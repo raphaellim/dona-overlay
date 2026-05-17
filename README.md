@@ -69,3 +69,15 @@ ADMIN_PASSWORD=원하는비밀번호
 
 Render 무료 Web Service는 재배포/재시작 시 로컬 `data/db.json` 저장 내용이 초기화될 수 있습니다.
 장기 운영에는 Supabase 또는 GitHub Gist 저장 방식으로 확장하는 것을 추천합니다.
+
+
+## 프리셋 OFF 시 overlay 숨김
+
+`control.html`에서 프리셋을 OFF 하면:
+
+- `admin.html` 처리 선택에서 숨김
+- `overlay.html` 크리에이터 상태 줄에서도 해당 프리셋 항목 숨김
+
+예:
+- `먹먹마` OFF → overlay에서 먹어/먹지마/먹먹마 표시 안 나옴
+- `펴피지마` OFF → overlay에서 흡연/금연/흡금 표시 안 나옴

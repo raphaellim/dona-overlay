@@ -282,6 +282,13 @@
       --right: 14px;
     }
   }
+
+  .state-item{
+    white-space:nowrap;
+    min-width:0;
+    text-align:center;
+  }
+
 </style>
 </head>
 <body>
@@ -307,6 +314,12 @@
   const API_DATA = "/api/data";
 
   const demoData = {
+    settings: {
+      presets: [
+        { id:"smoke", enabled:true, title:"펴피지마", plusName:"흡연", minusName:"금연" },
+        { id:"food", enabled:true, title:"먹먹마", plusName:"먹어", minusName:"먹지마" }
+      ]
+    },
     accountDonors: [
       { donor: "열려", amount: 200000 },
       { donor: "또영", amount: 150000 },
@@ -327,6 +340,7 @@
   let rollingItems = [];
   let rollingIndex = 0;
   let rollingTimer = null;
+  let enabledPresets = [];
 
   function num(v){
     const n = Number(v || 0);
@@ -338,6 +352,54 @@
     const n = num(won);
     const cut = Math.floor(n / 1000) / 10;
     return cut.toFixed(1).replace(/\.0$/, "");
+  }
+
+  
+  function getEnabledPresets(settings){
+    const presets = settings && Array.isArray(settings.presets) ? settings.presets : [];
+    return presets.filter(p => p && p.enabled !== false);
+  }
+
+  function statusLabelsFromPresetNets(presets, row){
+    const nets = Array.isArray(row.presetNets) ? row.presetNets : [];
+
+    return presets.map(preset => {
+      const n = nets.find(x =>
+        (x.presetId && x.presetId === preset.id) ||
+        (x.presetTitle && x.presetTitle === preset.title)
+      );
+
+      if(n){
+        const plus = num(n.plus);
+        const minus = num(n.minus);
+        const net = plus - minus;
+
+        if(net > 0){
+          const name = n.plusName || preset.plusName || "+";
+          return `<span class="plus">${escapeHtml(name)} +${Math.abs(net)}</span>`;
+        }
+        if(net < 0){
+          const name = n.minusName || preset.minusName || "-";
+          const cls = preset.id === "food" ? "red" : "blue";
+          return `<span class="${cls}">${escapeHtml(name)} -${Math.abs(net)}</span>`;
+        }
+      }
+
+      // 구버전 summary 호환
+      if(preset.id === "smoke"){
+        const net = num(row.smokeNet ?? row.smoke_net ?? (num(row.smoke || 0) - num(row.nosmoke || 0)));
+        if(net > 0) return `<span class="plus">${escapeHtml(preset.plusName || "흡연")} +${Math.abs(net)}</span>`;
+        if(net < 0) return `<span class="blue">${escapeHtml(preset.minusName || "금연")} -${Math.abs(net)}</span>`;
+      }
+
+      if(preset.id === "food"){
+        const net = num(row.eatNet ?? row.foodNet ?? row.food_net ?? (num(row.eat || 0) - num(row.noeat || 0)));
+        if(net > 0) return `<span class="plus">${escapeHtml(preset.plusName || "먹어")} +${Math.abs(net)}</span>`;
+        if(net < 0) return `<span class="red">${escapeHtml(preset.minusName || "먹지마")} -${Math.abs(net)}</span>`;
+      }
+
+      return `<span class="muted">${escapeHtml(preset.title || "처리")} 0</span>`;
+    });
   }
 
   function normalizeName(v){
@@ -360,53 +422,54 @@
     rollingItems = items && items.length ? items : [{ donor:"-", amount:0 }];
     rollingIndex = 0;
 
-    // 마지막 다음 1번이 다시 '위로' 올라오는 것처럼 보이도록
-    // 첫 번째 항목을 맨 뒤에 복제하고, 복제 항목에 도착한 직후
-    // 눈에 안 보이게 0번 위치로 순간 리셋한다.
-    const renderItems = rollingItems.length > 1
-      ? [...rollingItems, rollingItems[0]]
-      : rollingItems;
+    if(rollingTimer){
+      clearInterval(rollingTimer);
+      rollingTimer = null;
+    }
 
-    $track.classList.remove("no-transition");
-    $track.innerHTML = renderItems.map(item => {
+    const makeItemHtml = (item) => {
       const donor = normalizeName(item.donor || item.name || "익명");
       const amount = displayAmount(item.amount || item.total || item.account_amount || 0);
       return `<div class="roller-item">${escapeHtml(donor)} : ${amount}</div>`;
-    }).join("");
+    };
 
-    if(rollingTimer) clearInterval(rollingTimer);
+    // 1개면 고정
+    if(rollingItems.length <= 1){
+      $track.classList.add("no-transition");
+      $track.innerHTML = rollingItems.map(makeItemHtml).join("");
+      $track.style.transform = "translateY(0px)";
+      return;
+    }
+
+    // 마지막 다음 첫 번째가 자연스럽게 올라오도록 첫 번째를 뒤에 복제
+    const renderItems = [...rollingItems, rollingItems[0]];
+    $track.innerHTML = renderItems.map(makeItemHtml).join("");
 
     $track.classList.add("no-transition");
     $track.style.transform = "translateY(0px)";
-    // 브라우저가 0px 위치를 먼저 반영하게 강제
     $track.offsetHeight;
     $track.classList.remove("no-transition");
 
-    if(rollingItems.length > 1){
-      rollingTimer = setInterval(() => {
-        rollingIndex += 1;
-        $track.classList.remove("no-transition");
-        $track.style.transform = `translateY(${-rollingIndex * 28}px)`;
+    const itemHeight = 28;
+    const holdMs = 2600;       // 각 항목이 머무는 시간. 마지막도 동일하게 오래 보임.
+    const transitionMs = 420;  // CSS transition 시간과 맞춤
 
-        if(rollingIndex === rollingItems.length){
-          setTimeout(() => {
-            rollingIndex = 0;
-            $track.classList.add("no-transition");
-            $track.style.transform = "translateY(0px)";
-            $track.offsetHeight;
-            $track.classList.remove("no-transition");
-          }, 460);
-        }
-      }, 2300);
-    }
-  }
+    rollingTimer = setInterval(() => {
+      rollingIndex += 1;
+      $track.classList.remove("no-transition");
+      $track.style.transform = `translateY(${-rollingIndex * itemHeight}px)`;
 
-  function formatCreatorName(name){
-    const arr = Array.from(String(name || "").trim());
-    if(arr.length >= 3) return arr.slice(0, 3).join("");
-    if(arr.length === 2) return arr.join(" ");
-    if(arr.length === 1) return arr[0] + "  ";
-    return "익 명";
+      // clone 첫 번째에 도착하면, transition 완료 후 같은 모양의 진짜 첫 번째 위치로 무전환 리셋
+      if(rollingIndex === rollingItems.length){
+        setTimeout(() => {
+          rollingIndex = 0;
+          $track.classList.add("no-transition");
+          $track.style.transform = "translateY(0px)";
+          $track.offsetHeight;
+          $track.classList.remove("no-transition");
+        }, transitionMs + 30);
+      }
+    }, holdMs);
   }
 
   function renderCreators(creators){
@@ -417,12 +480,13 @@
       return;
     }
 
+    const visiblePresets = (enabledPresets || []).filter(p => p.enabled !== false);
+
     $list.innerHTML = rows.map(row => {
       const rawName = normalizeName(row.creator || row.name || "익명");
       const name = formatCreatorName(rawName);
       const total = displayAmount(row.total ?? row.totalAmount ?? row.total_amount ?? row.amount ?? row.donation ?? 0);
-      const smoke = row.smokeNet ?? row.smoke_net ?? (num(row.smoke || 0) - num(row.nosmoke || 0)) ?? (num(row.smoke_plus) - num(row.smoke_minus));
-      const food = row.eatNet ?? row.foodNet ?? row.food_net ?? (num(row.eat || 0) - num(row.noeat || 0)) ?? (num(row.food_plus) - num(row.food_minus));
+      const labels = visiblePresets.length ? statusLabelsFromPresetNets(visiblePresets, row) : [];
 
       return `
         <article class="creator-item">
@@ -430,10 +494,7 @@
             <div class="creator-name">${escapeHtml(name)} -</div>
             <div class="donation-amount">후원(${total})</div>
           </div>
-          <div class="creator-sub">
-            <span class="state-smoke">${statusText("smoke", smoke)}</span>
-            <span class="state-food">${statusText("food", food)}</span>
-          </div>
+          ${labels.length ? `<div class="creator-sub">${labels.map(label => `<span class="state-item">${label}</span>`).join("")}</div>` : ``}
         </article>
       `;
     }).join("");
@@ -496,6 +557,7 @@
     try{
       const s = await fetchJson(API_SUMMARY);
       return {
+        settings: s.settings || {},
         accountDonors: s.accountDonors || s.account_donors || s.recentAccounts || s.recent_account || [],
         creators: s.creators || s.creatorSummary || s.creator_summary || []
       };
@@ -518,6 +580,7 @@
 
   async function refresh(){
     const data = await loadData();
+    enabledPresets = getEnabledPresets(data.settings || {});
     renderAccountRoller(data.accountDonors);
     renderCreators(data.creators);
   }
@@ -535,5 +598,8 @@
 <!-- account-title-safe / auto-width-minmax version -->
 <!-- account-gap-tightened version -->
 <!-- fixed-center / 3-char-name-slot version -->
+<!-- seamless-css-loop-roller version -->
+<!-- stepped-smooth-roller-with-long-last-hold version -->
+<!-- preset-off-hidden-overlay version -->
 </body>
 </html>
