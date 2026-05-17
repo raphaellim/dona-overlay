@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>크리에이터별 도네이터 전체 리스트</title>
+<link rel="stylesheet" href="/app.css">
+<style>
+  body{background:#070b12;color:#e5e7eb}
+  .wrap{max-width:1180px;margin:0 auto;padding:22px}
+  .top{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:16px}
+  .title{font-size:28px;font-weight:900;letter-spacing:-.06em}
+  .nav{display:flex;gap:8px;flex-wrap:wrap}
+  .nav a,.btn{text-decoration:none;color:#dbeafe;background:#111827;border:1px solid #334155;padding:9px 12px;border-radius:11px;font-weight:900;cursor:pointer}
+  .card{background:#0b1220;border:1px solid #253247;border-radius:18px;padding:16px}
+  .resultBox{background:#08111f;border:1px solid #334155;border-radius:12px;padding:12px 14px;font-weight:900;color:#dbeafe;margin-bottom:14px}
+  select{background:#070b12;color:#e5e7eb;border:1px solid #334155;border-radius:12px;padding:10px 12px;min-width:240px}
+  .toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+  .table{width:100%;border-collapse:collapse;font-size:14px}
+  .table th,.table td{border-bottom:1px solid #1f2937;padding:9px 8px;text-align:left;white-space:nowrap}
+  .table th{color:#93c5fd;font-weight:900;background:#0f172a}
+  .num{text-align:right!important;font-variant-numeric:tabular-nums}
+  .pager{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:12px;color:#cbd5e1;font-weight:900}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div class="title">크리에이터별 도네이터 전체 리스트</div>
+    <div class="nav">
+      <a href="/summary.html">합산으로</a>
+      <a href="/donations.html">전체 입력</a>
+      <a href="/control.html">방송컨트롤</a>
+    </div>
+  </div>
+
+  <div id="currentBroadcast" class="resultBox">현재 방송 확인 중...</div>
+
+  <section class="card">
+    <div class="toolbar">
+      <b>크리에이터 선택</b>
+      <select id="creatorSelect" onchange="changeCreator()"></select>
+    </div>
+
+    <table class="table">
+      <thead><tr><th>도네이터</th><th>계좌</th><th>투네</th><th>합산</th><th>최근처리</th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+
+    <div class="pager">
+      <button class="btn" onclick="prevPage()">이전</button>
+      <span id="pageInfo">1 / 1</span>
+      <button class="btn" onclick="nextPage()">다음</button>
+    </div>
+  </section>
+</div>
+
+<script src="/common.js"></script>
+<script>
+let summary = null;
+let selectedCreator = '';
+let page = 1;
+const pageSize = 20;
+
+async function load(){
+  summary = await api('/api/summary');
+  $('#currentBroadcast').textContent = summary.broadcast ? `현재 방송: ${summary.broadcast.title}` : '현재 방송 없음';
+
+  const params = new URLSearchParams(location.search);
+  const requested = params.get('creator') || '';
+
+  const names = (summary.creators||[]).map(r=>r.creator);
+  if(!selectedCreator) selectedCreator = requested && names.includes(requested) ? requested : (names[0] || '');
+
+  $('#creatorSelect').innerHTML = names.map(n => `<option value="${escAttr(n)}" ${n===selectedCreator?'selected':''}>${esc(n)}</option>`).join('');
+  render();
+}
+
+function currentCreator(){
+  return (summary.creators||[]).find(c => c.creator === selectedCreator);
+}
+
+function changeCreator(){
+  selectedCreator = $('#creatorSelect').value;
+  page = 1;
+  history.replaceState(null, '', '/creator_detail.html?creator=' + encodeURIComponent(selectedCreator));
+  render();
+}
+
+function render(){
+  const c = currentCreator();
+  const rows = c ? (c.donorSummary || []) : [];
+  const maxPage = Math.max(1, Math.ceil(rows.length / pageSize));
+  if(page > maxPage) page = maxPage;
+  const pageRows = rows.slice((page-1)*pageSize, (page-1)*pageSize + pageSize);
+
+  $('#rows').innerHTML = pageRows.map(r => `
+    <tr>
+      <td><b>${esc(r.donor)}</b></td>
+      <td class="num">${r.accountText}</td>
+      <td class="num">${r.toonieText}</td>
+      <td class="num"><b>${r.totalText}</b></td>
+      <td>${esc(r.latestProcess)}</td>
+    </tr>
+  `).join('');
+
+  $('#pageInfo').textContent = `${page} / ${maxPage}`;
+}
+
+function prevPage(){ if(page > 1){ page--; render(); } }
+function nextPage(){
+  const c = currentCreator();
+  const rows = c ? (c.donorSummary || []) : [];
+  const maxPage = Math.max(1, Math.ceil(rows.length / pageSize));
+  if(page < maxPage){ page++; render(); }
+}
+function escAttr(v){ return String(v ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])); }
+
+load();
+</script>
+</body>
+</html>

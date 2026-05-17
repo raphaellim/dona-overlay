@@ -439,12 +439,35 @@ function buildSummary(settings, donations, broadcast) {
 
   accountDonors.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
+  // 계좌후원 롤링용: 같은 도네이터는 1번만 표시하고 계좌금액 합산
+  const accountDonorMap = new Map();
+  for (const item of accountDonors) {
+    const key = normName(item.donor) || '익명';
+    if (!accountDonorMap.has(key)) {
+      accountDonorMap.set(key, {
+        donor: key,
+        amount: 0,
+        amountText: '0',
+        latestAt: item.createdAt
+      });
+    }
+    const row = accountDonorMap.get(key);
+    row.amount += Number(item.amount || 0);
+    row.amountText = displayManText(row.amount);
+    if (new Date(item.createdAt) > new Date(row.latestAt)) row.latestAt = item.createdAt;
+  }
+
+  const accountDonorSummary = Array.from(accountDonorMap.values())
+    .sort((a, b) => new Date(b.latestAt) - new Date(a.latestAt))
+    .slice(0, 10);
+
   return {
     settings,
     broadcast: broadcast ? broadcastToClient(broadcast) : null,
     creators: creatorRows,
     donors: donorRows,
-    accountDonors: accountDonors.slice(0, 10),
+    accountDonors: accountDonorSummary,
+    accountDonorDetails: accountDonors,
     donations
   };
 }
