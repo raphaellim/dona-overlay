@@ -1,0 +1,16 @@
+{
+  "name": "donation-json-broadcast-server",
+  "version": "1.0.0",
+  "description": "Broadcast donation manager without SQL - JSON file storage",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -1,0 +1,20 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>방송컨트롤</title><link rel="stylesheet" href="/app.css"></head><body><div class="wrap">
+<div class="top"><div class="title">방송컨트롤 / 설정</div><div class="nav"><a href="/admin.html">입력</a><a href="/summary.html">합산</a><a href="/overlay.html" target="_blank">OBS화면</a></div></div>
+<div class="grid"><div class="card"><h2>방송 화면 설정</h2>
+<div class="row"><label>관리자 PW</label><input id="pw" class="input" type="password" placeholder="기본 1234"></div>
+<div class="row"><label>방송 타이틀</label><input id="title" class="input"></div>
+<div class="row"><label>타이틀 이미지 URL</label><input id="titleImage" class="input" placeholder="https://..."></div>
+<div class="row"><label>공지</label><input id="notice" class="input"></div>
+<div class="row"><label>박스 가로개수</label><input id="columns" class="input" type="number" min="1" max="6"></div>
+<div class="row"><label>최대 표시</label><input id="maxCreators" class="input" type="number" min="1" max="50"></div>
+<h2>단가 설정</h2>
+<div class="split"><input id="smoke" class="input" placeholder="흡연 11900"><input id="nosmoke" class="input" placeholder="금연 12000"><input id="eat" class="input" placeholder="먹어 14000"><input id="noeat" class="input" placeholder="먹지마 15000"></div>
+<button class="btn green" style="width:100%;margin-top:14px" onclick="save()">설정 저장</button>
+<button class="btn red" style="width:100%;margin-top:8px" onclick="resetAll()">전체 입력 데이터 초기화</button>
+</div><div class="card"><h2>크리에이터 설정</h2><p class="hint">한 줄에 한 명씩 입력하세요. 이 명단이 입력화면 선택창과 OBS 박스에 나옵니다.</p><textarea id="creators"></textarea></div></div>
+</div><script src="/common.js"></script><script>
+async function init(){const s=await api('/api/settings'); $('#title').value=s.title||''; $('#titleImage').value=s.titleImage||''; $('#notice').value=s.notice||''; $('#columns').value=s.columns||4; $('#maxCreators').value=s.maxCreators||12; $('#creators').value=(s.creators||[]).join('\n'); $('#smoke').value=s.prices?.smoke||11900; $('#nosmoke').value=s.prices?.nosmoke||12000; $('#eat').value=s.prices?.eat||14000; $('#noeat').value=s.prices?.noeat||15000;}
+async function save(){try{const body={password:$('#pw').value,title:$('#title').value,titleImage:$('#titleImage').value,notice:$('#notice').value,columns:$('#columns').value,maxCreators:$('#maxCreators').value,creators:$('#creators').value.split('\n'),prices:{smoke:$('#smoke').value,nosmoke:$('#nosmoke').value,eat:$('#eat').value,noeat:$('#noeat').value}};await api('/api/settings',{method:'POST',body:JSON.stringify(body)});alert('설정 저장 완료');}catch(e){alert(e.message)}}
+async function resetAll(){if(!confirm('정말 전체 입력 데이터를 삭제할까요?'))return;try{await api('/api/reset',{method:'POST',body:JSON.stringify({password:$('#pw').value})});alert('초기화 완료');}catch(e){alert(e.message)}}
+init();
+</script></body></html>

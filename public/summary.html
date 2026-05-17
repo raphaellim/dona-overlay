@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>합산</title>
+<link rel="stylesheet" href="/app.css">
+<style>
+  .summary-layout{display:grid;grid-template-columns:1fr;gap:16px}
+  .detail-grid{display:grid;grid-template-columns:1fr 1.4fr;gap:16px}
+  .select-line{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+  .select-line select{max-width:260px}
+  .stat-pills{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+  .stat-pills .pill{font-size:14px}
+  tr.clickable{cursor:pointer}
+  tr.clickable:hover{background:#172036}
+  @media(max-width:900px){.detail-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div class="title">합산 확인</div>
+    <div class="nav">
+      <a href="/admin.html">입력</a>
+      <a href="/control.html">방송컨트롤</a>
+      <a href="/overlay.html" target="_blank">OBS화면</a>
+    </div>
+  </div>
+
+  <div class="summary-layout">
+    <div class="grid">
+      <div class="card">
+        <h2>크리에이터 합산</h2>
+        <table class="table">
+          <thead><tr><th>크리에이터</th><th>계좌</th><th>투네</th><th>합산</th><th>먹먹마</th><th>흡금</th></tr></thead>
+          <tbody id="creatorRows"></tbody>
+        </table>
+        <p class="hint">크리에이터 행을 클릭하면 아래에 해당 크리에이터 후원자 리스트가 나옵니다.</p>
+      </div>
+
+      <div class="card">
+        <h2>도네이터 합산</h2>
+        <table class="table">
+          <thead><tr><th>도네이터</th><th>계좌</th><th>투네</th><th>합산</th><th>최근처리</th></tr></thead>
+          <tbody id="donorRows"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="detail-grid">
+      <div class="card">
+        <h2>크리에이터별 도네이터 합산</h2>
+        <div class="select-line">
+          <label><b>크리에이터 선택</b></label>
+          <select id="creatorSelect" onchange="renderCreatorDetail()"></select>
+        </div>
+        <div class="stat-pills" id="creatorStats"></div>
+        <table class="table">
+          <thead><tr><th>도네이터</th><th>계좌</th><th>투네</th><th>합산</th><th>최근처리</th></tr></thead>
+          <tbody id="creatorDonorRows"></tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <h2>선택 크리에이터 입력 리스트</h2>
+        <table class="table">
+          <thead><tr><th>시간</th><th>도네이터</th><th>계좌</th><th>투네</th><th>합산</th><th>결과</th><th>메모</th></tr></thead>
+          <tbody id="creatorDetailRows"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>전체 입력 리스트</h2>
+      <table class="table">
+        <thead><tr><th>시간</th><th>도네이터</th><th>크리에이터</th><th>계좌</th><th>투네</th><th>합산</th><th>결과</th><th>메모</th></tr></thead>
+        <tbody id="allRows"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script src="/common.js"></script>
+<script>
+let summary = null;
+let selectedCreator = '';
+
+function statusNet(kind, value){
+  const v = Number(value || 0);
+  if(kind === 'smoke'){
+    if(v > 0) return `흡연 +${v}`;
+    if(v < 0) return `금연 -${Math.abs(v)}`;
+    return '흡금 0';
+  }
+  if(v > 0) return `먹어 +${v}`;
+  if(v < 0) return `먹지마 -${Math.abs(v)}`;
+  return '먹먹마 0';
+}
+
+function findCreator(name){
+  return (summary.creators || []).find(c => c.creator === name) || null;
+}
+
+async function load(){
+  summary = await api('/api/summary');
+
+  $('#creatorRows').innerHTML = (summary.creators||[]).map(r => `
+    <tr class="clickable" onclick="selectCreator('${escAttr(r.creator)}')">
+      <td><b>${esc(r.creator)}</b></td>
+      <td class="num">${r.accountText}</td>
+      <td class="num">${r.toonieText}</td>
+      <td class="num"><b>${r.totalText}</b></td>
+      <td>${statusNet('food', r.eatNet)}</td>
+      <td>${statusNet('smoke', r.smokeNet)}</td>
+    </tr>
+  `).join('');
+
+  $('#donorRows').innerHTML = (summary.donors||[]).map(r => `
+    <tr>
+      <td><b>${esc(r.donor)}</b></td>
+      <td class="num">${r.accountText}</td>
+      <td class="num">${r.toonieText}</td>
+      <td class="num"><b>${r.totalText}</b></td>
+      <td>${esc(r.latestProcess)}</td>
+    </tr>
+  `).join('');
+
+  const sel = $('#creatorSelect');
+  const names = (summary.creators||[]).map(r=>r.creator);
+  if(!selectedCreator || !names.includes(selectedCreator)) selectedCreator = names[0] || '';
+  sel.innerHTML = names.map(n => `<option value="${escAttr(n)}" ${n===selectedCreator?'selected':''}>${esc(n)}</option>`).join('');
+
+  $('#allRows').innerHTML = (summary.donations||[]).slice().reverse().map(r => `
+    <tr>
+      <td>${new Date(r.createdAt).toLocaleString('ko-KR')}</td>
+      <td>${esc(r.donor)}</td>
+      <td>${esc(r.creator)}</td>
+      <td class="num">${displayMan(r.accountAmount).toFixed(1)}</td>
+      <td class="num">${displayMan(r.toonieAmount).toFixed(1)}</td>
+      <td class="num"><b>${esc(r.displayAmount)}</b></td>
+      <td>${esc(r.resultLabel||r.processType)}</td>
+      <td>${esc(r.memo)}</td>
+    </tr>
+  `).join('');
+
+  renderCreatorDetail();
+}
+
+function selectCreator(name){
+  selectedCreator = name;
+  $('#creatorSelect').value = name;
+  renderCreatorDetail();
+  document.querySelector('.detail-grid')?.scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function renderCreatorDetail(){
+  selectedCreator = $('#creatorSelect').value || selectedCreator;
+  const r = findCreator(selectedCreator);
+
+  if(!r){
+    $('#creatorStats').innerHTML = '';
+    $('#creatorDonorRows').innerHTML = '';
+    $('#creatorDetailRows').innerHTML = '';
+    return;
+  }
+
+  $('#creatorStats').innerHTML = `
+    <span class="pill">계좌 ${r.accountText}</span>
+    <span class="pill">투네 ${r.toonieText}</span>
+    <span class="pill">합산 ${r.totalText}</span>
+    <span class="pill">${statusNet('smoke', r.smokeNet)}</span>
+    <span class="pill">${statusNet('food', r.eatNet)}</span>
+  `;
+
+  $('#creatorDonorRows').innerHTML = (r.donorSummary || []).map(d => `
+    <tr>
+      <td><b>${esc(d.donor)}</b></td>
+      <td class="num">${d.accountText}</td>
+      <td class="num">${d.toonieText}</td>
+      <td class="num"><b>${d.totalText}</b></td>
+      <td>${esc(d.latestProcess)}</td>
+    </tr>
+  `).join('');
+
+  $('#creatorDetailRows').innerHTML = (r.rows || []).slice().reverse().map(row => `
+    <tr>
+      <td>${new Date(row.createdAt).toLocaleString('ko-KR')}</td>
+      <td>${esc(row.donor)}</td>
+      <td class="num">${displayMan(row.accountAmount).toFixed(1)}</td>
+      <td class="num">${displayMan(row.toonieAmount).toFixed(1)}</td>
+      <td class="num"><b>${esc(row.displayAmount)}</b></td>
+      <td>${esc(row.resultLabel||row.processType)}</td>
+      <td>${esc(row.memo)}</td>
+    </tr>
+  `).join('');
+}
+
+function escAttr(v){
+  return String(v ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+}
+
+load();
+setInterval(load, 3000);
+</script>
+</body>
+</html>

@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>관리자 입력</title>
+<link rel="stylesheet" href="/app.css">
+<style>
+  .entry-head{
+    display:grid;
+    grid-template-columns: 1.3fr .8fr .8fr 1.2fr;
+    gap:8px;
+    color:#cbd5e1;
+    font-weight:900;
+    margin:10px 0 8px;
+    padding:0 4px;
+  }
+  .split-row{
+    display:grid;
+    grid-template-columns: 1.3fr .8fr .8fr 1.2fr;
+    gap:8px;
+    align-items:center;
+    margin-bottom:8px;
+  }
+  .split-row .creator-name{
+    font-weight:900;
+    background:#0f172a;
+    border:1px solid #475569;
+    border-radius:10px;
+    padding:11px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .bulk-tools{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    margin:10px 0;
+  }
+  .total-line{
+    display:flex;
+    justify-content:space-between;
+    gap:10px;
+    padding:12px 14px;
+    border:1px solid #334155;
+    border-radius:12px;
+    background:#0f172a;
+    font-weight:900;
+    margin-top:10px;
+  }
+  .mini{font-size:12px;padding:7px 10px;border-radius:9px}
+  @media(max-width:800px){
+    .entry-head{display:none}
+    .split-row{grid-template-columns:1fr 1fr}
+    .split-row .creator-name{grid-column:1 / -1}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div class="title">관리자 입력</div>
+    <div class="nav">
+      <a href="/control.html">방송컨트롤</a>
+      <a href="/summary.html">합산</a>
+      <a href="/overlay.html?demo=1" target="_blank">OBS화면</a>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h2>도네이터 1명 → 여러 크리에이터 분배 입력</h2>
+      <div class="row"><label>관리자 PW</label><input id="pw" class="input" type="password" placeholder="기본 1234"></div>
+      <div class="row"><label>도네이터</label><input id="donor" class="input" placeholder="도네이터명"></div>
+      <div class="row">
+        <label>전체 처리</label>
+        <select id="processType">
+          <option value="후원">후원</option>
+          <option value="흡금">흡금</option>
+          <option value="먹먹마">먹먹마</option>
+        </select>
+      </div>
+
+      <div class="bulk-tools">
+        <button class="btn gray mini" onclick="clearAmounts()">금액 초기화</button>
+        <button class="btn gray mini" onclick="fillSame('account')">계좌 동일금액</button>
+        <button class="btn gray mini" onclick="fillSame('toonie')">투네 동일금액</button>
+      </div>
+
+      <div class="entry-head">
+        <div>크리에이터</div>
+        <div>계좌금액</div>
+        <div>투네금액</div>
+        <div>메모</div>
+      </div>
+      <div id="splitRows"></div>
+
+      <div class="total-line">
+        <span>입력 합계</span>
+        <span id="totalPreview">계좌 0 / 투네 0 / 합산 0</span>
+      </div>
+      <div class="resultBox" id="preview">자동결과: 후원</div>
+      <p class="hint">
+        한 명의 도네이터가 여러 크리에이터에게 나눠줄 때, 해당 크리에이터 줄에만 금액을 입력하고 저장하세요.
+        처리값은 전체 입력에 공통 적용됩니다. 금액은 항상 후원금액으로 합산되고, 흡금/먹먹마는 체크 수량만 계산됩니다.
+      </p>
+      <button class="btn green" style="width:100%;font-size:18px;margin-top:12px" onclick="saveBatch()">입력 저장</button>
+    </div>
+
+    <div class="card">
+      <h2>최근 입력</h2>
+      <table class="table">
+        <thead><tr><th>도네이터</th><th>크리에이터</th><th>금액</th><th>처리</th><th></th></tr></thead>
+        <tbody id="recent"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script src="/common.js"></script>
+<script>
+let settings;
+
+async function init(){
+  settings = await api('/api/settings');
+  renderSplitRows();
+  bindPreview();
+  await loadRecent();
+}
+
+function renderSplitRows(){
+  const wrap = $('#splitRows');
+  const creators = settings.creators || [];
+  wrap.innerHTML = creators.map((name, idx) => `
+    <div class="split-row" data-creator="${esc(name)}">
+      <div class="creator-name">${esc(name)}</div>
+      <input class="input amount account" inputmode="numeric" placeholder="계좌" data-idx="${idx}">
+      <input class="input amount toonie" inputmode="numeric" placeholder="투네" data-idx="${idx}">
+      <input class="input memo" placeholder="메모" data-idx="${idx}">
+    </div>
+  `).join('');
+}
+
+function bindPreview(){
+  $('#processType').addEventListener('input', updatePreview);
+  document.querySelectorAll('.amount').forEach(el => el.addEventListener('input', updatePreview));
+  updatePreview();
+}
+
+function getRows(){
+  return Array.from(document.querySelectorAll('.split-row')).map(row => {
+    return {
+      creator: row.dataset.creator,
+      accountAmount: row.querySelector('.account').value,
+      toonieAmount: row.querySelector('.toonie').value,
+      memo: row.querySelector('.memo').value
+    };
+  });
+}
+
+function updatePreview(){
+  const rows = getRows();
+  const account = rows.reduce((s,r)=>s+toWon(r.accountAmount),0);
+  const toonie = rows.reduce((s,r)=>s+toWon(r.toonieAmount),0);
+  const total = account + toonie;
+  $('#totalPreview').textContent = `계좌 ${displayMan(account).toFixed(1)} / 투네 ${displayMan(toonie).toFixed(1)} / 합산 ${displayMan(total).toFixed(1)}`;
+
+  const p = $('#processType').value || '후원';
+  const prices = settings.prices;
+  const filled = rows.filter(r => toWon(r.accountAmount)+toWon(r.toonieAmount)>0);
+
+  let msg = '후원';
+  if(p !== '후원' && filled.length){
+    const examples = filled.slice(0,3).map(r => {
+      const amt = toWon(r.accountAmount)+toWon(r.toonieAmount);
+      let label = '';
+      if(p === '흡금'){
+        if(amt && amt % prices.nosmoke === 0) label = '금연 ' + (amt/prices.nosmoke);
+        else if(amt && amt % prices.smoke === 0) label = '흡연 ' + (amt/prices.smoke);
+        else label = '흡금 확인';
+      }
+      if(p === '먹먹마'){
+        if(amt && amt % prices.noeat === 0) label = '먹지마 ' + (amt/prices.noeat);
+        else if(amt && amt % prices.eat === 0) label = '먹어 ' + (amt/prices.eat);
+        else label = '먹먹마 확인';
+      }
+      return `${r.creator}: ${label}`;
+    });
+    msg = examples.join(' / ') + (filled.length > 3 ? ` 외 ${filled.length-3}건` : '');
+  }
+  $('#preview').textContent = '자동결과: ' + msg;
+}
+
+function clearAmounts(){
+  document.querySelectorAll('.amount,.memo').forEach(el=>el.value='');
+  updatePreview();
+}
+
+function fillSame(type){
+  const v = prompt(type === 'account' ? '계좌 동일금액 입력' : '투네 동일금액 입력', '');
+  if(v === null) return;
+  const cls = type === 'account' ? '.account' : '.toonie';
+  document.querySelectorAll(cls).forEach(el => el.value = v);
+  updatePreview();
+}
+
+async function saveBatch(){
+  try{
+    const rows = getRows().filter(r => toWon(r.accountAmount)+toWon(r.toonieAmount)>0);
+    const body = {
+      password: $('#pw').value,
+      donor: $('#donor').value,
+      processType: $('#processType').value || '후원',
+      rows
+    };
+    const res = await api('/api/donations/batch', {method:'POST', body:JSON.stringify(body)});
+    $('#donor').value = '';
+    clearAmounts();
+    await loadRecent();
+    alert(`${res.count}건 저장 완료`);
+  }catch(e){
+    alert(e.message);
+  }
+}
+
+async function loadRecent(){
+  const s = await api('/api/summary');
+  const rows = (s.donations||[]).slice().reverse().slice(0,14);
+  $('#recent').innerHTML = rows.map(r => `
+    <tr>
+      <td>${esc(r.donor)}</td>
+      <td>${esc(r.creator)}</td>
+      <td class="num">${esc(r.displayAmount)}</td>
+      <td>${esc(r.resultLabel||r.processType)}</td>
+      <td><button class="btn red mini" onclick="delRow('${r.id}')">삭제</button></td>
+    </tr>
+  `).join('');
+}
+
+async function delRow(id){
+  const pw = $('#pw').value;
+  if(!confirm('삭제할까요?')) return;
+  await api('/api/donations/'+id, {method:'DELETE', headers:{'x-admin-password':pw}});
+  await loadRecent();
+}
+
+init();
+</script>
+</body>
+</html>
