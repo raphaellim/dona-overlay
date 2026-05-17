@@ -1,83 +1,79 @@
-# Donation Overlay Final
+# Donation Overlay - Supabase SQL + 방송 세션 버전
 
-## 포함 기능
+이 버전은 Render 로컬 JSON이 아니라 Supabase PostgreSQL에 저장합니다.
+또한 방송마다 데이터를 분리하는 방송 세션 기능이 포함되어 있습니다.
 
-### admin.html
-- 도네이터명 입력
-- 상단에서 계좌금액 / 투네금액 각각 입력
-- 처리 선택: 후원 또는 control.html에서 ON 된 프리셋
-- 하단 크리에이터별 금액 1칸 입력
-- 하단 크리에이터 금액 합계와 상단 계좌+투네 합계가 같아야 저장
-- 크리에이터별 금액은 입력 순서대로 계좌부터 자동 배분 후 남은 금액은 투네로 배분
-- 금액은 어떤 처리든 후원금액으로 합산
-- 흡금/먹먹마 등 프리셋은 체크 수량만 자동 계산
+## 핵심 변경점
 
-### control.html
-- 크리에이터 추가/제외/순서 변경
-- 프리셋 제목 변경 가능
-- 프리셋 ON/OFF 가능
-- + 항목명 / + 단가 설정 가능
-- - 항목명 / - 단가 설정 가능
-- 기본 프리셋:
-  1. 펴피지마: 흡연 11900 / 금연 12000
-  2. 먹먹마: 먹어 14000 / 먹지마 15000
+### 방송 세션
+`control.html`에서 방송을 만들고 현재 방송으로 선택할 수 있습니다.
 
-### summary.html
-- 크리에이터 합산
-- 도네이터 합산
-- 크리에이터별 도네이터 합산
-- 선택 크리에이터 상세 입력 리스트
-- 계좌 / 투네 / 합산 구분 표시
+예:
+- `0518여행방송`
+- `0519여행방송`
 
-### overlay.html
-- 우측 상단 심플 반투명 박스
-- 박스 폭 고정
-- 전체 센터 정렬
-- 크리에이터 이름은 3글자 기준으로 표시
-  - 2글자는 글자 사이를 띄워 표시
-  - 4글자 이상은 앞 3글자 표시
-- 계좌후원 롤링
-  - 마지막 항목도 충분히 오래 표시
-  - 마지막 다음 첫 항목으로 위 방향 자연스럽게 이동
-- 배경 투명
-- OBS 브라우저 소스용
+현재 방송을 바꾸면:
+- `admin.html` 입력은 현재 방송에만 저장
+- `summary.html` 합산은 현재 방송 데이터만 표시
+- `overlay.html` 오버레이도 현재 방송 데이터만 표시
 
-## 실행
+즉, 새 방송을 만들면 0부터 다시 시작하면서 이전 방송 데이터는 보관됩니다.
 
-```bash
-npm install
-npm start
-```
+## Supabase SQL
 
-## 접속
+Supabase → SQL Editor → New query 에서 `supabase.sql` 내용을 실행하세요.
 
-- 관리자 입력: `/admin.html`
-- 방송컨트롤: `/control.html`
-- 합산 확인: `/summary.html`
-- OBS 화면: `/overlay.html`
-- OBS 데모: `/overlay.html?demo=1`
+이미 기존 테이블이 있어도 `alter table ... add column if not exists`가 포함되어 있어 업그레이드 가능합니다.
 
 ## Render 환경변수
 
+Render 서비스 → Environment 에 아래 3개를 추가하세요.
+
 ```env
-ADMIN_PASSWORD=원하는비밀번호
+ADMIN_PASSWORD=원하는관리자비밀번호
+SUPABASE_URL=https://프로젝트ID.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=Supabase service_role secret key
 ```
 
-## Render 주의사항
+주의:
+- `SUPABASE_URL`에는 `/rest/v1/`를 붙이지 않습니다.
+- `SUPABASE_SERVICE_ROLE_KEY`는 GitHub에 올리면 안 됩니다.
+- Render Environment Variables에만 넣으세요.
 
-이 버전은 SQL 없는 JSON 저장 방식입니다.
+## GitHub 업로드 구조
 
-Render 무료 Web Service는 재배포/재시작 시 로컬 `data/db.json` 저장 내용이 초기화될 수 있습니다.
-장기 운영에는 Supabase 또는 GitHub Gist 저장 방식으로 확장하는 것을 추천합니다.
+ZIP 압축을 풀고 내부 파일들을 GitHub 저장소 최상단에 업로드하세요.
 
+정상 구조:
 
-## 프리셋 OFF 시 overlay 숨김
+```text
+server.js
+package.json
+supabase.sql
+README.md
+public/
+data/
+```
 
-`control.html`에서 프리셋을 OFF 하면:
+## 접속 주소
 
-- `admin.html` 처리 선택에서 숨김
-- `overlay.html` 크리에이터 상태 줄에서도 해당 프리셋 항목 숨김
+```text
+/admin.html     관리자 입력
+/control.html   방송컨트롤 / 방송 세션 생성
+/summary.html   합산 확인
+/overlay.html   OBS 오버레이
+/overlay.html?demo=1  데모
+```
 
-예:
-- `먹먹마` OFF → overlay에서 먹어/먹지마/먹먹마 표시 안 나옴
-- `펴피지마` OFF → overlay에서 흡연/금연/흡금 표시 안 나옴
+## 포함 기능
+
+- 계좌금액 / 투네금액 분리 입력
+- 크리에이터별 금액 1칸 입력
+- 처리 프리셋 설정
+- 프리셋 ON/OFF
+- OFF 시 admin과 overlay 모두 숨김
+- 크리에이터/도네이터 합산
+- 우측 상단 OBS 오버레이
+- 계좌후원 롤링
+- 3글자 기준 센터 고정 디자인
+- 방송별 데이터 분리

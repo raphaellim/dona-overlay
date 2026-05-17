@@ -28,6 +28,8 @@
     </div>
   </div>
 
+  <div id="currentBroadcast" class="resultBox" style="margin-bottom:16px">현재 방송 확인 중...</div>
+
   <div class="summary-layout">
     <div class="grid">
       <div class="card">
@@ -104,6 +106,7 @@ function findCreator(name){
 
 async function load(){
   summary = await api('/api/summary');
+  $('#currentBroadcast').textContent = summary.broadcast ? `현재 방송: ${summary.broadcast.title}` : '현재 방송 없음';
 
   $('#creatorRows').innerHTML = (summary.creators||[]).map(r => `
     <tr class="clickable" onclick="selectCreator('${escAttr(r.creator)}')">

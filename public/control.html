@@ -52,6 +52,45 @@
     .preset-fields{grid-template-columns:1fr}
     .preset-fields .full{grid-column:auto}
   }
+
+  .broadcast-card{
+    border:1px solid #334155;
+    background:#0f172a;
+    border-radius:14px;
+    padding:14px;
+    margin-bottom:12px;
+  }
+  .broadcast-list{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    margin-top:12px;
+  }
+  .broadcast-item{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    border:1px solid #334155;
+    border-radius:10px;
+    padding:10px 12px;
+    background:#111827;
+  }
+  .broadcast-item.active{
+    border-color:#22c55e;
+    background:#10251b;
+  }
+  .broadcast-title{
+    font-weight:900;
+  }
+  .broadcast-actions{
+    display:flex;
+    gap:6px;
+    flex-wrap:wrap;
+    justify-content:flex-end;
+  }
+
+  .mini{font-size:12px;padding:7px 10px;border-radius:9px}
 </style>
 </head>
 <body>
@@ -64,6 +103,23 @@
       <a href="/overlay.html" target="_blank">OBS화면</a>
       <a href="/overlay.html?demo=1" target="_blank">데모</a>
     </div>
+  </div>
+
+  
+  <div class="card" style="margin-bottom:16px">
+    <h2>방송 세션</h2>
+    <p class="hint">
+      방송마다 데이터를 따로 저장합니다. 새 방송을 만들고 현재 방송으로 선택하면 입력/합산/오버레이가 0부터 시작됩니다.
+    </p>
+    <div class="broadcast-card">
+      <div class="row">
+        <label>새 방송 제목</label>
+        <input id="broadcastTitle" class="input" placeholder="예: 0518여행방송">
+      </div>
+      <button class="btn green" onclick="createBroadcast()">새 방송 만들고 현재 방송으로 선택</button>
+    </div>
+    <div id="activeBroadcast" class="resultBox">현재 방송 확인 중...</div>
+    <div id="broadcastList" class="broadcast-list"></div>
   </div>
 
   <div class="settings-grid">
@@ -109,6 +165,84 @@ let settings = null;
 
 function escAttr(v){
   return String(v ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+}
+
+
+async function loadBroadcasts(){
+  try{
+    const data = await api('/api/broadcasts');
+    const active = data.active;
+    $('#activeBroadcast').textContent = active ? `현재 방송: ${active.title}` : '현재 방송 없음';
+
+    $('#broadcastList').innerHTML = (data.broadcasts || []).map(b => `
+      <div class="broadcast-item ${b.isActive ? 'active' : ''}">
+        <div>
+          <div class="broadcast-title">${esc(b.title)} ${b.isActive ? '<span class="pill">현재</span>' : ''}</div>
+          <div class="hint">${new Date(b.createdAt).toLocaleString('ko-KR')}</div>
+        </div>
+        <div class="broadcast-actions">
+          ${b.isActive ? '' : `<button class="btn gray mini" onclick="activateBroadcast('${b.id}')">현재 방송 선택</button>`}
+          <button class="btn red mini" onclick="resetCurrentBroadcast('${b.id}')">이 방송 데이터 초기화</button>
+        </div>
+      </div>
+    `).join('');
+  }catch(e){
+    $('#activeBroadcast').textContent = '방송 세션 조회 실패: ' + e.message;
+  }
+}
+
+async function createBroadcast(){
+  try{
+    const pw = $('#pw').value;
+    localStorage.setItem('ADMIN_PASSWORD', pw);
+    const title = $('#broadcastTitle').value.trim();
+    if(!title) return alert('방송 제목을 입력하세요.');
+
+    await api('/api/broadcasts', {
+      method:'POST',
+      body: JSON.stringify({ password: pw, title, activate: true })
+    });
+
+    $('#broadcastTitle').value = '';
+    await loadBroadcasts();
+    alert('새 방송이 현재 방송으로 선택되었습니다.');
+  }catch(e){
+    alert(e.message);
+  }
+}
+
+async function activateBroadcast(id){
+  try{
+    const pw = $('#pw').value;
+    localStorage.setItem('ADMIN_PASSWORD', pw);
+
+    await api('/api/broadcasts/' + id + '/activate', {
+      method:'POST',
+      body: JSON.stringify({ password: pw })
+    });
+
+    await loadBroadcasts();
+    alert('현재 방송이 변경되었습니다.');
+  }catch(e){
+    alert(e.message);
+  }
+}
+
+async function resetCurrentBroadcast(id){
+  try{
+    const pw = $('#pw').value;
+    if(!confirm('선택한 방송의 후원 데이터를 초기화할까요?')) return;
+
+    await api('/api/reset', {
+      method:'POST',
+      body: JSON.stringify({ password: pw, broadcastId: id })
+    });
+
+    alert('선택한 방송 데이터가 초기화되었습니다.');
+    await loadBroadcasts();
+  }catch(e){
+    alert(e.message);
+  }
 }
 
 async function load(){

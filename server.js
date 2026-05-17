@@ -1,37 +1,27 @@
 const express = require('express');
-const fs = require('fs');
-const path = require('path');
 const cors = require('cors');
+const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '1234';
-const DB_PATH = path.join(__dirname, 'data', 'db.json');
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+const supabase = SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY
+  ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+      auth: { persistSession: false, autoRefreshToken: false }
+    })
+  : null;
 
 app.use(cors());
 app.use(express.json({ limit: '2mb' }));
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static('public'));
 
 function defaultPresets() {
   return [
-    {
-      id: 'smoke',
-      enabled: true,
-      title: '펴피지마',
-      plusName: '흡연',
-      plusPrice: 11900,
-      minusName: '금연',
-      minusPrice: 12000
-    },
-    {
-      id: 'food',
-      enabled: true,
-      title: '먹먹마',
-      plusName: '먹어',
-      plusPrice: 14000,
-      minusName: '먹지마',
-      minusPrice: 15000
-    }
+    { id: 'smoke', enabled: true, title: '펴피지마', plusName: '흡연', plusPrice: 11900, minusName: '금연', minusPrice: 12000 },
+    { id: 'food', enabled: true, title: '먹먹마', plusName: '먹어', plusPrice: 14000, minusName: '먹지마', minusPrice: 15000 }
   ];
 }
 
@@ -44,9 +34,25 @@ function defaultSettings() {
     maxCreators: 12,
     creators: ['빵떠기', '또영', '수박', '몰라', '익명'],
     presets: defaultPresets(),
-    // 구버전 호환용
     prices: { smoke: 11900, nosmoke: 12000, eat: 14000, noeat: 15000 }
   };
+}
+
+function normName(v) {
+  return String(v || '').replace(/\u00A0/g, ' ').replace(/[\r\n\t]+/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function toWon(v) {
+  const n = Number(String(v ?? '').replace(/[^0-9.-]/g, ''));
+  return Number.isFinite(n) ? Math.trunc(n) : 0;
+}
+
+function displayMan(won) {
+  return Math.trunc(Number(won || 0) / 1000) / 10;
+}
+
+function displayManText(won) {
+  return displayMan(won).toFixed(1).replace(/\.0$/, '');
 }
 
 function normalizePreset(p, idx) {
@@ -75,25 +81,14 @@ function normalizeSettings(settings) {
   const base = defaultSettings();
   const raw = settings || {};
 
-  // 구버전 prices만 있던 경우 presets 생성
   let presets = Array.isArray(raw.presets) && raw.presets.length
     ? raw.presets
     : [
-        {
-          ...base.presets[0],
-          plusPrice: raw.prices?.smoke ?? base.presets[0].plusPrice,
-          minusPrice: raw.prices?.nosmoke ?? base.presets[0].minusPrice
-        },
-        {
-          ...base.presets[1],
-          plusPrice: raw.prices?.eat ?? base.presets[1].plusPrice,
-          minusPrice: raw.prices?.noeat ?? base.presets[1].minusPrice
-        }
+        { ...base.presets[0], plusPrice: raw.prices?.smoke ?? base.presets[0].plusPrice, minusPrice: raw.prices?.nosmoke ?? base.presets[0].minusPrice },
+        { ...base.presets[1], plusPrice: raw.prices?.eat ?? base.presets[1].plusPrice, minusPrice: raw.prices?.noeat ?? base.presets[1].minusPrice }
       ];
 
   presets = presets.map((p, idx) => normalizePreset(p, idx));
-
-  // 최소 2개 기본 프리셋 유지
   if (!presets.find(p => p.id === 'smoke')) presets.unshift(base.presets[0]);
   if (!presets.find(p => p.id === 'food')) presets.push(base.presets[1]);
 
@@ -119,85 +114,121 @@ function normalizeSettings(settings) {
   };
 }
 
-function ensureDb() {
-  if (!fs.existsSync(path.dirname(DB_PATH))) fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
-  if (!fs.existsSync(DB_PATH)) {
-    fs.writeFileSync(DB_PATH, JSON.stringify({ settings: defaultSettings(), donations: [] }, null, 2));
-  }
-}
-
-function readDb() {
-  ensureDb();
-  try {
-    const db = JSON.parse(fs.readFileSync(DB_PATH, 'utf8'));
-    db.settings = normalizeSettings(db.settings);
-    db.donations = Array.isArray(db.donations) ? db.donations : [];
-    return db;
-  } catch (e) {
-    return { settings: defaultSettings(), donations: [] };
-  }
-}
-
-function writeDb(db) {
-  db.settings = normalizeSettings(db.settings);
-  const tmp = DB_PATH + '.tmp';
-  fs.writeFileSync(tmp, JSON.stringify(db, null, 2));
-  fs.renameSync(tmp, DB_PATH);
-}
-
 function checkAuth(req, res, next) {
   const pw = req.headers['x-admin-password'] || req.body?.password || req.query?.password;
   if (pw !== ADMIN_PASSWORD) return res.status(401).json({ error: '관리자 비밀번호가 틀렸습니다.' });
   next();
 }
 
-function normName(v) {
-  return String(v || '').replace(/\u00A0/g, ' ').replace(/[\r\n\t]+/g, ' ').replace(/\s+/g, ' ').trim();
+function requireDb(res) {
+  if (!supabase) {
+    res.status(500).json({ error: 'Supabase 환경변수가 설정되지 않았습니다.' });
+    return false;
+  }
+  return true;
 }
 
-function toWon(v) {
-  const n = Number(String(v ?? '').replace(/[^0-9.-]/g, ''));
-  return Number.isFinite(n) ? Math.trunc(n) : 0;
+async function readSettings() {
+  const { data, error } = await supabase.from('settings').select('data').eq('id', 1).single();
+  if (error && error.code !== 'PGRST116') throw error;
+
+  if (!data) {
+    const settings = defaultSettings();
+    await writeSettings(settings);
+    return settings;
+  }
+  return normalizeSettings(data.data);
 }
 
-function displayMan(won) {
-  return Math.trunc(Number(won || 0) / 1000) / 10;
+async function writeSettings(settings) {
+  const normalized = normalizeSettings(settings);
+  const { error } = await supabase
+    .from('settings')
+    .upsert({ id: 1, data: normalized, updated_at: new Date().toISOString() }, { onConflict: 'id' });
+  if (error) throw error;
+  return normalized;
 }
 
-function displayManText(won) {
-  return displayMan(won).toFixed(1).replace(/\.0$/, '');
+/* 방송 세션 */
+function broadcastToClient(row) {
+  return {
+    id: row.id,
+    title: row.title,
+    isActive: row.is_active,
+    createdAt: row.created_at,
+    endedAt: row.ended_at || null,
+    memo: row.memo || ''
+  };
+}
+
+async function ensureActiveBroadcast() {
+  let { data, error } = await supabase
+    .from('broadcasts')
+    .select('*')
+    .eq('is_active', true)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) throw error;
+  if (data) return data;
+
+  const today = new Date();
+  const mm = String(today.getMonth() + 1).padStart(2, '0');
+  const dd = String(today.getDate()).padStart(2, '0');
+  const title = `${mm}${dd}방송`;
+
+  const inserted = await supabase
+    .from('broadcasts')
+    .insert({ title, is_active: true })
+    .select()
+    .single();
+
+  if (inserted.error) throw inserted.error;
+  return inserted.data;
+}
+
+async function listBroadcasts() {
+  const { data, error } = await supabase
+    .from('broadcasts')
+    .select('*')
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data || []).map(broadcastToClient);
+}
+
+async function setActiveBroadcast(id) {
+  const active = await supabase.from('broadcasts').update({ is_active: false }).eq('is_active', true);
+  if (active.error) throw active.error;
+
+  const { data, error } = await supabase
+    .from('broadcasts')
+    .update({ is_active: true, ended_at: null })
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
 }
 
 function findPreset(settings, processType) {
   const value = normName(processType);
   if (!value || value === '후원') return null;
   const presets = settings.presets || defaultPresets();
-  return presets.find(p =>
-    p.enabled &&
-    (p.id === value || p.title === value || p.plusName === value || p.minusName === value)
-  ) || null;
+  return presets.find(p => p.enabled && (p.id === value || p.title === value || p.plusName === value || p.minusName === value)) || null;
 }
 
 function calcCheck(processType, amount, settings) {
-  const result = {
-    smoke: 0,
-    nosmoke: 0,
-    eat: 0,
-    noeat: 0,
-    checks: [],
-    label: '후원'
-  };
-
+  const result = { smoke: 0, nosmoke: 0, eat: 0, noeat: 0, checks: [], label: '후원' };
   const preset = findPreset(settings, processType);
   if (!preset) return result;
 
   const plusPrice = Number(preset.plusPrice || 0);
   const minusPrice = Number(preset.minusPrice || 0);
-
   let side = null;
   let count = 0;
 
-  // 마이너스 단가 우선: 24000이면 금연2 / 30000이면 먹지마2
   if (amount > 0 && minusPrice > 0 && amount % minusPrice === 0) {
     side = 'minus';
     count = amount / minusPrice;
@@ -218,10 +249,10 @@ function calcCheck(processType, amount, settings) {
     name: side === 'plus' ? preset.plusName : preset.minusName,
     count
   };
+
   result.checks.push(check);
   result.label = `${check.name} ${count}`;
 
-  // 기존 overlay/summary 호환용 필드
   if (preset.id === 'smoke') {
     if (side === 'plus') result.smoke = count;
     else result.nosmoke = count;
@@ -229,11 +260,10 @@ function calcCheck(processType, amount, settings) {
     if (side === 'plus') result.eat = count;
     else result.noeat = count;
   }
-
   return result;
 }
 
-function makeDonationRow(body, settings) {
+function makeDonationRow(body, settings, broadcastId) {
   const donor = normName(body.donor);
   const creator = normName(body.creator);
   const processType = normName(body.processType) || '후원';
@@ -246,50 +276,71 @@ function makeDonationRow(body, settings) {
   if (total <= 0) throw new Error(`${creator}: 금액을 입력하세요.`);
 
   const check = calcCheck(processType, total, settings);
+
   return {
-    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
-    createdAt: new Date().toISOString(),
+    broadcast_id: broadcastId,
     donor,
     creator,
-    processType,
-    accountAmount,
-    toonieAmount,
-    totalAmount: total,
-    displayAmount: displayManText(total),
+    process_type: processType,
+    account_amount: accountAmount,
+    toonie_amount: toonieAmount,
+    total_amount: total,
+    display_amount: displayManText(total),
     smoke: check.smoke,
     nosmoke: check.nosmoke,
     eat: check.eat,
     noeat: check.noeat,
     checks: check.checks,
-    resultLabel: check.label,
+    result_label: check.label,
     memo: String(body.memo || '').trim()
   };
+}
+
+function dbRowToDonation(row) {
+  return {
+    id: row.id,
+    broadcastId: row.broadcast_id,
+    createdAt: row.created_at,
+    donor: row.donor,
+    creator: row.creator,
+    processType: row.process_type,
+    accountAmount: row.account_amount || 0,
+    toonieAmount: row.toonie_amount || 0,
+    totalAmount: row.total_amount || 0,
+    displayAmount: row.display_amount || displayManText(row.total_amount || 0),
+    smoke: row.smoke || 0,
+    nosmoke: row.nosmoke || 0,
+    eat: row.eat || 0,
+    noeat: row.noeat || 0,
+    checks: Array.isArray(row.checks) ? row.checks : [],
+    resultLabel: row.result_label || '후원',
+    memo: row.memo || ''
+  };
+}
+
+async function readDonations(broadcastId) {
+  let q = supabase.from('donations').select('*').order('created_at', { ascending: true });
+  if (broadcastId) q = q.eq('broadcast_id', broadcastId);
+
+  const { data, error } = await q;
+  if (error) throw error;
+  return (data || []).map(dbRowToDonation);
 }
 
 function emptyCreator(name) {
   return { creator: name, account: 0, toonie: 0, total: 0, smoke: 0, nosmoke: 0, eat: 0, noeat: 0, presetNets: {}, rows: [] };
 }
-
 function emptyDonor(name) {
   return { donor: name, account: 0, toonie: 0, total: 0, latestProcess: '후원', rows: [] };
 }
 
 function addPresetCheck(target, d) {
   const checks = Array.isArray(d.checks) ? d.checks : [];
-
   for (const ch of checks) {
     const key = ch.presetId || ch.presetTitle;
     if (!key) continue;
     if (!target.presetNets[key]) {
-      target.presetNets[key] = {
-        presetId: ch.presetId,
-        presetTitle: ch.presetTitle,
-        plusName: '',
-        minusName: '',
-        plus: 0,
-        minus: 0,
-        net: 0
-      };
+      target.presetNets[key] = { presetId: ch.presetId, presetTitle: ch.presetTitle, plusName: '', minusName: '', plus: 0, minus: 0, net: 0 };
     }
     if (ch.side === 'plus') {
       target.presetNets[key].plusName = ch.name;
@@ -302,8 +353,7 @@ function addPresetCheck(target, d) {
   }
 }
 
-function buildSummary(db) {
-  const settings = normalizeSettings(db.settings);
+function buildSummary(settings, donations, broadcast) {
   const creators = new Map();
   const donors = new Map();
   const accountDonors = [];
@@ -313,10 +363,11 @@ function buildSummary(db) {
     if (key) creators.set(key, emptyCreator(key));
   }
 
-  for (const d of db.donations || []) {
+  for (const d of donations || []) {
     const creator = normName(d.creator);
     const donor = normName(d.donor);
     if (!creator || !donor) continue;
+
     if (!creators.has(creator)) creators.set(creator, emptyCreator(creator));
     if (!donors.has(donor)) donors.set(donor, emptyDonor(donor));
 
@@ -325,14 +376,7 @@ function buildSummary(db) {
     const account = Number(d.accountAmount || 0);
     const toonie = Number(d.toonieAmount || 0);
     const total = account + toonie;
-
-    const normalizedRow = {
-      ...d,
-      accountAmount: account,
-      toonieAmount: toonie,
-      totalAmount: total,
-      displayAmount: displayManText(total)
-    };
+    const row = { ...d, accountAmount: account, toonieAmount: toonie, totalAmount: total, displayAmount: displayManText(total) };
 
     c.account += account;
     c.toonie += toonie;
@@ -342,23 +386,16 @@ function buildSummary(db) {
     c.eat += Number(d.eat || 0);
     c.noeat += Number(d.noeat || 0);
     addPresetCheck(c, d);
-    c.rows.push(normalizedRow);
+    c.rows.push(row);
 
     dn.account += account;
     dn.toonie += toonie;
     dn.total += total;
     dn.latestProcess = d.processType || '후원';
-    dn.rows.push(normalizedRow);
+    dn.rows.push(row);
 
     if (account > 0) {
-      accountDonors.push({
-        id: d.id,
-        createdAt: d.createdAt,
-        donor,
-        creator,
-        amount: account,
-        amountText: displayManText(account)
-      });
+      accountDonors.push({ id: d.id, createdAt: d.createdAt, donor, creator, amount: account, amountText: displayManText(account) });
     }
   }
 
@@ -404,92 +441,175 @@ function buildSummary(db) {
 
   return {
     settings,
+    broadcast: broadcast ? broadcastToClient(broadcast) : null,
     creators: creatorRows,
     donors: donorRows,
     accountDonors: accountDonors.slice(0, 10),
-    donations: db.donations || []
+    donations
   };
 }
 
-app.get('/api/health', (req, res) => res.json({ ok: true }));
+/* 기본 API */
+app.get('/api/health', (req, res) => res.json({ ok: true, storage: 'supabase', sessions: true, supabaseConfigured: !!supabase }));
 
-app.get('/api/settings', (req, res) => {
-  const db = readDb();
-  res.json(db.settings);
-});
-
-app.post('/api/settings', checkAuth, (req, res) => {
-  const db = readDb();
-  const body = req.body || {};
-  const old = db.settings || defaultSettings();
-
-  db.settings = normalizeSettings({
-    ...old,
-    title: String(body.title ?? old.title ?? '도네이터 현황'),
-    titleImage: String(body.titleImage ?? old.titleImage ?? ''),
-    notice: String(body.notice ?? old.notice ?? ''),
-    columns: body.columns ?? old.columns,
-    maxCreators: body.maxCreators ?? old.maxCreators,
-    creators: Array.isArray(body.creators) ? body.creators.map(normName).filter(Boolean) : old.creators,
-    presets: Array.isArray(body.presets) ? body.presets : old.presets
-  });
-
-  writeDb(db);
-  res.json({ ok: true, settings: db.settings });
-});
-
-app.get('/api/summary', (req, res) => {
-  const db = readDb();
-  res.json(buildSummary(db));
-});
-
-app.get('/api/donations', (req, res) => {
-  const db = readDb();
-  res.json({ donations: db.donations || [] });
-});
-
-app.post('/api/donations', checkAuth, (req, res) => {
+/* 방송 세션 API */
+app.get('/api/broadcasts', async (req, res) => {
   try {
-    const db = readDb();
-    const settings = db.settings || defaultSettings();
-    const row = makeDonationRow(req.body || {}, settings);
-    db.donations = db.donations || [];
-    db.donations.push(row);
-    writeDb(db);
-    res.json({ ok: true, donation: row });
+    if (!requireDb(res)) return;
+    const active = await ensureActiveBroadcast();
+    const broadcasts = await listBroadcasts();
+    res.json({ active: broadcastToClient(active), broadcasts });
+  } catch (e) {
+    res.status(500).json({ error: e.message || '방송 목록 조회 실패' });
+  }
+});
+
+app.post('/api/broadcasts', checkAuth, async (req, res) => {
+  try {
+    if (!requireDb(res)) return;
+    const title = normName(req.body.title);
+    if (!title) return res.status(400).json({ error: '방송 제목을 입력하세요.' });
+
+    if (req.body.activate !== false) {
+      const off = await supabase.from('broadcasts').update({ is_active: false }).eq('is_active', true);
+      if (off.error) throw off.error;
+    }
+
+    const { data, error } = await supabase
+      .from('broadcasts')
+      .insert({ title, memo: String(req.body.memo || ''), is_active: req.body.activate !== false })
+      .select()
+      .single();
+
+    if (error) throw error;
+    res.json({ ok: true, broadcast: broadcastToClient(data) });
+  } catch (e) {
+    res.status(400).json({ error: e.message || '방송 생성 실패' });
+  }
+});
+
+app.post('/api/broadcasts/:id/activate', checkAuth, async (req, res) => {
+  try {
+    if (!requireDb(res)) return;
+    const data = await setActiveBroadcast(req.params.id);
+    res.json({ ok: true, active: broadcastToClient(data) });
+  } catch (e) {
+    res.status(400).json({ error: e.message || '현재 방송 선택 실패' });
+  }
+});
+
+app.post('/api/broadcasts/:id/end', checkAuth, async (req, res) => {
+  try {
+    if (!requireDb(res)) return;
+    const { data, error } = await supabase
+      .from('broadcasts')
+      .update({ is_active: false, ended_at: new Date().toISOString() })
+      .eq('id', req.params.id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    res.json({ ok: true, broadcast: broadcastToClient(data) });
+  } catch (e) {
+    res.status(400).json({ error: e.message || '방송 종료 실패' });
+  }
+});
+
+/* 설정 */
+app.get('/api/settings', async (req, res) => {
+  try {
+    if (!requireDb(res)) return;
+    const settings = await readSettings();
+    res.json(settings);
+  } catch (e) {
+    res.status(500).json({ error: e.message || '설정 조회 실패' });
+  }
+});
+
+app.post('/api/settings', checkAuth, async (req, res) => {
+  try {
+    if (!requireDb(res)) return;
+    const old = await readSettings();
+    const body = req.body || {};
+    const settings = normalizeSettings({
+      ...old,
+      title: String(body.title ?? old.title ?? '도네이터 현황'),
+      titleImage: String(body.titleImage ?? old.titleImage ?? ''),
+      notice: String(body.notice ?? old.notice ?? ''),
+      columns: body.columns ?? old.columns,
+      maxCreators: body.maxCreators ?? old.maxCreators,
+      creators: Array.isArray(body.creators) ? body.creators.map(normName).filter(Boolean) : old.creators,
+      presets: Array.isArray(body.presets) ? body.presets : old.presets
+    });
+    const saved = await writeSettings(settings);
+    res.json({ ok: true, settings: saved });
+  } catch (e) {
+    res.status(500).json({ error: e.message || '설정 저장 실패' });
+  }
+});
+
+/* 후원/합산: 모두 현재 활성 방송 기준 */
+app.get('/api/donations', async (req, res) => {
+  try {
+    if (!requireDb(res)) return;
+    const active = await ensureActiveBroadcast();
+    const broadcastId = req.query.broadcastId || active.id;
+    const donations = await readDonations(broadcastId);
+    res.json({ broadcast: broadcastToClient(active), donations });
+  } catch (e) {
+    res.status(500).json({ error: e.message || '후원 조회 실패' });
+  }
+});
+
+app.get('/api/summary', async (req, res) => {
+  try {
+    if (!requireDb(res)) return;
+    const settings = await readSettings();
+    const active = await ensureActiveBroadcast();
+    const broadcastId = req.query.broadcastId || active.id;
+    const donations = await readDonations(broadcastId);
+    res.json(buildSummary(settings, donations, active));
+  } catch (e) {
+    res.status(500).json({ error: e.message || '합산 조회 실패' });
+  }
+});
+
+app.post('/api/donations', checkAuth, async (req, res) => {
+  try {
+    if (!requireDb(res)) return;
+    const settings = await readSettings();
+    const active = await ensureActiveBroadcast();
+    const row = makeDonationRow(req.body || {}, settings, active.id);
+
+    const { data, error } = await supabase.from('donations').insert(row).select().single();
+    if (error) throw error;
+    res.json({ ok: true, broadcast: broadcastToClient(active), donation: dbRowToDonation(data) });
   } catch (e) {
     res.status(400).json({ error: e.message || '저장 실패' });
   }
 });
 
-app.post('/api/donations/batch', checkAuth, (req, res) => {
+app.post('/api/donations/batch', checkAuth, async (req, res) => {
   try {
-    const db = readDb();
-    const settings = db.settings || defaultSettings();
+    if (!requireDb(res)) return;
+    const settings = await readSettings();
+    const active = await ensureActiveBroadcast();
 
     const donor = normName(req.body.donor);
     const processType = normName(req.body.processType) || '후원';
-
     const accountTotal = toWon(req.body.accountTotal ?? req.body.accountAmountTotal ?? req.body.accountAmount);
     const toonieTotal = toWon(req.body.toonieTotal ?? req.body.toonationTotal ?? req.body.toonieAmountTotal ?? req.body.toonieAmount);
     const grandTotal = accountTotal + toonieTotal;
-
     const inputRows = Array.isArray(req.body.rows) ? req.body.rows : [];
 
     if (!donor) return res.status(400).json({ error: '도네이터명을 입력하세요.' });
     if (grandTotal <= 0) return res.status(400).json({ error: '상단 계좌금액 또는 투네금액을 입력하세요.' });
 
     const validRows = inputRows
-      .map(r => ({
-        creator: normName(r.creator),
-        amount: toWon(r.amount ?? r.totalAmount ?? r.value),
-        memo: String(r.memo || req.body.memo || '').trim()
-      }))
+      .map(r => ({ creator: normName(r.creator), amount: toWon(r.amount ?? r.totalAmount ?? r.value), memo: String(r.memo || req.body.memo || '').trim() }))
       .filter(r => r.creator && r.amount > 0);
 
-    if (!validRows.length) {
-      return res.status(400).json({ error: '크리에이터별 금액을 1개 이상 입력하세요.' });
-    }
+    if (!validRows.length) return res.status(400).json({ error: '크리에이터별 금액을 1개 이상 입력하세요.' });
 
     const splitTotal = validRows.reduce((sum, r) => sum + r.amount, 0);
     if (splitTotal !== grandTotal) {
@@ -499,14 +619,10 @@ app.post('/api/donations/batch', checkAuth, (req, res) => {
     }
 
     let remainAccount = accountTotal;
-    let remainToonie = toonieTotal;
-
     const created = validRows.map(r => {
       const accountPart = Math.min(remainAccount, r.amount);
       remainAccount -= accountPart;
-
       const tooniePart = r.amount - accountPart;
-      remainToonie -= tooniePart;
 
       return makeDonationRow({
         donor,
@@ -515,44 +631,44 @@ app.post('/api/donations/batch', checkAuth, (req, res) => {
         accountAmount: accountPart,
         toonieAmount: tooniePart,
         memo: r.memo
-      }, settings);
+      }, settings, active.id);
     });
 
-    db.donations = db.donations || [];
-    db.donations.push(...created);
-    writeDb(db);
+    const { data, error } = await supabase.from('donations').insert(created).select();
+    if (error) throw error;
 
-    res.json({
-      ok: true,
-      count: created.length,
-      accountTotal,
-      toonieTotal,
-      total: grandTotal,
-      donations: created
-    });
+    res.json({ ok: true, broadcast: broadcastToClient(active), count: data.length, donations: data.map(dbRowToDonation) });
   } catch (e) {
     res.status(400).json({ error: e.message || '저장 실패' });
   }
 });
 
-app.delete('/api/donations/:id', checkAuth, (req, res) => {
-  const db = readDb();
-  const before = (db.donations || []).length;
-  db.donations = (db.donations || []).filter(d => d.id !== req.params.id);
-  writeDb(db);
-  res.json({ ok: true, deleted: before - db.donations.length });
+app.delete('/api/donations/:id', checkAuth, async (req, res) => {
+  try {
+    if (!requireDb(res)) return;
+    const { error } = await supabase.from('donations').delete().eq('id', req.params.id);
+    if (error) throw error;
+    res.json({ ok: true, deleted: 1 });
+  } catch (e) {
+    res.status(500).json({ error: e.message || '삭제 실패' });
+  }
 });
 
-app.post('/api/reset', checkAuth, (req, res) => {
-  const db = readDb();
-  db.donations = [];
-  writeDb(db);
-  res.json({ ok: true });
+app.post('/api/reset', checkAuth, async (req, res) => {
+  try {
+    if (!requireDb(res)) return;
+    const active = await ensureActiveBroadcast();
+    const broadcastId = req.body.broadcastId || active.id;
+    const { error } = await supabase.from('donations').delete().eq('broadcast_id', broadcastId);
+    if (error) throw error;
+    res.json({ ok: true, broadcastId });
+  } catch (e) {
+    res.status(500).json({ error: e.message || '현재 방송 데이터 초기화 실패' });
+  }
 });
 
 app.get('/', (req, res) => res.redirect('/admin.html'));
 
 app.listen(PORT, () => {
-  ensureDb();
-  console.log(`Donation JSON server running on port ${PORT}`);
+  console.log(`Donation Supabase Session server running on port ${PORT}`);
 });

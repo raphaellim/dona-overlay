@@ -78,6 +78,7 @@
   <div class="grid">
     <div class="card">
       <h2>도네이터 입력</h2>
+      <div id="currentBroadcast" class="resultBox">현재 방송 확인 중...</div>
 
       <div class="row"><label>관리자 PW</label><input id="pw" class="input" type="password" placeholder="기본 1234"></div>
       <div class="row"><label>도네이터</label><input id="donor" class="input" placeholder="도네이터명"></div>
@@ -145,8 +146,19 @@
 <script>
 let settings;
 
+
+async function loadCurrentBroadcast(){
+  try{
+    const data = await api('/api/broadcasts');
+    $('#currentBroadcast').textContent = data.active ? `현재 방송: ${data.active.title}` : '현재 방송 없음';
+  }catch(e){
+    $('#currentBroadcast').textContent = '현재 방송 확인 실패';
+  }
+}
+
 async function init(){
   settings = await api('/api/settings');
+  await loadCurrentBroadcast();
   const savedPw = localStorage.getItem('ADMIN_PASSWORD') || '';
   if(savedPw) $('#pw').value = savedPw;
   renderSplitRows();
