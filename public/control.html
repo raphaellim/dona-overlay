@@ -6,91 +6,121 @@
 <title>방송컨트롤</title>
 <link rel="stylesheet" href="/app.css">
 <style>
-  .settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-  .preset-card{
-    border:1px solid #334155;
-    background:#0f172a;
-    border-radius:14px;
-    padding:14px;
-    margin-bottom:12px;
+  body{background:#070b12;color:#e5e7eb}
+  .wrap{max-width:1180px;margin:0 auto;padding:22px}
+  .top{
+    display:flex;align-items:center;justify-content:space-between;gap:14px;
+    margin-bottom:16px
   }
-  .preset-top{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:10px;
-    margin-bottom:12px;
+  .title{font-size:30px;font-weight:900;letter-spacing:-.06em}
+  .nav{display:flex;gap:8px;flex-wrap:wrap}
+  .nav a{
+    text-decoration:none;color:#dbeafe;background:#111827;border:1px solid #334155;
+    padding:10px 14px;border-radius:12px;font-weight:900
   }
-  .preset-title{
-    font-weight:900;
-    font-size:18px;
-  }
-  .preset-fields{
+  .dash{
     display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:10px;
+    grid-template-columns: 1.15fr .85fr;
+    gap:14px;
+    align-items:start;
   }
-  .preset-fields .full{grid-column:1 / -1}
-  .toggle{
-    display:flex;
-    align-items:center;
-    gap:8px;
-    font-weight:900;
-    color:#cbd5e1;
-    white-space:nowrap;
+  .card{
+    background:#0b1220;border:1px solid #253247;border-radius:18px;
+    box-shadow:0 8px 24px rgba(0,0,0,.18);
+    padding:16px;
   }
-  .toggle input{
-    width:20px;
-    height:20px;
+  .card h2{
+    font-size:20px;margin:0 0 10px;font-weight:900;letter-spacing:-.05em;
+    display:flex;align-items:center;justify-content:space-between;gap:8px
   }
-  textarea{
-    min-height:180px;
-    resize:vertical;
+  .muted{color:#94a3b8;font-size:13px;line-height:1.45}
+  .row{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+  label{font-size:13px;color:#cbd5e1;font-weight:900}
+  .input, select, textarea{
+    width:100%;background:#070b12;color:#e5e7eb;border:1px solid #334155;
+    border-radius:12px;padding:11px 12px;font-size:15px;outline:none
   }
-  @media(max-width:900px){
-    .settings-grid{grid-template-columns:1fr}
-    .preset-fields{grid-template-columns:1fr}
-    .preset-fields .full{grid-column:auto}
+  textarea{min-height:132px;resize:vertical}
+  .btn{
+    border:0;border-radius:12px;padding:10px 13px;font-weight:900;cursor:pointer;
+    background:#334155;color:#fff
   }
-
-  .broadcast-card{
-    border:1px solid #334155;
-    background:#0f172a;
-    border-radius:14px;
-    padding:14px;
-    margin-bottom:12px;
+  .btn.green{background:#16a34a}
+  .btn.red{background:#dc2626}
+  .btn.gray{background:#334155}
+  .btn.blue{background:#2563eb}
+  .btn.mini{font-size:12px;padding:7px 9px;border-radius:9px}
+  .resultBox{
+    background:#08111f;border:1px solid #334155;border-radius:12px;
+    padding:11px 12px;font-weight:900;color:#dbeafe;margin-bottom:10px
+  }
+  .broadcast-create{
+    display:grid;grid-template-columns:1fr auto;gap:8px;margin-bottom:10px
   }
   .broadcast-list{
-    display:flex;
-    flex-direction:column;
-    gap:8px;
-    margin-top:12px;
+    display:flex;flex-direction:column;gap:8px;
+    min-height:318px;
   }
   .broadcast-item{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
+    display:grid;
+    grid-template-columns:1fr auto;
     gap:10px;
+    align-items:center;
     border:1px solid #334155;
-    border-radius:10px;
-    padding:10px 12px;
-    background:#111827;
+    border-radius:13px;
+    background:#0f172a;
+    padding:10px 11px;
+    min-height:56px;
   }
   .broadcast-item.active{
     border-color:#22c55e;
-    background:#10251b;
+    background:linear-gradient(90deg, rgba(34,197,94,.14), rgba(15,23,42,.95));
   }
   .broadcast-title{
-    font-weight:900;
+    font-size:16px;font-weight:900;letter-spacing:-.045em;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis
   }
-  .broadcast-actions{
-    display:flex;
-    gap:6px;
-    flex-wrap:wrap;
-    justify-content:flex-end;
+  .broadcast-meta{font-size:12px;color:#94a3b8;margin-top:3px}
+  .broadcast-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+  .pill{
+    display:inline-flex;align-items:center;justify-content:center;
+    padding:4px 8px;border-radius:999px;font-size:12px;font-weight:900;
+    background:#14532d;color:#bbf7d0;margin-left:4px
   }
-
-  .mini{font-size:12px;padding:7px 10px;border-radius:9px}
+  .pager{
+    display:flex;align-items:center;justify-content:center;gap:8px;margin-top:12px;
+    color:#cbd5e1;font-weight:900
+  }
+  .settings-grid{
+    display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px
+  }
+  .compact-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .preset-grid{
+    display:grid;
+    grid-template-columns:repeat(2, minmax(0,1fr));
+    gap:10px;
+  }
+  .preset-card{
+    background:#0f172a;border:1px solid #334155;border-radius:14px;padding:12px
+  }
+  .preset-card.off{opacity:.55}
+  .preset-head{
+    display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px
+  }
+  .preset-name{font-size:17px;font-weight:900;letter-spacing:-.045em}
+  .toggle{display:flex;align-items:center;gap:6px;font-weight:900;color:#cbd5e1;font-size:13px}
+  .toggle input{width:18px;height:18px}
+  .preset-fields{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+  .preset-fields .full{grid-column:1/-1}
+  .preset-fields label{font-size:11px}
+  .preset-fields .input{padding:8px 9px;font-size:14px;border-radius:10px}
+  .wide{grid-column:1/-1}
+  .danger-zone{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  @media(max-width:950px){
+    .dash,.settings-grid{grid-template-columns:1fr}
+    .preset-grid{grid-template-columns:1fr}
+    .broadcast-create{grid-template-columns:1fr}
+  }
 </style>
 </head>
 <body>
@@ -105,89 +135,141 @@
     </div>
   </div>
 
-  
-  <div class="card" style="margin-bottom:16px">
-    <h2>방송 세션</h2>
-    <p class="hint">
-      방송마다 데이터를 따로 저장합니다. 새 방송을 만들고 현재 방송으로 선택하면 입력/합산/오버레이가 0부터 시작됩니다.
-    </p>
-    <div class="broadcast-card">
-      <div class="row">
-        <label>새 방송 제목</label>
-        <input id="broadcastTitle" class="input" placeholder="예: 0518여행방송">
+  <div class="dash">
+    <section class="card">
+      <h2>방송 세션 <span class="muted">5개씩 표시</span></h2>
+      <div id="activeBroadcast" class="resultBox">현재 방송 확인 중...</div>
+
+      <div class="broadcast-create">
+        <input id="broadcastTitle" class="input" placeholder="새 방송 제목 예: 0518여행방송">
+        <button class="btn green" onclick="createBroadcast()">새 방송 시작</button>
       </div>
-      <button class="btn green" onclick="createBroadcast()">새 방송 만들고 현재 방송으로 선택</button>
-    </div>
-    <div id="activeBroadcast" class="resultBox">현재 방송 확인 중...</div>
-    <div id="broadcastList" class="broadcast-list"></div>
+
+      <div id="broadcastList" class="broadcast-list"></div>
+
+      <div class="pager">
+        <button class="btn gray mini" onclick="prevBroadcastPage()">이전</button>
+        <span id="broadcastPageInfo">1 / 1</span>
+        <button class="btn gray mini" onclick="nextBroadcastPage()">다음</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>기본 설정</h2>
+      <div class="row"><label>관리자 PW</label><input id="pw" class="input" type="password" placeholder="Render 환경변수 ADMIN_PASSWORD"></div>
+      <div class="compact-grid">
+        <div class="row"><label>방송 타이틀</label><input id="title" class="input" placeholder="도네이터 현황"></div>
+        <div class="row"><label>공지</label><input id="notice" class="input" placeholder="공지 문구"></div>
+      </div>
+      <div class="row"><label>타이틀 이미지 URL</label><input id="titleImage" class="input" placeholder="https://..."></div>
+      <div class="compact-grid">
+        <div class="row"><label>OBS 박스 가로 개수</label><input id="columns" class="input" type="number" min="1" max="6"></div>
+        <div class="row"><label>최대 표시 크리에이터 수</label><input id="maxCreators" class="input" type="number" min="1" max="50"></div>
+      </div>
+      <button class="btn green" style="width:100%" onclick="saveSettings()">설정 저장</button>
+    </section>
   </div>
 
   <div class="settings-grid">
-    <div class="card">
-      <h2>기본 설정</h2>
-      <div class="row"><label>관리자 PW</label><input id="pw" class="input" type="password" placeholder="Render 환경변수 ADMIN_PASSWORD"></div>
-      <div class="row"><label>방송 타이틀</label><input id="title" class="input" placeholder="도네이터 현황"></div>
-      <div class="row"><label>타이틀 이미지 URL</label><input id="titleImage" class="input" placeholder="https://..."></div>
-      <div class="row"><label>공지</label><input id="notice" class="input" placeholder="공지 문구"></div>
-      <div class="row"><label>OBS 박스 가로 개수</label><input id="columns" class="input" type="number" min="1" max="6"></div>
-      <div class="row"><label>최대 표시 크리에이터 수</label><input id="maxCreators" class="input" type="number" min="1" max="50"></div>
-    </div>
-
-    <div class="card">
+    <section class="card">
       <h2>크리에이터 목록</h2>
-      <p class="hint">한 줄에 한 명씩 입력하세요. 순서가 입력/오버레이 표시 순서입니다.</p>
+      <p class="muted">한 줄에 한 명씩 입력하세요. 순서가 입력/오버레이 표시 순서입니다.</p>
       <textarea id="creators" class="input" placeholder="빵떠기&#10;또영&#10;수박"></textarea>
-    </div>
-  </div>
+      <button class="btn green" style="width:100%;margin-top:10px" onclick="saveSettings()">크리에이터 저장</button>
+    </section>
 
-  <div class="card" style="margin-top:16px">
-    <h2>처리 프리셋 / 단가 설정</h2>
-    <p class="hint">
-      프리셋 제목은 admin.html의 처리 선택에 표시됩니다.
-      ON을 끄면 관리자 입력 화면에서 해당 처리가 숨겨집니다.
-      예: <b>펴피지마</b> = 흡연 11900 / 금연 12000, <b>먹먹마</b> = 먹어 14000 / 먹지마 15000
-    </p>
-
-    <div id="presetList"></div>
-
-    <button class="btn gray" onclick="addPreset()">프리셋 추가</button>
-  </div>
-
-  <div class="card" style="margin-top:16px">
-    <button class="btn green" style="width:100%;font-size:18px" onclick="saveSettings()">설정 저장</button>
-    <button class="btn red" style="width:100%;font-size:18px;margin-top:10px" onclick="resetDonations()">후원 데이터 전체 초기화</button>
+    <section class="card">
+      <h2>처리 프리셋 <button class="btn gray mini" onclick="addPreset()">추가</button></h2>
+      <p class="muted">OFF 하면 입력화면과 오버레이에서 해당 항목이 숨겨집니다.</p>
+      <div id="presetList" class="preset-grid"></div>
+      <button class="btn green" style="width:100%;margin-top:10px" onclick="saveSettings()">프리셋 저장</button>
+    </section>
   </div>
 </div>
 
 <script src="/common.js"></script>
 <script>
 let settings = null;
+let broadcasts = [];
+let broadcastPage = 1;
+const pageSize = 5;
 
 function escAttr(v){
   return String(v ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
 }
 
+async function load(){
+  settings = await api('/api/settings');
+  const savedPw = localStorage.getItem('ADMIN_PASSWORD') || '';
+  if(savedPw) $('#pw').value = savedPw;
+
+  $('#title').value = settings.title || '';
+  $('#titleImage').value = settings.titleImage || '';
+  $('#notice').value = settings.notice || '';
+  $('#columns').value = settings.columns || 4;
+  $('#maxCreators').value = settings.maxCreators || 12;
+  $('#creators').value = (settings.creators || []).join('\n');
+
+  if(!settings.presets || !settings.presets.length){
+    settings.presets = [
+      {id:'smoke', enabled:true, title:'펴피지마', plusName:'흡연', plusPrice:11900, minusName:'금연', minusPrice:12000},
+      {id:'food', enabled:true, title:'먹먹마', plusName:'먹어', plusPrice:14000, minusName:'먹지마', plusPrice:15000}
+    ];
+  }
+
+  renderPresets();
+  await loadBroadcasts();
+}
 
 async function loadBroadcasts(){
   try{
     const data = await api('/api/broadcasts');
+    broadcasts = data.broadcasts || [];
     const active = data.active;
     $('#activeBroadcast').textContent = active ? `현재 방송: ${active.title}` : '현재 방송 없음';
 
-    $('#broadcastList').innerHTML = (data.broadcasts || []).map(b => `
-      <div class="broadcast-item ${b.isActive ? 'active' : ''}">
-        <div>
-          <div class="broadcast-title">${esc(b.title)} ${b.isActive ? '<span class="pill">현재</span>' : ''}</div>
-          <div class="hint">${new Date(b.createdAt).toLocaleString('ko-KR')}</div>
-        </div>
-        <div class="broadcast-actions">
-          ${b.isActive ? '' : `<button class="btn gray mini" onclick="activateBroadcast('${b.id}')">현재 방송 선택</button>`}
-          <button class="btn red mini" onclick="resetCurrentBroadcast('${b.id}')">이 방송 데이터 초기화</button>
-        </div>
-      </div>
-    `).join('');
+    const maxPage = Math.max(1, Math.ceil(broadcasts.length / pageSize));
+    if(broadcastPage > maxPage) broadcastPage = maxPage;
+    renderBroadcasts();
   }catch(e){
     $('#activeBroadcast').textContent = '방송 세션 조회 실패: ' + e.message;
+  }
+}
+
+function renderBroadcasts(){
+  const maxPage = Math.max(1, Math.ceil(broadcasts.length / pageSize));
+  const start = (broadcastPage - 1) * pageSize;
+  const pageRows = broadcasts.slice(start, start + pageSize);
+
+  $('#broadcastList').innerHTML = pageRows.map(b => `
+    <div class="broadcast-item ${b.isActive ? 'active' : ''}">
+      <div>
+        <div class="broadcast-title">${esc(b.title)} ${b.isActive ? '<span class="pill">현재</span>' : ''}</div>
+        <div class="broadcast-meta">${new Date(b.createdAt).toLocaleString('ko-KR')}</div>
+      </div>
+      <div class="broadcast-actions">
+        ${b.isActive ? '' : `<button class="btn blue mini" onclick="activateBroadcast('${b.id}')">선택</button>`}
+        <button class="btn gray mini" onclick="resetBroadcast('${b.id}')">초기화</button>
+        ${b.isActive ? '' : `<button class="btn red mini" onclick="deleteBroadcast('${b.id}')">삭제</button>`}
+      </div>
+    </div>
+  `).join('') || `<div class="resultBox">방송 세션 없음</div>`;
+
+  $('#broadcastPageInfo').textContent = `${broadcastPage} / ${maxPage}`;
+}
+
+function prevBroadcastPage(){
+  if(broadcastPage > 1){
+    broadcastPage--;
+    renderBroadcasts();
+  }
+}
+
+function nextBroadcastPage(){
+  const maxPage = Math.max(1, Math.ceil(broadcasts.length / pageSize));
+  if(broadcastPage < maxPage){
+    broadcastPage++;
+    renderBroadcasts();
   }
 }
 
@@ -204,6 +286,7 @@ async function createBroadcast(){
     });
 
     $('#broadcastTitle').value = '';
+    broadcastPage = 1;
     await loadBroadcasts();
     alert('새 방송이 현재 방송으로 선택되었습니다.');
   }catch(e){
@@ -228,10 +311,10 @@ async function activateBroadcast(id){
   }
 }
 
-async function resetCurrentBroadcast(id){
+async function resetBroadcast(id){
   try{
     const pw = $('#pw').value;
-    if(!confirm('선택한 방송의 후원 데이터를 초기화할까요?')) return;
+    if(!confirm('선택한 방송의 후원 데이터만 초기화할까요?')) return;
 
     await api('/api/reset', {
       method:'POST',
@@ -245,64 +328,51 @@ async function resetCurrentBroadcast(id){
   }
 }
 
-async function load(){
-  settings = await api('/api/settings');
-  const savedPw = localStorage.getItem('ADMIN_PASSWORD') || '';
-  if(savedPw) $('#pw').value = savedPw;
+async function deleteBroadcast(id){
+  try{
+    const pw = $('#pw').value;
+    if(!confirm('이 방송 세션과 해당 후원 데이터를 리스트에서 삭제할까요?')) return;
 
-  $('#title').value = settings.title || '';
-  $('#titleImage').value = settings.titleImage || '';
-  $('#notice').value = settings.notice || '';
-  $('#columns').value = settings.columns || 4;
-  $('#maxCreators').value = settings.maxCreators || 12;
-  $('#creators').value = (settings.creators || []).join('\n');
+    await api('/api/broadcasts/' + id, {
+      method:'DELETE',
+      headers:{'x-admin-password': pw}
+    });
 
-  if(!settings.presets || !settings.presets.length){
-    settings.presets = [
-      {id:'smoke', enabled:true, title:'펴피지마', plusName:'흡연', plusPrice:11900, minusName:'금연', minusPrice:12000},
-      {id:'food', enabled:true, title:'먹먹마', plusName:'먹어', plusPrice:14000, minusName:'먹지마', minusPrice:15000}
-    ];
+    await loadBroadcasts();
+    alert('삭제되었습니다.');
+  }catch(e){
+    alert(e.message);
   }
-
-  renderPresets();
 }
 
 function renderPresets(){
   const wrap = $('#presetList');
   wrap.innerHTML = (settings.presets || []).map((p, idx) => `
-    <div class="preset-card" data-idx="${idx}">
-      <div class="preset-top">
-        <div class="preset-title">프리셋 ${idx + 1}</div>
-        <label class="toggle">
-          <input type="checkbox" class="preset-enabled" ${p.enabled !== false ? 'checked' : ''}>
-          ON/OFF
-        </label>
+    <div class="preset-card ${p.enabled === false ? 'off' : ''}" data-idx="${idx}">
+      <div class="preset-head">
+        <div class="preset-name">${esc(p.title || ('프리셋 ' + (idx+1)))}</div>
+        <label class="toggle"><input type="checkbox" class="preset-enabled" ${p.enabled !== false ? 'checked' : ''}> ON</label>
       </div>
-
       <div class="preset-fields">
         <div class="full">
           <label>프리셋 제목</label>
           <input class="input preset-title-input" value="${escAttr(p.title || '')}" placeholder="예: 펴피지마">
         </div>
-
         <div>
-          <label>+ 항목명</label>
-          <input class="input preset-plus-name" value="${escAttr(p.plusName || '')}" placeholder="예: 흡연">
+          <label>+ 항목</label>
+          <input class="input preset-plus-name" value="${escAttr(p.plusName || '')}" placeholder="흡연">
         </div>
-
         <div>
           <label>+ 단가</label>
-          <input class="input preset-plus-price" inputmode="numeric" value="${escAttr(p.plusPrice || '')}" placeholder="예: 11900">
+          <input class="input preset-plus-price" inputmode="numeric" value="${escAttr(p.plusPrice || '')}" placeholder="11900">
         </div>
-
         <div>
-          <label>- 항목명</label>
-          <input class="input preset-minus-name" value="${escAttr(p.minusName || '')}" placeholder="예: 금연">
+          <label>- 항목</label>
+          <input class="input preset-minus-name" value="${escAttr(p.minusName || '')}" placeholder="금연">
         </div>
-
         <div>
           <label>- 단가</label>
-          <input class="input preset-minus-price" inputmode="numeric" value="${escAttr(p.minusPrice || '')}" placeholder="예: 12000">
+          <input class="input preset-minus-price" inputmode="numeric" value="${escAttr(p.minusPrice || '')}" placeholder="12000">
         </div>
       </div>
     </div>
@@ -360,13 +430,6 @@ async function saveSettings(){
   }catch(e){
     alert(e.message);
   }
-}
-
-async function resetDonations(){
-  const pw = $('#pw').value;
-  if(!confirm('후원 데이터를 전체 초기화할까요?')) return;
-  await api('/api/reset', {method:'POST', body:JSON.stringify({password: pw})});
-  alert('초기화 완료');
 }
 
 load();

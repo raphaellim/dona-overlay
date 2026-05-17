@@ -89,3 +89,5 @@ create index if not exists broadcasts_active_idx on broadcasts (is_active);
 insert into broadcasts (title, is_active)
 select '기본방송', true
 where not exists (select 1 from broadcasts);
+
+-- broadcasts can be deleted from control.html; related donations are deleted by server first.

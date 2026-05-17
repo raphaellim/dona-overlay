@@ -581,6 +581,15 @@
   async function refresh(){
     const data = await loadData();
     enabledPresets = getEnabledPresets(data.settings || {});
+    if(!enabledPresets.length && data.settings && Array.isArray(data.settings.presets)){
+      enabledPresets = [];
+    }
+    if(!enabledPresets.length && (!data.settings || !Array.isArray(data.settings.presets))){
+      enabledPresets = [
+        { id:"smoke", enabled:true, title:"펴피지마", plusName:"흡연", minusName:"금연" },
+        { id:"food", enabled:true, title:"먹먹마", plusName:"먹어", minusName:"먹지마" }
+      ];
+    }
     renderAccountRoller(data.accountDonors);
     renderCreators(data.creators);
   }

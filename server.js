@@ -515,6 +515,39 @@ app.post('/api/broadcasts/:id/end', checkAuth, async (req, res) => {
   }
 });
 
+app.delete('/api/broadcasts/:id', checkAuth, async (req, res) => {
+  try {
+    if (!requireDb(res)) return;
+
+    const { data: target, error: readError } = await supabase
+      .from('broadcasts')
+      .select('*')
+      .eq('id', req.params.id)
+      .single();
+
+    if (readError) throw readError;
+    if (target?.is_active) {
+      return res.status(400).json({ error: '현재 방송은 삭제할 수 없습니다. 다른 방송을 현재 방송으로 선택한 뒤 삭제하세요.' });
+    }
+
+    const delDonations = await supabase
+      .from('donations')
+      .delete()
+      .eq('broadcast_id', req.params.id);
+    if (delDonations.error) throw delDonations.error;
+
+    const delBroadcast = await supabase
+      .from('broadcasts')
+      .delete()
+      .eq('id', req.params.id);
+    if (delBroadcast.error) throw delBroadcast.error;
+
+    res.json({ ok: true, deleted: 1 });
+  } catch (e) {
+    res.status(500).json({ error: e.message || '방송 삭제 실패' });
+  }
+});
+
 /* 설정 */
 app.get('/api/settings', async (req, res) => {
   try {
