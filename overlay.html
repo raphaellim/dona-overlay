@@ -6,20 +6,20 @@
 <title>후원현황 Overlay</title>
 <style>
   :root{
-    --panel-w: 255px;
+    --panel-w: 252px;
     --top: 54px;
-    --right: 16px;
+    --right: 14px;
 
     --pink: rgba(255, 155, 185, .95);
-    --pink-soft: rgba(255, 155, 185, .40);
+    --pink-soft: rgba(255, 155, 185, .38);
     --pink-text: #ffb4ca;
     --white: rgba(255,255,255,.96);
     --muted: rgba(255,255,255,.76);
     --green: #7df18c;
     --mint: #aef8d5;
 
-    --glass: rgba(10, 8, 13, .31);
-    --glass-2: rgba(12, 8, 14, .18);
+    --glass: rgba(10, 8, 13, .30);
+    --glass-2: rgba(12, 8, 14, .16);
   }
 
   *{
@@ -65,16 +65,16 @@
     right:var(--right) !important;
     left:auto !important;
     width:var(--panel-w);
-    padding:12px 13px 12px;
+    padding:11px 12px 11px;
     color:var(--white);
     background:
       linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.012)),
       var(--glass);
     border:2px solid var(--pink);
-    border-radius:20px;
+    border-radius:19px;
     box-shadow:
       0 0 0 1px rgba(255,255,255,.03) inset,
-      0 0 8px rgba(255, 115, 165, .13);
+      0 0 7px rgba(255, 115, 165, .12);
     backdrop-filter: blur(3px);
     -webkit-backdrop-filter: blur(3px);
   }
@@ -82,18 +82,21 @@
   .account-row{
     display:flex;
     align-items:center;
-    justify-content:flex-start;
-    gap:22px;
-    height:28px;
-    padding:0 0 7px;
+    justify-content:flex-end;
+    gap:10px;
+    height:30px;
+    padding:0 0 8px;
     border-bottom:1px solid var(--pink-soft);
-    font-weight:800;
-    letter-spacing:-0.05em;
+    font-weight:900;
+    letter-spacing:-0.065em;
+    text-align:right;
   }
 
   .account-title{
-    font-size:20px;
+    flex:0 0 auto;
+    font-size:22px;
     color:var(--white);
+    text-align:right;
     text-shadow:
       0 1px 2px rgba(0,0,0,.55),
       0 0 5px rgba(255, 120, 165, .14);
@@ -104,13 +107,14 @@
     position:relative;
     height:28px;
     overflow:hidden;
-    text-align:left;
-    width:auto;
-    min-width:82px;
+    text-align:right;
+    width:96px;
+    min-width:0;
     color:var(--pink-text);
-    font-size:20px;
+    font-size:21px;
     line-height:28px;
     font-weight:900;
+    letter-spacing:-0.055em;
     text-shadow:
       0 1px 2px rgba(0,0,0,.62),
       0 0 4px rgba(255, 145, 185, .18);
@@ -122,6 +126,11 @@
     right:0;
     top:0;
     transition:transform .42s ease;
+    will-change:transform;
+  }
+
+  .roller-track.no-transition{
+    transition:none !important;
   }
 
   .roller-item{
@@ -130,11 +139,11 @@
     white-space:nowrap;
     overflow:hidden;
     text-overflow:ellipsis;
-    text-align:left;
+    text-align:right;
   }
 
   .creator-list{
-    padding-top:9px;
+    padding-top:8px;
     display:flex;
     flex-direction:column;
     gap:7px;
@@ -147,11 +156,12 @@
   .creator-main{
     display:flex;
     align-items:baseline;
-    justify-content:flex-start;
+    justify-content:flex-end;
     gap:5px;
     min-height:25px;
     font-weight:900;
-    letter-spacing:-0.065em;
+    letter-spacing:-0.068em;
+    text-align:right;
     text-shadow:
       0 1px 2px rgba(0,0,0,.70),
       0 0 4px rgba(255,255,255,.07);
@@ -159,14 +169,14 @@
 
   .creator-name{
     flex:0 1 auto;
-    max-width:118px;
+    max-width:112px;
     color:var(--white);
     font-size:23px;
     line-height:1.05;
     white-space:nowrap;
     overflow:hidden;
     text-overflow:ellipsis;
-    text-align:left;
+    text-align:right;
   }
 
   .donation-amount{
@@ -175,19 +185,20 @@
     font-size:23px;
     line-height:1.05;
     white-space:nowrap;
-    text-align:left;
+    text-align:right;
   }
 
   .creator-sub{
     display:flex;
-    justify-content:flex-start;
+    justify-content:flex-end;
     align-items:center;
     gap:11px;
-    margin-top:1px;
-    font-size:19px;
-    line-height:1.1;
+    margin-top:2px;
+    font-size:21px;
+    line-height:1.08;
     font-weight:900;
-    letter-spacing:-0.06em;
+    letter-spacing:-0.064em;
+    text-align:right;
     text-shadow:
       0 1px 2px rgba(0,0,0,.75),
       0 0 4px rgba(0,0,0,.30);
@@ -197,7 +208,7 @@
   .state-food{
     white-space:nowrap;
     min-width:0;
-    text-align:left;
+    text-align:right;
   }
 
   .plus{
@@ -226,39 +237,45 @@
   /* 모바일 세로 방송 기준 자동 축소 */
   @media (max-width: 520px){
     :root{
-      --panel-w: 248px;
+      --panel-w: 246px;
       --top: 50px;
       --right: 12px;
     }
     .donation-panel{
-      padding:11px 12px 11px;
+      padding:10px 11px 10px;
     }
     .account-row{
-      gap:18px;
+      gap:9px;
+      justify-content:flex-end;
     }
-    .account-title,
+    .account-title{
+      font-size:21px;
+    }
     .roller{
-      font-size:19px;
+      width:92px;
+      font-size:20px;
     }
     .creator-name,
     .donation-amount{
       font-size:22px;
     }
     .creator-name{
-      max-width:112px;
+      max-width:108px;
+      text-align:right;
     }
     .creator-sub{
-      font-size:18px;
-      gap:9px;
+      font-size:20px;
+      gap:10px;
+      justify-content:flex-end;
     }
   }
 
   /* OBS에서 1080x1920 세로 캔버스에 맞춘 고정 느낌 */
   @media (min-height: 1200px) and (min-width: 700px){
     :root{
-      --panel-w: 255px;
+      --panel-w: 252px;
       --top: 54px;
-      --right: 16px;
+      --right: 14px;
     }
   }
 </style>
@@ -339,19 +356,43 @@
     rollingItems = items && items.length ? items : [{ donor:"-", amount:0 }];
     rollingIndex = 0;
 
-    $track.innerHTML = rollingItems.map(item => {
+    // 마지막 다음 1번이 다시 '위로' 올라오는 것처럼 보이도록
+    // 첫 번째 항목을 맨 뒤에 복제하고, 복제 항목에 도착한 직후
+    // 눈에 안 보이게 0번 위치로 순간 리셋한다.
+    const renderItems = rollingItems.length > 1
+      ? [...rollingItems, rollingItems[0]]
+      : rollingItems;
+
+    $track.classList.remove("no-transition");
+    $track.innerHTML = renderItems.map(item => {
       const donor = normalizeName(item.donor || item.name || "익명");
       const amount = displayAmount(item.amount || item.total || item.account_amount || 0);
       return `<div class="roller-item">${escapeHtml(donor)} : ${amount}</div>`;
     }).join("");
 
     if(rollingTimer) clearInterval(rollingTimer);
+
+    $track.classList.add("no-transition");
     $track.style.transform = "translateY(0px)";
+    // 브라우저가 0px 위치를 먼저 반영하게 강제
+    $track.offsetHeight;
+    $track.classList.remove("no-transition");
 
     if(rollingItems.length > 1){
       rollingTimer = setInterval(() => {
-        rollingIndex = (rollingIndex + 1) % rollingItems.length;
+        rollingIndex += 1;
+        $track.classList.remove("no-transition");
         $track.style.transform = `translateY(${-rollingIndex * 28}px)`;
+
+        if(rollingIndex === rollingItems.length){
+          setTimeout(() => {
+            rollingIndex = 0;
+            $track.classList.add("no-transition");
+            $track.style.transform = "translateY(0px)";
+            $track.offsetHeight;
+            $track.classList.remove("no-transition");
+          }, 460);
+        }
       }, 2300);
     }
   }
@@ -473,5 +514,9 @@
 })();
 </script>
 <!-- right-fixed overlay version -->
+<!-- seamless-up-roller / right-aligned-creator version -->
+<!-- aligned-start / larger-status / adjusted-box version -->
+<!-- compact-no-right-gap / bigger-account-title version -->
+<!-- all-content-right-aligned-inside-panel version -->
 </body>
 </html>
