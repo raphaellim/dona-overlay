@@ -17,7 +17,27 @@
       "nosmoke": 12000,
       "eat": 14000,
       "noeat": 15000
-    }
+    },
+    "presets": [
+      {
+        "id": "smoke",
+        "enabled": true,
+        "title": "펴피지마",
+        "plusName": "흡연",
+        "plusPrice": 11900,
+        "minusName": "금연",
+        "minusPrice": 12000
+      },
+      {
+        "id": "food",
+        "enabled": true,
+        "title": "먹먹마",
+        "plusName": "먹어",
+        "plusPrice": 14000,
+        "minusName": "먹지마",
+        "minusPrice": 15000
+      }
+    ]
   },
   "donations": []
 }

@@ -150,6 +150,7 @@ async function init(){
   const savedPw = localStorage.getItem('ADMIN_PASSWORD') || '';
   if(savedPw) $('#pw').value = savedPw;
   renderSplitRows();
+  renderProcessOptions();
   bindPreview();
   await loadRecent();
 }
@@ -164,6 +165,36 @@ function renderSplitRows(){
       <input class="input memo" placeholder="메모" data-idx="${idx}">
     </div>
   `).join('');
+}
+
+
+function renderProcessOptions(){
+  const sel = $('#processType');
+  const current = sel.value || '후원';
+  const presets = (settings.presets || []).filter(p => p.enabled !== false);
+  sel.innerHTML = [
+    `<option value="후원">후원</option>`,
+    ...presets.map(p => `<option value="${esc(p.title)}">${esc(p.title)}</option>`)
+  ].join('');
+  if([...sel.options].some(o => o.value === current)) sel.value = current;
+}
+
+function findPresetByTitle(title){
+  return (settings.presets || []).find(p => p.enabled !== false && p.title === title);
+}
+
+function calcPresetPreview(preset, amount){
+  if(!preset || amount <= 0) return '후원';
+  const plusPrice = Number(preset.plusPrice || 0);
+  const minusPrice = Number(preset.minusPrice || 0);
+
+  if(minusPrice > 0 && amount % minusPrice === 0){
+    return `${preset.minusName} ${amount / minusPrice}`;
+  }
+  if(plusPrice > 0 && amount % plusPrice === 0){
+    return `${preset.plusName} ${amount / plusPrice}`;
+  }
+  return `${preset.title} 확인`;
 }
 
 function bindPreview(){
@@ -199,20 +230,10 @@ function updatePreview(){
 
   let msg = '후원';
   if(p !== '후원' && filled.length){
+    const preset = findPresetByTitle(p);
     const examples = filled.slice(0,4).map(r => {
       const amt = toWon(r.amount);
-      let label = '';
-      if(p === '흡금'){
-        if(amt && amt % prices.nosmoke === 0) label = '금연 ' + (amt/prices.nosmoke);
-        else if(amt && amt % prices.smoke === 0) label = '흡연 ' + (amt/prices.smoke);
-        else label = '흡금 확인';
-      }
-      if(p === '먹먹마'){
-        if(amt && amt % prices.noeat === 0) label = '먹지마 ' + (amt/prices.noeat);
-        else if(amt && amt % prices.eat === 0) label = '먹어 ' + (amt/prices.eat);
-        else label = '먹먹마 확인';
-      }
-      return `${r.creator}: ${label}`;
+      return `${r.creator}: ${calcPresetPreview(preset, amt)}`;
     });
     msg = examples.join(' / ') + (filled.length > 4 ? ` 외 ${filled.length-4}건` : '');
   }

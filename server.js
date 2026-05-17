@@ -12,11 +12,27 @@ app.use(cors());
 app.use(express.json({ limit: '2mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-function ensureDb() {
-  if (!fs.existsSync(path.dirname(DB_PATH))) fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
-  if (!fs.existsSync(DB_PATH)) {
-    fs.writeFileSync(DB_PATH, JSON.stringify({ settings: defaultSettings(), donations: [] }, null, 2));
-  }
+function defaultPresets() {
+  return [
+    {
+      id: 'smoke',
+      enabled: true,
+      title: '펴피지마',
+      plusName: '흡연',
+      plusPrice: 11900,
+      minusName: '금연',
+      minusPrice: 12000
+    },
+    {
+      id: 'food',
+      enabled: true,
+      title: '먹먹마',
+      plusName: '먹어',
+      plusPrice: 14000,
+      minusName: '먹지마',
+      minusPrice: 15000
+    }
+  ];
 }
 
 function defaultSettings() {
@@ -26,17 +42,95 @@ function defaultSettings() {
     notice: '',
     columns: 4,
     maxCreators: 12,
-    creators: ['떠기', '빵떠기', '수박', '열려'],
+    creators: ['빵떠기', '또영', '수박', '몰라', '익명'],
+    presets: defaultPresets(),
+    // 구버전 호환용
     prices: { smoke: 11900, nosmoke: 12000, eat: 14000, noeat: 15000 }
   };
+}
+
+function normalizePreset(p, idx) {
+  const defaults = defaultPresets()[idx] || {
+    id: `preset_${idx + 1}`,
+    enabled: true,
+    title: `프리셋${idx + 1}`,
+    plusName: '플러스',
+    plusPrice: 10000,
+    minusName: '마이너스',
+    minusPrice: 10000
+  };
+
+  return {
+    id: String(p?.id || defaults.id || `preset_${idx + 1}`).replace(/[^a-zA-Z0-9_-]/g, '') || `preset_${idx + 1}`,
+    enabled: p?.enabled !== false && p?.enabled !== 'false',
+    title: normName(p?.title || defaults.title),
+    plusName: normName(p?.plusName || defaults.plusName),
+    plusPrice: Math.max(0, toWon(p?.plusPrice ?? defaults.plusPrice)),
+    minusName: normName(p?.minusName || defaults.minusName),
+    minusPrice: Math.max(0, toWon(p?.minusPrice ?? defaults.minusPrice))
+  };
+}
+
+function normalizeSettings(settings) {
+  const base = defaultSettings();
+  const raw = settings || {};
+
+  // 구버전 prices만 있던 경우 presets 생성
+  let presets = Array.isArray(raw.presets) && raw.presets.length
+    ? raw.presets
+    : [
+        {
+          ...base.presets[0],
+          plusPrice: raw.prices?.smoke ?? base.presets[0].plusPrice,
+          minusPrice: raw.prices?.nosmoke ?? base.presets[0].minusPrice
+        },
+        {
+          ...base.presets[1],
+          plusPrice: raw.prices?.eat ?? base.presets[1].plusPrice,
+          minusPrice: raw.prices?.noeat ?? base.presets[1].minusPrice
+        }
+      ];
+
+  presets = presets.map((p, idx) => normalizePreset(p, idx));
+
+  // 최소 2개 기본 프리셋 유지
+  if (!presets.find(p => p.id === 'smoke')) presets.unshift(base.presets[0]);
+  if (!presets.find(p => p.id === 'food')) presets.push(base.presets[1]);
+
+  const smoke = presets.find(p => p.id === 'smoke') || base.presets[0];
+  const food = presets.find(p => p.id === 'food') || base.presets[1];
+
+  return {
+    ...base,
+    ...raw,
+    title: String(raw.title ?? base.title),
+    titleImage: String(raw.titleImage ?? base.titleImage),
+    notice: String(raw.notice ?? base.notice),
+    columns: Math.max(1, Math.min(6, Number(raw.columns || base.columns))),
+    maxCreators: Math.max(1, Math.min(50, Number(raw.maxCreators || base.maxCreators))),
+    creators: Array.isArray(raw.creators) ? raw.creators.map(normName).filter(Boolean) : base.creators,
+    presets,
+    prices: {
+      smoke: smoke.plusPrice,
+      nosmoke: smoke.minusPrice,
+      eat: food.plusPrice,
+      noeat: food.minusPrice
+    }
+  };
+}
+
+function ensureDb() {
+  if (!fs.existsSync(path.dirname(DB_PATH))) fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
+  if (!fs.existsSync(DB_PATH)) {
+    fs.writeFileSync(DB_PATH, JSON.stringify({ settings: defaultSettings(), donations: [] }, null, 2));
+  }
 }
 
 function readDb() {
   ensureDb();
   try {
     const db = JSON.parse(fs.readFileSync(DB_PATH, 'utf8'));
-    db.settings = { ...defaultSettings(), ...(db.settings || {}) };
-    db.settings.prices = { ...defaultSettings().prices, ...(db.settings.prices || {}) };
+    db.settings = normalizeSettings(db.settings);
     db.donations = Array.isArray(db.donations) ? db.donations : [];
     return db;
   } catch (e) {
@@ -45,6 +139,7 @@ function readDb() {
 }
 
 function writeDb(db) {
+  db.settings = normalizeSettings(db.settings);
   const tmp = DB_PATH + '.tmp';
   fs.writeFileSync(tmp, JSON.stringify(db, null, 2));
   fs.renameSync(tmp, DB_PATH);
@@ -66,42 +161,73 @@ function toWon(v) {
 }
 
 function displayMan(won) {
-  return Math.trunc(Number(won || 0) / 1000) / 10; // 12600 -> 1.2, 12900 -> 1.2
+  return Math.trunc(Number(won || 0) / 1000) / 10;
 }
 
 function displayManText(won) {
   return displayMan(won).toFixed(1).replace(/\.0$/, '');
 }
 
-function calcCheck(processType, amount, prices) {
-  const result = { smoke: 0, nosmoke: 0, eat: 0, noeat: 0, label: '' };
-  if (!processType || processType === '후원') {
-    result.label = '후원';
+function findPreset(settings, processType) {
+  const value = normName(processType);
+  if (!value || value === '후원') return null;
+  const presets = settings.presets || defaultPresets();
+  return presets.find(p =>
+    p.enabled &&
+    (p.id === value || p.title === value || p.plusName === value || p.minusName === value)
+  ) || null;
+}
+
+function calcCheck(processType, amount, settings) {
+  const result = {
+    smoke: 0,
+    nosmoke: 0,
+    eat: 0,
+    noeat: 0,
+    checks: [],
+    label: '후원'
+  };
+
+  const preset = findPreset(settings, processType);
+  if (!preset) return result;
+
+  const plusPrice = Number(preset.plusPrice || 0);
+  const minusPrice = Number(preset.minusPrice || 0);
+
+  let side = null;
+  let count = 0;
+
+  // 마이너스 단가 우선: 24000이면 금연2 / 30000이면 먹지마2
+  if (amount > 0 && minusPrice > 0 && amount % minusPrice === 0) {
+    side = 'minus';
+    count = amount / minusPrice;
+  } else if (amount > 0 && plusPrice > 0 && amount % plusPrice === 0) {
+    side = 'plus';
+    count = amount / plusPrice;
+  }
+
+  if (!side) {
+    result.label = `${preset.title} 확인`;
     return result;
   }
 
-  if (processType === '흡금') {
-    if (amount > 0 && amount % prices.nosmoke === 0) {
-      result.nosmoke = amount / prices.nosmoke;
-      result.label = `금연 ${result.nosmoke}`;
-    } else if (amount > 0 && amount % prices.smoke === 0) {
-      result.smoke = amount / prices.smoke;
-      result.label = `흡연 ${result.smoke}`;
-    } else {
-      result.label = '흡금 확인';
-    }
-  }
+  const check = {
+    presetId: preset.id,
+    presetTitle: preset.title,
+    side,
+    name: side === 'plus' ? preset.plusName : preset.minusName,
+    count
+  };
+  result.checks.push(check);
+  result.label = `${check.name} ${count}`;
 
-  if (processType === '먹먹마') {
-    if (amount > 0 && amount % prices.noeat === 0) {
-      result.noeat = amount / prices.noeat;
-      result.label = `먹지마 ${result.noeat}`;
-    } else if (amount > 0 && amount % prices.eat === 0) {
-      result.eat = amount / prices.eat;
-      result.label = `먹어 ${result.eat}`;
-    } else {
-      result.label = '먹먹마 확인';
-    }
+  // 기존 overlay/summary 호환용 필드
+  if (preset.id === 'smoke') {
+    if (side === 'plus') result.smoke = count;
+    else result.nosmoke = count;
+  } else if (preset.id === 'food') {
+    if (side === 'plus') result.eat = count;
+    else result.noeat = count;
   }
 
   return result;
@@ -117,9 +243,9 @@ function makeDonationRow(body, settings) {
 
   if (!donor) throw new Error('도네이터명을 입력하세요.');
   if (!creator) throw new Error('크리에이터를 선택하세요.');
-  if (total <= 0) throw new Error(`${creator}: 계좌금액 또는 투네금액을 입력하세요.`);
+  if (total <= 0) throw new Error(`${creator}: 금액을 입력하세요.`);
 
-  const check = calcCheck(processType, total, settings.prices || defaultSettings().prices);
+  const check = calcCheck(processType, total, settings);
   return {
     id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
     createdAt: new Date().toISOString(),
@@ -134,13 +260,50 @@ function makeDonationRow(body, settings) {
     nosmoke: check.nosmoke,
     eat: check.eat,
     noeat: check.noeat,
+    checks: check.checks,
     resultLabel: check.label,
     memo: String(body.memo || '').trim()
   };
 }
 
+function emptyCreator(name) {
+  return { creator: name, account: 0, toonie: 0, total: 0, smoke: 0, nosmoke: 0, eat: 0, noeat: 0, presetNets: {}, rows: [] };
+}
+
+function emptyDonor(name) {
+  return { donor: name, account: 0, toonie: 0, total: 0, latestProcess: '후원', rows: [] };
+}
+
+function addPresetCheck(target, d) {
+  const checks = Array.isArray(d.checks) ? d.checks : [];
+
+  for (const ch of checks) {
+    const key = ch.presetId || ch.presetTitle;
+    if (!key) continue;
+    if (!target.presetNets[key]) {
+      target.presetNets[key] = {
+        presetId: ch.presetId,
+        presetTitle: ch.presetTitle,
+        plusName: '',
+        minusName: '',
+        plus: 0,
+        minus: 0,
+        net: 0
+      };
+    }
+    if (ch.side === 'plus') {
+      target.presetNets[key].plusName = ch.name;
+      target.presetNets[key].plus += Number(ch.count || 0);
+    } else {
+      target.presetNets[key].minusName = ch.name;
+      target.presetNets[key].minus += Number(ch.count || 0);
+    }
+    target.presetNets[key].net = target.presetNets[key].plus - target.presetNets[key].minus;
+  }
+}
+
 function buildSummary(db) {
-  const settings = db.settings || defaultSettings();
+  const settings = normalizeSettings(db.settings);
   const creators = new Map();
   const donors = new Map();
   const accountDonors = [];
@@ -178,6 +341,7 @@ function buildSummary(db) {
     c.nosmoke += Number(d.nosmoke || 0);
     c.eat += Number(d.eat || 0);
     c.noeat += Number(d.noeat || 0);
+    addPresetCheck(c, d);
     c.rows.push(normalizedRow);
 
     dn.account += account;
@@ -224,6 +388,7 @@ function buildSummary(db) {
       totalText: displayManText(row.total),
       eatNet: row.eat - row.noeat,
       smokeNet: row.smoke - row.nosmoke,
+      presetNets: Object.values(row.presetNets || {}),
       donorSummary
     };
   }).sort((a, b) => b.total - a.total);
@@ -246,39 +411,29 @@ function buildSummary(db) {
   };
 }
 
-function emptyCreator(name) {
-  return { creator: name, account: 0, toonie: 0, total: 0, smoke: 0, nosmoke: 0, eat: 0, noeat: 0, rows: [] };
-}
-function emptyDonor(name) {
-  return { donor: name, account: 0, toonie: 0, total: 0, latestProcess: '후원', rows: [] };
-}
-
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 
 app.get('/api/settings', (req, res) => {
   const db = readDb();
-  res.json(db.settings || defaultSettings());
+  res.json(db.settings);
 });
 
 app.post('/api/settings', checkAuth, (req, res) => {
   const db = readDb();
   const body = req.body || {};
-  db.settings = {
-    ...defaultSettings(),
-    ...(db.settings || {}),
-    title: String(body.title ?? db.settings?.title ?? '도네이터 현황'),
-    titleImage: String(body.titleImage ?? db.settings?.titleImage ?? ''),
-    notice: String(body.notice ?? db.settings?.notice ?? ''),
-    columns: Math.max(1, Math.min(6, Number(body.columns || db.settings?.columns || 4))),
-    maxCreators: Math.max(1, Math.min(50, Number(body.maxCreators || db.settings?.maxCreators || 12))),
-    creators: Array.isArray(body.creators) ? body.creators.map(normName).filter(Boolean) : (db.settings?.creators || []),
-    prices: {
-      smoke: toWon(body.prices?.smoke ?? db.settings?.prices?.smoke ?? 11900),
-      nosmoke: toWon(body.prices?.nosmoke ?? db.settings?.prices?.nosmoke ?? 12000),
-      eat: toWon(body.prices?.eat ?? db.settings?.prices?.eat ?? 14000),
-      noeat: toWon(body.prices?.noeat ?? db.settings?.prices?.noeat ?? 15000)
-    }
-  };
+  const old = db.settings || defaultSettings();
+
+  db.settings = normalizeSettings({
+    ...old,
+    title: String(body.title ?? old.title ?? '도네이터 현황'),
+    titleImage: String(body.titleImage ?? old.titleImage ?? ''),
+    notice: String(body.notice ?? old.notice ?? ''),
+    columns: body.columns ?? old.columns,
+    maxCreators: body.maxCreators ?? old.maxCreators,
+    creators: Array.isArray(body.creators) ? body.creators.map(normName).filter(Boolean) : old.creators,
+    presets: Array.isArray(body.presets) ? body.presets : old.presets
+  });
+
   writeDb(db);
   res.json({ ok: true, settings: db.settings });
 });
@@ -315,7 +470,6 @@ app.post('/api/donations/batch', checkAuth, (req, res) => {
     const donor = normName(req.body.donor);
     const processType = normName(req.body.processType) || '후원';
 
-    // 상단 도네이터 총액: 계좌 / 투네 각각 입력
     const accountTotal = toWon(req.body.accountTotal ?? req.body.accountAmountTotal ?? req.body.accountAmount);
     const toonieTotal = toWon(req.body.toonieTotal ?? req.body.toonationTotal ?? req.body.toonieAmountTotal ?? req.body.toonieAmount);
     const grandTotal = accountTotal + toonieTotal;
@@ -344,8 +498,6 @@ app.post('/api/donations/batch', checkAuth, (req, res) => {
       });
     }
 
-    // 크리에이터별 금액은 1칸만 받기 때문에 계좌/투네는 입력 순서대로 자동 배분
-    // 예: 계좌총액 5만, 투네총액 3만 / A 4만, B 4만 => A 계좌4만, B 계좌1만+투네3만
     let remainAccount = accountTotal;
     let remainToonie = toonieTotal;
 
