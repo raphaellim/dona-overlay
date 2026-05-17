@@ -311,34 +311,73 @@ app.post('/api/donations/batch', checkAuth, (req, res) => {
   try {
     const db = readDb();
     const settings = db.settings || defaultSettings();
+
     const donor = normName(req.body.donor);
     const processType = normName(req.body.processType) || '후원';
-    const rows = Array.isArray(req.body.rows) ? req.body.rows : [];
+
+    // 상단 도네이터 총액: 계좌 / 투네 각각 입력
+    const accountTotal = toWon(req.body.accountTotal ?? req.body.accountAmountTotal ?? req.body.accountAmount);
+    const toonieTotal = toWon(req.body.toonieTotal ?? req.body.toonationTotal ?? req.body.toonieAmountTotal ?? req.body.toonieAmount);
+    const grandTotal = accountTotal + toonieTotal;
+
+    const inputRows = Array.isArray(req.body.rows) ? req.body.rows : [];
 
     if (!donor) return res.status(400).json({ error: '도네이터명을 입력하세요.' });
+    if (grandTotal <= 0) return res.status(400).json({ error: '상단 계좌금액 또는 투네금액을 입력하세요.' });
 
-    const validRows = rows
+    const validRows = inputRows
       .map(r => ({
-        ...r,
-        donor,
-        processType,
         creator: normName(r.creator),
-        accountAmount: toWon(r.accountAmount),
-        toonieAmount: toWon(r.toonieAmount),
+        amount: toWon(r.amount ?? r.totalAmount ?? r.value),
         memo: String(r.memo || req.body.memo || '').trim()
       }))
-      .filter(r => r.creator && (r.accountAmount + r.toonieAmount) > 0);
+      .filter(r => r.creator && r.amount > 0);
 
     if (!validRows.length) {
       return res.status(400).json({ error: '크리에이터별 금액을 1개 이상 입력하세요.' });
     }
 
-    const created = validRows.map(r => makeDonationRow(r, settings));
+    const splitTotal = validRows.reduce((sum, r) => sum + r.amount, 0);
+    if (splitTotal !== grandTotal) {
+      return res.status(400).json({
+        error: `상단 총액과 크리에이터별 금액 합계가 다릅니다. 상단 합계 ${displayManText(grandTotal)}, 분배 합계 ${displayManText(splitTotal)}`
+      });
+    }
+
+    // 크리에이터별 금액은 1칸만 받기 때문에 계좌/투네는 입력 순서대로 자동 배분
+    // 예: 계좌총액 5만, 투네총액 3만 / A 4만, B 4만 => A 계좌4만, B 계좌1만+투네3만
+    let remainAccount = accountTotal;
+    let remainToonie = toonieTotal;
+
+    const created = validRows.map(r => {
+      const accountPart = Math.min(remainAccount, r.amount);
+      remainAccount -= accountPart;
+
+      const tooniePart = r.amount - accountPart;
+      remainToonie -= tooniePart;
+
+      return makeDonationRow({
+        donor,
+        creator: r.creator,
+        processType,
+        accountAmount: accountPart,
+        toonieAmount: tooniePart,
+        memo: r.memo
+      }, settings);
+    });
+
     db.donations = db.donations || [];
     db.donations.push(...created);
     writeDb(db);
 
-    res.json({ ok: true, count: created.length, donations: created });
+    res.json({
+      ok: true,
+      count: created.length,
+      accountTotal,
+      toonieTotal,
+      total: grandTotal,
+      donations: created
+    });
   } catch (e) {
     res.status(400).json({ error: e.message || '저장 실패' });
   }
