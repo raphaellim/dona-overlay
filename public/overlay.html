@@ -424,26 +424,50 @@ function checkLatestOptionAlert(donations){
 
   if(!rows.length) return;
 
-  if(firstLoad){
+  // 처음 접속했는데 저장된 알림 기록이 없으면
+  // 현재 마지막 후원을 기준점으로 저장만 하고 알림은 띄우지 않음
+  if(!lastDonationKey){
     const latest = rows[rows.length - 1];
-    lastDonationKey = (latest.id || "") + "_" + (latest.createdAt || latest.created_at || "");
+    const key = (latest.id || "") + "_" + (latest.createdAt || latest.created_at || "");
+    lastDonationKey = key;
+    localStorage.setItem(ALERT_STORAGE_KEY, key);
     return;
   }
 
   const newRows = [];
 
+  let passedLast = false;
+
   for(const row of rows){
     const key = (row.id || "") + "_" + (row.createdAt || row.created_at || "");
 
-    if(lastDonationKey && key > lastDonationKey){
+    if(key === lastDonationKey){
+      passedLast = true;
+      continue;
+    }
+
+    if(passedLast){
       newRows.push(row);
     }
+  }
+
+  // 만약 lastDonationKey가 현재 목록에 없으면,
+  // 새로고침/세션변경 상황일 가능성이 높으므로 마지막값만 저장하고 알림은 띄우지 않음
+  if(!passedLast){
+    const latest = rows[rows.length - 1];
+    const key = (latest.id || "") + "_" + (latest.createdAt || latest.created_at || "");
+    lastDonationKey = key;
+    localStorage.setItem(ALERT_STORAGE_KEY, key);
+    return;
   }
 
   if(!newRows.length) return;
 
   const last = newRows[newRows.length - 1];
-  lastDonationKey = (last.id || "") + "_" + (last.createdAt || last.created_at || "");
+  const lastKey = (last.id || "") + "_" + (last.createdAt || last.created_at || "");
+
+  lastDonationKey = lastKey;
+  localStorage.setItem(ALERT_STORAGE_KEY, lastKey);
 
   newRows.forEach(row => {
     alertQueue.push(makeDonationAlertHtml(row));
