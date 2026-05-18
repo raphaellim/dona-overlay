@@ -133,6 +133,9 @@
   let alertTimer = null;
   let firstLoad = true;
 
+let alertQueue = [];
+let alertPlaying = false;
+
   const defaultSettings = {
     creators:["빵떠기","또영","수박","몰라","익명"],
     presets:[
@@ -358,45 +361,94 @@
     alertTimer=setTimeout(()=>{ $alert.classList.remove("show"); },2300);
   }
 
-  function checkLatestOptionAlert(donations){
-    const rows=(donations||[]).slice().sort((a,b)=>new Date(a.createdAt||a.created_at||0)-new Date(b.createdAt||b.created_at||0));
-    const latest=rows[rows.length-1];
-    if(!latest) return;
+ function makeDonationAlertHtml(row){
+  const donor = escapeHtml(row.donor || "익명");
+  const creator = escapeHtml(row.creator || "익명");
 
-    const key=(latest.id||"")+"_"+(latest.createdAt||latest.created_at||"");
-    if(firstLoad){
-      lastDonationKey=key;
-      return;
-    }
-    if(key===lastDonationKey) return;
-    lastDonationKey=key;
+  const accountAmount = num(row.accountAmount ?? row.account_amount);
+  const toonieAmount = num(row.toonieAmount ?? row.toonie_amount);
+  const totalAmount = num(row.totalAmount ?? row.total_amount ?? accountAmount + toonieAmount);
+  const amountText = displayAmount(totalAmount);
 
-    const donor=escapeHtml(latest.donor||"익명");
-    const creator=escapeHtml(latest.creator||"익명");
+  const checks = Array.isArray(row.checks) ? row.checks : [];
+  let optionText = "";
 
-    const accountAmount=num(latest.accountAmount??latest.account_amount);
-    const toonieAmount=num(latest.toonieAmount??latest.toonie_amount);
-    const totalAmount=num(latest.totalAmount??latest.total_amount??accountAmount+toonieAmount);
-    const amountText=displayAmount(totalAmount);
+  if(checks.length){
+    const ch = checks[checks.length - 1];
+    const sign = ch.side === "minus" ? "-" : "+";
+    const cls = ch.side === "minus" ? "alert-minus" : "alert-plus";
+    const name = escapeHtml(ch.name || "옵션");
+    const count = Math.abs(num(ch.count));
 
-    const checks=Array.isArray(latest.checks)?latest.checks:[];
-    let optionText="";
-
-    if(checks.length){
-      const ch=checks[checks.length-1];
-      const sign=ch.side==="minus"?"-":"+";
-      const cls=ch.side==="minus"?"alert-minus":"alert-plus";
-      const name=escapeHtml(ch.name||"옵션");
-      const count=Math.abs(num(ch.count));
-      optionText=`<span class="${cls}">${name}${sign}${count}</span>`;
-    }
-
-    showOptionAlert(`
-      <div class="alert-line1"><span class="alert-name">${donor}</span> → ${creator}</div>
-      <div class="alert-line2"><span>${amountText}</span>${optionText}</div>
-    `);
+    optionText = `<span class="${cls}">${name}${sign}${count}</span>`;
   }
 
+  return `
+    <div class="alert-line1">
+      <span class="alert-name">${donor}</span> → ${creator}
+    </div>
+    <div class="alert-line2">
+      <span>${amountText}</span>
+      ${optionText}
+    </div>
+  `;
+}
+
+function playAlertQueue(){
+  if(alertPlaying) return;
+  if(!alertQueue.length) return;
+
+  alertPlaying = true;
+
+  const html = alertQueue.shift();
+  $alert.innerHTML = html;
+  $alert.classList.add("show");
+
+  clearTimeout(alertTimer);
+  alertTimer = setTimeout(() => {
+    $alert.classList.remove("show");
+
+    setTimeout(() => {
+      alertPlaying = false;
+      playAlertQueue();
+    }, 350);
+  }, 2300);
+}
+
+function checkLatestOptionAlert(donations){
+  const rows = (donations || [])
+    .slice()
+    .sort((a, b) => new Date(a.createdAt || a.created_at || 0) - new Date(b.createdAt || b.created_at || 0));
+
+  if(!rows.length) return;
+
+  if(firstLoad){
+    const latest = rows[rows.length - 1];
+    lastDonationKey = (latest.id || "") + "_" + (latest.createdAt || latest.created_at || "");
+    return;
+  }
+
+  const newRows = [];
+
+  for(const row of rows){
+    const key = (row.id || "") + "_" + (row.createdAt || row.created_at || "");
+
+    if(lastDonationKey && key > lastDonationKey){
+      newRows.push(row);
+    }
+  }
+
+  if(!newRows.length) return;
+
+  const last = newRows[newRows.length - 1];
+  lastDonationKey = (last.id || "") + "_" + (last.createdAt || last.created_at || "");
+
+  newRows.forEach(row => {
+    alertQueue.push(makeDonationAlertHtml(row));
+  });
+
+  playAlertQueue();
+}
   async function fetchJson(url){
     const res=await fetch(url,{cache:"no-store"});
     if(!res.ok) throw new Error(url+" "+res.status);
