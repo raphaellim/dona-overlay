@@ -4,113 +4,346 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>후원현황 Overlay</title>
+
 <style>
   :root{
     --panel-w:275px;
     --top:54px;
     --right:14px;
+
     --pink:rgba(255,155,185,.95);
     --pink-soft:rgba(255,155,185,.38);
     --pink-text:#ffb4ca;
+
     --white:rgba(255,255,255,.96);
     --muted:rgba(255,255,255,.76);
+
     --green:#7df18c;
     --blue:#83c9ff;
     --red:#ff8a8a;
+
     --glass:rgba(10,8,13,.30);
-    --yellow:#ffe066;      /* 0일 때 */
-    --plus-blue:#5ecbff;   /* +일 때 */
-    --minus-red:#ff4d5e;   /* -일 때 */
+
+    --yellow:#ffe066;
+    --plus-blue:#5ecbff;
+    --minus-red:#ff4d5e;
   }
-  *{box-sizing:border-box}
-  html,body{
-    margin:0;width:100%;height:100%;overflow:hidden;background:transparent!important;
+
+  *{
+    box-sizing:border-box;
+  }
+
+  html,
+  body{
+    margin:0;
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    background:transparent!important;
     font-family:"Pretendard","Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",Arial,sans-serif;
   }
-  .overlay-root{user-select:none;pointer-events:none;position:fixed;inset:0;width:100vw;height:100vh;background:transparent}
+
+  .overlay-root{
+    user-select:none;
+    pointer-events:none;
+    position:fixed;
+    inset:0;
+    width:100vw;
+    height:100vh;
+    background:transparent;
+  }
+
   .donation-panel{
-    position:absolute;top:var(--top);right:var(--right)!important;left:auto!important;width:var(--panel-w);
-    padding:11px 12px;color:var(--white);
-    background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.012)),var(--glass);
-    border:2px solid var(--pink);border-radius:19px;
-    box-shadow:0 0 0 1px rgba(255,255,255,.03) inset,0 0 7px rgba(255,115,165,.12);
-    backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);
+    position:absolute;
+    top:var(--top);
+    right:var(--right)!important;
+    left:auto!important;
+    width:var(--panel-w);
+    padding:11px 12px;
+    color:var(--white);
+    background:
+      linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.012)),
+      var(--glass);
+    border:2px solid var(--pink);
+    border-radius:19px;
+    box-shadow:
+      0 0 0 1px rgba(255,255,255,.03) inset,
+      0 0 7px rgba(255,115,165,.12);
+    backdrop-filter:blur(3px);
+    -webkit-backdrop-filter:blur(3px);
   }
+
   .account-row{
-    display:flex;align-items:center;justify-content:center;gap:8px;height:30px;
-    padding:0 0 8px;border-bottom:1px solid var(--pink-soft);
-    font-weight:900;letter-spacing:-.065em;text-align:center;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    height:30px;
+    padding:0 0 8px;
+    border-bottom:1px solid var(--pink-soft);
+    font-weight:900;
+    letter-spacing:-.065em;
+    text-align:center;
   }
+
   .account-title{
-    flex:0 0 auto;font-size:22px;color:var(--white);white-space:nowrap;
-    text-shadow:0 1px 2px rgba(0,0,0,.55),0 0 5px rgba(255,120,165,.14);
+    flex:0 0 auto;
+    font-size:22px;
+    color:var(--white);
+    white-space:nowrap;
+    text-shadow:
+      0 1px 2px rgba(0,0,0,.55),
+      0 0 5px rgba(255,120,165,.14);
   }
+
   .roller{
-  position:relative;height:31px;overflow:hidden;width:125px;min-width:125px;color:var(--pink-text);font-size:24px;
-  line-height:31px;font-weight:900;letter-spacing:-0.055em;}
-  
-  .roller-track{position:absolute;left:0;right:0;top:0;transition:transform .42s ease;will-change:transform}
-  .roller-track.no-transition{transition:none!important}
-  .roller-item{height:31px;line-height:31px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;}
+    position:relative;
+    height:31px;
+    overflow:hidden;
+    width:125px;
+    min-width:125px;
+    color:var(--pink-text);
+    font-size:24px;
+    line-height:31px;
+    font-weight:900;
+    letter-spacing:-0.055em;
+  }
+
+  .roller-track{
+    position:absolute;
+    left:0;
+    right:0;
+    top:0;
+    transition:transform .42s ease;
+    will-change:transform;
+  }
+
+  .roller-track.no-transition{
+    transition:none!important;
+  }
+
+  .roller-item{
+    height:31px;
+    line-height:31px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    text-align:center;
+  }
+
   .creator-list{
-    padding-top:8px;display:flex;flex-direction:column;align-items:center;gap:7px;width:100%;
+    padding-top:8px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:7px;
+    width:100%;
   }
-  .creator-item{padding:0;width:100%;text-align:center}
+
+  .creator-item{
+    padding:0;
+    width:100%;
+    text-align:center;
+  }
+
   .creator-main{
-    display:flex;align-items:baseline;justify-content:center;gap:5px;width:100%;min-height:25px;
-    font-weight:900;letter-spacing:-.068em;text-align:center;
-    text-shadow:0 1px 2px rgba(0,0,0,.70),0 0 4px rgba(255,255,255,.07);
+    display:flex;
+    align-items:baseline;
+    justify-content:center;
+    gap:5px;
+    width:100%;
+    min-height:25px;
+    font-weight:900;
+    letter-spacing:-.068em;
+    text-align:center;
+    text-shadow:
+      0 1px 2px rgba(0,0,0,.70),
+      0 0 4px rgba(255,255,255,.07);
   }
+
   .creator-name{
-    flex:0 0 72px;width:72px;color:var(--white);font-size:23px;line-height:1.05;
-    white-space:nowrap;overflow:hidden;text-align:center;
+    flex:0 0 72px;
+    width:72px;
+    color:var(--white);
+    font-size:23px;
+    line-height:1.05;
+    white-space:nowrap;
+    overflow:hidden;
+    text-align:center;
   }
+
   .donation-amount{
-    flex:0 0 auto;color:var(--pink-text);font-size:23px;line-height:1.05;white-space:nowrap;text-align:left;
+    flex:0 0 auto;
+    color:var(--pink-text);
+    font-size:23px;
+    line-height:1.05;
+    white-space:nowrap;
+    text-align:left;
   }
+
   .creator-sub{
-    display:flex;justify-content:center;align-items:center;gap:11px;width:100%;margin-top:2px;
-    font-size:21px;line-height:1.08;font-weight:900;letter-spacing:-.064em;text-align:center;
-    text-shadow:0 1px 2px rgba(0,0,0,.75),0 0 4px rgba(0,0,0,.30);
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:11px;
+    width:100%;
+    margin-top:2px;
+    font-size:21px;
+    line-height:1.08;
+    font-weight:900;
+    letter-spacing:-.064em;
+    text-align:center;
+    text-shadow:
+      0 1px 2px rgba(0,0,0,.75),
+      0 0 4px rgba(0,0,0,.30);
   }
-  .state-item{white-space:nowrap;min-width:0;text-align:center}
-  .plus{color:var(--plus-blue);}.blue,.red{color:var(--minus-red);}.muted{color:var(--yellow);}
+
+  .state-item{
+    white-space:nowrap;
+    min-width:0;
+    text-align:center;
+  }
+
+  .plus{
+    color:var(--plus-blue);
+  }
+
+  .blue,
+  .red{
+    color:var(--minus-red);
+  }
+
+  .muted{
+    color:var(--yellow);
+  }
+
   .option-alert{
-    position:absolute;left:12px;right:12px;top:45px;z-index:10;
-    padding:9px 10px;border-radius:14px;border:1px solid rgba(255,155,185,.70);
-    background:rgba(10,8,13,.82);color:var(--white);font-size:21px;font-weight:900;
-    text-align:center;letter-spacing:-.06em;
-    opacity:0;transform:translateY(-8px) scale(.98);
-    transition:opacity .22s ease,transform .22s ease;
+    position:absolute;
+    left:12px;
+    right:12px;
+    top:45px;
+    z-index:10;
+    padding:9px 10px;
+    border-radius:14px;
+    border:1px solid rgba(255,155,185,.70);
+    background:rgba(10,8,13,.82);
+    color:var(--white);
+    font-size:21px;
+    font-weight:900;
+    text-align:center;
+    letter-spacing:-.06em;
+    opacity:0;
+    transform:translateY(-8px) scale(.98);
+    transition:
+      opacity .22s ease,
+      transform .22s ease;
     box-shadow:0 0 10px rgba(255,115,165,.22);
+    line-height:1.25;
   }
-  .option-alert.show{opacity:1;transform:translateY(0) scale(1)}
-  .option-alert .alert-name{color:var(--pink-text)}
-  .option-alert .alert-plus{color:var(--plus-blue)}
-  .option-alert .alert-minus{color:var(--minus-red)}
-  .option-alert{line-height:1.25}
-  .alert-line1{font-size:20px;color:var(--white);margin-bottom:3px}
-  .alert-line2{display:flex;justify-content:center;gap:10px;font-size:22px;font-weight:900}
-  .alert-line2 span:first-child{color:var(--pink-text)}
-  .empty{opacity:.72;font-size:18px;padding:14px 0 4px;text-align:center}
+
+  .option-alert.show{
+    opacity:1;
+    transform:translateY(0) scale(1);
+  }
+
+  .option-alert .alert-name{
+    color:var(--pink-text);
+  }
+
+  .option-alert .alert-plus{
+    color:var(--plus-blue);
+  }
+
+  .option-alert .alert-minus{
+    color:var(--minus-red);
+  }
+
+  .alert-line1{
+    font-size:20px;
+    color:var(--white);
+    margin-bottom:3px;
+  }
+
+  .alert-line2{
+    display:flex;
+    justify-content:center;
+    gap:10px;
+    font-size:22px;
+    font-weight:900;
+  }
+
+  .alert-line2 span:first-child{
+    color:var(--pink-text);
+  }
+
+  .empty{
+    opacity:.72;
+    font-size:18px;
+    padding:14px 0 4px;
+    text-align:center;
+  }
+
   @media(max-width:520px){
-    :root{--panel-w:252px;--top:50px;--right:12px}
-    .donation-panel{padding:10px 11px}
-    .account-row{gap:7px}.account-title{font-size:21px}
-    .roller{width:118px;min-width:118px;font-size:20px}
-    .creator-name{flex-basis:70px;width:70px;font-size:22px}.donation-amount{font-size:22px}
-    .creator-sub{font-size:20px;gap:10px}.option-alert{font-size:20px}
+    :root{
+      --panel-w:252px;
+      --top:50px;
+      --right:12px;
+    }
+
+    .donation-panel{
+      padding:10px 11px;
+    }
+
+    .account-row{
+      gap:7px;
+    }
+
+    .account-title{
+      font-size:21px;
+    }
+
+    .roller{
+      width:118px;
+      min-width:118px;
+      font-size:20px;
+    }
+
+    .creator-name{
+      flex-basis:70px;
+      width:70px;
+      font-size:22px;
+    }
+
+    .donation-amount{
+      font-size:22px;
+    }
+
+    .creator-sub{
+      font-size:20px;
+      gap:10px;
+    }
+
+    .option-alert{
+      font-size:20px;
+    }
   }
 </style>
 </head>
+
 <body>
   <div class="overlay-root">
     <section class="donation-panel">
       <div class="option-alert" id="optionAlert"></div>
+
       <div class="account-row">
         <div class="account-title">계좌후원</div>
-        <div class="roller"><div class="roller-track" id="rollerTrack"><div class="roller-item">- : 0</div></div></div>
+        <div class="roller">
+          <div class="roller-track" id="rollerTrack">
+            <div class="roller-item">- : 0</div>
+          </div>
+        </div>
       </div>
+
       <div class="creator-list" id="creatorList"></div>
     </section>
   </div>
@@ -119,62 +352,128 @@
 (() => {
   const API_SUMMARY = "/api/summary";
   const API_SETTINGS = "/api/settings";
+
   const $list = document.getElementById("creatorList");
   const $track = document.getElementById("rollerTrack");
   const $alert = document.getElementById("optionAlert");
-  
+
   const alertSound = new Audio("/sounds/alert.mp3");
-alertSound.volume = 1.5;
+  alertSound.volume = 1;
 
   let rollingItems = [];
   let rollingIndex = 0;
   let rollingTimer = null;
+
   let enabledPresets = [];
   let lastSignature = "";
+
   const ALERT_STORAGE_KEY = "overlay_last_alert_key";
 
-let lastDonationKey = localStorage.getItem(ALERT_STORAGE_KEY) || "";
-let alertTimer = null;
-let firstLoad = true;
+  let lastDonationKey = localStorage.getItem(ALERT_STORAGE_KEY) || "";
+  let alertTimer = null;
+  let firstLoad = true;
 
-let alertQueue = [];
-let alertPlaying = false;
+  let alertQueue = [];
+  let alertPlaying = false;
 
   const defaultSettings = {
     creators:["빵떠기","또영","수박","몰라","익명"],
     presets:[
-      {id:"smoke",enabled:true,title:"펴피지마",plusName:"흡연",minusName:"금연"},
-      {id:"food",enabled:true,title:"먹먹마",plusName:"먹어",minusName:"먹지마"}
+      {
+        id:"smoke",
+        enabled:true,
+        title:"펴피지마",
+        plusName:"흡연",
+        minusName:"금연"
+      },
+      {
+        id:"food",
+        enabled:true,
+        title:"먹먹마",
+        plusName:"먹어",
+        minusName:"먹지마"
+      }
     ]
   };
 
   const demoData = {
     settings: defaultSettings,
-    accountDonors:[{donor:"열려",amount:36000}],
+    accountDonors:[
+      {
+        donor:"열려",
+        amount:36000
+      }
+    ],
     creators:[
-      {creator:"빵떠기",total:0,presetNets:[]},
-      {creator:"또영",total:0,presetNets:[]},
-      {creator:"수박",total:0,presetNets:[]},
-      {creator:"몰라",total:0,presetNets:[]},
-      {creator:"익명",total:0,presetNets:[]}
+      {
+        creator:"빵떠기",
+        total:0,
+        presetNets:[]
+      },
+      {
+        creator:"또영",
+        total:0,
+        presetNets:[]
+      },
+      {
+        creator:"수박",
+        total:0,
+        presetNets:[]
+      },
+      {
+        creator:"몰라",
+        total:0,
+        presetNets:[]
+      },
+      {
+        creator:"익명",
+        total:0,
+        presetNets:[]
+      }
     ],
     donations:[]
   };
 
-  function num(v){ const n=Number(v||0); return Number.isFinite(n)?n:0; }
-  function displayAmount(won){ const cut=Math.floor(num(won)/1000)/10; return cut.toFixed(1).replace(/\.0$/,""); }
-  function normalizeName(v){ return String(v??"").replace(/\s+/g," ").trim(); }
-  function escapeHtml(str){ return String(str).replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[ch])); }
+  function num(v){
+    const n = Number(v || 0);
+    return Number.isFinite(n) ? n : 0;
+  }
+
+  function displayAmount(won){
+    const cut = Math.floor(num(won) / 1000) / 10;
+    return cut.toFixed(1).replace(/\.0$/, "");
+  }
+
+  function normalizeName(v){
+    return String(v ?? "").replace(/\s+/g, " ").trim();
+  }
+
+  function escapeHtml(str){
+    return String(str).replace(/[&<>"']/g, ch => ({
+      "&":"&amp;",
+      "<":"&lt;",
+      ">":"&gt;",
+      '"':"&quot;",
+      "'":"&#039;"
+    }[ch]));
+  }
+
   function formatCreatorName(name){
-    const arr=Array.from(String(name||"").trim());
-    if(arr.length>=3) return arr.slice(0,3).join("");
-    if(arr.length===2) return arr.join(" ");
-    if(arr.length===1) return arr[0]+"  ";
+    const arr = Array.from(String(name || "").trim());
+
+    if(arr.length >= 3) return arr.slice(0, 3).join("");
+    if(arr.length === 2) return arr.join(" ");
+    if(arr.length === 1) return arr[0] + "  ";
+
     return "익 명";
   }
+
   function getEnabledPresets(settings){
-    const presets=settings&&Array.isArray(settings.presets)?settings.presets:[];
-    return presets.filter(p=>p&&p.enabled!==false);
+    const presets = settings && Array.isArray(settings.presets)
+      ? settings.presets
+      : [];
+
+    return presets.filter(p => p && p.enabled !== false);
   }
 
   function zeroCreatorsFromSettings(settings){
@@ -182,7 +481,7 @@ let alertPlaying = false;
       ? settings.creators
       : defaultSettings.creators;
 
-    return names.slice(0,5).map(name => ({
+    return names.slice(0, 5).map(name => ({
       creator: normalizeName(name),
       total: 0,
       smokeNet: 0,
@@ -192,44 +491,94 @@ let alertPlaying = false;
   }
 
   function aggregateAccountDonorsFromDonations(donations){
-    const map=new Map();
-    (donations||[]).forEach(d=>{
-      const account=num(d.accountAmount??d.account_amount);
-      if(account<=0) return;
-      const donor=normalizeName(d.donor||d.donor_name||"익명");
-      if(!map.has(donor)) map.set(donor,{donor,amount:0,latestAt:d.createdAt||d.created_at||""});
-      const row=map.get(donor);
-      row.amount+=account;
-      if(new Date(d.createdAt||d.created_at||0)>new Date(row.latestAt||0)) row.latestAt=d.createdAt||d.created_at||"";
+    const map = new Map();
+
+    (donations || []).forEach(d => {
+      const account = num(d.accountAmount ?? d.account_amount);
+      if(account <= 0) return;
+
+      const donor = normalizeName(d.donor || d.donor_name || "익명");
+
+      if(!map.has(donor)){
+        map.set(donor, {
+          donor,
+          amount:0,
+          latestAt:d.createdAt || d.created_at || ""
+        });
+      }
+
+      const row = map.get(donor);
+      row.amount += account;
+
+      if(new Date(d.createdAt || d.created_at || 0) > new Date(row.latestAt || 0)){
+        row.latestAt = d.createdAt || d.created_at || "";
+      }
     });
-    return Array.from(map.values()).sort((a,b)=>new Date(b.latestAt||0)-new Date(a.latestAt||0)).slice(0,10);
+
+    return Array.from(map.values())
+      .sort((a,b) => new Date(b.latestAt || 0) - new Date(a.latestAt || 0))
+      .slice(0,10);
   }
 
   function aggregateCreatorsFromDonations(donations, settings){
-    const map=new Map();
-    zeroCreatorsFromSettings(settings).forEach(c => map.set(c.creator, c));
+    const map = new Map();
 
-    (donations||[]).forEach(d=>{
-      const creator=normalizeName(d.creator||"익명");
-      const account=num(d.accountAmount??d.account_amount);
-      const toonie=num(d.toonieAmount??d.toonie_amount);
-      const total=num(d.totalAmount??d.total_amount??account+toonie);
-      if(!map.has(creator)) map.set(creator,{creator,total:0,smokeNet:0,eatNet:0,presetNets:[]});
-      const row=map.get(creator);
-      row.total+=total;
-      row.smokeNet+=num(d.smoke||0)-num(d.nosmoke||0);
-      row.eatNet+=num(d.eat||0)-num(d.noeat||0);
+    zeroCreatorsFromSettings(settings).forEach(c => {
+      map.set(c.creator, c);
+    });
 
-      (Array.isArray(d.checks)?d.checks:[]).forEach(ch=>{
-        const key=ch.presetId||ch.presetTitle;
+    (donations || []).forEach(d => {
+      const creator = normalizeName(d.creator || "익명");
+
+      const account = num(d.accountAmount ?? d.account_amount);
+      const toonie = num(d.toonieAmount ?? d.toonie_amount);
+      const total = num(d.totalAmount ?? d.total_amount ?? account + toonie);
+
+      if(!map.has(creator)){
+        map.set(creator, {
+          creator,
+          total:0,
+          smokeNet:0,
+          eatNet:0,
+          presetNets:[]
+        });
+      }
+
+      const row = map.get(creator);
+
+      row.total += total;
+      row.smokeNet += num(d.smoke || 0) - num(d.nosmoke || 0);
+      row.eatNet += num(d.eat || 0) - num(d.noeat || 0);
+
+      (Array.isArray(d.checks) ? d.checks : []).forEach(ch => {
+        const key = ch.presetId || ch.presetTitle;
         if(!key) return;
-        let n=row.presetNets.find(x=>(ch.presetId&&x.presetId===ch.presetId)||(ch.presetTitle&&x.presetTitle===ch.presetTitle));
+
+        let n = row.presetNets.find(x =>
+          (ch.presetId && x.presetId === ch.presetId) ||
+          (ch.presetTitle && x.presetTitle === ch.presetTitle)
+        );
+
         if(!n){
-          n={presetId:ch.presetId,presetTitle:ch.presetTitle,plusName:"",minusName:"",plus:0,minus:0};
+          n = {
+            presetId:ch.presetId,
+            presetTitle:ch.presetTitle,
+            plusName:"",
+            minusName:"",
+            plus:0,
+            minus:0
+          };
+
           row.presetNets.push(n);
         }
-        if(ch.side==="plus"){ n.plusName=ch.name; n.plus+=num(ch.count); }
-        else { n.minusName=ch.name; n.minus+=num(ch.count); }
+
+        if(ch.side === "plus"){
+          n.plusName = ch.name;
+          n.plus += num(ch.count);
+        }else{
+          n.minusName = ch.name;
+          n.minus += num(ch.count);
+        }
       });
     });
 
@@ -237,113 +586,187 @@ let alertPlaying = false;
   }
 
   function normalizeCreatorRows(summary){
-    const settings=summary.settings||defaultSettings;
-    const donations=summary.donations||[];
-    const byName=new Map();
+    const settings = summary.settings || defaultSettings;
+    const donations = summary.donations || [];
+    const byName = new Map();
 
-    zeroCreatorsFromSettings(settings).forEach(c => byName.set(c.creator, c));
-
-    (summary.creators||summary.creatorSummary||summary.creator_summary||[]).forEach(c=>{
-      const name=normalizeName(c.creator||c.name);
-      if(!name) return;
-      const base=byName.get(name)||{creator:name,total:0,smokeNet:0,eatNet:0,presetNets:[]};
-      base.total=num(c.total??c.totalAmount??c.total_amount??c.amount??base.total);
-      base.smokeNet=num(c.smokeNet??c.smoke_net??base.smokeNet);
-      base.eatNet=num(c.eatNet??c.foodNet??c.food_net??base.eatNet);
-      base.presetNets=(Array.isArray(c.presetNets)&&c.presetNets.length)?c.presetNets:base.presetNets;
-      byName.set(name,base);
+    zeroCreatorsFromSettings(settings).forEach(c => {
+      byName.set(c.creator, c);
     });
 
-    aggregateCreatorsFromDonations(donations, settings).forEach(c=>{
-      const old=byName.get(c.creator)||c;
+    (summary.creators || summary.creatorSummary || summary.creator_summary || []).forEach(c => {
+      const name = normalizeName(c.creator || c.name);
+      if(!name) return;
+
+      const base = byName.get(name) || {
+        creator:name,
+        total:0,
+        smokeNet:0,
+        eatNet:0,
+        presetNets:[]
+      };
+
+      base.total = num(c.total ?? c.totalAmount ?? c.total_amount ?? c.amount ?? base.total);
+      base.smokeNet = num(c.smokeNet ?? c.smoke_net ?? base.smokeNet);
+      base.eatNet = num(c.eatNet ?? c.foodNet ?? c.food_net ?? base.eatNet);
+      base.presetNets = Array.isArray(c.presetNets) && c.presetNets.length
+        ? c.presetNets
+        : base.presetNets;
+
+      byName.set(name, base);
+    });
+
+    aggregateCreatorsFromDonations(donations, settings).forEach(c => {
+      const old = byName.get(c.creator) || c;
+
       old.total = c.total;
       old.smokeNet = c.smokeNet;
       old.eatNet = c.eatNet;
       old.presetNets = c.presetNets;
+
       byName.set(c.creator, old);
     });
 
     return Array.from(byName.values()).slice(0,5);
   }
 
-  function statusLabelsFromPresetNets(presets,row){
-    const nets=Array.isArray(row.presetNets)?row.presetNets:[];
-    return presets.map(preset=>{
-      const n=nets.find(x=>(x.presetId&&x.presetId===preset.id)||(x.presetTitle&&x.presetTitle===preset.title));
+  function statusLabelsFromPresetNets(presets, row){
+    const nets = Array.isArray(row.presetNets) ? row.presetNets : [];
+
+    return presets.map(preset => {
+      const n = nets.find(x =>
+        (x.presetId && x.presetId === preset.id) ||
+        (x.presetTitle && x.presetTitle === preset.title)
+      );
+
       if(n){
-        const net=num(n.plus)-num(n.minus);
-        if(net>0) return `<span class="plus">${escapeHtml(n.plusName||preset.plusName||"+")} +${Math.abs(net)}</span>`;
-        if(net<0){
-          const cls=preset.id==="food"?"red":"blue";
-          return `<span class="${cls}">${escapeHtml(n.minusName||preset.minusName||"-")} -${Math.abs(net)}</span>`;
+        const net = num(n.plus) - num(n.minus);
+
+        if(net > 0){
+          return `<span class="plus">${escapeHtml(n.plusName || preset.plusName || "+")} +${Math.abs(net)}</span>`;
+        }
+
+        if(net < 0){
+          const cls = preset.id === "food" ? "red" : "blue";
+          return `<span class="${cls}">${escapeHtml(n.minusName || preset.minusName || "-")} -${Math.abs(net)}</span>`;
         }
       }
-      if(preset.id==="smoke"){
-        const net=num(row.smokeNet??row.smoke_net??0);
-        if(net>0) return `<span class="plus">${escapeHtml(preset.plusName||"흡연")} +${Math.abs(net)}</span>`;
-        if(net<0) return `<span class="blue">${escapeHtml(preset.minusName||"금연")} -${Math.abs(net)}</span>`;
+
+      if(preset.id === "smoke"){
+        const net = num(row.smokeNet ?? row.smoke_net ?? 0);
+
+        if(net > 0){
+          return `<span class="plus">${escapeHtml(preset.plusName || "흡연")} +${Math.abs(net)}</span>`;
+        }
+
+        if(net < 0){
+          return `<span class="blue">${escapeHtml(preset.minusName || "금연")} -${Math.abs(net)}</span>`;
+        }
       }
-      if(preset.id==="food"){
-        const net=num(row.eatNet??row.foodNet??row.food_net??0);
-        if(net>0) return `<span class="plus">${escapeHtml(preset.plusName||"먹어")} +${Math.abs(net)}</span>`;
-        if(net<0) return `<span class="red">${escapeHtml(preset.minusName||"먹지마")} -${Math.abs(net)}</span>`;
+
+      if(preset.id === "food"){
+        const net = num(row.eatNet ?? row.foodNet ?? row.food_net ?? 0);
+
+        if(net > 0){
+          return `<span class="plus">${escapeHtml(preset.plusName || "먹어")} +${Math.abs(net)}</span>`;
+        }
+
+        if(net < 0){
+          return `<span class="red">${escapeHtml(preset.minusName || "먹지마")} -${Math.abs(net)}</span>`;
+        }
       }
-      return `<span class="muted">${escapeHtml(preset.title||"처리")} 0</span>`;
+
+      return `<span class="muted">${escapeHtml(preset.title || "처리")} 0</span>`;
     });
   }
 
   function renderAccountRoller(items){
-    rollingItems=items&&items.length?items:[{donor:"-",amount:0}];
-    if(rollingTimer){ clearInterval(rollingTimer); rollingTimer=null; }
+    rollingItems = items && items.length
+      ? items
+      : [{donor:"-", amount:0}];
 
-    const makeItemHtml=item=>{
-      const donor=normalizeName(item.donor||item.name||"익명");
-      const amount=displayAmount(item.amount??item.accountAmount??item.account_amount??item.total??0);
+    if(rollingTimer){
+      clearInterval(rollingTimer);
+      rollingTimer = null;
+    }
+
+    const makeItemHtml = item => {
+      const donor = normalizeName(item.donor || item.name || "익명");
+      const amount = displayAmount(
+        item.amount ??
+        item.accountAmount ??
+        item.account_amount ??
+        item.total ??
+        0
+      );
+
       return `<div class="roller-item">${escapeHtml(donor)} : ${amount}</div>`;
     };
 
-    if(rollingItems.length<=1){
-      rollingIndex=0;
+    if(rollingItems.length <= 1){
+      rollingIndex = 0;
       $track.classList.add("no-transition");
-      $track.innerHTML=rollingItems.map(makeItemHtml).join("");
-      $track.style.transform="translateY(0px)";
+      $track.innerHTML = rollingItems.map(makeItemHtml).join("");
+      $track.style.transform = "translateY(0px)";
       return;
     }
 
-    const renderItems=[...rollingItems,rollingItems[0]];
-    $track.innerHTML=renderItems.map(makeItemHtml).join("");
-    rollingIndex=0;
+    const renderItems = [...rollingItems, rollingItems[0]];
+
+    $track.innerHTML = renderItems.map(makeItemHtml).join("");
+    rollingIndex = 0;
+
     $track.classList.add("no-transition");
-    $track.style.transform="translateY(0px)";
+    $track.style.transform = "translateY(0px)";
     $track.offsetHeight;
     $track.classList.remove("no-transition");
 
-    const itemHeight=31, holdMs=2600, transitionMs=420;
-    rollingTimer=setInterval(()=>{
-      rollingIndex+=1;
+    const itemHeight = 31;
+    const holdMs = 2600;
+    const transitionMs = 420;
+
+    rollingTimer = setInterval(() => {
+      rollingIndex += 1;
+
       $track.classList.remove("no-transition");
-      $track.style.transform=`translateY(${-rollingIndex*itemHeight}px)`;
-      if(rollingIndex===rollingItems.length){
-        setTimeout(()=>{
-          rollingIndex=0;
+      $track.style.transform = `translateY(${-rollingIndex * itemHeight}px)`;
+
+      if(rollingIndex === rollingItems.length){
+        setTimeout(() => {
+          rollingIndex = 0;
+
           $track.classList.add("no-transition");
-          $track.style.transform="translateY(0px)";
+          $track.style.transform = "translateY(0px)";
           $track.offsetHeight;
           $track.classList.remove("no-transition");
-        },transitionMs+30);
+        }, transitionMs + 30);
       }
-    },holdMs);
+    }, holdMs);
   }
 
   function renderCreators(creators){
-    const rows=(creators&&creators.length?creators:zeroCreatorsFromSettings(defaultSettings)).slice(0,5);
-    const visiblePresets=(enabledPresets||[]).filter(p=>p.enabled!==false);
+    const rows = creators && creators.length
+      ? creators
+      : zeroCreatorsFromSettings(defaultSettings);
 
-    $list.innerHTML=rows.map(row=>{
-      const rawName=normalizeName(row.creator||row.name||"익명");
-      const name=formatCreatorName(rawName);
-      const total=displayAmount(row.total??row.totalAmount??row.total_amount??row.amount??0);
-      const labels=visiblePresets.length?statusLabelsFromPresetNets(visiblePresets,row):[];
+    const visibleRows = rows.slice(0,5);
+    const visiblePresets = (enabledPresets || []).filter(p => p.enabled !== false);
+
+    $list.innerHTML = visibleRows.map(row => {
+      const rawName = normalizeName(row.creator || row.name || "익명");
+      const name = formatCreatorName(rawName);
+
+      const total = displayAmount(
+        row.total ??
+        row.totalAmount ??
+        row.total_amount ??
+        row.amount ??
+        0
+      );
+
+      const labels = visiblePresets.length
+        ? statusLabelsFromPresetNets(visiblePresets, row)
+        : [];
 
       return `
         <article class="creator-item">
@@ -351,171 +774,214 @@ let alertPlaying = false;
             <div class="creator-name">${escapeHtml(name)} -</div>
             <div class="donation-amount">후원(${total})</div>
           </div>
-          ${labels.length?`<div class="creator-sub">${labels.map(label=>`<span class="state-item">${label}</span>`).join("")}</div>`:``}
+          ${
+            labels.length
+              ? `<div class="creator-sub">${labels.map(label => `<span class="state-item">${label}</span>`).join("")}</div>`
+              : ``
+          }
         </article>
       `;
     }).join("");
   }
 
- function showOptionAlert(text){
-  if(!text) return;
+  function showOptionAlert(text){
+    if(!text) return;
 
-  $alert.innerHTML = text;
-  $alert.classList.add("show");
+    $alert.innerHTML = text;
+    $alert.classList.add("show");
 
-  try{
-    alertSound.currentTime = 0;
-    alertSound.play().catch(() => {});
-  }catch(e){}
+    try{
+      alertSound.currentTime = 0;
+      alertSound.play().catch(() => {});
+    }catch(e){}
 
-  clearTimeout(alertTimer);
-  alertTimer = setTimeout(() => {
-    $alert.classList.remove("show");
-  }, 5000);
-}
+    clearTimeout(alertTimer);
 
- function makeDonationAlertHtml(row){
-  const donor = escapeHtml(row.donor || "익명");
-  const creator = escapeHtml(row.creator || "익명");
-
-  const accountAmount = num(row.accountAmount ?? row.account_amount);
-  const toonieAmount = num(row.toonieAmount ?? row.toonie_amount);
-  const totalAmount = num(row.totalAmount ?? row.total_amount ?? accountAmount + toonieAmount);
-  const amountText = displayAmount(totalAmount);
-
-  const checks = Array.isArray(row.checks) ? row.checks : [];
-  let optionText = "";
-
-  if(checks.length){
-    const ch = checks[checks.length - 1];
-    const sign = ch.side === "minus" ? "-" : "+";
-    const cls = ch.side === "minus" ? "alert-minus" : "alert-plus";
-    const name = escapeHtml(ch.name || "옵션");
-    const count = Math.abs(num(ch.count));
-
-    optionText = `<span class="${cls}">${name}${sign}${count}</span>`;
+    alertTimer = setTimeout(() => {
+      $alert.classList.remove("show");
+    }, 5000);
   }
 
-  return `
-    <div class="alert-line1">
-      <span class="alert-name">${donor}</span> → ${creator}
-    </div>
-    <div class="alert-line2">
-      <span>${amountText}</span>
-      ${optionText}
-    </div>
-  `;
-}
+  function makeDonationAlertHtml(row){
+    const donor = escapeHtml(row.donor || "익명");
+    const creator = escapeHtml(row.creator || "익명");
 
-function playAlertQueue(){
-  if(alertPlaying) return;
-  if(!alertQueue.length) return;
+    const accountAmount = num(row.accountAmount ?? row.account_amount);
+    const toonieAmount = num(row.toonieAmount ?? row.toonie_amount);
+    const totalAmount = num(row.totalAmount ?? row.total_amount ?? accountAmount + toonieAmount);
 
-  alertPlaying = true;
+    const amountText = displayAmount(totalAmount);
 
-  const html = alertQueue.shift();
-  $alert.innerHTML = html;
-  $alert.classList.add("show");
+    const checks = Array.isArray(row.checks) ? row.checks : [];
+    let optionText = "";
 
-  clearTimeout(alertTimer);
-  alertTimer = setTimeout(() => {
-    $alert.classList.remove("show");
+    if(checks.length){
+      const ch = checks[checks.length - 1];
+      const sign = ch.side === "minus" ? "-" : "+";
+      const cls = ch.side === "minus" ? "alert-minus" : "alert-plus";
+      const name = escapeHtml(ch.name || "옵션");
+      const count = Math.abs(num(ch.count));
 
-    setTimeout(() => {
-      alertPlaying = false;
-      playAlertQueue();
-    }, 350);
-  }, 2300);
-}
-
-function checkLatestOptionAlert(donations){
-  const rows = (donations || [])
-    .slice()
-    .sort((a, b) => new Date(a.createdAt || a.created_at || 0) - new Date(b.createdAt || b.created_at || 0));
-
-  if(!rows.length) return;
-
-  // 처음 접속했는데 저장된 알림 기록이 없으면
-  // 현재 마지막 후원을 기준점으로 저장만 하고 알림은 띄우지 않음
-  if(!lastDonationKey){
-    const latest = rows[rows.length - 1];
-    const key = (latest.id || "") + "_" + (latest.createdAt || latest.created_at || "");
-    lastDonationKey = key;
-    localStorage.setItem(ALERT_STORAGE_KEY, key);
-    return;
-  }
-
-  const newRows = [];
-
-  let passedLast = false;
-
-  for(const row of rows){
-    const key = (row.id || "") + "_" + (row.createdAt || row.created_at || "");
-
-    if(key === lastDonationKey){
-      passedLast = true;
-      continue;
+      optionText = `<span class="${cls}">${name}${sign}${count}</span>`;
     }
 
-    if(passedLast){
-      newRows.push(row);
+    return `
+      <div class="alert-line1">
+        <span class="alert-name">${donor}</span> → ${creator}
+      </div>
+      <div class="alert-line2">
+        <span>${amountText}</span>
+        ${optionText}
+      </div>
+    `;
+  }
+
+  function playAlertQueue(){
+    if(alertPlaying) return;
+    if(!alertQueue.length) return;
+
+    alertPlaying = true;
+
+    const html = alertQueue.shift();
+
+    $alert.innerHTML = html;
+    $alert.classList.add("show");
+
+    try{
+      alertSound.currentTime = 0;
+      alertSound.play().catch(() => {});
+    }catch(e){}
+
+    clearTimeout(alertTimer);
+
+    alertTimer = setTimeout(() => {
+      $alert.classList.remove("show");
+
+      setTimeout(() => {
+        alertPlaying = false;
+        playAlertQueue();
+      }, 350);
+    }, 2300);
+  }
+
+  function checkLatestOptionAlert(donations){
+    const rows = (donations || [])
+      .slice()
+      .sort((a,b) => {
+        return new Date(a.createdAt || a.created_at || 0) -
+               new Date(b.createdAt || b.created_at || 0);
+      });
+
+    if(!rows.length) return;
+
+    if(!lastDonationKey){
+      const latest = rows[rows.length - 1];
+      const key = (latest.id || "") + "_" + (latest.createdAt || latest.created_at || "");
+
+      lastDonationKey = key;
+      localStorage.setItem(ALERT_STORAGE_KEY, key);
+      return;
     }
+
+    const newRows = [];
+    let passedLast = false;
+
+    for(const row of rows){
+      const key = (row.id || "") + "_" + (row.createdAt || row.created_at || "");
+
+      if(key === lastDonationKey){
+        passedLast = true;
+        continue;
+      }
+
+      if(passedLast){
+        newRows.push(row);
+      }
+    }
+
+    if(!passedLast){
+      const latest = rows[rows.length - 1];
+      const key = (latest.id || "") + "_" + (latest.createdAt || latest.created_at || "");
+
+      lastDonationKey = key;
+      localStorage.setItem(ALERT_STORAGE_KEY, key);
+      return;
+    }
+
+    if(!newRows.length) return;
+
+    const last = newRows[newRows.length - 1];
+    const lastKey = (last.id || "") + "_" + (last.createdAt || last.created_at || "");
+
+    lastDonationKey = lastKey;
+    localStorage.setItem(ALERT_STORAGE_KEY, lastKey);
+
+    newRows.forEach(row => {
+      alertQueue.push(makeDonationAlertHtml(row));
+    });
+
+    playAlertQueue();
   }
 
-  // 만약 lastDonationKey가 현재 목록에 없으면,
-  // 새로고침/세션변경 상황일 가능성이 높으므로 마지막값만 저장하고 알림은 띄우지 않음
-  if(!passedLast){
-    const latest = rows[rows.length - 1];
-    const key = (latest.id || "") + "_" + (latest.createdAt || latest.created_at || "");
-    lastDonationKey = key;
-    localStorage.setItem(ALERT_STORAGE_KEY, key);
-    return;
-  }
-
-  if(!newRows.length) return;
-
-  const last = newRows[newRows.length - 1];
-  const lastKey = (last.id || "") + "_" + (last.createdAt || last.created_at || "");
-
-  lastDonationKey = lastKey;
-  localStorage.setItem(ALERT_STORAGE_KEY, lastKey);
-
-  newRows.forEach(row => {
-    alertQueue.push(makeDonationAlertHtml(row));
-  });
-
-  playAlertQueue();
-}
   async function fetchJson(url){
-    const res=await fetch(url,{cache:"no-store"});
-    if(!res.ok) throw new Error(url+" "+res.status);
+    const res = await fetch(url, {
+      cache:"no-store"
+    });
+
+    if(!res.ok){
+      throw new Error(url + " " + res.status);
+    }
+
     return res.json();
   }
 
   async function loadData(){
-    const params=new URLSearchParams(location.search);
-    if(params.get("demo")==="1") return demoData;
+    const params = new URLSearchParams(location.search);
+
+    if(params.get("demo") === "1"){
+      return demoData;
+    }
 
     let settings = defaultSettings;
+
     try{
       const s = await fetchJson(API_SUMMARY);
-      settings = s.settings && Object.keys(s.settings).length ? s.settings : defaultSettings;
-      const accountDonors=(s.accountDonors&&s.accountDonors.length)?s.accountDonors:aggregateAccountDonorsFromDonations(s.donations||[]);
+
+      settings = s.settings && Object.keys(s.settings).length
+        ? s.settings
+        : defaultSettings;
+
+      const accountDonors = s.accountDonors && s.accountDonors.length
+        ? s.accountDonors
+        : aggregateAccountDonorsFromDonations(s.donations || []);
+
       return {
         settings,
         accountDonors,
-        creators:normalizeCreatorRows({...s, settings}),
-        donations:s.donations||[]
+        creators: normalizeCreatorRows({
+          ...s,
+          settings
+        }),
+        donations: s.donations || []
       };
+
     }catch(e){
+
       try{
         settings = await fetchJson(API_SETTINGS);
+
         return {
           settings,
-          accountDonors:[{donor:"-",amount:0}],
-          creators:zeroCreatorsFromSettings(settings),
+          accountDonors:[
+            {
+              donor:"-",
+              amount:0
+            }
+          ],
+          creators: zeroCreatorsFromSettings(settings),
           donations:[]
         };
+
       }catch(err){
         return demoData;
       }
@@ -524,31 +990,45 @@ function checkLatestOptionAlert(donations){
 
   async function refresh(){
     let data;
-    try{ data=await loadData(); }
-    catch(e){ data=demoData; }
 
-    enabledPresets=getEnabledPresets(data.settings||defaultSettings);
-    const creators = data.creators && data.creators.length ? data.creators : zeroCreatorsFromSettings(data.settings||defaultSettings);
+    try{
+      data = await loadData();
+    }catch(e){
+      data = demoData;
+    }
 
-    const signature=JSON.stringify({
-      accountDonors:data.accountDonors||[],
+    enabledPresets = getEnabledPresets(data.settings || defaultSettings);
+
+    const creators = data.creators && data.creators.length
+      ? data.creators
+      : zeroCreatorsFromSettings(data.settings || defaultSettings);
+
+    const signature = JSON.stringify({
+      accountDonors:data.accountDonors || [],
       creators,
-      presets:enabledPresets.map(p=>({id:p.id,enabled:p.enabled,title:p.title,plusName:p.plusName,minusName:p.minusName}))
+      presets:enabledPresets.map(p => ({
+        id:p.id,
+        enabled:p.enabled,
+        title:p.title,
+        plusName:p.plusName,
+        minusName:p.minusName
+      }))
     });
 
-    checkLatestOptionAlert(data.donations||[]);
+    checkLatestOptionAlert(data.donations || []);
 
-    if(signature!==lastSignature){
-      lastSignature=signature;
+    if(signature !== lastSignature){
+      lastSignature = signature;
+
       renderAccountRoller(data.accountDonors);
       renderCreators(creators);
     }
 
-    firstLoad=false;
+    firstLoad = false;
   }
 
   refresh();
-  setInterval(refresh,5000);
+  setInterval(refresh, 5000);
 })();
 </script>
 </body>
