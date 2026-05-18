@@ -18,6 +18,9 @@
     --blue:#83c9ff;
     --red:#ff8a8a;
     --glass:rgba(10,8,13,.30);
+    --yellow:#ffe066;      /* 0일 때 */
+    --plus-blue:#5ecbff;   /* +일 때 */
+    --minus-red:#ff4d5e;   /* -일 때 */
   }
   *{box-sizing:border-box}
   html,body{
@@ -72,7 +75,7 @@
     text-shadow:0 1px 2px rgba(0,0,0,.75),0 0 4px rgba(0,0,0,.30);
   }
   .state-item{white-space:nowrap;min-width:0;text-align:center}
-  .plus{color:var(--green)} .blue{color:var(--blue)} .red{color:var(--red)} .muted{color:var(--muted)}
+  .plus{color:var(--plus-blue);}.blue,.red{color:var(--minus-red);}.muted{color:var(--yellow);}
   .option-alert{
     position:absolute;left:12px;right:12px;top:45px;z-index:10;
     padding:9px 10px;border-radius:14px;border:1px solid rgba(255,155,185,.70);
@@ -84,8 +87,8 @@
   }
   .option-alert.show{opacity:1;transform:translateY(0) scale(1)}
   .option-alert .alert-name{color:var(--pink-text)}
-  .option-alert .alert-plus{color:var(--green)}
-  .option-alert .alert-minus{color:var(--blue)}
+  .option-alert .alert-plus{color:var(--plus-blue)}
+  .option-alert .alert-minus{color:var(--minus-red)}
   .option-alert{line-height:1.25}
   .alert-line1{font-size:20px;color:var(--white);margin-bottom:3px}
   .alert-line2{display:flex;justify-content:center;gap:10px;font-size:22px;font-weight:900}
