@@ -129,9 +129,11 @@
   let rollingTimer = null;
   let enabledPresets = [];
   let lastSignature = "";
-  let lastDonationKey = "";
-  let alertTimer = null;
-  let firstLoad = true;
+  const ALERT_STORAGE_KEY = "overlay_last_alert_key";
+
+let lastDonationKey = localStorage.getItem(ALERT_STORAGE_KEY) || "";
+let alertTimer = null;
+let firstLoad = true;
 
 let alertQueue = [];
 let alertPlaying = false;
