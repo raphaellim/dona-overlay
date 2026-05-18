@@ -96,6 +96,27 @@
     .roller{width:82px;min-width:82px;font-size:20px}
     .creator-name{flex-basis:64px;width:64px;font-size:22px}.donation-amount{font-size:22px}
     .creator-sub{font-size:20px;gap:8px}.option-alert{font-size:20px}
+    .option-alert{
+  line-height:1.25;
+}
+
+.alert-line1{
+  font-size:20px;
+  color:var(--white);
+  margin-bottom:3px;
+}
+
+.alert-line2{
+  display:flex;
+  justify-content:center;
+  gap:10px;
+  font-size:22px;
+  font-weight:900;
+}
+
+.alert-line2 span:first-child{
+  color:var(--pink-text);
+}
   }
 </style>
 </head>
@@ -372,14 +393,29 @@
     const checks=Array.isArray(latest.checks)?latest.checks:[];
     if(!checks.length) return;
 
-    const ch=checks[checks.length-1];
-    const sign=ch.side==="minus"?"-":"+";
-    const cls=ch.side==="minus"?"alert-minus":"alert-plus";
-    const donor=escapeHtml(latest.donor||"익명");
-    const name=escapeHtml(ch.name||"옵션");
-    const count=Math.abs(num(ch.count));
-    showOptionAlert(`<span class="alert-name">${donor}</span> / <span class="${cls}">${name}${sign}${count}</span>`);
-  }
+    const ch = checks[checks.length - 1];
+
+const sign = ch.side === "minus" ? "-" : "+";
+const cls = ch.side === "minus" ? "alert-minus" : "alert-plus";
+
+const donor = escapeHtml(latest.donor || "익명");
+const creator = escapeHtml(latest.creator || "익명");
+const name = escapeHtml(ch.name || "옵션");
+const count = Math.abs(num(ch.count));
+
+const accountAmount = num(latest.accountAmount ?? latest.account_amount);
+const toonieAmount = num(latest.toonieAmount ?? latest.toonie_amount);
+const totalAmount = num(latest.totalAmount ?? latest.total_amount ?? accountAmount + toonieAmount);
+const amountText = displayAmount(totalAmount);
+
+// 옵션 있을 때
+showOptionAlert(`
+  <div class="alert-line1">${donor} → ${creator}</div>
+  <div class="alert-line2">
+    <span>${amountText}</span>
+    <span class="${cls}">${name}${sign}${count}</span>
+  </div>
+`);
 
   async function fetchJson(url){
     const res=await fetch(url,{cache:"no-store"});
