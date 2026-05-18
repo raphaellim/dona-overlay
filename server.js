@@ -63,6 +63,16 @@ function toWon(v) {
 function displayMan(won) {
   return Math.trunc(Number(won || 0) / 1000) / 10;
 }
+function cutHundreds(won) {
+  const n = Number(won || 0);
+  if (!Number.isFinite(n)) return 0;
+
+  // 100원 단위 절삭
+  // 12,600 -> 12,000
+  // 11,900 -> 11,000
+  // 24,900 -> 24,000
+  return Math.floor(n / 1000) * 1000;
+}
 
 function displayManText(won) {
   return displayMan(won).toFixed(1).replace(/\.0$/, '');
@@ -280,15 +290,20 @@ function makeDonationRow(body, settings, broadcastId) {
   const donor = normName(body.donor);
   const creator = normName(body.creator);
   const processType = normName(body.processType) || '후원';
-  const accountAmount = toWon(body.accountAmount);
-  const toonieAmount = toWon(body.toonieAmount);
-  const total = accountAmount + toonieAmount;
+  const rawAccountAmount = toWon(body.accountAmount);
+const rawToonieAmount = toWon(body.toonieAmount);
+const rawTotal = rawAccountAmount + rawToonieAmount;
+
+// 합산/저장용 금액은 100원 단위 절삭
+const accountAmount = cutHundreds(rawAccountAmount);
+const toonieAmount = cutHundreds(rawToonieAmount);
+const total = accountAmount + toonieAmount;
 
   if (!donor) throw new Error('도네이터명을 입력하세요.');
   if (!creator) throw new Error('크리에이터를 선택하세요.');
   if (total <= 0) throw new Error(`${creator}: 금액을 입력하세요.`);
 
-  const check = calcCheck(processType, total, settings);
+  const check = calcCheck(processType, rawTotal, settings);
 
   return {
     broadcast_id: broadcastId,
