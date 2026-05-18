@@ -360,7 +360,7 @@ let alertPlaying = false;
     $alert.innerHTML=text;
     $alert.classList.add("show");
     clearTimeout(alertTimer);
-    alertTimer=setTimeout(()=>{ $alert.classList.remove("show"); },2300);
+    alertTimer=setTimeout(()=>{ $alert.classList.remove("show"); },5000);
   }
 
  function makeDonationAlertHtml(row){
