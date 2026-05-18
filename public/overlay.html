@@ -476,7 +476,7 @@
     const rows = (creators || []).slice(0, 5);
 
     if(!rows.length){
-      $list.innerHTML = `<div class="empty">표시할 후원 내역 없음</div>`;
+      $list.innerHTML = `<div class="empty">크리에이터 후원 없음</div>`;
       return;
     }
 
@@ -512,32 +512,80 @@
 
   function summarizeFromDonations(donations){
     const creatorMap = new Map();
-    const accountDonors = [];
+    const accountMap = new Map();
 
     (donations || []).forEach(d => {
       const creator = normalizeName(d.creator || "익명");
       const donor = normalizeName(d.donor || d.donor_name || "익명");
-      const account = num(d.account_amount);
-      const toonation = num(d.toonation_amount);
-      const total = num(d.total_amount || account + toonation || d.amount);
+
+      const account = num(d.accountAmount ?? d.account_amount);
+      const toonie = num(d.toonieAmount ?? d.toonie_amount);
+      const total = num(d.totalAmount ?? d.total_amount ?? account + toonie);
 
       if(account > 0){
-        accountDonors.unshift({ donor, amount: account });
+        if(!accountMap.has(donor)){
+          accountMap.set(donor, { donor, amount:0, latestAt:d.createdAt || d.created_at || "" });
+        }
+        const a = accountMap.get(donor);
+        a.amount += account;
+        if(new Date(d.createdAt || d.created_at || 0) > new Date(a.latestAt || 0)){
+          a.latestAt = d.createdAt || d.created_at || "";
+        }
       }
 
       if(!creatorMap.has(creator)){
-        creatorMap.set(creator, { creator, total: 0, smoke: 0, food: 0 });
+        creatorMap.set(creator, {
+          creator,
+          total: 0,
+          smokeNet: 0,
+          eatNet: 0,
+          presetNets: []
+        });
       }
 
       const row = creatorMap.get(creator);
       row.total += total;
-      row.smoke += num(d.smoke_plus) - num(d.smoke_minus);
-      row.food += num(d.food_plus) - num(d.food_minus);
+      row.smokeNet += num(d.smoke || 0) - num(d.nosmoke || 0);
+      row.eatNet += num(d.eat || 0) - num(d.noeat || 0);
+
+      const checks = Array.isArray(d.checks) ? d.checks : [];
+      checks.forEach(ch => {
+        const key = ch.presetId || ch.presetTitle;
+        if(!key) return;
+
+        let n = row.presetNets.find(x => x.presetId === ch.presetId || x.presetTitle === ch.presetTitle);
+        if(!n){
+          n = {
+            presetId: ch.presetId,
+            presetTitle: ch.presetTitle,
+            plusName: "",
+            minusName: "",
+            plus: 0,
+            minus: 0
+          };
+          row.presetNets.push(n);
+        }
+
+        if(ch.side === "plus"){
+          n.plusName = ch.name;
+          n.plus += num(ch.count);
+        }else{
+          n.minusName = ch.name;
+          n.minus += num(ch.count);
+        }
+      });
     });
 
+    const accountDonors = Array.from(accountMap.values())
+      .sort((a,b) => new Date(b.latestAt || 0) - new Date(a.latestAt || 0))
+      .slice(0, 10);
+
     return {
-      accountDonors: accountDonors.slice(0, 10),
-      creators: Array.from(creatorMap.values()).slice(0, 5)
+      accountDonors,
+      creators: Array.from(creatorMap.values())
+        .filter(c => num(c.total) > 0)
+        .sort((a,b) => num(b.total) - num(a.total))
+        .slice(0, 5)
     };
   }
 
@@ -556,10 +604,24 @@
     // 서버마다 응답 구조가 조금 달라도 최대한 받아주기
     try{
       const s = await fetchJson(API_SUMMARY);
+      let creators = s.creators || s.creatorSummary || s.creator_summary || [];
+
+      // 서버에서 creators가 비어오면 donations 원본으로 오버레이에서 즉시 재합산
+      if((!creators || !creators.length) && Array.isArray(s.donations) && s.donations.length){
+        creators = summarizeFromDonations(s.donations).creators;
+      }
+
+      // creators가 있는데 전부 0처럼 들어오는 경우도 donations로 다시 계산
+      const hasVisibleTotal = (creators || []).some(c => Number(c.total || c.totalAmount || c.total_amount || c.amount || 0) > 0);
+      if(!hasVisibleTotal && Array.isArray(s.donations) && s.donations.length){
+        const fallback = summarizeFromDonations(s.donations);
+        if(fallback.creators.length) creators = fallback.creators;
+      }
+
       return {
         settings: s.settings || {},
         accountDonors: s.accountDonors || s.account_donors || s.recentAccounts || s.recent_account || [],
-        creators: s.creators || s.creatorSummary || s.creator_summary || []
+        creators
       };
     }catch(e){}
 
@@ -610,5 +672,6 @@
 <!-- seamless-css-loop-roller version -->
 <!-- stepped-smooth-roller-with-long-last-hold version -->
 <!-- preset-off-hidden-overlay version -->
+<!-- overlay creator fallback fixed -->
 </body>
 </html>

@@ -81,3 +81,11 @@ Manual Deploy → Deploy latest commit
 ### 추가 페이지
 - `/creator_detail.html` : 크리에이터별 도네이터 합산 전체 리스트
 - `/donations.html` : 전체 입력 리스트 전체 페이지
+
+
+## overlay.html 크리에이터 표시 보강
+
+- `/api/summary`에서 creators 배열이 비어오거나 전부 0으로 들어오는 경우,
+  overlay가 `donations` 원본 데이터를 기준으로 즉시 크리에이터별 후원금액을 다시 합산해서 표시합니다.
+- 계좌후원은 같은 도네이터명을 1번만 표시하고 계좌금액 합산으로 롤링합니다.
+- 크리에이터 후원금액은 기본 표시, 옵션값은 control.html 프리셋 ON/OFF 기준으로 표시합니다.
