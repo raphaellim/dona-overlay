@@ -123,6 +123,9 @@
   const $list = document.getElementById("creatorList");
   const $track = document.getElementById("rollerTrack");
   const $alert = document.getElementById("optionAlert");
+  
+  const alertSound = new Audio("/sounds/alert.mp3");
+alertSound.volume = 0.75;
 
   let rollingItems = [];
   let rollingIndex = 0;
@@ -355,13 +358,22 @@ let alertPlaying = false;
     }).join("");
   }
 
-  function showOptionAlert(text){
-    if(!text) return;
-    $alert.innerHTML=text;
-    $alert.classList.add("show");
-    clearTimeout(alertTimer);
-    alertTimer=setTimeout(()=>{ $alert.classList.remove("show"); },5000);
-  }
+ function showOptionAlert(text){
+  if(!text) return;
+
+  $alert.innerHTML = text;
+  $alert.classList.add("show");
+
+  try{
+    alertSound.currentTime = 0;
+    alertSound.play().catch(() => {});
+  }catch(e){}
+
+  clearTimeout(alertTimer);
+  alertTimer = setTimeout(() => {
+    $alert.classList.remove("show");
+  }, 2300);
+}
 
  function makeDonationAlertHtml(row){
   const donor = escapeHtml(row.donor || "익명");
