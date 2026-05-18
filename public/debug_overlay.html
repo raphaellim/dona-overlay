@@ -6,16 +6,19 @@
 <h1>Overlay Debug</h1>
 <pre id="out">loading...</pre>
 <script>
-fetch('/api/summary',{cache:'no-store'}).then(r=>r.json()).then(d=>{
+Promise.all([
+  fetch('/api/settings',{cache:'no-store'}).then(r=>r.json()).catch(e=>({error:e.message})),
+  fetch('/api/summary',{cache:'no-store'}).then(r=>r.json()).catch(e=>({error:e.message}))
+]).then(([settings,summary])=>{
   document.getElementById('out').textContent=JSON.stringify({
-    broadcast:d.broadcast,
-    settingsCreators:d.settings&&d.settings.creators,
-    presets:d.settings&&d.settings.presets,
-    accountDonors:d.accountDonors,
-    creators:d.creators,
-    donationsCount:(d.donations||[]).length,
-    latestDonations:(d.donations||[]).slice(-5)
+    settingsCreators:settings.creators,
+    settingsPresets:settings.presets,
+    broadcast:summary.broadcast,
+    accountDonors:summary.accountDonors,
+    creators:summary.creators,
+    donationsCount:(summary.donations||[]).length,
+    latestDonations:(summary.donations||[]).slice(-5)
   },null,2);
-}).catch(e=>document.getElementById('out').textContent=e.message);
+});
 </script>
 </body></html>

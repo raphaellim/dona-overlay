@@ -111,3 +111,10 @@ Manual Deploy → Deploy latest commit
   - `6.6` 입력 → 6,600원
   - `11900` 입력 → 11,900원
 - 최근 입력 개별 삭제 지원.
+
+
+## 후원 0원 크리에이터 기본 표시 수정
+
+- overlay.html은 이제 `/api/summary` 데이터가 비어도 `/api/settings`의 creators 목록을 읽어서 기본 표시합니다.
+- 후원이 없으면 `크리에이터 - 후원(0)`으로 표시됩니다.
+- `/debug_overlay.html`에서 settings.creators가 정상으로 오는지 확인할 수 있습니다.
