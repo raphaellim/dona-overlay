@@ -25,6 +25,7 @@
   .option-plus{color:#5ecbff}
   .option-minus{color:#ff4d5e}
   .option-zero{color:#ffe066}
+  .option-plusminus{color:#dbeafe;}
   .table{width:100%;border-collapse:collapse;font-size:14px}
   .table th,.table td{border-bottom:1px solid #1f2937;padding:9px 8px;text-align:left;white-space:nowrap}
   .table th{color:#93c5fd;font-weight:900;background:#0f172a}
@@ -32,6 +33,7 @@
   .num{text-align:right!important;font-variant-numeric:tabular-nums}
   .center{text-align:center!important}
   .pager{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:12px;color:#cbd5e1;font-weight:900}
+  
   @media(max-width:900px){
     .top{align-items:flex-start;flex-direction:column}
     .summary-grid{grid-template-columns:1fr 1fr}
@@ -166,25 +168,33 @@ function getOptionSummary(creator){
     }else{
       if(preset.id === 'smoke'){
         const net = Number(creator.smokeNet || 0);
-        if(net > 0) plus = net;
-        if(net < 0) minus = Math.abs(net);
+
+        if(net > 0){
+          plus = net;
+        }
+
+        if(net < 0){
+          minus = Math.abs(net);
+        }
       }
+
       if(preset.id === 'food'){
         const net = Number(creator.eatNet || creator.foodNet || 0);
-        if(net > 0) plus = net;
-        if(net < 0) minus = Math.abs(net);
+
+        if(net > 0){
+          plus = net;
+        }
+
+        if(net < 0){
+          minus = Math.abs(net);
+        }
       }
     }
 
-    const net = plus - minus;
-
-    if(net > 0){
-      return { text: `${plusName} +${net}`, className: 'option-plus' };
-    }
-    if(net < 0){
-      return { text: `${minusName} -${Math.abs(net)}`, className: 'option-minus' };
-    }
-    return { text: `${preset.title} 0`, className: 'option-zero' };
+    return {
+      text: `${plusName} +${plus} / ${minusName} -${minus}`,
+      className: plus || minus ? 'option-plusminus' : 'option-zero'
+    };
   });
 }
 
