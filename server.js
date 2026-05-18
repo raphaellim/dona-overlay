@@ -43,8 +43,21 @@ function normName(v) {
 }
 
 function toWon(v) {
-  const n = Number(String(v ?? '').replace(/[^0-9.-]/g, ''));
-  return Number.isFinite(n) ? Math.trunc(n) : 0;
+  const raw = String(v ?? '').trim().replace(/,/g, '');
+  if (!raw) return 0;
+
+  const n = Number(raw.replace(/[^0-9.-]/g, ''));
+  if (!Number.isFinite(n)) return 0;
+
+  // 운영 편의 입력:
+  // 20  => 20,000원
+  // 6.6 => 6,600원
+  // 11900 => 11,900원
+  if (Math.abs(n) > 0 && Math.abs(n) < 1000) {
+    return Math.round(n * 1000);
+  }
+
+  return Math.trunc(n);
 }
 
 function displayMan(won) {

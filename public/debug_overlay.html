@@ -1,29 +1,21 @@
 <!doctype html>
 <html lang="ko">
-<head>
-<meta charset="utf-8">
-<title>Overlay Debug</title>
-<style>
-body{font-family:monospace;background:#111;color:#eee;padding:20px}
-pre{white-space:pre-wrap;background:#000;padding:16px;border-radius:12px}
-</style>
-</head>
+<head><meta charset="utf-8"><title>Overlay Debug</title>
+<style>body{font-family:monospace;background:#111;color:#eee;padding:20px}pre{white-space:pre-wrap;background:#000;padding:16px;border-radius:12px}</style></head>
 <body>
 <h1>Overlay Debug</h1>
-<p>아래 데이터에서 creators 배열과 donations 배열을 확인하세요.</p>
 <pre id="out">loading...</pre>
 <script>
 fetch('/api/summary',{cache:'no-store'}).then(r=>r.json()).then(d=>{
-  document.getElementById('out').textContent = JSON.stringify({
+  document.getElementById('out').textContent=JSON.stringify({
     broadcast:d.broadcast,
+    settingsCreators:d.settings&&d.settings.creators,
+    presets:d.settings&&d.settings.presets,
     accountDonors:d.accountDonors,
     creators:d.creators,
     donationsCount:(d.donations||[]).length,
-    donations:(d.donations||[]).slice(-5)
-  }, null, 2);
-}).catch(e=>{
-  document.getElementById('out').textContent = e.message;
-});
+    latestDonations:(d.donations||[]).slice(-5)
+  },null,2);
+}).catch(e=>document.getElementById('out').textContent=e.message);
 </script>
-</body>
-</html>
+</body></html>
