@@ -20,8 +20,26 @@ app.use(express.static('public'));
 
 function defaultPresets() {
   return [
-    { id: 'smoke', enabled: true, title: '펴피지마', plusName: '흡연', plusPrice: 11900, minusName: '금연', minusPrice: 12000 },
-    { id: 'food', enabled: true, title: '먹먹마', plusName: '먹어', plusPrice: 14000, minusName: '먹지마', minusPrice: 15000 }
+    {
+      id: 'smoke',
+      enabled: true,
+      title: '펴피지마',
+      plusName: '흡연',
+      plusPrice: 11900,
+      minusName: '금연',
+      minusPrice: 12000,
+      resetAt: null
+    },
+    {
+      id: 'food',
+      enabled: true,
+      title: '먹먹마',
+      plusName: '먹어',
+      plusPrice: 14000,
+      minusName: '먹지마',
+      minusPrice: 15000,
+      resetAt: null
+    }
   ];
 }
 
@@ -90,14 +108,15 @@ function normalizePreset(p, idx) {
   };
 
   return {
-    id: String(p?.id || defaults.id || `preset_${idx + 1}`).replace(/[^a-zA-Z0-9_-]/g, '') || `preset_${idx + 1}`,
-    enabled: p?.enabled !== false && p?.enabled !== 'false',
-    title: normName(p?.title || defaults.title),
-    plusName: normName(p?.plusName || defaults.plusName),
-    plusPrice: Math.max(0, toWon(p?.plusPrice ?? defaults.plusPrice)),
-    minusName: normName(p?.minusName || defaults.minusName),
-    minusPrice: Math.max(0, toWon(p?.minusPrice ?? defaults.minusPrice))
-  };
+  id: String(p?.id || defaults.id || `preset_${idx + 1}`).replace(/[^a-zA-Z0-9_-]/g, '') || `preset_${idx + 1}`,
+  enabled: p?.enabled !== false && p?.enabled !== 'false',
+  title: normName(p?.title || defaults.title),
+  plusName: normName(p?.plusName || defaults.plusName),
+  plusPrice: Math.max(0, toWon(p?.plusPrice ?? defaults.plusPrice)),
+  minusName: normName(p?.minusName || defaults.minusName),
+  minusPrice: Math.max(0, toWon(p?.minusPrice ?? defaults.minusPrice)),
+  resetAt: p?.resetAt || defaults.resetAt || null
+};
 }
 
 function normalizeSettings(settings) {
@@ -607,6 +626,52 @@ app.get('/api/settings', async (req, res) => {
     res.json(settings);
   } catch (e) {
     res.status(500).json({ error: e.message || '설정 조회 실패' });
+  }
+});
+app.post('/api/preset-reset', checkAuth, async (req, res) => {
+  try {
+    if (!requireDb(res)) return;
+
+    const presetId = normName(req.body.presetId);
+
+    if (!presetId) {
+      return res.status(400).json({
+        error: 'presetId가 없습니다.'
+      });
+    }
+
+    const old = await readSettings();
+
+    const presets = Array.isArray(old.presets)
+      ? old.presets.map((p, idx) => normalizePreset(p, idx))
+      : defaultPresets();
+
+    const target = presets.find(p => p.id === presetId);
+
+    if (!target) {
+      return res.status(404).json({
+        error: '프리셋을 찾을 수 없습니다.'
+      });
+    }
+
+    target.resetAt = new Date().toISOString();
+
+    const saved = await writeSettings({
+      ...old,
+      presets
+    });
+
+    res.json({
+      ok: true,
+      presetId,
+      resetAt: target.resetAt,
+      settings: saved
+    });
+
+  } catch (e) {
+    res.status(500).json({
+      error: e.message || '프리셋 리셋 실패'
+    });
   }
 });
 
