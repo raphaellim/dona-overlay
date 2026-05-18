@@ -628,6 +628,30 @@ app.get('/api/settings', async (req, res) => {
     res.status(500).json({ error: e.message || '설정 조회 실패' });
   }
 });
+
+
+app.post('/api/settings', checkAuth, async (req, res) => {
+  try {
+    if (!requireDb(res)) return;
+    const old = await readSettings();
+    const body = req.body || {};
+    const settings = normalizeSettings({
+      ...old,
+      title: String(body.title ?? old.title ?? '도네이터 현황'),
+      titleImage: String(body.titleImage ?? old.titleImage ?? ''),
+      notice: String(body.notice ?? old.notice ?? ''),
+      columns: body.columns ?? old.columns,
+      maxCreators: body.maxCreators ?? old.maxCreators,
+      creators: Array.isArray(body.creators) ? body.creators.map(normName).filter(Boolean) : old.creators,
+      presets: Array.isArray(body.presets) ? body.presets : old.presets
+    });
+    const saved = await writeSettings(settings);
+    res.json({ ok: true, settings: saved });
+  } catch (e) {
+    res.status(500).json({ error: e.message || '설정 저장 실패' });
+  }
+});
+
 app.post('/api/preset-reset', checkAuth, async (req, res) => {
   try {
     if (!requireDb(res)) return;
@@ -672,28 +696,6 @@ app.post('/api/preset-reset', checkAuth, async (req, res) => {
     res.status(500).json({
       error: e.message || '프리셋 리셋 실패'
     });
-  }
-});
-
-app.post('/api/settings', checkAuth, async (req, res) => {
-  try {
-    if (!requireDb(res)) return;
-    const old = await readSettings();
-    const body = req.body || {};
-    const settings = normalizeSettings({
-      ...old,
-      title: String(body.title ?? old.title ?? '도네이터 현황'),
-      titleImage: String(body.titleImage ?? old.titleImage ?? ''),
-      notice: String(body.notice ?? old.notice ?? ''),
-      columns: body.columns ?? old.columns,
-      maxCreators: body.maxCreators ?? old.maxCreators,
-      creators: Array.isArray(body.creators) ? body.creators.map(normName).filter(Boolean) : old.creators,
-      presets: Array.isArray(body.presets) ? body.presets : old.presets
-    });
-    const saved = await writeSettings(settings);
-    res.json({ ok: true, settings: saved });
-  } catch (e) {
-    res.status(500).json({ error: e.message || '설정 저장 실패' });
   }
 });
 
