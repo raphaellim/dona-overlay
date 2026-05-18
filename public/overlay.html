@@ -41,6 +41,8 @@
     overflow:hidden;
     background:transparent!important;
     font-family:"Pretendard","Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",Arial,sans-serif;
+    -webkit-font-smoothing: antialiased;
+  text-rendering: geometricPrecision;
   }
 
   .overlay-root{
@@ -74,27 +76,29 @@
   }
 
   .account-row{
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    gap:8px;
-    height:30px;
-    padding:0 0 8px;
-    border-bottom:1px solid var(--pink-soft);
-    font-weight:900;
-    letter-spacing:-.065em;
-    text-align:center;
-  }
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  height:34px;
+  padding:0 0 8px;
+  border-bottom:1px solid var(--pink-soft);
+  font-weight:900;
+  letter-spacing:-0.03em;
+  text-align:center;
+}
 
-  .account-title{
-    flex:0 0 auto;
-    font-size:22px;
-    color:var(--white);
-    white-space:nowrap;
-    text-shadow:
-      0 1px 2px rgba(0,0,0,.55),
-      0 0 5px rgba(255,120,165,.14);
-  }
+ .account-title{
+  flex:0 0 auto;
+  font-size:22px;
+  color:var(--white);
+  white-space:nowrap;
+  letter-spacing:-0.025em;
+  transform:none;
+  text-shadow:
+    0 2px 3px rgba(0,0,0,.75),
+    0 0 3px rgba(255,255,255,.18);
+}
 
   .roller{
     position:relative;
