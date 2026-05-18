@@ -6,7 +6,7 @@
 <title>후원현황 Overlay</title>
 <style>
   :root{
-    --panel-w:230px;
+    --panel-w:258px;
     --top:54px;
     --right:14px;
     --pink:rgba(255,155,185,.95);
@@ -16,10 +16,8 @@
     --muted:rgba(255,255,255,.76);
     --green:#7df18c;
     --blue:#83c9ff;
+    --red:#ff8a8a;
     --glass:rgba(10,8,13,.30);
-    --yellow:#ffe066;
-    --smoke-blue:#6ecbff;
-    --red:#ff5c5c;
   }
   *{box-sizing:border-box}
   html,body{
@@ -29,14 +27,14 @@
   .overlay-root{user-select:none;pointer-events:none;position:fixed;inset:0;width:100vw;height:100vh;background:transparent}
   .donation-panel{
     position:absolute;top:var(--top);right:var(--right)!important;left:auto!important;width:var(--panel-w);
-    padding:10px 10px;color:var(--white);
+    padding:11px 12px;color:var(--white);
     background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.012)),var(--glass);
-    border:2px solid var(--pink);border-radius:17px;
+    border:2px solid var(--pink);border-radius:19px;
     box-shadow:0 0 0 1px rgba(255,255,255,.03) inset,0 0 7px rgba(255,115,165,.12);
     backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);
   }
   .account-row{
-    display:flex;align-items:center;justify-content:center;gap:6px;height:30px;
+    display:flex;align-items:center;justify-content:center;gap:8px;height:30px;
     padding:0 0 8px;border-bottom:1px solid var(--pink-soft);
     font-weight:900;letter-spacing:-.065em;text-align:center;
   }
@@ -45,7 +43,7 @@
     text-shadow:0 1px 2px rgba(0,0,0,.55),0 0 5px rgba(255,120,165,.14);
   }
   .roller{
-    position:relative;height:28px;overflow:hidden;width:84px;min-width:84px;
+    position:relative;height:28px;overflow:hidden;width:92px;min-width:92px;
     color:var(--pink-text);font-size:21px;line-height:28px;font-weight:900;letter-spacing:-.055em;
     text-shadow:0 1px 2px rgba(0,0,0,.62),0 0 4px rgba(255,145,185,.18);
   }
@@ -53,7 +51,7 @@
   .roller-track.no-transition{transition:none!important}
   .roller-item{height:28px;line-height:28px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center}
   .creator-list{
-    padding-top:8px;display:flex;flex-direction:column;align-items:center;gap:6px;width:100%;
+    padding-top:8px;display:flex;flex-direction:column;align-items:center;gap:7px;width:100%;
   }
   .creator-item{padding:0;width:100%;text-align:center}
   .creator-main{
@@ -62,21 +60,21 @@
     text-shadow:0 1px 2px rgba(0,0,0,.70),0 0 4px rgba(255,255,255,.07);
   }
   .creator-name{
-    flex:0 0 66px;width:66px;color:var(--white);font-size:23px;line-height:1.05;
+    flex:0 0 72px;width:72px;color:var(--white);font-size:23px;line-height:1.05;
     white-space:nowrap;overflow:hidden;text-align:center;
   }
   .donation-amount{
     flex:0 0 auto;color:var(--pink-text);font-size:23px;line-height:1.05;white-space:nowrap;text-align:left;
   }
   .creator-sub{
-    display:flex;justify-content:center;align-items:center;gap:8px;width:100%;margin-top:2px;
+    display:flex;justify-content:center;align-items:center;gap:11px;width:100%;margin-top:2px;
     font-size:21px;line-height:1.08;font-weight:900;letter-spacing:-.064em;text-align:center;
     text-shadow:0 1px 2px rgba(0,0,0,.75),0 0 4px rgba(0,0,0,.30);
   }
   .state-item{white-space:nowrap;min-width:0;text-align:center}
-  .plus{color:var(--smoke-blue);}.blue,.red{color:var(--red);}.muted{color:var(--yellow);}
+  .plus{color:var(--green)} .blue{color:var(--blue)} .red{color:var(--red)} .muted{color:var(--muted)}
   .option-alert{
-    position:absolute;left:10px;right:10px;top:45px;z-index:10;
+    position:absolute;left:12px;right:12px;top:45px;z-index:10;
     padding:9px 10px;border-radius:14px;border:1px solid rgba(255,155,185,.70);
     background:rgba(10,8,13,.82);color:var(--white);font-size:21px;font-weight:900;
     text-align:center;letter-spacing:-.06em;
@@ -88,18 +86,18 @@
   .option-alert .alert-name{color:var(--pink-text)}
   .option-alert .alert-plus{color:var(--green)}
   .option-alert .alert-minus{color:var(--blue)}
+  .option-alert{line-height:1.25}
+  .alert-line1{font-size:20px;color:var(--white);margin-bottom:3px}
+  .alert-line2{display:flex;justify-content:center;gap:10px;font-size:22px;font-weight:900}
+  .alert-line2 span:first-child{color:var(--pink-text)}
   .empty{opacity:.72;font-size:18px;padding:14px 0 4px;text-align:center}
-  .option-alert{line-height:1.25;}
-  .alert-line1{font-size:20px;color:var(--white);margin-bottom:3px;}
-  .alert-line2{display:flex;justify-content:center;gap:10px;font-size:22px;font-weight:900;}
-  .alert-line2 span:first-child{color:var(--pink-text);}
   @media(max-width:520px){
-    :root{--panel-w:230px;--top:50px;--right:12px}
+    :root{--panel-w:252px;--top:50px;--right:12px}
     .donation-panel{padding:10px 11px}
-    .account-row{gap:6px}.account-title{font-size:21px}
-    .roller{width:82px;min-width:82px;font-size:20px}
-    .creator-name{flex-basis:64px;width:64px;font-size:22px}.donation-amount{font-size:22px}
-    .creator-sub{font-size:20px;gap:8px}.option-alert{font-size:20px}    
+    .account-row{gap:7px}.account-title{font-size:21px}
+    .roller{width:88px;min-width:88px;font-size:20px}
+    .creator-name{flex-basis:70px;width:70px;font-size:22px}.donation-amount{font-size:22px}
+    .creator-sub{font-size:20px;gap:10px}.option-alert{font-size:20px}
   }
 </style>
 </head>
@@ -233,10 +231,8 @@
     const donations=summary.donations||[];
     const byName=new Map();
 
-    // 1순위: 설정된 크리에이터 목록으로 0원 기본줄 생성
     zeroCreatorsFromSettings(settings).forEach(c => byName.set(c.creator, c));
 
-    // 2순위: 서버 summary creators 값이 있으면 total/status 덮어쓰기
     (summary.creators||summary.creatorSummary||summary.creator_summary||[]).forEach(c=>{
       const name=normalizeName(c.creator||c.name);
       if(!name) return;
@@ -248,7 +244,6 @@
       byName.set(name,base);
     });
 
-    // 3순위: donations 원본으로 다시 계산해서 덮어쓰기
     aggregateCreatorsFromDonations(donations, settings).forEach(c=>{
       const old=byName.get(c.creator)||c;
       old.total = c.total;
@@ -373,32 +368,31 @@
     if(key===lastDonationKey) return;
     lastDonationKey=key;
 
+    const donor=escapeHtml(latest.donor||"익명");
+    const creator=escapeHtml(latest.creator||"익명");
+
+    const accountAmount=num(latest.accountAmount??latest.account_amount);
+    const toonieAmount=num(latest.toonieAmount??latest.toonie_amount);
+    const totalAmount=num(latest.totalAmount??latest.total_amount??accountAmount+toonieAmount);
+    const amountText=displayAmount(totalAmount);
+
     const checks=Array.isArray(latest.checks)?latest.checks:[];
-    if(!checks.length) return;
+    let optionText="";
 
-    const ch = checks[checks.length - 1];
+    if(checks.length){
+      const ch=checks[checks.length-1];
+      const sign=ch.side==="minus"?"-":"+";
+      const cls=ch.side==="minus"?"alert-minus":"alert-plus";
+      const name=escapeHtml(ch.name||"옵션");
+      const count=Math.abs(num(ch.count));
+      optionText=`<span class="${cls}">${name}${sign}${count}</span>`;
+    }
 
-const sign = ch.side === "minus" ? "-" : "+";
-const cls = ch.side === "minus" ? "alert-minus" : "alert-plus";
-
-const donor = escapeHtml(latest.donor || "익명");
-const creator = escapeHtml(latest.creator || "익명");
-const name = escapeHtml(ch.name || "옵션");
-const count = Math.abs(num(ch.count));
-
-const accountAmount = num(latest.accountAmount ?? latest.account_amount);
-const toonieAmount = num(latest.toonieAmount ?? latest.toonie_amount);
-const totalAmount = num(latest.totalAmount ?? latest.total_amount ?? accountAmount + toonieAmount);
-const amountText = displayAmount(totalAmount);
-
-// 옵션 있을 때
-showOptionAlert(`
-  <div class="alert-line1">${donor} → ${creator}</div>
-  <div class="alert-line2">
-    <span>${amountText}</span>
-    <span class="${cls}">${name}${sign}${count}</span>
-  </div>
-`);
+    showOptionAlert(`
+      <div class="alert-line1"><span class="alert-name">${donor}</span> → ${creator}</div>
+      <div class="alert-line2"><span>${amountText}</span>${optionText}</div>
+    `);
+  }
 
   async function fetchJson(url){
     const res=await fetch(url,{cache:"no-store"});
@@ -465,6 +459,5 @@ showOptionAlert(`
   setInterval(refresh,5000);
 })();
 </script>
-<!-- tight side padding / compact panel version -->
 </body>
 </html>
