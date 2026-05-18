@@ -212,9 +212,27 @@ async function load(){
 
   if(!settings.presets || !settings.presets.length){
     settings.presets = [
-      {id:'smoke', enabled:true, title:'펴피지마', plusName:'흡연', plusPrice:11900, minusName:'금연', minusPrice:12000},
-      {id:'food', enabled:true, title:'먹먹마', plusName:'먹어', plusPrice:14000, minusName:'먹지마', plusPrice:15000}
-    ];
+  {
+    id:'smoke',
+    enabled:true,
+    title:'펴피지마',
+    plusName:'흡연',
+    plusPrice:11900,
+    minusName:'금연',
+    minusPrice:12000,
+    resetAt:null
+  },
+  {
+    id:'food',
+    enabled:true,
+    title:'먹먹마',
+    plusName:'먹어',
+    plusPrice:14000,
+    minusName:'먹지마',
+    minusPrice:15000,
+    resetAt:null
+  }
+];
   }
 
   renderPresets();
@@ -328,18 +346,26 @@ async function resetBroadcast(id){
   }
 }
 
-async function deleteBroadcast(id){
+async function resetPresetCounter(presetId){
   try{
     const pw = $('#pw').value;
-    if(!confirm('이 방송 세션과 해당 후원 데이터를 리스트에서 삭제할까요?')) return;
+    localStorage.setItem('ADMIN_PASSWORD', pw);
 
-    await api('/api/broadcasts/' + id, {
-      method:'DELETE',
-      headers:{'x-admin-password': pw}
+    if(!confirm('이 프리셋의 overlay 화면 카운트만 0으로 리셋할까요?\n기존 후원 기록은 삭제되지 않습니다.')){
+      return;
+    }
+
+    const res = await api('/api/preset-reset', {
+      method:'POST',
+      body:JSON.stringify({
+        password: pw,
+        presetId
+      })
     });
 
-    await loadBroadcasts();
-    alert('삭제되었습니다.');
+    alert('화면 카운트가 리셋되었습니다.');
+    await load();
+
   }catch(e){
     alert(e.message);
   }
@@ -375,6 +401,15 @@ function renderPresets(){
           <input class="input preset-minus-price" inputmode="numeric" value="${escAttr(p.minusPrice || '')}" placeholder="12000">
         </div>
       </div>
+
+      <div class="danger-zone">
+        <button class="btn red mini" type="button" onclick="resetPresetCounter('${escAttr(p.id)}')">
+          화면 카운트 리셋
+        </button>
+        <span class="muted">
+          ${p.resetAt ? '리셋: ' + new Date(p.resetAt).toLocaleString('ko-KR') : '리셋 없음'}
+        </span>
+      </div>
     </div>
   `).join('');
 }
@@ -383,28 +418,30 @@ function collectPresets(){
   return Array.from(document.querySelectorAll('.preset-card')).map((card, idx) => {
     const old = settings.presets[idx] || {};
     return {
-      id: old.id || `preset_${idx+1}`,
-      enabled: card.querySelector('.preset-enabled').checked,
-      title: card.querySelector('.preset-title-input').value.trim(),
-      plusName: card.querySelector('.preset-plus-name').value.trim(),
-      plusPrice: toWon(card.querySelector('.preset-plus-price').value),
-      minusName: card.querySelector('.preset-minus-name').value.trim(),
-      minusPrice: toWon(card.querySelector('.preset-minus-price').value)
-    };
+  id: old.id || `preset_${idx+1}`,
+  enabled: card.querySelector('.preset-enabled').checked,
+  title: card.querySelector('.preset-title-input').value.trim(),
+  plusName: card.querySelector('.preset-plus-name').value.trim(),
+  plusPrice: toWon(card.querySelector('.preset-plus-price').value),
+  minusName: card.querySelector('.preset-minus-name').value.trim(),
+  minusPrice: toWon(card.querySelector('.preset-minus-price').value),
+  resetAt: old.resetAt || null
+};
   }).filter(p => p.title && p.plusName && p.minusName);
 }
 
 function addPreset(){
   settings.presets = settings.presets || [];
   settings.presets.push({
-    id: 'preset_' + Date.now(),
-    enabled: true,
-    title: '새프리셋',
-    plusName: '플러스',
-    plusPrice: 10000,
-    minusName: '마이너스',
-    minusPrice: 10000
-  });
+  id: 'preset_' + Date.now(),
+  enabled: true,
+  title: '새프리셋',
+  plusName: '플러스',
+  plusPrice: 10000,
+  minusName: '마이너스',
+  minusPrice: 10000,
+  resetAt: null
+});
   renderPresets();
 }
 
