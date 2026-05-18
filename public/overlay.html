@@ -408,24 +408,26 @@
   let alertPlaying = false;
 
   const defaultSettings = {
-    creators:["빵떠기","또영","수박","몰라","익명"],
-    presets:[
-      {
-        id:"smoke",
-        enabled:true,
-        title:"펴피지마",
-        plusName:"흡연",
-        minusName:"금연"
-      },
-      {
-        id:"food",
-        enabled:true,
-        title:"먹먹마",
-        plusName:"먹어",
-        minusName:"먹지마"
-      }
-    ]
-  };
+  creators:["빵떠기","또영","수박","몰라","익명"],
+  presets:[
+    {
+      id:"smoke",
+      enabled:true,
+      title:"펴피지마",
+      plusName:"흡연",
+      minusName:"금연",
+      resetAt:null
+    },
+    {
+      id:"food",
+      enabled:true,
+      title:"먹먹마",
+      plusName:"먹어",
+      minusName:"먹지마",
+      resetAt:null
+    }
+  ]
+};
 
   const demoData = {
     settings: defaultSettings,
@@ -506,6 +508,36 @@
 
     return presets.filter(p => p && p.enabled !== false);
   }
+  function getDonationTime(d){
+  const t = new Date(d.createdAt || d.created_at || 0).getTime();
+  return Number.isFinite(t) ? t : 0;
+}
+
+function getPresetResetTime(settings, presetId, presetTitle){
+  const presets = Array.isArray(settings?.presets) ? settings.presets : [];
+
+  const preset = presets.find(p =>
+    (presetId && p.id === presetId) ||
+    (presetTitle && p.title === presetTitle)
+  );
+
+  if(!preset || !preset.resetAt) return 0;
+
+  const t = new Date(preset.resetAt).getTime();
+  return Number.isFinite(t) ? t : 0;
+}
+
+function isAfterPresetReset(donation, check, settings){
+  const donationTime = getDonationTime(donation);
+
+  const resetTime = getPresetResetTime(
+    settings,
+    check.presetId,
+    check.presetTitle
+  );
+
+  return donationTime >= resetTime;
+}
 
   function zeroCreatorsFromSettings(settings){
     const names = Array.isArray(settings?.creators) && settings.creators.length
@@ -578,39 +610,53 @@
       const row = map.get(creator);
 
       row.total += total;
-      row.smokeNet += num(d.smoke || 0) - num(d.nosmoke || 0);
-      row.eatNet += num(d.eat || 0) - num(d.noeat || 0);
+      const donationTime = getDonationTime(d);
 
-      (Array.isArray(d.checks) ? d.checks : []).forEach(ch => {
-        const key = ch.presetId || ch.presetTitle;
-        if(!key) return;
+const smokeResetTime = getPresetResetTime(settings, "smoke", "펴피지마");
+const foodResetTime = getPresetResetTime(settings, "food", "먹먹마");
 
-        let n = row.presetNets.find(x =>
-          (ch.presetId && x.presetId === ch.presetId) ||
-          (ch.presetTitle && x.presetTitle === ch.presetTitle)
-        );
+// 예전 호환용 smoke/eat 값도 리셋 시간 이후 것만 계산
+if(donationTime >= smokeResetTime){
+  row.smokeNet += num(d.smoke || 0) - num(d.nosmoke || 0);
+}
 
-        if(!n){
-          n = {
-            presetId:ch.presetId,
-            presetTitle:ch.presetTitle,
-            plusName:"",
-            minusName:"",
-            plus:0,
-            minus:0
-          };
+if(donationTime >= foodResetTime){
+  row.eatNet += num(d.eat || 0) - num(d.noeat || 0);
+}
 
-          row.presetNets.push(n);
-        }
+// 현재 방식 checks도 프리셋별 resetAt 이후 것만 계산
+(Array.isArray(d.checks) ? d.checks : []).forEach(ch => {
+  const key = ch.presetId || ch.presetTitle;
+  if(!key) return;
 
-        if(ch.side === "plus"){
-          n.plusName = ch.name;
-          n.plus += num(ch.count);
-        }else{
-          n.minusName = ch.name;
-          n.minus += num(ch.count);
-        }
-      });
+  if(!isAfterPresetReset(d, ch, settings)) return;
+
+  let n = row.presetNets.find(x =>
+    (ch.presetId && x.presetId === ch.presetId) ||
+    (ch.presetTitle && x.presetTitle === ch.presetTitle)
+  );
+
+  if(!n){
+    n = {
+      presetId:ch.presetId,
+      presetTitle:ch.presetTitle,
+      plusName:"",
+      minusName:"",
+      plus:0,
+      minus:0
+    };
+
+    row.presetNets.push(n);
+  }
+
+  if(ch.side === "plus"){
+    n.plusName = ch.name;
+    n.plus += num(ch.count);
+  }else{
+    n.minusName = ch.name;
+    n.minus += num(ch.count);
+  }
+});
     });
 
     return Array.from(map.values()).slice(0,5);
@@ -1038,12 +1084,13 @@
       accountDonors:data.accountDonors || [],
       creators,
       presets:enabledPresets.map(p => ({
-        id:p.id,
-        enabled:p.enabled,
-        title:p.title,
-        plusName:p.plusName,
-        minusName:p.minusName
-      }))
+  id:p.id,
+  enabled:p.enabled,
+  title:p.title,
+  plusName:p.plusName,
+  minusName:p.minusName,
+  resetAt:p.resetAt || null
+}))
     });
 
     checkLatestOptionAlert(data.donations || []);
