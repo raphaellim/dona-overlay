@@ -83,9 +83,15 @@ Manual Deploy → Deploy latest commit
 - `/donations.html` : 전체 입력 리스트 전체 페이지
 
 
-## overlay.html 크리에이터 표시 보강
+## overlay.html 완전 재구성
 
-- `/api/summary`에서 creators 배열이 비어오거나 전부 0으로 들어오는 경우,
-  overlay가 `donations` 원본 데이터를 기준으로 즉시 크리에이터별 후원금액을 다시 합산해서 표시합니다.
-- 계좌후원은 같은 도네이터명을 1번만 표시하고 계좌금액 합산으로 롤링합니다.
-- 크리에이터 후원금액은 기본 표시, 옵션값은 control.html 프리셋 ON/OFF 기준으로 표시합니다.
+계좌후원만 보이던 문제 원인:
+- 이전 overlay.html에서 크리에이터 이름 3글자 처리 함수가 빠지거나,
+- 서버 creators 배열이 비어오면 렌더링이 멈추는 경우가 있었습니다.
+
+이번 버전:
+- overlay.html을 완전 재작성했습니다.
+- formatCreatorName 함수 포함.
+- creators가 비어오면 donations 원본으로 즉시 재합산합니다.
+- 계좌후원은 도네이터별 계좌합산으로 표시합니다.
+- `/debug_overlay.html`에서 API 응답 확인 가능합니다.

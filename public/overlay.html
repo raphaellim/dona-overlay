@@ -16,15 +16,12 @@
     --white: rgba(255,255,255,.96);
     --muted: rgba(255,255,255,.76);
     --green: #7df18c;
-    --mint: #aef8d5;
-
+    --blue: #83c9ff;
+    --red: #ff8a8a;
     --glass: rgba(10, 8, 13, .30);
-    --glass-2: rgba(12, 8, 14, .16);
   }
 
-  *{
-    box-sizing:border-box;
-  }
+  *{ box-sizing:border-box; }
 
   html, body{
     margin:0;
@@ -32,28 +29,14 @@
     height:100%;
     overflow:hidden;
     background:transparent !important;
-    font-family:
-      "Pretendard",
-      "Noto Sans KR",
-      "Apple SD Gothic Neo",
-      "Malgun Gothic",
-      Arial,
-      sans-serif;
+    font-family:"Pretendard","Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",Arial,sans-serif;
   }
 
-  body{
-    position:relative;
-  }
-
-  /* OBS에서 드래그/선택 방지 */
   .overlay-root{
     user-select:none;
     pointer-events:none;
     position:fixed;
-    top:0;
-    left:0;
-    right:0;
-    bottom:0;
+    inset:0;
     width:100vw;
     height:100vh;
     background:transparent;
@@ -67,16 +50,12 @@
     width:var(--panel-w);
     padding:11px 12px 11px;
     color:var(--white);
-    background:
-      linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.012)),
-      var(--glass);
+    background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.012)), var(--glass);
     border:2px solid var(--pink);
     border-radius:19px;
-    box-shadow:
-      0 0 0 1px rgba(255,255,255,.03) inset,
-      0 0 7px rgba(255, 115, 165, .12);
-    backdrop-filter: blur(3px);
-    -webkit-backdrop-filter: blur(3px);
+    box-shadow:0 0 0 1px rgba(255,255,255,.03) inset, 0 0 7px rgba(255,115,165,.12);
+    backdrop-filter:blur(3px);
+    -webkit-backdrop-filter:blur(3px);
   }
 
   .account-row{
@@ -97,9 +76,7 @@
     font-size:22px;
     color:var(--white);
     text-align:center;
-    text-shadow:
-      0 1px 2px rgba(0,0,0,.55),
-      0 0 5px rgba(255, 120, 165, .14);
+    text-shadow:0 1px 2px rgba(0,0,0,.55), 0 0 5px rgba(255,120,165,.14);
     white-space:nowrap;
   }
 
@@ -115,9 +92,7 @@
     line-height:28px;
     font-weight:900;
     letter-spacing:-0.055em;
-    text-shadow:
-      0 1px 2px rgba(0,0,0,.62),
-      0 0 4px rgba(255, 145, 185, .18);
+    text-shadow:0 1px 2px rgba(0,0,0,.62), 0 0 4px rgba(255,145,185,.18);
   }
 
   .roller-track{
@@ -167,9 +142,7 @@
     font-weight:900;
     letter-spacing:-0.068em;
     text-align:center;
-    text-shadow:
-      0 1px 2px rgba(0,0,0,.70),
-      0 0 4px rgba(255,255,255,.07);
+    text-shadow:0 1px 2px rgba(0,0,0,.70), 0 0 4px rgba(255,255,255,.07);
   }
 
   .creator-name{
@@ -204,57 +177,36 @@
     font-weight:900;
     letter-spacing:-0.064em;
     text-align:center;
-    text-shadow:
-      0 1px 2px rgba(0,0,0,.75),
-      0 0 4px rgba(0,0,0,.30);
+    text-shadow:0 1px 2px rgba(0,0,0,.75), 0 0 4px rgba(0,0,0,.30);
   }
 
-  .state-smoke,
-  .state-food{
+  .state-item{
     white-space:nowrap;
     min-width:0;
     text-align:center;
   }
 
-  .plus{
-    color:var(--green);
-  }
-
-  .mint{
-    color:var(--mint);
-  }
-
-  .blue{
-    color:#80c8ff;
-  }
-
-  .red{
-    color:#ff8a8a;
-  }
+  .plus{ color:var(--green); }
+  .blue{ color:var(--blue); }
+  .red{ color:var(--red); }
+  .muted{ color:var(--muted); }
 
   .empty{
     opacity:.72;
-    font-size:20px;
-    padding:16px 0 4px;
+    font-size:18px;
+    padding:14px 0 4px;
     text-align:center;
   }
 
-  /* 모바일 세로 방송 기준 자동 축소 */
-  @media (max-width: 520px){
+  @media (max-width:520px){
     :root{
-      --panel-w: 252px;
-      --top: 50px;
-      --right: 12px;
+      --panel-w:252px;
+      --top:50px;
+      --right:12px;
     }
-    .donation-panel{
-      padding:10px 11px 10px;
-    }
-    .account-row{
-      gap:7px;
-    }
-    .account-title{
-      font-size:21px;
-    }
+    .donation-panel{ padding:10px 11px 10px; }
+    .account-row{ gap:7px; }
+    .account-title{ font-size:21px; }
     .roller{
       width:88px;
       min-width:88px;
@@ -265,44 +217,25 @@
       width:70px;
       font-size:22px;
     }
-    .donation-amount{
-      font-size:22px;
-    }
+    .donation-amount{ font-size:22px; }
     .creator-sub{
       font-size:20px;
       gap:10px;
     }
   }
-
-  /* OBS에서 1080x1920 세로 캔버스에 맞춘 고정 느낌 */
-  @media (min-height: 1200px) and (min-width: 700px){
-    :root{
-      --panel-w: 258px;
-      --top: 54px;
-      --right: 14px;
-    }
-  }
-
-  .state-item{
-    white-space:nowrap;
-    min-width:0;
-    text-align:center;
-  }
-
 </style>
 </head>
 <body>
   <div class="overlay-root">
-    <section class="donation-panel" id="panel">
+    <section class="donation-panel">
       <div class="account-row">
         <div class="account-title">계좌후원</div>
         <div class="roller" id="accountRoller">
           <div class="roller-track" id="rollerTrack">
-            <div class="roller-item">열려 : 20</div>
+            <div class="roller-item">- : 0</div>
           </div>
         </div>
       </div>
-
       <div class="creator-list" id="creatorList"></div>
     </section>
   </div>
@@ -310,8 +243,6 @@
 <script>
 (() => {
   const API_SUMMARY = "/api/summary";
-  const API_DONATIONS = "/api/donations";
-  const API_DATA = "/api/data";
 
   const demoData = {
     settings: {
@@ -321,17 +252,15 @@
       ]
     },
     accountDonors: [
-      { donor: "열려", amount: 200000 },
-      { donor: "또영", amount: 150000 },
-      { donor: "수박", amount: 80000 }
+      { donor:"열려", amount:36000 },
+      { donor:"또영", amount:15000 }
     ],
     creators: [
-      { creator: "빵떠기", total: 200000, smoke: 3, food: 1 },
-      { creator: "또영", total: 200000, smoke: 3, food: 1 },
-      { creator: "수박", total: 200000, smoke: 3, food: 1 },
-      { creator: "몰라", total: 200000, smoke: 3, food: 1 },
-      { creator: "익명", total: 200000, smoke: 3, food: 1 }
-    ]
+      { creator:"빵떠기", total:36000, smokeNet:-2, eatNet:0, presetNets:[{presetId:"smoke", plus:0, minus:2, plusName:"흡연", minusName:"금연"}, {presetId:"food", plus:0, minus:0, plusName:"먹어", minusName:"먹지마"}] },
+      { creator:"또영", total:20000, smokeNet:0, eatNet:0, presetNets:[{presetId:"smoke", plus:0, minus:0, plusName:"흡연", minusName:"금연"}, {presetId:"food", plus:0, minus:0, plusName:"먹어", minusName:"먹지마"}] },
+      { creator:"수박", total:20000, smokeNet:3, eatNet:1, presetNets:[{presetId:"smoke", plus:3, minus:0, plusName:"흡연", minusName:"금연"}, {presetId:"food", plus:1, minus:0, plusName:"먹어", minusName:"먹지마"}] }
+    ],
+    donations: []
   };
 
   const $list = document.getElementById("creatorList");
@@ -341,23 +270,146 @@
   let rollingIndex = 0;
   let rollingTimer = null;
   let enabledPresets = [];
+  let lastSignature = "";
 
   function num(v){
     const n = Number(v || 0);
     return Number.isFinite(n) ? n : 0;
   }
 
-  // 12600 -> 1.2 / 200000 -> 20
   function displayAmount(won){
     const n = num(won);
     const cut = Math.floor(n / 1000) / 10;
     return cut.toFixed(1).replace(/\.0$/, "");
   }
 
-  
+  function normalizeName(v){
+    return String(v ?? "").replace(/\s+/g, " ").trim();
+  }
+
+  function escapeHtml(str){
+    return String(str).replace(/[&<>"']/g, ch => ({
+      "&":"&amp;",
+      "<":"&lt;",
+      ">":"&gt;",
+      '"':"&quot;",
+      "'":"&#039;"
+    }[ch]));
+  }
+
+  function formatCreatorName(name){
+    const arr = Array.from(String(name || "").trim());
+    if(arr.length >= 3) return arr.slice(0, 3).join("");
+    if(arr.length === 2) return arr.join(" ");
+    if(arr.length === 1) return arr[0] + "  ";
+    return "익 명";
+  }
+
   function getEnabledPresets(settings){
     const presets = settings && Array.isArray(settings.presets) ? settings.presets : [];
     return presets.filter(p => p && p.enabled !== false);
+  }
+
+  function aggregateAccountDonorsFromDonations(donations){
+    const map = new Map();
+    (donations || []).forEach(d => {
+      const account = num(d.accountAmount ?? d.account_amount);
+      if(account <= 0) return;
+
+      const donor = normalizeName(d.donor || d.donor_name || "익명");
+      if(!map.has(donor)){
+        map.set(donor, { donor, amount:0, latestAt:d.createdAt || d.created_at || "" });
+      }
+      const row = map.get(donor);
+      row.amount += account;
+      if(new Date(d.createdAt || d.created_at || 0) > new Date(row.latestAt || 0)){
+        row.latestAt = d.createdAt || d.created_at || "";
+      }
+    });
+
+    return Array.from(map.values())
+      .sort((a,b) => new Date(b.latestAt || 0) - new Date(a.latestAt || 0))
+      .slice(0, 10);
+  }
+
+  function aggregateCreatorsFromDonations(donations){
+    const map = new Map();
+
+    (donations || []).forEach(d => {
+      const creator = normalizeName(d.creator || "익명");
+      const account = num(d.accountAmount ?? d.account_amount);
+      const toonie = num(d.toonieAmount ?? d.toonie_amount);
+      const total = num(d.totalAmount ?? d.total_amount ?? account + toonie);
+
+      if(!map.has(creator)){
+        map.set(creator, {
+          creator,
+          total:0,
+          smokeNet:0,
+          eatNet:0,
+          presetNets:[]
+        });
+      }
+
+      const row = map.get(creator);
+      row.total += total;
+      row.smokeNet += num(d.smoke || 0) - num(d.nosmoke || 0);
+      row.eatNet += num(d.eat || 0) - num(d.noeat || 0);
+
+      const checks = Array.isArray(d.checks) ? d.checks : [];
+      checks.forEach(ch => {
+        const key = ch.presetId || ch.presetTitle;
+        if(!key) return;
+
+        let n = row.presetNets.find(x =>
+          (ch.presetId && x.presetId === ch.presetId) ||
+          (ch.presetTitle && x.presetTitle === ch.presetTitle)
+        );
+
+        if(!n){
+          n = {
+            presetId: ch.presetId,
+            presetTitle: ch.presetTitle,
+            plusName:"",
+            minusName:"",
+            plus:0,
+            minus:0
+          };
+          row.presetNets.push(n);
+        }
+
+        if(ch.side === "plus"){
+          n.plusName = ch.name;
+          n.plus += num(ch.count);
+        }else{
+          n.minusName = ch.name;
+          n.minus += num(ch.count);
+        }
+      });
+    });
+
+    return Array.from(map.values())
+      .filter(c => num(c.total) > 0)
+      .sort((a,b) => num(b.total) - num(a.total))
+      .slice(0,5);
+  }
+
+  function normalizeCreatorRows(summary){
+    let creators = summary.creators || summary.creatorSummary || summary.creator_summary || [];
+
+    // 서버가 기본 크리에이터만 주고 total이 0이거나 빈 배열이면 donations로 복구
+    const hasVisible = (creators || []).some(c =>
+      num(c.total ?? c.totalAmount ?? c.total_amount ?? c.amount) > 0
+    );
+
+    if((!creators || !creators.length || !hasVisible) && Array.isArray(summary.donations)){
+      const fallback = aggregateCreatorsFromDonations(summary.donations);
+      if(fallback.length) creators = fallback;
+    }
+
+    return (creators || [])
+      .filter(c => num(c.total ?? c.totalAmount ?? c.total_amount ?? c.amount) > 0)
+      .slice(0,5);
   }
 
   function statusLabelsFromPresetNets(presets, row){
@@ -375,17 +427,14 @@
         const net = plus - minus;
 
         if(net > 0){
-          const name = n.plusName || preset.plusName || "+";
-          return `<span class="plus">${escapeHtml(name)} +${Math.abs(net)}</span>`;
+          return `<span class="plus">${escapeHtml(n.plusName || preset.plusName || "+")} +${Math.abs(net)}</span>`;
         }
         if(net < 0){
-          const name = n.minusName || preset.minusName || "-";
           const cls = preset.id === "food" ? "red" : "blue";
-          return `<span class="${cls}">${escapeHtml(name)} -${Math.abs(net)}</span>`;
+          return `<span class="${cls}">${escapeHtml(n.minusName || preset.minusName || "-")} -${Math.abs(net)}</span>`;
         }
       }
 
-      // 구버전 summary 호환
       if(preset.id === "smoke"){
         const net = num(row.smokeNet ?? row.smoke_net ?? (num(row.smoke || 0) - num(row.nosmoke || 0)));
         if(net > 0) return `<span class="plus">${escapeHtml(preset.plusName || "흡연")} +${Math.abs(net)}</span>`;
@@ -402,25 +451,8 @@
     });
   }
 
-  function normalizeName(v){
-    return String(v ?? "").replace(/\s+/g, " ").trim();
-  }
-
-  function statusText(kind, value){
-    const v = num(value);
-    if(kind === "smoke"){
-      if(v > 0) return `<span class="plus">흡연 +${Math.abs(v)}</span>`;
-      if(v < 0) return `<span class="blue">금연 -${Math.abs(v)}</span>`;
-      return `<span class="muted">흡금 0</span>`;
-    }
-    if(v > 0) return `<span class="mint">먹어 +${Math.abs(v)}</span>`;
-    if(v < 0) return `<span class="red">먹지마 -${Math.abs(v)}</span>`;
-    return `<span class="muted">먹먹마 0</span>`;
-  }
-
   function renderAccountRoller(items){
     rollingItems = items && items.length ? items : [{ donor:"-", amount:0 }];
-    rollingIndex = 0;
 
     if(rollingTimer){
       clearInterval(rollingTimer);
@@ -429,37 +461,36 @@
 
     const makeItemHtml = (item) => {
       const donor = normalizeName(item.donor || item.name || "익명");
-      const amount = displayAmount(item.amount || item.total || item.account_amount || 0);
+      const amount = displayAmount(item.amount ?? item.accountAmount ?? item.account_amount ?? item.total ?? 0);
       return `<div class="roller-item">${escapeHtml(donor)} : ${amount}</div>`;
     };
 
-    // 1개면 고정
     if(rollingItems.length <= 1){
+      rollingIndex = 0;
       $track.classList.add("no-transition");
       $track.innerHTML = rollingItems.map(makeItemHtml).join("");
       $track.style.transform = "translateY(0px)";
       return;
     }
 
-    // 마지막 다음 첫 번째가 자연스럽게 올라오도록 첫 번째를 뒤에 복제
     const renderItems = [...rollingItems, rollingItems[0]];
     $track.innerHTML = renderItems.map(makeItemHtml).join("");
 
+    rollingIndex = 0;
     $track.classList.add("no-transition");
     $track.style.transform = "translateY(0px)";
     $track.offsetHeight;
     $track.classList.remove("no-transition");
 
     const itemHeight = 28;
-    const holdMs = 2600;       // 각 항목이 머무는 시간. 마지막도 동일하게 오래 보임.
-    const transitionMs = 420;  // CSS transition 시간과 맞춤
+    const holdMs = 2600;
+    const transitionMs = 420;
 
     rollingTimer = setInterval(() => {
       rollingIndex += 1;
       $track.classList.remove("no-transition");
       $track.style.transform = `translateY(${-rollingIndex * itemHeight}px)`;
 
-      // clone 첫 번째에 도착하면, transition 완료 후 같은 모양의 진짜 첫 번째 위치로 무전환 리셋
       if(rollingIndex === rollingItems.length){
         setTimeout(() => {
           rollingIndex = 0;
@@ -473,7 +504,9 @@
   }
 
   function renderCreators(creators){
-    const rows = (creators || []).slice(0, 5);
+    const rows = (creators || []).filter(c =>
+      num(c.total ?? c.totalAmount ?? c.total_amount ?? c.amount) > 0
+    ).slice(0, 5);
 
     if(!rows.length){
       $list.innerHTML = `<div class="empty">크리에이터 후원 없음</div>`;
@@ -500,158 +533,47 @@
     }).join("");
   }
 
-  function escapeHtml(str){
-    return String(str).replace(/[&<>"']/g, ch => ({
-      "&":"&amp;",
-      "<":"&lt;",
-      ">":"&gt;",
-      '"':"&quot;",
-      "'":"&#039;"
-    }[ch]));
-  }
-
-  function summarizeFromDonations(donations){
-    const creatorMap = new Map();
-    const accountMap = new Map();
-
-    (donations || []).forEach(d => {
-      const creator = normalizeName(d.creator || "익명");
-      const donor = normalizeName(d.donor || d.donor_name || "익명");
-
-      const account = num(d.accountAmount ?? d.account_amount);
-      const toonie = num(d.toonieAmount ?? d.toonie_amount);
-      const total = num(d.totalAmount ?? d.total_amount ?? account + toonie);
-
-      if(account > 0){
-        if(!accountMap.has(donor)){
-          accountMap.set(donor, { donor, amount:0, latestAt:d.createdAt || d.created_at || "" });
-        }
-        const a = accountMap.get(donor);
-        a.amount += account;
-        if(new Date(d.createdAt || d.created_at || 0) > new Date(a.latestAt || 0)){
-          a.latestAt = d.createdAt || d.created_at || "";
-        }
-      }
-
-      if(!creatorMap.has(creator)){
-        creatorMap.set(creator, {
-          creator,
-          total: 0,
-          smokeNet: 0,
-          eatNet: 0,
-          presetNets: []
-        });
-      }
-
-      const row = creatorMap.get(creator);
-      row.total += total;
-      row.smokeNet += num(d.smoke || 0) - num(d.nosmoke || 0);
-      row.eatNet += num(d.eat || 0) - num(d.noeat || 0);
-
-      const checks = Array.isArray(d.checks) ? d.checks : [];
-      checks.forEach(ch => {
-        const key = ch.presetId || ch.presetTitle;
-        if(!key) return;
-
-        let n = row.presetNets.find(x => x.presetId === ch.presetId || x.presetTitle === ch.presetTitle);
-        if(!n){
-          n = {
-            presetId: ch.presetId,
-            presetTitle: ch.presetTitle,
-            plusName: "",
-            minusName: "",
-            plus: 0,
-            minus: 0
-          };
-          row.presetNets.push(n);
-        }
-
-        if(ch.side === "plus"){
-          n.plusName = ch.name;
-          n.plus += num(ch.count);
-        }else{
-          n.minusName = ch.name;
-          n.minus += num(ch.count);
-        }
-      });
-    });
-
-    const accountDonors = Array.from(accountMap.values())
-      .sort((a,b) => new Date(b.latestAt || 0) - new Date(a.latestAt || 0))
-      .slice(0, 10);
-
-    return {
-      accountDonors,
-      creators: Array.from(creatorMap.values())
-        .filter(c => num(c.total) > 0)
-        .sort((a,b) => num(b.total) - num(a.total))
-        .slice(0, 5)
-    };
-  }
-
   async function fetchJson(url){
-    const res = await fetch(url, { cache: "no-store" });
+    const res = await fetch(url, { cache:"no-store" });
     if(!res.ok) throw new Error(url + " " + res.status);
     return res.json();
   }
 
   async function loadData(){
     const params = new URLSearchParams(location.search);
-    if(params.get("demo") === "1"){
-      return demoData;
-    }
+    if(params.get("demo") === "1") return demoData;
 
-    // 서버마다 응답 구조가 조금 달라도 최대한 받아주기
     try{
       const s = await fetchJson(API_SUMMARY);
-      let creators = s.creators || s.creatorSummary || s.creator_summary || [];
 
-      // 서버에서 creators가 비어오면 donations 원본으로 오버레이에서 즉시 재합산
-      if((!creators || !creators.length) && Array.isArray(s.donations) && s.donations.length){
-        creators = summarizeFromDonations(s.donations).creators;
-      }
-
-      // creators가 있는데 전부 0처럼 들어오는 경우도 donations로 다시 계산
-      const hasVisibleTotal = (creators || []).some(c => Number(c.total || c.totalAmount || c.total_amount || c.amount || 0) > 0);
-      if(!hasVisibleTotal && Array.isArray(s.donations) && s.donations.length){
-        const fallback = summarizeFromDonations(s.donations);
-        if(fallback.creators.length) creators = fallback.creators;
-      }
+      const accountDonors = (s.accountDonors && s.accountDonors.length)
+        ? s.accountDonors
+        : aggregateAccountDonorsFromDonations(s.donations || []);
 
       return {
         settings: s.settings || {},
-        accountDonors: s.accountDonors || s.account_donors || s.recentAccounts || s.recent_account || [],
-        creators
+        accountDonors,
+        creators: normalizeCreatorRows(s),
+        donations: s.donations || []
       };
-    }catch(e){}
-
-    try{
-      const d = await fetchJson(API_DONATIONS);
-      const list = Array.isArray(d) ? d : (d.donations || d.rows || []);
-      return summarizeFromDonations(list);
-    }catch(e){}
-
-    try{
-      const d = await fetchJson(API_DATA);
-      const list = d.donations || [];
-      return summarizeFromDonations(list);
-    }catch(e){}
-
-    return demoData;
+    }catch(e){
+      return demoData;
+    }
   }
 
   async function refresh(){
     const data = await loadData();
     enabledPresets = getEnabledPresets(data.settings || {});
-    if(!enabledPresets.length && data.settings && Array.isArray(data.settings.presets)){
-      enabledPresets = [];
-    }
-    if(!enabledPresets.length && (!data.settings || !Array.isArray(data.settings.presets))){
-      enabledPresets = [
-        { id:"smoke", enabled:true, title:"펴피지마", plusName:"흡연", minusName:"금연" },
-        { id:"food", enabled:true, title:"먹먹마", plusName:"먹어", minusName:"먹지마" }
-      ];
-    }
+
+    const signature = JSON.stringify({
+      accountDonors: data.accountDonors || [],
+      creators: data.creators || [],
+      presets: enabledPresets.map(p => ({ id:p.id, enabled:p.enabled, title:p.title, plusName:p.plusName, minusName:p.minusName }))
+    });
+
+    if(signature === lastSignature) return;
+    lastSignature = signature;
+
     renderAccountRoller(data.accountDonors);
     renderCreators(data.creators);
   }
@@ -660,18 +582,5 @@
   setInterval(refresh, 5000);
 })();
 </script>
-<!-- right-fixed overlay version -->
-<!-- seamless-up-roller / right-aligned-creator version -->
-<!-- aligned-start / larger-status / adjusted-box version -->
-<!-- compact-no-right-gap / bigger-account-title version -->
-<!-- all-content-right-aligned-inside-panel version -->
-<!-- auto-width-content / equal-padding / right-edge-aligned version -->
-<!-- account-title-safe / auto-width-minmax version -->
-<!-- account-gap-tightened version -->
-<!-- fixed-center / 3-char-name-slot version -->
-<!-- seamless-css-loop-roller version -->
-<!-- stepped-smooth-roller-with-long-last-hold version -->
-<!-- preset-off-hidden-overlay version -->
-<!-- overlay creator fallback fixed -->
 </body>
 </html>
