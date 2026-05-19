@@ -20,26 +20,8 @@ app.use(express.static('public'));
 
 function defaultPresets() {
   return [
-    {
-      id: 'smoke',
-      enabled: true,
-      title: '펴피지마',
-      plusName: '흡연',
-      plusPrice: 11900,
-      minusName: '금연',
-      minusPrice: 12000,
-      resetAt: null
-    },
-    {
-      id: 'food',
-      enabled: true,
-      title: '먹먹마',
-      plusName: '먹어',
-      plusPrice: 14000,
-      minusName: '먹지마',
-      minusPrice: 15000,
-      resetAt: null
-    }
+    { id: 'smoke', enabled: true, title: '펴피지마', plusName: '흡연', plusPrice: 11900, minusName: '금연', minusPrice: 12000 },
+    { id: 'food', enabled: true, title: '먹먹마', plusName: '먹어', plusPrice: 14000, minusName: '먹지마', minusPrice: 15000 }
   ];
 }
 
@@ -48,6 +30,7 @@ function defaultSettings() {
     title: '도네이터 현황',
     titleImage: '',
     notice: '',
+    overlaySections: { account: true, notice: false, creators: true },
     columns: 4,
     maxCreators: 12,
     creators: ['빵떠기', '또영', '수박', '몰라', '익명'],
@@ -81,16 +64,6 @@ function toWon(v) {
 function displayMan(won) {
   return Math.trunc(Number(won || 0) / 1000) / 10;
 }
-function cutHundreds(won) {
-  const n = Number(won || 0);
-  if (!Number.isFinite(n)) return 0;
-
-  // 100원 단위 절삭
-  // 12,600 -> 12,000
-  // 11,900 -> 11,000
-  // 24,900 -> 24,000
-  return Math.floor(n / 1000) * 1000;
-}
 
 function displayManText(won) {
   return displayMan(won).toFixed(1).replace(/\.0$/, '');
@@ -108,15 +81,27 @@ function normalizePreset(p, idx) {
   };
 
   return {
-  id: String(p?.id || defaults.id || `preset_${idx + 1}`).replace(/[^a-zA-Z0-9_-]/g, '') || `preset_${idx + 1}`,
-  enabled: p?.enabled !== false && p?.enabled !== 'false',
-  title: normName(p?.title || defaults.title),
-  plusName: normName(p?.plusName || defaults.plusName),
-  plusPrice: Math.max(0, toWon(p?.plusPrice ?? defaults.plusPrice)),
-  minusName: normName(p?.minusName || defaults.minusName),
-  minusPrice: Math.max(0, toWon(p?.minusPrice ?? defaults.minusPrice)),
-  resetAt: p?.resetAt || defaults.resetAt || null
-};
+    id: String(p?.id || defaults.id || `preset_${idx + 1}`).replace(/[^a-zA-Z0-9_-]/g, '') || `preset_${idx + 1}`,
+    enabled: p?.enabled !== false && p?.enabled !== 'false',
+    title: normName(p?.title || defaults.title),
+    plusName: normName(p?.plusName || defaults.plusName),
+    plusPrice: Math.max(0, toWon(p?.plusPrice ?? defaults.plusPrice)),
+    minusName: normName(p?.minusName || defaults.minusName),
+    minusPrice: Math.max(0, toWon(p?.minusPrice ?? defaults.minusPrice))
+  };
+}
+
+
+
+function normalizeOverlaySections(raw, base) {
+  const fallback = base || { account: true, notice: false, creators: true };
+  const value = raw && typeof raw === 'object' ? raw : fallback;
+
+  return {
+    account: value.account !== false,
+    notice: value.notice === true,
+    creators: value.creators !== false
+  };
 }
 
 function normalizeSettings(settings) {
@@ -143,6 +128,7 @@ function normalizeSettings(settings) {
     title: String(raw.title ?? base.title),
     titleImage: String(raw.titleImage ?? base.titleImage),
     notice: String(raw.notice ?? base.notice),
+    overlaySections: normalizeOverlaySections(raw.overlaySections, base.overlaySections),
     columns: Math.max(1, Math.min(6, Number(raw.columns || base.columns))),
     maxCreators: Math.max(1, Math.min(50, Number(raw.maxCreators || base.maxCreators))),
     creators: Array.isArray(raw.creators) ? raw.creators.map(normName).filter(Boolean) : base.creators,
@@ -309,20 +295,15 @@ function makeDonationRow(body, settings, broadcastId) {
   const donor = normName(body.donor);
   const creator = normName(body.creator);
   const processType = normName(body.processType) || '후원';
-  const rawAccountAmount = toWon(body.accountAmount);
-const rawToonieAmount = toWon(body.toonieAmount);
-const rawTotal = rawAccountAmount + rawToonieAmount;
-
-// 합산/저장용 금액은 100원 단위 절삭
-const accountAmount = cutHundreds(rawAccountAmount);
-const toonieAmount = cutHundreds(rawToonieAmount);
-const total = accountAmount + toonieAmount;
+  const accountAmount = toWon(body.accountAmount);
+  const toonieAmount = toWon(body.toonieAmount);
+  const total = accountAmount + toonieAmount;
 
   if (!donor) throw new Error('도네이터명을 입력하세요.');
   if (!creator) throw new Error('크리에이터를 선택하세요.');
   if (total <= 0) throw new Error(`${creator}: 금액을 입력하세요.`);
 
-  const check = calcCheck(processType, rawTotal, settings);
+  const check = calcCheck(processType, total, settings);
 
   return {
     broadcast_id: broadcastId,
@@ -629,73 +610,28 @@ app.get('/api/settings', async (req, res) => {
   }
 });
 
-
 app.post('/api/settings', checkAuth, async (req, res) => {
   try {
     if (!requireDb(res)) return;
     const old = await readSettings();
     const body = req.body || {};
+
     const settings = normalizeSettings({
       ...old,
       title: String(body.title ?? old.title ?? '도네이터 현황'),
       titleImage: String(body.titleImage ?? old.titleImage ?? ''),
       notice: String(body.notice ?? old.notice ?? ''),
+      overlaySections: normalizeOverlaySections(body.overlaySections, old.overlaySections),
       columns: body.columns ?? old.columns,
       maxCreators: body.maxCreators ?? old.maxCreators,
       creators: Array.isArray(body.creators) ? body.creators.map(normName).filter(Boolean) : old.creators,
       presets: Array.isArray(body.presets) ? body.presets : old.presets
     });
+
     const saved = await writeSettings(settings);
     res.json({ ok: true, settings: saved });
   } catch (e) {
     res.status(500).json({ error: e.message || '설정 저장 실패' });
-  }
-});
-
-app.post('/api/preset-reset', checkAuth, async (req, res) => {
-  try {
-    if (!requireDb(res)) return;
-
-    const presetId = normName(req.body.presetId);
-
-    if (!presetId) {
-      return res.status(400).json({
-        error: 'presetId가 없습니다.'
-      });
-    }
-
-    const old = await readSettings();
-
-    const presets = Array.isArray(old.presets)
-      ? old.presets.map((p, idx) => normalizePreset(p, idx))
-      : defaultPresets();
-
-    const target = presets.find(p => p.id === presetId);
-
-    if (!target) {
-      return res.status(404).json({
-        error: '프리셋을 찾을 수 없습니다.'
-      });
-    }
-
-    target.resetAt = new Date().toISOString();
-
-    const saved = await writeSettings({
-      ...old,
-      presets
-    });
-
-    res.json({
-      ok: true,
-      presetId,
-      resetAt: target.resetAt,
-      settings: saved
-    });
-
-  } catch (e) {
-    res.status(500).json({
-      error: e.message || '프리셋 리셋 실패'
-    });
   }
 });
 
