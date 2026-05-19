@@ -7,6 +7,7 @@
 <link rel="icon" href="data:,">
 <style>
   :root{
+    --account-roll-height:34px;
     --overlay-w:285px;
     --top:54px;
     --right:14px;
@@ -25,8 +26,6 @@
     --account-name-color:#ffffff;
     --account-amount-color:#ffd1e0;
     --account-shadow:rgba(0,0,0,.85);
-    
-    --account-roll-height:34px;
   }
 
   *{box-sizing:border-box}
@@ -90,19 +89,19 @@
     text-shadow:0 2px 3px var(--account-shadow),0 0 8px rgba(255,255,255,.22);
   }
 
- .roller{
-  position:relative;
-  height:var(--account-roll-height);
-  overflow:hidden;
-  width:132px;
-  min-width:132px;
-  color:var(--account-amount-color);
-  font-size:25px;
-  line-height:1;
-  font-weight:950;
-  letter-spacing:-.055em;
-  text-shadow:0 2px 3px var(--account-shadow),0 0 8px rgba(255,160,195,.28);
-}
+  .roller{
+    position:relative;
+    height:32px;
+    overflow:hidden;
+    width:132px;
+    min-width:132px;
+    color:var(--account-amount-color);
+    font-size:25px;
+    line-height:32px;
+    font-weight:950;
+    letter-spacing:-.055em;
+    text-shadow:0 2px 3px var(--account-shadow),0 0 8px rgba(255,160,195,.28);
+  }
 
   .roller-track{
     position:absolute;
@@ -116,18 +115,14 @@
   .roller-track.no-transition{transition:none!important}
 
   .roller-item{
-  height:var(--account-roll-height);
-  line-height:1;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
-  text-align:center;
-  color:var(--account-amount-color);
-  padding-top:1px;
-}
+    height:32px;
+    line-height:32px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    text-align:center;
+    color:var(--account-amount-color);
+  }
 
   .account-donor{color:var(--account-name-color)}
   .account-amount{color:var(--account-amount-color)}
@@ -406,6 +401,52 @@
     color:#ff6b7c !important;
   }
 
+
+  /* 프리즘 스케일링 롤링 위치 고정 */
+  .roller{
+    height:var(--account-roll-height) !important;
+    line-height:1 !important;
+    overflow:hidden !important;
+  }
+
+  .roller-track{
+    top:0 !important;
+    transform:translate3d(0,0,0);
+    will-change:transform;
+  }
+
+  .roller-item{
+    height:var(--account-roll-height) !important;
+    min-height:var(--account-roll-height) !important;
+    line-height:1 !important;
+    display:flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+    padding-top:2px !important;
+    padding-bottom:0 !important;
+  }
+
+  .account-row{
+    align-items:center !important;
+  }
+
+
+  /* 프리즘 폰트 baseline 보정 */
+  .creator-main{
+    align-items:center !important;
+    line-height:1 !important;
+    padding-top:2px !important;
+  }
+  .creator-name,
+  .donation-amount{
+    line-height:1 !important;
+  }
+  .creator-sub{
+    align-items:center !important;
+    line-height:1 !important;
+    padding-top:2px !important;
+  }
+
 </style>
 </head>
 <body>
@@ -673,38 +714,46 @@
       return `<div class="roller-item"><span class="account-donor">${escapeHtml(donor)}</span> <span class="account-sep">:</span> <span class="account-amount">${amount}</span></div>`;
     };
 
+    const moveToIndex = (index, useTransition=true) => {
+      const item = $track.children[index];
+      const y = item ? item.offsetTop : 0;
+
+      if(useTransition){
+        $track.classList.remove("no-transition");
+      }else{
+        $track.classList.add("no-transition");
+      }
+
+      // offsetTop 기준으로 이동해서 프리즘 스케일/폰트 렌더링 차이에도 누적 오차가 생기지 않음
+      $track.style.transform = `translate3d(0, ${-y}px, 0)`;
+    };
+
     if(rollingItems.length<=1){
       rollingIndex=0;
-      $track.classList.add("no-transition");
       $track.innerHTML=rollingItems.map(makeItemHtml).join("");
-      $track.style.transform="translateY(0px)";
+      moveToIndex(0, false);
       return;
     }
 
     const renderItems=[...rollingItems,rollingItems[0]];
     $track.innerHTML=renderItems.map(makeItemHtml).join("");
+
     rollingIndex=0;
-    $track.classList.add("no-transition");
-    $track.style.transform="translateY(0px)";
+    moveToIndex(0, false);
     $track.offsetHeight;
     $track.classList.remove("no-transition");
 
-    const itemHeight = parseFloat(
-  getComputedStyle(document.documentElement)
-    .getPropertyValue("--account-roll-height")
-) || 34;
+    const holdMs=2600;
+    const transitionMs=420;
 
-const holdMs = 2600;
-const transitionMs = 420;
     rollingTimer=setInterval(()=>{
       rollingIndex+=1;
-      $track.classList.remove("no-transition");
-      $track.style.transform=`translateY(${-rollingIndex*itemHeight}px)`;
+      moveToIndex(rollingIndex, true);
+
       if(rollingIndex===rollingItems.length){
         setTimeout(()=>{
           rollingIndex=0;
-          $track.classList.add("no-transition");
-          $track.style.transform="translateY(0px)";
+          moveToIndex(0, false);
           $track.offsetHeight;
           $track.classList.remove("no-transition");
         },transitionMs+30);
