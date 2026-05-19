@@ -93,6 +93,7 @@ function normalizePreset(p, idx) {
 
 
 
+
 function normalizeOverlaySections(raw, base) {
   const fallback = base || { account: true, notice: false, creators: true };
   const value = raw && typeof raw === 'object' ? raw : fallback;

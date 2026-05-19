@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="ko">
+<head><meta charset="utf-8"><title>Settings Debug</title>
+<style>body{background:#111;color:#eee;font-family:monospace;padding:20px}pre{background:#000;padding:15px;border-radius:10px;white-space:pre-wrap}</style></head>
+<body>
+<h1>Settings Debug</h1>
+<pre id="out">loading...</pre>
+<script>
+fetch('/api/settings',{cache:'no-store'})
+  .then(r=>r.json())
+  .then(d=>document.getElementById('out').textContent=JSON.stringify(d.overlaySections,null,2))
+  .catch(e=>document.getElementById('out').textContent=e.message);
+</script>
+</body></html>

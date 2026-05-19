@@ -118,3 +118,74 @@ Manual Deploy → Deploy latest commit
 - overlay.html은 이제 `/api/summary` 데이터가 비어도 `/api/settings`의 creators 목록을 읽어서 기본 표시합니다.
 - 후원이 없으면 `크리에이터 - 후원(0)`으로 표시됩니다.
 - `/debug_overlay.html`에서 settings.creators가 정상으로 오는지 확인할 수 있습니다.
+
+
+## creator_detail.html 상단 집계 추가
+
+- 선택된 크리에이터 기준 상단에 아래 항목을 표시합니다.
+  - 전체 후원금액
+  - 계좌 합계
+  - 투네 합계
+  - 도네이터 수
+  - 옵션 합계: 흡연/금연, 먹어/먹지마 등 프리셋 ON 항목 기준
+- 도네이터 리스트에 순번 컬럼을 추가했습니다.
+
+
+## donor_detail.html 추가
+
+- `/donor_detail.html` 페이지 추가
+- 도네이터를 전체 / 계좌만 / 투네만 탭으로 분류해서 확인 가능
+- 계좌만 선택 시 계좌 후원 있는 도네이터만 표시
+- 투네만 선택 시 투네 후원 있는 도네이터만 표시
+- 상단에 도네이터 수, 계좌 총합, 투네 총합, 전체 합산 표시
+- 도네이터 검색 가능
+- 정렬 가능: 자동, 전체합계, 계좌, 투네, 이름순
+- 도네이터 클릭 시 선택한 분류 기준의 상세 입력 리스트 표시
+
+
+## overlay.html 3박스 분리
+
+- overlay를 계좌박스 / 공지박스 / 크리에이터박스 3개로 분리했습니다.
+- control.html에서 노출 박스를 선택할 수 있습니다.
+  - 계좌박스
+  - 공지박스
+  - 크리에이터박스
+- 공지박스는 공지문구가 있고, 공지박스 ON일 때만 표시됩니다.
+- 계좌후원만 표시하거나, 전체 박스를 모두 표시하는 방식으로 운영할 수 있습니다.
+
+
+## control.html 오버레이 박스 선택 기능
+
+control.html 기본 설정 영역에 아래 체크박스가 추가되었습니다.
+
+- 계좌박스
+- 공지박스
+- 크리에이터박스
+
+체크한 항목만 overlay.html에 표시됩니다.
+공지박스는 공지문구가 있고, 공지박스가 ON일 때만 표시됩니다.
+
+
+## control.html 오버레이 박스 체크 중복/저장 수정
+
+- 중복으로 보이던 오버레이 체크 영역을 제거했습니다.
+- 계좌박스 / 공지박스 / 크리에이터박스 체크 영역은 1개만 표시됩니다.
+- 저장 후에도 overlaySections 값이 유지되도록 server.js 저장 로직을 보강했습니다.
+
+
+## overlaySections 저장 오류 수정
+
+- 공지박스 체크 후 저장하면 다시 OFF로 돌아가던 문제 수정.
+- server.js의 /api/settings 저장 로직을 교체하여 overlaySections가 Supabase settings.data에 저장됩니다.
+- control.html의 중복 체크박스를 제거하고 1개 영역만 유지했습니다.
+- `/debug_settings.html`에서 현재 저장된 overlaySections 값을 확인할 수 있습니다.
+
+
+## overlay 적용/알림/효과음 수정
+
+- overlay.html이 settings.overlaySections를 직접 읽어서 계좌/공지/크리에이터 박스를 표시합니다.
+- /debug_overlay.html 에서 settingsOverlaySections와 summaryOverlaySections를 확인할 수 있습니다.
+- alert.mp3 효과음 재생 코드가 추가되었습니다.
+  - 파일 위치: public/sounds/alert.mp3
+  - 이 ZIP에는 음원 파일은 포함하지 않았습니다. 직접 alert.mp3를 넣어주세요.
+- 알림 박스 디자인을 더 화려하고 시인성 좋게 변경했습니다.
