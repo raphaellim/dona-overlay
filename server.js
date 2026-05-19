@@ -29,13 +29,15 @@ function defaultSettings() {
   return {
     title: '도네이터 현황',
     titleImage: '',
+    noticeTitle: '공지',
     notice: '',
     overlaySections: { account: true, notice: false, creators: true },
     columns: 4,
     maxCreators: 12,
     creators: ['빵떠기', '또영', '수박', '몰라', '익명'],
     presets: defaultPresets(),
-    prices: { smoke: 11900, nosmoke: 12000, eat: 14000, noeat: 15000 }
+    prices: { smoke: 11900, nosmoke: 12000, eat: 14000, noeat: 15000 },
+    sessionSettings: {}
   };
 }
 
@@ -128,6 +130,7 @@ function normalizeSettings(settings) {
     ...raw,
     title: String(raw.title ?? base.title),
     titleImage: String(raw.titleImage ?? base.titleImage),
+    noticeTitle: String(raw.noticeTitle ?? base.noticeTitle ?? '공지'),
     notice: String(raw.notice ?? base.notice),
     overlaySections: normalizeOverlaySections(raw.overlaySections, base.overlaySections),
     columns: Math.max(1, Math.min(6, Number(raw.columns || base.columns))),
@@ -141,6 +144,78 @@ function normalizeSettings(settings) {
       noeat: food.minusPrice
     }
   };
+}
+
+
+const BROADCAST_SETTING_FIELDS = [
+  'title',
+  'titleImage',
+  'noticeTitle',
+  'notice',
+  'overlaySections',
+  'columns',
+  'maxCreators',
+  'creators',
+  'presets',
+  'prices'
+];
+
+function pickBroadcastSettings(settings) {
+  const src = normalizeSettings(settings || {});
+  const picked = {};
+  for (const key of BROADCAST_SETTING_FIELDS) {
+    if (src[key] !== undefined) picked[key] = src[key];
+  }
+  return JSON.parse(JSON.stringify(picked));
+}
+
+function mergeBroadcastSettings(settings, broadcastId) {
+  const base = normalizeSettings(settings || {});
+  const sessionMap = base.sessionSettings || {};
+  const scoped = broadcastId && sessionMap[broadcastId] ? sessionMap[broadcastId] : {};
+  return normalizeSettings({
+    ...base,
+    ...scoped,
+    sessionSettings: sessionMap
+  });
+}
+
+function saveBroadcastSettingsToMap(settings, broadcastId, updates) {
+  const base = normalizeSettings(settings || {});
+  const effective = normalizeSettings({
+    ...mergeBroadcastSettings(base, broadcastId),
+    ...(updates || {})
+  });
+
+  const sessionSettings = {
+    ...(base.sessionSettings || {}),
+    [broadcastId]: pickBroadcastSettings(effective)
+  };
+
+  return normalizeSettings({
+    ...base,
+    sessionSettings
+  });
+}
+
+async function readEffectiveSettings(broadcastId) {
+  const settings = await readSettings();
+  return mergeBroadcastSettings(settings, broadcastId);
+}
+
+async function copySettingsToBroadcast(broadcastId) {
+  if (!broadcastId) return;
+  const current = await readSettings();
+  const next = saveBroadcastSettingsToMap(current, broadcastId, mergeBroadcastSettings(current, null));
+  await writeSettings(next);
+}
+
+async function removeBroadcastSettings(broadcastId) {
+  if (!broadcastId) return;
+  const settings = await readSettings();
+  const sessionSettings = { ...(settings.sessionSettings || {}) };
+  delete sessionSettings[broadcastId];
+  await writeSettings({ ...settings, sessionSettings });
 }
 
 function checkAuth(req, res, next) {
@@ -534,6 +609,7 @@ app.post('/api/broadcasts', checkAuth, async (req, res) => {
       .single();
 
     if (error) throw error;
+    await copySettingsToBroadcast(data.id);
     res.json({ ok: true, broadcast: broadcastToClient(data) });
   } catch (e) {
     res.status(400).json({ error: e.message || '방송 생성 실패' });
@@ -604,8 +680,9 @@ app.delete('/api/broadcasts/:id', checkAuth, async (req, res) => {
 app.get('/api/settings', async (req, res) => {
   try {
     if (!requireDb(res)) return;
-    const settings = await readSettings();
-    res.json(settings);
+    const active = await ensureActiveBroadcast();
+    const settings = await readEffectiveSettings(active.id);
+    res.json({ ...settings, broadcast: broadcastToClient(active) });
   } catch (e) {
     res.status(500).json({ error: e.message || '설정 조회 실패' });
   }
@@ -614,23 +691,27 @@ app.get('/api/settings', async (req, res) => {
 app.post('/api/settings', checkAuth, async (req, res) => {
   try {
     if (!requireDb(res)) return;
+    const active = await ensureActiveBroadcast();
     const old = await readSettings();
     const body = req.body || {};
 
-    const settings = normalizeSettings({
-      ...old,
-      title: String(body.title ?? old.title ?? '도네이터 현황'),
-      titleImage: String(body.titleImage ?? old.titleImage ?? ''),
-      notice: String(body.notice ?? old.notice ?? ''),
-      overlaySections: normalizeOverlaySections(body.overlaySections, old.overlaySections),
-      columns: body.columns ?? old.columns,
-      maxCreators: body.maxCreators ?? old.maxCreators,
-      creators: Array.isArray(body.creators) ? body.creators.map(normName).filter(Boolean) : old.creators,
-      presets: Array.isArray(body.presets) ? body.presets : old.presets
-    });
+    const updates = {
+      title: String(body.title ?? '도네이터 현황'),
+      titleImage: String(body.titleImage ?? ''),
+      noticeTitle: String(body.noticeTitle ?? '공지'),
+      notice: String(body.notice ?? ''),
+      overlaySections: normalizeOverlaySections(body.overlaySections, { account: true, notice: false, creators: true }),
+      columns: body.columns ?? 4,
+      maxCreators: body.maxCreators ?? 12,
+      creators: Array.isArray(body.creators) ? body.creators.map(normName).filter(Boolean) : [],
+      presets: Array.isArray(body.presets) ? body.presets : []
+    };
 
-    const saved = await writeSettings(settings);
-    res.json({ ok: true, settings: saved });
+    const nextGlobal = saveBroadcastSettingsToMap(old, active.id, updates);
+    const savedGlobal = await writeSettings(nextGlobal);
+    const effective = mergeBroadcastSettings(savedGlobal, active.id);
+
+    res.json({ ok: true, settings: { ...effective, broadcast: broadcastToClient(active) } });
   } catch (e) {
     res.status(500).json({ error: e.message || '설정 저장 실패' });
   }
@@ -652,9 +733,9 @@ app.get('/api/donations', async (req, res) => {
 app.get('/api/summary', async (req, res) => {
   try {
     if (!requireDb(res)) return;
-    const settings = await readSettings();
     const active = await ensureActiveBroadcast();
     const broadcastId = req.query.broadcastId || active.id;
+    const settings = await readEffectiveSettings(broadcastId);
     const donations = await readDonations(broadcastId);
     res.json(buildSummary(settings, donations, active));
   } catch (e) {
@@ -665,8 +746,8 @@ app.get('/api/summary', async (req, res) => {
 app.post('/api/donations', checkAuth, async (req, res) => {
   try {
     if (!requireDb(res)) return;
-    const settings = await readSettings();
     const active = await ensureActiveBroadcast();
+    const settings = await readEffectiveSettings(active.id);
     const row = makeDonationRow(req.body || {}, settings, active.id);
 
     const { data, error } = await supabase.from('donations').insert(row).select().single();
@@ -680,8 +761,8 @@ app.post('/api/donations', checkAuth, async (req, res) => {
 app.post('/api/donations/batch', checkAuth, async (req, res) => {
   try {
     if (!requireDb(res)) return;
-    const settings = await readSettings();
     const active = await ensureActiveBroadcast();
+    const settings = await readEffectiveSettings(active.id);
 
     const donor = normName(req.body.donor);
     const processType = normName(req.body.processType) || '후원';

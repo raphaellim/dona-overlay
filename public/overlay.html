@@ -143,6 +143,7 @@
     letter-spacing:-.055em;
     text-shadow:0 2px 3px rgba(0,0,0,.85);
     word-break:keep-all;
+    white-space:pre-line;
   }
 
   .creator-list{
@@ -289,6 +290,10 @@
     .alert-line1{font-size:20px}
     .alert-line2{font-size:25px}
   }
+
+  .notice-text{
+    min-height:24px;
+  }
 </style>
 </head>
 <body>
@@ -306,7 +311,7 @@
       </section>
 
       <section class="overlay-box notice-box" id="noticeBox">
-        <div class="notice-title">공지</div>
+        <div class="notice-title" id="noticeTitleText">공지</div>
         <div class="notice-text" id="noticeText"></div>
       </section>
 
@@ -326,6 +331,7 @@
   const $noticeBox = document.getElementById("noticeBox");
   const $creatorBox = document.getElementById("creatorBox");
   const $noticeText = document.getElementById("noticeText");
+  const $noticeTitleText = document.getElementById("noticeTitleText");
   const $list = document.getElementById("creatorList");
   const $track = document.getElementById("rollerTrack");
   const $alert = document.getElementById("optionAlert");
@@ -345,6 +351,7 @@
   let alertPlaying = false;
 
   const defaultSettings = {
+    noticeTitle:"공지",
     notice:"",
     overlaySections:{ account:true, notice:false, creators:true },
     creators:["빵떠기","또영","수박","몰라","익명"],
@@ -402,9 +409,10 @@
 
     $accountBox.classList.toggle("hidden", !sections.account);
     $creatorBox.classList.toggle("hidden", !sections.creators);
-    $noticeBox.classList.toggle("hidden", !sections.notice || !notice);
+    $noticeBox.classList.toggle("hidden", !sections.notice);
 
-    $noticeText.textContent = notice;
+    $noticeTitleText.textContent = normalizeName(settings?.noticeTitle || "공지");
+    $noticeText.textContent = notice || "공지문구 없음";
   }
 
   function zeroCreatorsFromSettings(settings){
@@ -726,6 +734,7 @@
     const signature=JSON.stringify({
       sections:getOverlaySections(settings),
       notice:settings.notice||"",
+      noticeTitle:settings.noticeTitle||"공지",
       accountDonors:data.accountDonors||[],
       creators,
       presets:enabledPresets.map(p=>({id:p.id,enabled:p.enabled,title:p.title,plusName:p.plusName,minusName:p.minusName}))
@@ -745,5 +754,6 @@
   setInterval(refresh,5000);
 })();
 </script>
+<!-- notice box visible when ON even without text -->
 </body>
 </html>
