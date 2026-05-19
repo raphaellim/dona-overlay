@@ -8,6 +8,40 @@
 <style>
   :root{--bg:#070b12;--card:#0b1220;--card2:#0f172a;--line:#253247;--line2:#334155;--text:#e5e7eb;--muted:#94a3b8;--blue:#2563eb;--green:#16a34a;--red:#dc2626;--pink:#ec4899}
   *{box-sizing:border-box} body{background:var(--bg);color:var(--text);margin:0}.wrap{max-width:1240px;margin:0 auto;padding:22px}.top{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:16px}.title{font-size:30px;font-weight:950;letter-spacing:-.06em}.nav{display:flex;gap:8px;flex-wrap:wrap}.nav a{text-decoration:none;color:#dbeafe;background:#111827;border:1px solid var(--line2);padding:10px 14px;border-radius:12px;font-weight:900}.layout{display:grid;grid-template-columns:1.05fr .95fr;gap:14px;align-items:start}.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;box-shadow:0 8px 24px rgba(0,0,0,.18)}.card + .card{margin-top:14px}.card h2{font-size:20px;margin:0 0 12px;font-weight:950;letter-spacing:-.05em;display:flex;align-items:center;justify-content:space-between;gap:8px}.sub-card{background:var(--card2);border:1px solid var(--line2);border-radius:14px;padding:12px;margin-top:10px}.muted{color:var(--muted);font-size:13px;line-height:1.45}.row{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}label{font-size:13px;color:#cbd5e1;font-weight:900}.input,select,textarea{width:100%;background:#070b12;color:var(--text);border:1px solid var(--line2);border-radius:12px;padding:11px 12px;font-size:15px;outline:none}.input:focus,select:focus,textarea:focus{border-color:#60a5fa;box-shadow:0 0 0 3px rgba(37,99,235,.18)}textarea{resize:vertical;line-height:1.45}.notice-area{min-height:110px}.creator-area{min-height:180px}.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}.btn{border:0;border-radius:12px;padding:10px 13px;font-weight:900;cursor:pointer;background:#334155;color:#fff}.btn.green{background:var(--green)}.btn.red{background:var(--red)}.btn.blue{background:var(--blue)}.btn.gray{background:#334155}.btn.mini{font-size:12px;padding:7px 9px;border-radius:9px}.resultBox{background:#08111f;border:1px solid var(--line2);border-radius:12px;padding:11px 12px;font-weight:900;color:#dbeafe;margin-bottom:10px}.broadcast-create{display:grid;grid-template-columns:1fr auto;gap:8px;margin-bottom:10px}.broadcast-list{display:flex;flex-direction:column;gap:8px;min-height:318px}.broadcast-item{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;border:1px solid var(--line2);border-radius:13px;background:var(--card2);padding:10px 11px;min-height:56px}.broadcast-item.active{border-color:#22c55e;background:linear-gradient(90deg,rgba(34,197,94,.14),rgba(15,23,42,.95))}.broadcast-title{font-size:16px;font-weight:950;letter-spacing:-.045em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.broadcast-meta{font-size:12px;color:var(--muted);margin-top:3px}.broadcast-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}.pill{display:inline-flex;align-items:center;justify-content:center;padding:4px 8px;border-radius:999px;font-size:12px;font-weight:900;background:#14532d;color:#bbf7d0;margin-left:4px}.pager{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:12px;color:#cbd5e1;font-weight:900}.toggle-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.toggle-box{display:flex;align-items:center;gap:9px;padding:12px;border:1px solid var(--line2);border-radius:13px;background:#070b12;color:var(--text);font-weight:950;cursor:pointer;user-select:none}.toggle-box input{width:20px;height:20px;accent-color:var(--pink)}.preset-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.preset-card{background:var(--card2);border:1px solid var(--line2);border-radius:14px;padding:12px}.preset-card.off{opacity:.55}.preset-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}.preset-name{font-size:17px;font-weight:950;letter-spacing:-.045em}.preset-actions{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end}.toggle{display:flex;align-items:center;gap:6px;font-weight:900;color:#cbd5e1;font-size:13px}.toggle input{width:18px;height:18px;accent-color:var(--green)}.preset-fields{display:grid;grid-template-columns:1fr 1fr;gap:7px}.preset-fields .full{grid-column:1/-1}.preset-fields label{font-size:11px}.preset-fields .input{padding:8px 9px;font-size:14px;border-radius:10px}.savebar{position:sticky;bottom:10px;z-index:10;margin-top:12px;background:rgba(15,23,42,.92);border:1px solid var(--line2);border-radius:16px;padding:10px;display:flex;gap:8px;align-items:center;justify-content:space-between;backdrop-filter:blur(4px)}.savebar .muted{font-weight:900}@media(max-width:980px){.layout,.grid-2,.toggle-grid,.preset-grid{grid-template-columns:1fr}.broadcast-create{grid-template-columns:1fr}.top{align-items:flex-start;flex-direction:column}}
+
+  .notice-color-grid{
+    display:grid;
+    grid-template-columns:repeat(5, minmax(0, 1fr));
+    gap:8px;
+    margin-top:8px;
+  }
+  .notice-color-item{
+    display:flex;
+    flex-direction:column;
+    gap:5px;
+    padding:8px;
+    border:1px solid #334155;
+    border-radius:12px;
+    background:#070b12;
+  }
+  .notice-color-item label{
+    font-size:11px;
+    color:#cbd5e1;
+    font-weight:900;
+  }
+  .notice-color-item input[type="color"]{
+    width:100%;
+    height:36px;
+    border:0;
+    border-radius:8px;
+    background:transparent;
+    cursor:pointer;
+  }
+  @media(max-width:980px){
+    .notice-color-grid{
+      grid-template-columns:repeat(2, minmax(0, 1fr));
+    }
+  }
 </style>
 </head>
 <body>
@@ -19,7 +53,32 @@
       <section class="card"><h2>크리에이터 목록</h2><p class="muted">한 줄에 한 명씩 입력하세요. 이 순서가 입력/오버레이 표시 순서입니다.</p><textarea id="creators" class="input creator-area" placeholder="빵떠기&#10;또영&#10;수박"></textarea></section>
     </div>
     <div>
-      <section class="card"><h2>현재 방송 설정</h2><div class="row"><label>관리자 PW</label><input id="pw" class="input" type="password" placeholder="Render 환경변수 ADMIN_PASSWORD"></div><div class="grid-2"><div class="row"><label>방송 타이틀</label><input id="title" class="input" placeholder="도네이터 현황"></div><div class="row"><label>타이틀 이미지 URL</label><input id="titleImage" class="input" placeholder="https://..."></div></div><div class="sub-card"><h2 style="font-size:17px;margin-bottom:10px">공지사항</h2><div class="row"><label>공지 타이틀</label><input id="noticeTitle" class="input" placeholder="예: 오늘 공지"></div><div class="row"><label>공지문구</label><textarea id="notice" class="input notice-area" placeholder="여러 줄 입력 가능&#10;예) 계좌후원 반영 중&#10;예) 흡연/금연 단가 확인"></textarea></div></div><div class="sub-card"><h2 style="font-size:17px;margin-bottom:10px">오버레이 노출 박스</h2><div class="toggle-grid"><label class="toggle-box"><input type="checkbox" id="overlayAccountBox">계좌박스</label><label class="toggle-box"><input type="checkbox" id="overlayNoticeBox">공지박스</label><label class="toggle-box"><input type="checkbox" id="overlayCreatorBox">크리에이터박스</label></div></div><div class="grid-2" style="margin-top:10px"><div class="row"><label>최대 표시 크리에이터 수</label><input id="maxCreators" class="input" type="number" min="1" max="50"></div><div class="row"><label>OBS 박스 가로 개수</label><input id="columns" class="input" type="number" min="1" max="6"></div></div></section>
+      <section class="card"><h2>현재 방송 설정</h2><div class="row"><label>관리자 PW</label><input id="pw" class="input" type="password" placeholder="Render 환경변수 ADMIN_PASSWORD"></div><div class="grid-2"><div class="row"><label>방송 타이틀</label><input id="title" class="input" placeholder="도네이터 현황"></div><div class="row"><label>타이틀 이미지 URL</label><input id="titleImage" class="input" placeholder="https://..."></div></div><div class="sub-card"><h2 style="font-size:17px;margin-bottom:10px">공지사항</h2><div class="row"><label>공지 타이틀</label><input id="noticeTitle" class="input" placeholder="예: 오늘 공지"></div><div class="row"><label>공지문구</label><textarea id="notice" class="input notice-area" placeholder="여러 줄 입력 가능&#10;예) 계좌후원 반영 중&#10;예) 흡연/금연 단가 확인"></textarea></div>
+
+          <div class="notice-color-grid">
+            <div class="notice-color-item">
+              <label>1줄 색상</label>
+              <input type="color" id="noticeColor0" value="#ffffff">
+            </div>
+            <div class="notice-color-item">
+              <label>2줄 색상</label>
+              <input type="color" id="noticeColor1" value="#ffe066">
+            </div>
+            <div class="notice-color-item">
+              <label>3줄 색상</label>
+              <input type="color" id="noticeColor2" value="#5ecbff">
+            </div>
+            <div class="notice-color-item">
+              <label>4줄 색상</label>
+              <input type="color" id="noticeColor3" value="#ffb4ca">
+            </div>
+            <div class="notice-color-item">
+              <label>5줄 색상</label>
+              <input type="color" id="noticeColor4" value="#ff4d5e">
+            </div>
+          </div>
+          <div class="muted" style="margin-top:6px">공지문구는 줄바꿈 기준으로 최대 5줄까지 색상이 각각 적용됩니다.</div>
+</div><div class="sub-card"><h2 style="font-size:17px;margin-bottom:10px">오버레이 노출 박스</h2><div class="toggle-grid"><label class="toggle-box"><input type="checkbox" id="overlayAccountBox">계좌박스</label><label class="toggle-box"><input type="checkbox" id="overlayNoticeBox">공지박스</label><label class="toggle-box"><input type="checkbox" id="overlayCreatorBox">크리에이터박스</label></div></div><div class="grid-2" style="margin-top:10px"><div class="row"><label>최대 표시 크리에이터 수</label><input id="maxCreators" class="input" type="number" min="1" max="50"></div><div class="row"><label>OBS 박스 가로 개수</label><input id="columns" class="input" type="number" min="1" max="6"></div></div></section>
       <section class="card"><h2>처리 프리셋 <button class="btn blue mini" onclick="addPreset()">프리셋 추가</button></h2><p class="muted">OFF 하면 입력화면과 오버레이에서 숨김 처리됩니다. 삭제 버튼으로 방송별 프리셋에서 제거할 수 있습니다.</p><div id="presetList" class="preset-grid"></div></section>
     </div>
   </div>
@@ -47,6 +106,13 @@ async function loadSettings(){
   $('#titleImage').value = settings.titleImage || '';
   $('#noticeTitle').value = settings.noticeTitle || '공지';
   $('#notice').value = settings.notice || '';
+
+  const noticeColors = settings.noticeColors || ['#ffffff', '#ffe066', '#5ecbff', '#ffb4ca', '#ff4d5e'];
+  for(let i=0;i<5;i++){
+    const el = $('#noticeColor' + i);
+    if(el) el.value = noticeColors[i] || '#ffffff';
+  }
+
   $('#columns').value = settings.columns || 4;
   $('#maxCreators').value = settings.maxCreators || 12;
   $('#creators').value = (settings.creators || []).join('\n');

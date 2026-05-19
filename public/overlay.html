@@ -294,6 +294,112 @@
   .notice-text{
     min-height:24px;
   }
+
+  /* 공지 줄바꿈/줄별 색상 */
+  .notice-text{
+    white-space:normal !important;
+  }
+  .notice-line{
+    display:block;
+    line-height:1.22;
+    margin:2px 0;
+    text-shadow:0 2px 3px rgba(0,0,0,.85);
+  }
+
+  /* 세련된 Alert 카드 */
+  .option-alert{
+    left:8px !important;
+    right:8px !important;
+    top:42px !important;
+    padding:13px 12px 14px !important;
+    border-radius:18px !important;
+    border:1px solid rgba(255,255,255,.22) !important;
+    background:
+      radial-gradient(circle at 18% 0%, rgba(255,255,255,.18), transparent 28%),
+      linear-gradient(180deg, rgba(20,24,38,.96), rgba(7,10,18,.96)) !important;
+    box-shadow:
+      0 0 0 1px rgba(255,255,255,.07) inset,
+      0 0 0 2px rgba(255,194,214,.18),
+      0 12px 28px rgba(0,0,0,.42),
+      0 0 22px rgba(255,194,214,.22) !important;
+    transform:translateY(-8px) scale(.96) !important;
+  }
+
+  .option-alert.show{
+    transform:translateY(0) scale(1) !important;
+    animation:alertCleanPop .34s ease-out, alertCleanGlow 1.2s ease-in-out infinite alternate !important;
+  }
+
+  @keyframes alertCleanPop{
+    0%{transform:translateY(-8px) scale(.92)}
+    70%{transform:translateY(0) scale(1.035)}
+    100%{transform:translateY(0) scale(1)}
+  }
+
+  @keyframes alertCleanGlow{
+    from{
+      box-shadow:
+        0 0 0 1px rgba(255,255,255,.07) inset,
+        0 0 0 2px rgba(255,194,214,.16),
+        0 12px 28px rgba(0,0,0,.42),
+        0 0 18px rgba(255,194,214,.18);
+    }
+    to{
+      box-shadow:
+        0 0 0 1px rgba(255,255,255,.10) inset,
+        0 0 0 2px rgba(94,203,255,.28),
+        0 12px 28px rgba(0,0,0,.42),
+        0 0 26px rgba(94,203,255,.24);
+    }
+  }
+
+  .alert-donor{
+    display:block;
+    font-size:32px;
+    line-height:1.05;
+    font-weight:1000;
+    color:#ffffff;
+    letter-spacing:-.07em;
+    text-shadow:
+      0 2px 3px rgba(0,0,0,.9),
+      0 0 12px rgba(255,255,255,.22);
+    margin-bottom:3px;
+  }
+
+  .alert-target{
+    display:block;
+    font-size:17px;
+    line-height:1.1;
+    font-weight:900;
+    color:#ffc2d6;
+    letter-spacing:-.045em;
+    margin-bottom:7px;
+    text-shadow:0 2px 3px rgba(0,0,0,.75);
+  }
+
+  .alert-line2{
+    display:flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+    gap:9px !important;
+    font-size:23px !important;
+    line-height:1.05 !important;
+    font-weight:950 !important;
+  }
+
+  .alert-amount{
+    color:#ffe066 !important;
+    text-shadow:0 2px 3px rgba(0,0,0,.8);
+  }
+
+  .option-alert .alert-plus{
+    color:#5ecbff !important;
+  }
+
+  .option-alert .alert-minus{
+    color:#ff6b7c !important;
+  }
+
 </style>
 </head>
 <body>
@@ -353,6 +459,7 @@
   const defaultSettings = {
     noticeTitle:"공지",
     notice:"",
+    noticeColors:["#ffffff", "#ffe066", "#5ecbff", "#ffb4ca", "#ff4d5e"],
     overlaySections:{ account:true, notice:false, creators:true },
     creators:["빵떠기","또영","수박","몰라","익명"],
     presets:[
@@ -403,6 +510,30 @@
     };
   }
 
+
+  function renderNotice(settings){
+    const title = normalizeName(settings?.noticeTitle || "공지");
+    const notice = String(settings?.notice || "").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+    const colors = Array.isArray(settings?.noticeColors) ? settings.noticeColors : ["#ffffff", "#ffe066", "#5ecbff", "#ffb4ca", "#ff4d5e"];
+
+    if($noticeTitleText) $noticeTitleText.textContent = title;
+
+    const lines = notice
+      .split("\n")
+      .map(v => v.trim())
+      .filter(Boolean);
+
+    if(!lines.length){
+      $noticeText.innerHTML = `<span class="notice-line" style="color:${colors[0] || '#ffffff'}">공지문구 없음</span>`;
+      return;
+    }
+
+    $noticeText.innerHTML = lines.slice(0, 5).map((line, idx) => {
+      const color = colors[idx] || colors[0] || "#ffffff";
+      return `<span class="notice-line" style="color:${escapeHtml(color)}">${escapeHtml(line)}</span>`;
+    }).join("");
+  }
+
   function applySections(settings){
     const sections = getOverlaySections(settings);
     const notice = normalizeName(settings?.notice || "");
@@ -411,8 +542,7 @@
     $creatorBox.classList.toggle("hidden", !sections.creators);
     $noticeBox.classList.toggle("hidden", !sections.notice);
 
-    $noticeTitleText.textContent = normalizeName(settings?.noticeTitle || "공지");
-    $noticeText.textContent = notice || "공지문구 없음";
+    renderNotice(settings);
   }
 
   function zeroCreatorsFromSettings(settings){
@@ -612,8 +742,9 @@
     }
 
     return `
-      <div class="alert-line1"><span class="alert-name">${donor}</span> → ${creator}</div>
-      <div class="alert-line2"><span>${amountText}</span>${optionText}</div>
+      <div class="alert-donor">${donor}</div>
+      <div class="alert-target">→ ${creator}</div>
+      <div class="alert-line2"><span class="alert-amount">${amountText}</span>${optionText}</div>
     `;
   }
 
@@ -734,6 +865,7 @@
     const signature=JSON.stringify({
       sections:getOverlaySections(settings),
       notice:settings.notice||"",
+      noticeColors:settings.noticeColors||[],
       noticeTitle:settings.noticeTitle||"공지",
       accountDonors:data.accountDonors||[],
       creators,
