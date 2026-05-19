@@ -89,18 +89,18 @@
   }
 
   .roller{
-    position:relative;
-    height:32px;
-    overflow:hidden;
-    width:132px;
-    min-width:132px;
-    color:var(--account-amount-color);
-    font-size:25px;
-    line-height:32px;
-    font-weight:950;
-    letter-spacing:-.055em;
-    text-shadow:0 2px 3px var(--account-shadow),0 0 8px rgba(255,160,195,.28);
-  }
+  position:relative;
+  height:34px;
+  overflow:hidden;
+  width:132px;
+  min-width:132px;
+  color:var(--account-amount-color);
+  font-size:25px;
+  line-height:1;
+  font-weight:950;
+  letter-spacing:-.055em;
+  text-shadow:0 2px 3px var(--account-shadow),0 0 8px rgba(255,160,195,.28);
+}
 
   .roller-track{
     position:absolute;
@@ -114,14 +114,18 @@
   .roller-track.no-transition{transition:none!important}
 
   .roller-item{
-    height:32px;
-    line-height:32px;
-    white-space:nowrap;
-    overflow:hidden;
-    text-overflow:ellipsis;
-    text-align:center;
-    color:var(--account-amount-color);
-  }
+  height:34px;
+  line-height:1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  text-align:center;
+  color:var(--account-amount-color);
+  padding-bottom:1px;
+}
 
   .account-donor{color:var(--account-name-color)}
   .account-amount{color:var(--account-amount-color)}
@@ -683,7 +687,7 @@
     $track.offsetHeight;
     $track.classList.remove("no-transition");
 
-    const itemHeight=32, holdMs=2600, transitionMs=420;
+    const itemHeight=34, holdMs=2600, transitionMs=420;
     rollingTimer=setInterval(()=>{
       rollingIndex+=1;
       $track.classList.remove("no-transition");
