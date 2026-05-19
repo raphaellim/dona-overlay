@@ -25,6 +25,8 @@
     --account-name-color:#ffffff;
     --account-amount-color:#ffd1e0;
     --account-shadow:rgba(0,0,0,.85);
+    
+    --account-roll-height:34px;
   }
 
   *{box-sizing:border-box}
@@ -88,9 +90,9 @@
     text-shadow:0 2px 3px var(--account-shadow),0 0 8px rgba(255,255,255,.22);
   }
 
-  .roller{
+ .roller{
   position:relative;
-  height:34px;
+  height:var(--account-roll-height);
   overflow:hidden;
   width:132px;
   min-width:132px;
@@ -114,7 +116,7 @@
   .roller-track.no-transition{transition:none!important}
 
   .roller-item{
-  height:34px;
+  height:var(--account-roll-height);
   line-height:1;
   display:flex;
   align-items:center;
@@ -124,7 +126,7 @@
   text-overflow:ellipsis;
   text-align:center;
   color:var(--account-amount-color);
-  padding-bottom:1px;
+  padding-top:1px;
 }
 
   .account-donor{color:var(--account-name-color)}
@@ -687,7 +689,13 @@
     $track.offsetHeight;
     $track.classList.remove("no-transition");
 
-    const itemHeight=34, holdMs=2600, transitionMs=420;
+    const itemHeight = parseFloat(
+  getComputedStyle(document.documentElement)
+    .getPropertyValue("--account-roll-height")
+) || 34;
+
+const holdMs = 2600;
+const transitionMs = 420;
     rollingTimer=setInterval(()=>{
       rollingIndex+=1;
       $track.classList.remove("no-transition");
