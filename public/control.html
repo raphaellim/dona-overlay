@@ -121,6 +121,63 @@
     .preset-grid{grid-template-columns:1fr}
     .broadcast-create{grid-template-columns:1fr}
   }
+
+  .overlay-checks{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+  }
+  .checkline{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    padding:9px 11px;
+    border:1px solid #334155;
+    border-radius:12px;
+    background:#070b12;
+    color:#e5e7eb;
+    font-weight:900;
+    cursor:pointer;
+  }
+  .checkline input{
+    width:18px;
+    height:18px;
+  }
+
+  .overlay-section-card{
+    border:1px solid #334155;
+    background:#0f172a;
+    border-radius:14px;
+    padding:12px;
+    margin:10px 0 12px;
+  }
+  .overlay-section-grid{
+    display:grid;
+    grid-template-columns:repeat(3, minmax(0,1fr));
+    gap:8px;
+  }
+  .overlay-toggle{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:11px 12px;
+    border:1px solid #334155;
+    border-radius:12px;
+    background:#070b12;
+    color:#e5e7eb;
+    font-weight:900;
+    cursor:pointer;
+    user-select:none;
+  }
+  .overlay-toggle input{
+    width:19px;
+    height:19px;
+    accent-color:#ec4899;
+  }
+  @media(max-width:800px){
+    .overlay-section-grid{grid-template-columns:1fr}
+  }
+
 </style>
 </head>
 <body>
@@ -160,8 +217,38 @@
       <div class="compact-grid">
         <div class="row"><label>방송 타이틀</label><input id="title" class="input" placeholder="도네이터 현황"></div>
         <div class="row"><label>공지</label><input id="notice" class="input" placeholder="공지 문구"></div>
+
+      <div class="overlay-section-card">
+        <h3 style="margin:0 0 8px;font-size:16px">오버레이 노출 박스</h3>
+        <div class="overlay-section-grid">
+          <label class="overlay-toggle">
+            <input type="checkbox" id="overlayAccountBox">
+            계좌박스
+          </label>
+          <label class="overlay-toggle">
+            <input type="checkbox" id="overlayNoticeBox">
+            공지박스
+          </label>
+          <label class="overlay-toggle">
+            <input type="checkbox" id="overlayCreatorBox">
+            크리에이터박스
+          </label>
+        </div>
+        <p class="muted" style="margin:8px 0 0">체크한 박스만 overlay.html에 표시됩니다. 공지박스는 공지문구가 있을 때만 표시됩니다.</p>
+      </div>
+
       </div>
       <div class="row"><label>타이틀 이미지 URL</label><input id="titleImage" class="input" placeholder="https://..."></div>
+
+      <div class="row">
+        <label>오버레이 노출 박스</label>
+        <div class="overlay-checks">
+          <label class="checkline"><input type="checkbox" id="showAccountBox"> 계좌박스</label>
+          <label class="checkline"><input type="checkbox" id="showNoticeBox"> 공지박스</label>
+          <label class="checkline"><input type="checkbox" id="showCreatorBox"> 크리에이터박스</label>
+        </div>
+      </div>
+
       <div class="compact-grid">
         <div class="row"><label>OBS 박스 가로 개수</label><input id="columns" class="input" type="number" min="1" max="6"></div>
         <div class="row"><label>최대 표시 크리에이터 수</label><input id="maxCreators" class="input" type="number" min="1" max="50"></div>
@@ -210,29 +297,22 @@ async function load(){
   $('#maxCreators').value = settings.maxCreators || 12;
   $('#creators').value = (settings.creators || []).join('\n');
 
+  const overlaySections = settings.overlaySections || { account:true, notice:false, creators:true };
+  $('#overlayAccountBox').checked = overlaySections.account !== false;
+  $('#overlayNoticeBox').checked = overlaySections.notice === true;
+  $('#overlayCreatorBox').checked = overlaySections.creators !== false;
+
+
+  const sections = settings.overlaySections || { account:true, notice:false, creators:true };
+  $('#showAccountBox').checked = sections.account !== false;
+  $('#showNoticeBox').checked = sections.notice === true;
+  $('#showCreatorBox').checked = sections.creators !== false;
+
   if(!settings.presets || !settings.presets.length){
     settings.presets = [
-  {
-    id:'smoke',
-    enabled:true,
-    title:'펴피지마',
-    plusName:'흡연',
-    plusPrice:11900,
-    minusName:'금연',
-    minusPrice:12000,
-    resetAt:null
-  },
-  {
-    id:'food',
-    enabled:true,
-    title:'먹먹마',
-    plusName:'먹어',
-    plusPrice:14000,
-    minusName:'먹지마',
-    minusPrice:15000,
-    resetAt:null
-  }
-];
+      {id:'smoke', enabled:true, title:'펴피지마', plusName:'흡연', plusPrice:11900, minusName:'금연', minusPrice:12000},
+      {id:'food', enabled:true, title:'먹먹마', plusName:'먹어', plusPrice:14000, minusName:'먹지마', plusPrice:15000}
+    ];
   }
 
   renderPresets();
@@ -346,26 +426,18 @@ async function resetBroadcast(id){
   }
 }
 
-async function resetPresetCounter(presetId){
+async function deleteBroadcast(id){
   try{
     const pw = $('#pw').value;
-    localStorage.setItem('ADMIN_PASSWORD', pw);
+    if(!confirm('이 방송 세션과 해당 후원 데이터를 리스트에서 삭제할까요?')) return;
 
-    if(!confirm('이 프리셋의 overlay 화면 카운트만 0으로 리셋할까요?\n기존 후원 기록은 삭제되지 않습니다.')){
-      return;
-    }
-
-    const res = await api('/api/preset-reset', {
-      method:'POST',
-      body:JSON.stringify({
-        password: pw,
-        presetId
-      })
+    await api('/api/broadcasts/' + id, {
+      method:'DELETE',
+      headers:{'x-admin-password': pw}
     });
 
-    alert('화면 카운트가 리셋되었습니다.');
-    await load();
-
+    await loadBroadcasts();
+    alert('삭제되었습니다.');
   }catch(e){
     alert(e.message);
   }
@@ -401,15 +473,6 @@ function renderPresets(){
           <input class="input preset-minus-price" inputmode="numeric" value="${escAttr(p.minusPrice || '')}" placeholder="12000">
         </div>
       </div>
-
-      <div class="danger-zone">
-        <button class="btn red mini" type="button" onclick="resetPresetCounter('${escAttr(p.id)}')">
-          화면 카운트 리셋
-        </button>
-        <span class="muted">
-          ${p.resetAt ? '리셋: ' + new Date(p.resetAt).toLocaleString('ko-KR') : '리셋 없음'}
-        </span>
-      </div>
     </div>
   `).join('');
 }
@@ -418,30 +481,28 @@ function collectPresets(){
   return Array.from(document.querySelectorAll('.preset-card')).map((card, idx) => {
     const old = settings.presets[idx] || {};
     return {
-  id: old.id || `preset_${idx+1}`,
-  enabled: card.querySelector('.preset-enabled').checked,
-  title: card.querySelector('.preset-title-input').value.trim(),
-  plusName: card.querySelector('.preset-plus-name').value.trim(),
-  plusPrice: toWon(card.querySelector('.preset-plus-price').value),
-  minusName: card.querySelector('.preset-minus-name').value.trim(),
-  minusPrice: toWon(card.querySelector('.preset-minus-price').value),
-  resetAt: old.resetAt || null
-};
+      id: old.id || `preset_${idx+1}`,
+      enabled: card.querySelector('.preset-enabled').checked,
+      title: card.querySelector('.preset-title-input').value.trim(),
+      plusName: card.querySelector('.preset-plus-name').value.trim(),
+      plusPrice: toWon(card.querySelector('.preset-plus-price').value),
+      minusName: card.querySelector('.preset-minus-name').value.trim(),
+      minusPrice: toWon(card.querySelector('.preset-minus-price').value)
+    };
   }).filter(p => p.title && p.plusName && p.minusName);
 }
 
 function addPreset(){
   settings.presets = settings.presets || [];
   settings.presets.push({
-  id: 'preset_' + Date.now(),
-  enabled: true,
-  title: '새프리셋',
-  plusName: '플러스',
-  plusPrice: 10000,
-  minusName: '마이너스',
-  minusPrice: 10000,
-  resetAt: null
-});
+    id: 'preset_' + Date.now(),
+    enabled: true,
+    title: '새프리셋',
+    plusName: '플러스',
+    plusPrice: 10000,
+    minusName: '마이너스',
+    minusPrice: 10000
+  });
   renderPresets();
 }
 
@@ -458,7 +519,12 @@ async function saveSettings(){
       columns: Number($('#columns').value || 4),
       maxCreators: Number($('#maxCreators').value || 12),
       creators: $('#creators').value.split(/\n+/).map(v => v.trim()).filter(Boolean),
-      presets: collectPresets()
+      presets: collectPresets(),
+      overlaySections: {
+        account: $('#showAccountBox') ? $('#showAccountBox').checked : true,
+        notice: $('#showNoticeBox') ? $('#showNoticeBox').checked : false,
+        creators: $('#showCreatorBox') ? $('#showCreatorBox').checked : true
+      }
     };
 
     await api('/api/settings', {method:'POST', body:JSON.stringify(body)});
