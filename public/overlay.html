@@ -502,48 +502,39 @@
   const $list = document.getElementById("creatorList");
   const $track = document.getElementById("rollerTrack");
   const $alert = document.getElementById("optionAlert");
-
-  /*
-    사운드 파일 위치:
-    public/sounds/
-
-    옵션별 사운드:
-    - smoke_plus.mp3   : 흡연
-    - smoke_minus.mp3  : 금연
-    - food_plus.mp3    : 먹어
-    - food_minus.mp3   : 먹지마
-
-    계좌후원 금액별 사운드:
-    - account_small.mp3 : 1만원 미만
-    - account_mid.mp3   : 1만원 이상 5만원 미만
-    - account_big.mp3   : 5만원 이상 10만원 미만
-    - account_super.mp3 : 10만원 이상
-
-    기본 사운드:
-    - alert.mp3
+  /* 안전 사운드 로더
+     - 페이지 로딩 시 모든 mp3를 미리 요청하지 않습니다.
+     - 실제 Alert 재생 순간에 필요한 파일만 /sounds/에서 요청합니다.
+     - control.html에서 파일명을 비워두면 해당 사운드는 재생하지 않습니다.
   */
-  const soundFiles = {
-    default: "/sounds/alert.mp3",
+  let soundRulesCache = null;
+  const audioCache = {};
 
-    accountSmall: "/sounds/account_small.mp3",
-    accountMid: "/sounds/account_mid.mp3",
-    accountBig: "/sounds/account_big.mp3",
-    accountSuper: "/sounds/account_super.mp3",
+  function sanitizeSoundFile(file){
+    return String(file || "").replace(/[\\/]/g, "").trim();
+  }
 
-    smokePlus: "/sounds/smoke_plus.mp3",
-    smokeMinus: "/sounds/smoke_minus.mp3",
-    foodPlus: "/sounds/food_plus.mp3",
-    foodMinus: "/sounds/food_minus.mp3"
-  };
+  function cacheSoundRules(settings){
+    soundRulesCache = settings?.soundRules || {
+      enabled: true,
+      defaultSound: "",
+      amountRules: []
+    };
+  }
 
-  const soundBank = Object.fromEntries(
-    Object.entries(soundFiles).map(([key, src]) => {
-      const audio = new Audio(src);
+  function getAudio(file){
+    const safe = sanitizeSoundFile(file);
+    if(!safe) return null;
+
+    if(!audioCache[safe]){
+      const audio = new Audio("/sounds/" + safe);
       audio.volume = 0.85;
-      audio.preload = "auto";
-      return [key, audio];
-    })
-  );
+      audio.preload = "none";
+      audioCache[safe] = audio;
+    }
+    return audioCache[safe];
+  }
+
 
   let rollingItems = [];
   let rollingIndex = 0;
@@ -878,52 +869,39 @@
       <div class="alert-line2"><span class="alert-amount">${amountText}</span>${optionText}</div>
     `;
   }
+  function pickSoundFileForDonation(row){
+    if(soundRulesCache && soundRulesCache.enabled === false) return "";
 
-  function pickSoundKeyForDonation(row){
+    // 1순위: 수동 사운드 이벤트
+    const manualFile = sanitizeSoundFile(row?.manualSoundFile || row?.manual_sound_file || "");
+    if(manualFile) return manualFile;
+
+    // 2순위: 프리셋 사운드
     const checks = Array.isArray(row?.checks) ? row.checks : [];
     const latestCheck = checks.length ? checks[checks.length - 1] : null;
-
-    // 1순위: 옵션별 사운드
     if(latestCheck){
-      const presetId = String(latestCheck.presetId || "").toLowerCase();
-      const presetTitle = String(latestCheck.presetTitle || "").toLowerCase();
-      const name = String(latestCheck.name || "").toLowerCase();
-      const side = latestCheck.side === "minus" ? "minus" : "plus";
-
-      const isSmoke = presetId === "smoke" || presetTitle.includes("펴피") || name.includes("흡연") || name.includes("금연");
-      const isFood = presetId === "food" || presetTitle.includes("먹먹") || name.includes("먹어") || name.includes("먹지");
-
-      if(isSmoke && side === "plus") return "smokePlus";
-      if(isSmoke && side === "minus") return "smokeMinus";
-      if(isFood && side === "plus") return "foodPlus";
-      if(isFood && side === "minus") return "foodMinus";
+      const presetId = String(latestCheck.presetId || "");
+      const presetTitle = String(latestCheck.presetTitle || "");
+      const preset = (enabledPresets || []).find(p => p.id === presetId || p.title === presetTitle);
+      if(preset && preset.soundFile) return sanitizeSoundFile(preset.soundFile);
     }
 
-    // 2순위: 옵션이 없으면 계좌후원 금액별 사운드
+    // 3순위: 계좌금액 구간 사운드
     const accountAmount = num(row?.accountAmount ?? row?.account_amount);
+    const rules = Array.isArray(soundRulesCache?.amountRules) ? soundRulesCache.amountRules : [];
+    const matched = rules
+      .filter(r => accountAmount >= num(r.min) && (!num(r.max) || accountAmount <= num(r.max)) && r.sound)
+      .sort((a,b) => num(b.min) - num(a.min))[0];
 
-    if(accountAmount >= 100000) return "accountSuper";
-    if(accountAmount >= 50000) return "accountBig";
-    if(accountAmount >= 10000) return "accountMid";
-    if(accountAmount > 0) return "accountSmall";
+    if(matched) return sanitizeSoundFile(matched.sound);
 
-    // 3순위: 기본 사운드
-    return "default";
+    // 4순위: 기본 사운드
+    return sanitizeSoundFile(soundRulesCache?.defaultSound || "");
   }
 
   function playSoundForDonation(row){
-    const manualFile = String(row?.manualSoundFile || row?.manual_sound_file || '').replace(/[\\/]/g,'').trim();
-    if(manualFile){
-      try{
-        const audio = new Audio('/sounds/' + manualFile);
-        audio.volume = 0.85;
-        const p = audio.play();
-        if(p && typeof p.catch === 'function') p.catch(()=>{});
-      }catch(e){}
-      return;
-    }
-    const key = pickSoundKeyForDonation(row);
-    const audio = soundBank[key] || soundBank.default;
+    const file = pickSoundFileForDonation(row);
+    const audio = getAudio(file);
     if(!audio) return;
 
     try{
@@ -1041,10 +1019,19 @@
   }
 
   function testSoundFromQuery(){
-    const testKey = PARAMS.get("testSound");
-    if(!testKey) return;
+    const testFileOrKey = PARAMS.get("testSound");
+    if(!testFileOrKey) return;
     setTimeout(() => {
-      const audio = soundBank[testKey] || soundBank.default;
+      let file = testFileOrKey;
+      const aliases = {
+        accountSmall: soundRulesCache?.amountRules?.find(r=>r.id==='small')?.sound || 'account_small.mp3',
+        accountMid: soundRulesCache?.amountRules?.find(r=>r.id==='mid')?.sound || 'account_mid.mp3',
+        accountBig: soundRulesCache?.amountRules?.find(r=>r.id==='big')?.sound || 'account_big.mp3',
+        accountSuper: soundRulesCache?.amountRules?.find(r=>r.id==='super')?.sound || 'account_super.mp3',
+        default: soundRulesCache?.defaultSound || 'alert.mp3'
+      };
+      if(aliases[testFileOrKey]) file = aliases[testFileOrKey];
+      const audio = getAudio(file);
       if(!audio) return;
       try{
         audio.pause();
