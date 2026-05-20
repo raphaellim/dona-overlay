@@ -522,62 +522,28 @@
     기본 사운드:
     - alert.mp3
   */
-  let soundBank = {};
-  let soundRulesCache = null;
+  const soundFiles = {
+    default: "/sounds/alert.mp3",
 
-  function sanitizeSoundFile(name){
-    return String(name || "").replace(/[\\/]/g, "").trim();
-  }
+    accountSmall: "/sounds/account_small.mp3",
+    accountMid: "/sounds/account_mid.mp3",
+    accountBig: "/sounds/account_big.mp3",
+    accountSuper: "/sounds/account_super.mp3",
 
-  function buildSoundBank(settings){
-    const rules = settings?.soundRules || {};
-    const fallback = {
-      defaultSound: "alert.mp3",
-      accountSmall: "account_small.mp3",
-      accountMid: "account_mid.mp3",
-      accountBig: "account_big.mp3",
-      accountSuper: "account_super.mp3",
-      smokePlus: "smoke_plus.mp3",
-      smokeMinus: "smoke_minus.mp3",
-      foodPlus: "food_plus.mp3",
-      foodMinus: "food_minus.mp3"
-    };
+    smokePlus: "/sounds/smoke_plus.mp3",
+    smokeMinus: "/sounds/smoke_minus.mp3",
+    foodPlus: "/sounds/food_plus.mp3",
+    foodMinus: "/sounds/food_minus.mp3"
+  };
 
-    soundRulesCache = {
-      enabled: rules.enabled !== false,
-      defaultSound: sanitizeSoundFile(rules.defaultSound) || fallback.defaultSound,
-      accountSmall: sanitizeSoundFile(rules.accountSmall) || fallback.accountSmall,
-      accountMid: sanitizeSoundFile(rules.accountMid) || fallback.accountMid,
-      accountBig: sanitizeSoundFile(rules.accountBig) || fallback.accountBig,
-      accountSuper: sanitizeSoundFile(rules.accountSuper) || fallback.accountSuper,
-      smokePlus: sanitizeSoundFile(rules.smokePlus) || fallback.smokePlus,
-      smokeMinus: sanitizeSoundFile(rules.smokeMinus) || fallback.smokeMinus,
-      foodPlus: sanitizeSoundFile(rules.foodPlus) || fallback.foodPlus,
-      foodMinus: sanitizeSoundFile(rules.foodMinus) || fallback.foodMinus
-    };
-
-    const files = {
-      default: soundRulesCache.defaultSound,
-      accountSmall: soundRulesCache.accountSmall,
-      accountMid: soundRulesCache.accountMid,
-      accountBig: soundRulesCache.accountBig,
-      accountSuper: soundRulesCache.accountSuper,
-      smokePlus: soundRulesCache.smokePlus,
-      smokeMinus: soundRulesCache.smokeMinus,
-      foodPlus: soundRulesCache.foodPlus,
-      foodMinus: soundRulesCache.foodMinus
-    };
-
-    Object.entries(files).forEach(([key, file]) => {
-      const src = "/sounds/" + file;
-      if(!soundBank[key] || !soundBank[key].src.endsWith(src)){
-        const audio = new Audio(src);
-        audio.volume = 0.85;
-        audio.preload = "auto";
-        soundBank[key] = audio;
-      }
-    });
-  }
+  const soundBank = Object.fromEntries(
+    Object.entries(soundFiles).map(([key, src]) => {
+      const audio = new Audio(src);
+      audio.volume = 0.85;
+      audio.preload = "auto";
+      return [key, audio];
+    })
+  );
 
   let rollingItems = [];
   let rollingIndex = 0;
@@ -594,19 +560,17 @@
     notice:"",
     noticeColors:["#ffffff", "#ffe066", "#5ecbff", "#ffb4ca", "#ff4d5e"],
     overlaySections:{ account:true, notice:false, creators:true },
-    creators:["빵떠기","또영","수박","몰라","익명"],
     soundRules:{
       enabled:true,
       defaultSound:"alert.mp3",
-      accountSmall:"account_small.mp3",
-      accountMid:"account_mid.mp3",
-      accountBig:"account_big.mp3",
-      accountSuper:"account_super.mp3",
-      smokePlus:"smoke_plus.mp3",
-      smokeMinus:"smoke_minus.mp3",
-      foodPlus:"food_plus.mp3",
-      foodMinus:"food_minus.mp3"
+      amountRules:[
+        {title:"계좌 1만원 미만",min:1,max:9999,sound:"account_small.mp3"},
+        {title:"계좌 1만원 이상",min:10000,max:49999,sound:"account_mid.mp3"},
+        {title:"계좌 5만원 이상",min:50000,max:99999,sound:"account_big.mp3"},
+        {title:"계좌 10만원 이상",min:100000,max:0,sound:"account_super.mp3"}
+      ]
     },
+    creators:["빵떠기","또영","수박","몰라","익명"],
     presets:[
       {id:"smoke",enabled:true,title:"펴피지마",plusName:"흡연",minusName:"금연"},
       {id:"food",enabled:true,title:"먹먹마",plusName:"먹어",minusName:"먹지마"}
@@ -915,12 +879,6 @@
   }
 
   function pickSoundKeyForDonation(row){
-    if(soundRulesCache && soundRulesCache.enabled === false) return "";
-
-    // 0순위: admin.html에서 수동으로 선택한 사운드
-    const manualKey = String(row?.manualSoundKey || row?.manual_sound_key || "").trim();
-    if(manualKey && soundBank[manualKey]) return manualKey;
-
     const checks = Array.isArray(row?.checks) ? row.checks : [];
     const latestCheck = checks.length ? checks[checks.length - 1] : null;
 
@@ -1091,7 +1049,7 @@
     catch(e){ data=demoData; }
 
     const settings = data.settings || defaultSettings;
-    buildSoundBank(settings);
+    cacheSoundRules(settings);
     enabledPresets=getEnabledPresets(settings);
     const creators = data.creators && data.creators.length ? data.creators : zeroCreatorsFromSettings(settings);
 

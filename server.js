@@ -2,6 +2,8 @@ const express = require('express');
 const cors = require('cors');
 const { createClient } = require('@supabase/supabase-js');
 const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -45,14 +47,12 @@ function defaultSettings() {
     soundRules: {
       enabled: true,
       defaultSound: 'alert.mp3',
-      accountSmall: 'account_small.mp3',
-      accountMid: 'account_mid.mp3',
-      accountBig: 'account_big.mp3',
-      accountSuper: 'account_super.mp3',
-      smokePlus: 'smoke_plus.mp3',
-      smokeMinus: 'smoke_minus.mp3',
-      foodPlus: 'food_plus.mp3',
-      foodMinus: 'food_minus.mp3'
+      amountRules: [
+        { id: 'small', title: '계좌 1만원 미만', min: 1, max: 9999, sound: 'account_small.mp3' },
+        { id: 'mid', title: '계좌 1만원 이상', min: 10000, max: 49999, sound: 'account_mid.mp3' },
+        { id: 'big', title: '계좌 5만원 이상', min: 50000, max: 99999, sound: 'account_big.mp3' },
+        { id: 'super', title: '계좌 10만원 이상', min: 100000, max: 0, sound: 'account_super.mp3' }
+      ]
     },
     stationSettings: {}
   };
@@ -106,26 +106,31 @@ function normalizePreset(p, idx) {
     plusName: normName(p?.plusName || defaults.plusName),
     plusPrice: Math.max(0, toWon(p?.plusPrice ?? defaults.plusPrice)),
     minusName: normName(p?.minusName || defaults.minusName),
-    minusPrice: Math.max(0, toWon(p?.minusPrice ?? defaults.minusPrice))
+    minusPrice: Math.max(0, toWon(p?.minusPrice ?? defaults.minusPrice)),
+    soundFile: cleanSoundFile(p?.soundFile ?? defaults.soundFile ?? '')
   };
+}
+
+
+function cleanSoundFile(v) {
+  return String(v || '').replace(/[\\\/]/g, '').trim();
 }
 
 function normalizeSoundRules(raw, base) {
   const fallback = base || defaultSettings().soundRules;
   const value = raw && typeof raw === 'object' ? raw : {};
-  const clean = v => String(v || '').replace(/[\\\/]/g, '').trim();
+  const rawRules = Array.isArray(value.amountRules) ? value.amountRules : fallback.amountRules;
 
   return {
     enabled: value.enabled !== false,
-    defaultSound: clean(value.defaultSound) || fallback.defaultSound || 'alert.mp3',
-    accountSmall: clean(value.accountSmall) || fallback.accountSmall || 'account_small.mp3',
-    accountMid: clean(value.accountMid) || fallback.accountMid || 'account_mid.mp3',
-    accountBig: clean(value.accountBig) || fallback.accountBig || 'account_big.mp3',
-    accountSuper: clean(value.accountSuper) || fallback.accountSuper || 'account_super.mp3',
-    smokePlus: clean(value.smokePlus) || fallback.smokePlus || 'smoke_plus.mp3',
-    smokeMinus: clean(value.smokeMinus) || fallback.smokeMinus || 'smoke_minus.mp3',
-    foodPlus: clean(value.foodPlus) || fallback.foodPlus || 'food_plus.mp3',
-    foodMinus: clean(value.foodMinus) || fallback.foodMinus || 'food_minus.mp3'
+    defaultSound: cleanSoundFile(value.defaultSound) || fallback.defaultSound || 'alert.mp3',
+    amountRules: rawRules.slice(0, 10).map((r, idx) => ({
+      id: String(r.id || `amount_${idx + 1}`).replace(/[^a-zA-Z0-9_-]/g, '') || `amount_${idx + 1}`,
+      title: normName(r.title || `금액구간 ${idx + 1}`),
+      min: Math.max(0, Number(r.min || 0)),
+      max: Math.max(0, Number(r.max || 0)),
+      sound: cleanSoundFile(r.sound) || ''
+    }))
   };
 }
 
@@ -667,7 +672,7 @@ function makeDonationRow(body, settings, stationId, broadcastId) {
     noeat: check.noeat,
     checks: check.checks,
     result_label: check.label,
-    manual_sound_key: String(body.manualSoundKey || body.manual_sound_key || '').replace(/[^a-zA-Z0-9_-]/g, ''),
+    manual_sound_file: cleanSoundFile(body.manualSoundFile || body.manual_sound_file || ''),
     manual_sound_title: String(body.manualSoundTitle || body.manual_sound_title || '').trim(),
     memo: String(body.memo || '').trim()
   };
@@ -692,7 +697,7 @@ function dbRowToDonation(row) {
     noeat: row.noeat || 0,
     checks: Array.isArray(row.checks) ? row.checks : [],
     resultLabel: row.result_label || '후원',
-    manualSoundKey: row.manual_sound_key || '',
+    manualSoundFile: row.manual_sound_file || '',
     manualSoundTitle: row.manual_sound_title || '',
     memo: row.memo || ''
   };
@@ -1143,6 +1148,24 @@ app.delete('/api/broadcasts/:id', async (req, res) => {
     res.status(500).json({ error: e.message || '방송 삭제 실패' });
   }
 });
+
+
+app.get('/api/sounds', async (req, res) => {
+  try {
+    const dir = path.join(__dirname, 'public', 'sounds');
+    if (!fs.existsSync(dir)) return res.json({ sounds: [] });
+
+    const sounds = fs.readdirSync(dir)
+      .filter(file => /\.(mp3|wav|ogg|m4a)$/i.test(file))
+      .map(file => ({ file, label: file.replace(/\.[^.]+$/, '') }))
+      .sort((a, b) => a.file.localeCompare(b.file, 'ko'));
+
+    res.json({ sounds });
+  } catch (e) {
+    res.status(500).json({ error: e.message || '사운드 목록 조회 실패' });
+  }
+});
+
 
 /* 설정 */
 app.get('/api/settings', async (req, res) => {

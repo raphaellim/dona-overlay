@@ -90,7 +90,6 @@ create index if not exists donations_created_at_idx on donations (created_at des
 create index if not exists donations_creator_idx on donations (creator);
 create index if not exists donations_donor_idx on donations (donor);
 
-
--- 사운드 수동 선택 필드 추가
-alter table donations add column if not exists manual_sound_key text default '';
+-- 수동 사운드 선택 필드 추가
+alter table donations add column if not exists manual_sound_file text default '';
 alter table donations add column if not exists manual_sound_title text default '';
