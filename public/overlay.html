@@ -589,10 +589,12 @@
   let enabledPresets = [];
   let lastSignature = "";
   let lastDonationKey = localStorage.getItem("overlay_last_alert_key") || "";
-  let lastSoundEventAt = localStorage.getItem("overlay_last_sound_event_at") || "";
+  let lastSoundEventAt = localStorage.getItem("overlay_last_sound_event_at") || new Date().toISOString();
+  sessionStorage.setItem("overlay_sound_event_session_start", lastSoundEventAt);
   let alertTimer = null;
   let alertQueue = [];
   let alertPlaying = false;
+  let alertShowing = false;
 
   const defaultSettings = {
     noticeTitle:"공지",
@@ -947,10 +949,7 @@
   }
 
   function playSoundForDonation(row){
-    const file = typeof pickSoundFileForDonation === "function"
-      ? pickSoundFileForDonation(row)
-      : "";
-
+    const file = typeof pickSoundFileForDonation === "function" ? pickSoundFileForDonation(row) : "";
     if(!file) return null;
 
     const audio = typeof getAudio === "function"
@@ -971,7 +970,7 @@
   }
 
   function playAlertQueue(){
-    if(alertShowing || alertPlaying || !alertQueue.length) return;
+    if(alertShowing || !alertQueue.length) return;
 
     alertShowing = true;
     alertPlaying = true;
@@ -987,15 +986,12 @@
 
     let closed = false;
     let minDone = false;
-    let minTimer = null;
     let fallbackTimer = null;
 
     const closeAlert = () => {
       if(closed) return;
       closed = true;
-      clearTimeout(minTimer);
       clearTimeout(fallbackTimer);
-
       $alert.classList.remove("show");
       setTimeout(() => {
         alertShowing = false;
@@ -1004,8 +1000,7 @@
       }, 280);
     };
 
-    // 짧은 효과음도 최소 2.6초는 표시
-    minTimer = setTimeout(() => {
+    setTimeout(() => {
       minDone = true;
       if(!audio || audio.ended || audio.paused) closeAlert();
     }, 2600);
@@ -1026,8 +1021,8 @@
       audio.addEventListener("ended", onEnded);
       audio.addEventListener("error", onError);
 
-      // 음악이 너무 길어도 overlay를 계속 막지 않도록 최대 20초
-      fallbackTimer = setTimeout(closeAlert, 20000);
+      // 긴 음악은 최대 1분까지 Alert 유지
+      fallbackTimer = setTimeout(closeAlert, 60000);
     }else{
       fallbackTimer = setTimeout(closeAlert, 3200);
     }
@@ -1100,13 +1095,6 @@
       const data = await fetchJson(url);
       const events = Array.isArray(data.events) ? data.events : [];
       if(!events.length) return;
-
-      if(!lastSoundEventAt){
-        const latest = events[events.length - 1];
-        lastSoundEventAt = latest.createdAt || "";
-        localStorage.setItem("overlay_last_sound_event_at", lastSoundEventAt);
-        return;
-      }
 
       events.forEach(ev => {
         lastSoundEventAt = ev.createdAt || lastSoundEventAt;
