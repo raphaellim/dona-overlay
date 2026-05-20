@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>후원현황 Overlay</title>
+<link rel="icon" href="data:,">
+<style>
+  :root{
+    --account-roll-height:34px;
+    --overlay-w:285px;
+    --top:54px;
+    --right:14px;
+
+    --pink:rgba(255,138,185,.95);
+    --pink-soft:rgba(255,138,185,.36);
+    --pink-text:#ffc2d6;
+    --white:rgba(255,255,255,.98);
+    --muted:rgba(255,255,255,.76);
+
+    --yellow:#ffe066;
+    --plus-blue:#5ecbff;
+    --minus-red:#ff4d5e;
+
+    --account-title-color:#ffffff;
+    --account-name-color:#ffffff;
+    --account-amount-color:#ffd1e0;
+    --account-shadow:rgba(0,0,0,.85);
+  }
+
+  *{box-sizing:border-box}
+
+  html,body{
+    margin:0;
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    background:transparent!important;
+    font-family:"Pretendard","Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",Arial,sans-serif;
+  }
+
+  .overlay-root{
+    user-select:none;
+    pointer-events:none;
+    position:fixed;
+    inset:0;
+    background:transparent;
+  }
+
+  .overlay-stack{
+    position:absolute;
+    top:var(--top);
+    right:var(--right);
+    width:var(--overlay-w);
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+
+  .overlay-box{
+    position:relative;
+    color:var(--white);
+    background:rgba(8,8,12,.72);
+    border:2px solid var(--pink);
+    border-radius:16px;
+    box-shadow:none;
+  }
+
+  .account-box{padding:8px 11px 9px}
+  .notice-box{padding:9px 12px;text-align:center}
+  .creator-box{padding:10px 12px 12px}
+
+  .account-row{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    height:34px;
+    font-weight:900;
+    letter-spacing:-.065em;
+    text-align:center;
+  }
+
+  .account-title{
+    flex:0 0 auto;
+    font-size:25px;
+    color:var(--account-title-color);
+    white-space:nowrap;
+    text-shadow:0 2px 3px var(--account-shadow),0 0 8px rgba(255,255,255,.22);
+  }
+
+  .roller{
+    position:relative;
+    height:32px;
+    overflow:hidden;
+    width:132px;
+    min-width:132px;
+    color:var(--account-amount-color);
+    font-size:25px;
+    line-height:32px;
+    font-weight:950;
+    letter-spacing:-.055em;
+    text-shadow:0 2px 3px var(--account-shadow),0 0 8px rgba(255,160,195,.28);
+  }
+
+  .roller-track{
+    position:absolute;
+    left:0;
+    right:0;
+    top:0;
+    transition:transform .42s ease;
+    will-change:transform;
+  }
+
+  .roller-track.no-transition{transition:none!important}
+
+  .roller-item{
+    height:32px;
+    line-height:32px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    text-align:center;
+    color:var(--account-amount-color);
+  }
+
+  .account-donor{color:var(--account-name-color)}
+  .account-amount{color:var(--account-amount-color)}
+
+  .notice-title{
+    font-size:14px;
+    line-height:1;
+    font-weight:900;
+    color:var(--pink-text);
+    margin-bottom:4px;
+    letter-spacing:-.04em;
+  }
+
+  .notice-text{
+    font-size:20px;
+    line-height:1.18;
+    font-weight:900;
+    color:var(--white);
+    letter-spacing:-.055em;
+    text-shadow:0 2px 3px rgba(0,0,0,.85);
+    word-break:keep-all;
+    white-space:pre-line;
+  }
+
+  .creator-list{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:8px;
+    width:100%;
+  }
+
+  .creator-item{padding:0;width:100%;text-align:center}
+
+  .creator-main{
+    display:flex;
+    align-items:baseline;
+    justify-content:center;
+    gap:5px;
+    width:100%;
+    min-height:28px;
+    font-weight:900;
+    letter-spacing:-.07em;
+    text-align:center;
+    text-shadow:0 2px 3px rgba(0,0,0,.85);
+  }
+
+  .creator-name{
+    flex:0 0 78px;
+    width:78px;
+    color:var(--white);
+    font-size:25px;
+    line-height:1.08;
+    white-space:nowrap;
+    overflow:hidden;
+    text-align:center;
+  }
+
+  .donation-amount{
+    flex:0 0 auto;
+    color:var(--pink-text);
+    font-size:25px;
+    line-height:1.08;
+    white-space:nowrap;
+    text-align:left;
+  }
+
+  .creator-sub{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:10px;
+    width:100%;
+    margin-top:2px;
+    font-size:23px;
+    line-height:1.08;
+    font-weight:900;
+    letter-spacing:-.065em;
+    text-align:center;
+    text-shadow:0 2px 3px rgba(0,0,0,.85);
+  }
+
+  .state-item{white-space:nowrap;min-width:0;text-align:center}
+  .plus{color:var(--plus-blue)}
+  .blue,.red{color:var(--minus-red)}
+  .muted{color:var(--yellow)}
+
+  .option-alert{
+    position:absolute;
+    left:8px;
+    right:8px;
+    top:42px;
+    z-index:50;
+    padding:12px 10px 13px;
+    border-radius:18px;
+    border:2px solid rgba(255,220,95,.92);
+    background:
+      radial-gradient(circle at 12% 20%, rgba(255,255,255,.18), transparent 20%),
+      linear-gradient(135deg, rgba(255,72,152,.94), rgba(105,54,255,.93) 55%, rgba(0,184,255,.92));
+    color:#fff;
+    text-align:center;
+    letter-spacing:-.06em;
+    opacity:0;
+    transform:translateY(-10px) scale(.94);
+    transition:opacity .22s ease, transform .22s cubic-bezier(.2,1.35,.3,1);
+    box-shadow:
+      0 0 0 1px rgba(255,255,255,.24) inset,
+      0 0 18px rgba(255,72,152,.48),
+      0 8px 24px rgba(0,0,0,.34);
+  }
+
+  .option-alert.show{
+    opacity:1;
+    transform:translateY(0) scale(1);
+    animation:alertPop .42s ease, alertGlow 1.15s ease-in-out infinite alternate;
+  }
+
+  @keyframes alertPop{
+    0%{transform:translateY(-10px) scale(.88)}
+    65%{transform:translateY(0) scale(1.045)}
+    100%{transform:translateY(0) scale(1)}
+  }
+
+  @keyframes alertGlow{
+    from{box-shadow:0 0 0 1px rgba(255,255,255,.24) inset,0 0 16px rgba(255,72,152,.48),0 8px 24px rgba(0,0,0,.34)}
+    to{box-shadow:0 0 0 1px rgba(255,255,255,.36) inset,0 0 28px rgba(255,220,95,.58),0 8px 24px rgba(0,0,0,.34)}
+  }
+
+  .alert-line1{
+    font-size:22px;
+    line-height:1.15;
+    font-weight:950;
+    margin-bottom:5px;
+    color:#fff;
+    text-shadow:0 2px 3px rgba(0,0,0,.72);
+  }
+
+  .alert-line2{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:12px;
+    font-size:28px;
+    line-height:1.05;
+    font-weight:950;
+    text-shadow:0 2px 3px rgba(0,0,0,.72);
+  }
+
+  .option-alert .alert-name{color:#fff5a8}
+  .alert-line2 span:first-child{color:#ffffff}
+  .option-alert .alert-plus{color:#9ffcff}
+  .option-alert .alert-minus{color:#ffeb75}
+
+  .hidden{display:none!important}
+
+  @media(max-width:520px){
+    :root{--overlay-w:268px;--top:50px;--right:12px}
+    .overlay-stack{gap:7px}
+    .account-title{font-size:23px}
+    .roller{width:126px;min-width:126px;font-size:24px;height:31px;line-height:31px}
+    .roller-item{height:31px;line-height:31px}
+    .creator-name{flex-basis:76px;width:76px;font-size:24px}
+    .donation-amount{font-size:24px}
+    .creator-sub{font-size:22px;gap:9px}
+    .notice-text{font-size:19px}
+    .alert-line1{font-size:20px}
+    .alert-line2{font-size:25px}
+  }
+
+  .notice-text{
+    min-height:24px;
+  }
+
+  /* 공지 줄바꿈/줄별 색상 */
+  .notice-text{
+    white-space:normal !important;
+  }
+  .notice-line{
+    display:block;
+    line-height:1.22;
+    margin:2px 0;
+    text-shadow:0 2px 3px rgba(0,0,0,.85);
+  }
+
+  /* 세련된 Alert 카드 */
+  .option-alert{
+    left:8px !important;
+    right:8px !important;
+    top:42px !important;
+    padding:13px 12px 14px !important;
+    border-radius:18px !important;
+    border:1px solid rgba(255,255,255,.22) !important;
+    background:
+      radial-gradient(circle at 18% 0%, rgba(255,255,255,.18), transparent 28%),
+      linear-gradient(180deg, rgba(20,24,38,.96), rgba(7,10,18,.96)) !important;
+    box-shadow:
+      0 0 0 1px rgba(255,255,255,.07) inset,
+      0 0 0 2px rgba(255,194,214,.18),
+      0 12px 28px rgba(0,0,0,.42),
+      0 0 22px rgba(255,194,214,.22) !important;
+    transform:translateY(-8px) scale(.96) !important;
+  }
+
+  .option-alert.show{
+    transform:translateY(0) scale(1) !important;
+    animation:alertCleanPop .34s ease-out, alertCleanGlow 1.2s ease-in-out infinite alternate !important;
+  }
+
+  @keyframes alertCleanPop{
+    0%{transform:translateY(-8px) scale(.92)}
+    70%{transform:translateY(0) scale(1.035)}
+    100%{transform:translateY(0) scale(1)}
+  }
+
+  @keyframes alertCleanGlow{
+    from{
+      box-shadow:
+        0 0 0 1px rgba(255,255,255,.07) inset,
+        0 0 0 2px rgba(255,194,214,.16),
+        0 12px 28px rgba(0,0,0,.42),
+        0 0 18px rgba(255,194,214,.18);
+    }
+    to{
+      box-shadow:
+        0 0 0 1px rgba(255,255,255,.10) inset,
+        0 0 0 2px rgba(94,203,255,.28),
+        0 12px 28px rgba(0,0,0,.42),
+        0 0 26px rgba(94,203,255,.24);
+    }
+  }
+
+  .alert-donor{
+    display:block;
+    font-size:32px;
+    line-height:1.05;
+    font-weight:1000;
+    color:#ffffff;
+    letter-spacing:-.07em;
+    text-shadow:
+      0 2px 3px rgba(0,0,0,.9),
+      0 0 12px rgba(255,255,255,.22);
+    margin-bottom:3px;
+  }
+
+  .alert-target{
+    display:block;
+    font-size:17px;
+    line-height:1.1;
+    font-weight:900;
+    color:#ffc2d6;
+    letter-spacing:-.045em;
+    margin-bottom:7px;
+    text-shadow:0 2px 3px rgba(0,0,0,.75);
+  }
+
+  .alert-line2{
+    display:flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+    gap:9px !important;
+    font-size:23px !important;
+    line-height:1.05 !important;
+    font-weight:950 !important;
+  }
+
+  .alert-amount{
+    color:#ffe066 !important;
+    text-shadow:0 2px 3px rgba(0,0,0,.8);
+  }
+
+  .option-alert .alert-plus{
+    color:#5ecbff !important;
+  }
+
+  .option-alert .alert-minus{
+    color:#ff6b7c !important;
+  }
+
+
+  /* 프리즘 스케일링 롤링 위치 고정 */
+  .roller{
+    height:var(--account-roll-height) !important;
+    line-height:1 !important;
+    overflow:hidden !important;
+  }
+
+  .roller-track{
+    top:0 !important;
+    transform:translate3d(0,0,0);
+    will-change:transform;
+  }
+
+  .roller-item{
+    height:var(--account-roll-height) !important;
+    min-height:var(--account-roll-height) !important;
+    line-height:1 !important;
+    display:flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+    padding-top:2px !important;
+    padding-bottom:0 !important;
+  }
+
+  .account-row{
+    align-items:center !important;
+  }
+
+
+  /* 프리즘 폰트 baseline 보정 */
+  .creator-main{
+    align-items:center !important;
+    line-height:1 !important;
+    padding-top:2px !important;
+  }
+  .creator-name,
+  .donation-amount{
+    line-height:1 !important;
+  }
+  .creator-sub{
+    align-items:center !important;
+    line-height:1 !important;
+    padding-top:2px !important;
+  }
+
+</style>
+</head>
+<body>
+  <div class="overlay-root">
+    <div class="overlay-stack">
+      <section class="overlay-box account-box" id="accountBox">
+        <div class="account-row">
+          <div class="account-title">계좌후원</div>
+          <div class="roller">
+            <div class="roller-track" id="rollerTrack">
+              <div class="roller-item">- : 0</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="overlay-box notice-box" id="noticeBox">
+        <div class="notice-title" id="noticeTitleText">공지</div>
+        <div class="notice-text" id="noticeText"></div>
+      </section>
+
+      <section class="overlay-box creator-box" id="creatorBox">
+        <div class="option-alert" id="optionAlert"></div>
+        <div class="creator-list" id="creatorList"></div>
+      </section>
+    </div>
+  </div>
+
+<script>
+(() => {
+  const API_SUMMARY = "/api/summary";
+  const API_SETTINGS = "/api/settings";
+  const PARAMS = new URLSearchParams(location.search);
+  const ACCESS_TOKEN = PARAMS.get("token") || "";
+  const STATION_SLUG = PARAMS.get("station") || "default";
+
+  const $accountBox = document.getElementById("accountBox");
+  const $noticeBox = document.getElementById("noticeBox");
+  const $creatorBox = document.getElementById("creatorBox");
+  const $noticeText = document.getElementById("noticeText");
+  const $noticeTitleText = document.getElementById("noticeTitleText");
+  const $list = document.getElementById("creatorList");
+  const $track = document.getElementById("rollerTrack");
+  const $alert = document.getElementById("optionAlert");
+
+  /*
+    사운드 파일 위치:
+    public/sounds/
+
+    옵션별 사운드:
+    - smoke_plus.mp3   : 흡연
+    - smoke_minus.mp3  : 금연
+    - food_plus.mp3    : 먹어
+    - food_minus.mp3   : 먹지마
+
+    계좌후원 금액별 사운드:
+    - account_small.mp3 : 1만원 미만
+    - account_mid.mp3   : 1만원 이상 5만원 미만
+    - account_big.mp3   : 5만원 이상 10만원 미만
+    - account_super.mp3 : 10만원 이상
+
+    기본 사운드:
+    - alert.mp3
+  */
+  const soundFiles = {
+    default: "/sounds/alert.mp3",
+
+    accountSmall: "/sounds/account_small.mp3",
+    accountMid: "/sounds/account_mid.mp3",
+    accountBig: "/sounds/account_big.mp3",
+    accountSuper: "/sounds/account_super.mp3",
+
+    smokePlus: "/sounds/smoke_plus.mp3",
+    smokeMinus: "/sounds/smoke_minus.mp3",
+    foodPlus: "/sounds/food_plus.mp3",
+    foodMinus: "/sounds/food_minus.mp3"
+  };
+
+  const soundBank = Object.fromEntries(
+    Object.entries(soundFiles).map(([key, src]) => {
+      const audio = new Audio(src);
+      audio.volume = 0.85;
+      audio.preload = "auto";
+      return [key, audio];
+    })
+  );
+
+  let rollingItems = [];
+  let rollingIndex = 0;
+  let rollingTimer = null;
+  let enabledPresets = [];
+  let lastSignature = "";
+  let lastDonationKey = localStorage.getItem("overlay_last_alert_key") || "";
+  let alertTimer = null;
+  let alertQueue = [];
+  let alertPlaying = false;
+
+  const defaultSettings = {
+    noticeTitle:"공지",
+    notice:"",
+    noticeColors:["#ffffff", "#ffe066", "#5ecbff", "#ffb4ca", "#ff4d5e"],
+    overlaySections:{ account:true, notice:false, creators:true },
+    creators:["빵떠기","또영","수박","몰라","익명"],
+    presets:[
+      {id:"smoke",enabled:true,title:"펴피지마",plusName:"흡연",minusName:"금연"},
+      {id:"food",enabled:true,title:"먹먹마",plusName:"먹어",minusName:"먹지마"}
+    ]
+  };
+
+  const demoData = {
+    settings:{
+      ...defaultSettings,
+      notice:"오늘 룰 확인하고 후원해주세요",
+      overlaySections:{account:true,notice:true,creators:true}
+    },
+    accountDonors:[{donor:"열려",amount:36000},{donor:"이잉",amount:123400}],
+    creators:[
+      {creator:"빵떠기",total:36000,presetNets:[{presetId:"smoke",plus:2,minus:0,plusName:"흡연",minusName:"금연"}]},
+      {creator:"또영",total:0,presetNets:[]},
+      {creator:"수박",total:0,presetNets:[]},
+      {creator:"몰라",total:0,presetNets:[]},
+      {creator:"익명",total:0,presetNets:[]}
+    ],
+    donations:[]
+  };
+
+  function num(v){ const n=Number(v||0); return Number.isFinite(n)?n:0; }
+  function displayAmount(won){ const cut=Math.floor(num(won)/1000)/10; return cut.toFixed(1).replace(/\.0$/,""); }
+  function normalizeName(v){ return String(v??"").replace(/\s+/g," ").trim(); }
+  function escapeHtml(str){ return String(str).replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[ch])); }
+  function formatCreatorName(name){
+    const arr=Array.from(String(name||"").trim());
+    if(arr.length>=3) return arr.slice(0,3).join("");
+    if(arr.length===2) return arr.join(" ");
+    if(arr.length===1) return arr[0]+"  ";
+    return "익 명";
+  }
+  function getEnabledPresets(settings){
+    const presets=settings&&Array.isArray(settings.presets)?settings.presets:[];
+    return presets.filter(p=>p&&p.enabled!==false);
+  }
+
+  function getOverlaySections(settings){
+    const s = settings?.overlaySections || {};
+    return {
+      account: s.account !== false,
+      notice: s.notice === true,
+      creators: s.creators !== false
+    };
+  }
+
+
+  function renderNotice(settings){
+    const title = normalizeName(settings?.noticeTitle || "공지");
+    const notice = String(settings?.notice || "").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+    const colors = Array.isArray(settings?.noticeColors) ? settings.noticeColors : ["#ffffff", "#ffe066", "#5ecbff", "#ffb4ca", "#ff4d5e"];
+
+    if($noticeTitleText) $noticeTitleText.textContent = title;
+
+    const lines = notice
+      .split("\n")
+      .map(v => v.trim())
+      .filter(Boolean);
+
+    if(!lines.length){
+      $noticeText.innerHTML = `<span class="notice-line" style="color:${colors[0] || '#ffffff'}">공지문구 없음</span>`;
+      return;
+    }
+
+    $noticeText.innerHTML = lines.slice(0, 5).map((line, idx) => {
+      const color = colors[idx] || colors[0] || "#ffffff";
+      return `<span class="notice-line" style="color:${escapeHtml(color)}">${escapeHtml(line)}</span>`;
+    }).join("");
+  }
+
+  function applySections(settings){
+    const sections = getOverlaySections(settings);
+    const notice = normalizeName(settings?.notice || "");
+
+    $accountBox.classList.toggle("hidden", !sections.account);
+    $creatorBox.classList.toggle("hidden", !sections.creators);
+    $noticeBox.classList.toggle("hidden", !sections.notice);
+
+    renderNotice(settings);
+  }
+
+  function zeroCreatorsFromSettings(settings){
+    const names = Array.isArray(settings?.creators) && settings.creators.length
+      ? settings.creators
+      : defaultSettings.creators;
+
+    return names.slice(0,5).map(name => ({
+      creator: normalizeName(name),
+      total: 0,
+      smokeNet: 0,
+      eatNet: 0,
+      presetNets: []
+    }));
+  }
+
+  function aggregateAccountDonorsFromDonations(donations){
+    const map=new Map();
+    (donations||[]).forEach(d=>{
+      const account=num(d.accountAmount??d.account_amount);
+      if(account<=0) return;
+      const donor=normalizeName(d.donor||d.donor_name||"익명");
+      if(!map.has(donor)) map.set(donor,{donor,amount:0,latestAt:d.createdAt||d.created_at||""});
+      const row=map.get(donor);
+      row.amount+=account;
+      if(new Date(d.createdAt||d.created_at||0)>new Date(row.latestAt||0)) row.latestAt=d.createdAt||d.created_at||"";
+    });
+    return Array.from(map.values()).sort((a,b)=>new Date(b.latestAt||0)-new Date(a.latestAt||0)).slice(0,10);
+  }
+
+  function aggregateCreatorsFromDonations(donations, settings){
+    const map=new Map();
+    zeroCreatorsFromSettings(settings).forEach(c => map.set(c.creator, c));
+
+    (donations||[]).forEach(d=>{
+      const creator=normalizeName(d.creator||"익명");
+      const account=num(d.accountAmount??d.account_amount);
+      const toonie=num(d.toonieAmount??d.toonie_amount);
+      const total=num(d.totalAmount??d.total_amount??account+toonie);
+      if(!map.has(creator)) map.set(creator,{creator,total:0,smokeNet:0,eatNet:0,presetNets:[]});
+      const row=map.get(creator);
+      row.total+=total;
+      row.smokeNet+=num(d.smoke||0)-num(d.nosmoke||0);
+      row.eatNet+=num(d.eat||0)-num(d.noeat||0);
+
+      (Array.isArray(d.checks)?d.checks:[]).forEach(ch=>{
+        const key=ch.presetId||ch.presetTitle;
+        if(!key) return;
+        let n=row.presetNets.find(x=>(ch.presetId&&x.presetId===ch.presetId)||(ch.presetTitle&&x.presetTitle===ch.presetTitle));
+        if(!n){
+          n={presetId:ch.presetId,presetTitle:ch.presetTitle,plusName:"",minusName:"",plus:0,minus:0};
+          row.presetNets.push(n);
+        }
+        if(ch.side==="plus"){ n.plusName=ch.name; n.plus+=num(ch.count); }
+        else { n.minusName=ch.name; n.minus+=num(ch.count); }
+      });
+    });
+
+    return Array.from(map.values()).slice(0,5);
+  }
+
+  function normalizeCreatorRows(summary){
+    const settings=summary.settings||defaultSettings;
+    const donations=summary.donations||[];
+    const byName=new Map();
+
+    zeroCreatorsFromSettings(settings).forEach(c => byName.set(c.creator, c));
+
+    (summary.creators||summary.creatorSummary||summary.creator_summary||[]).forEach(c=>{
+      const name=normalizeName(c.creator||c.name);
+      if(!name) return;
+      const base=byName.get(name)||{creator:name,total:0,smokeNet:0,eatNet:0,presetNets:[]};
+      base.total=num(c.total??c.totalAmount??c.total_amount??c.amount??base.total);
+      base.smokeNet=num(c.smokeNet??c.smoke_net??base.smokeNet);
+      base.eatNet=num(c.eatNet??c.foodNet??c.food_net??base.eatNet);
+      base.presetNets=(Array.isArray(c.presetNets)&&c.presetNets.length)?c.presetNets:base.presetNets;
+      byName.set(name,base);
+    });
+
+    aggregateCreatorsFromDonations(donations, settings).forEach(c=>{
+      const old=byName.get(c.creator)||c;
+      old.total = c.total;
+      old.smokeNet = c.smokeNet;
+      old.eatNet = c.eatNet;
+      old.presetNets = c.presetNets;
+      byName.set(c.creator, old);
+    });
+
+    return Array.from(byName.values()).slice(0,5);
+  }
+
+  function statusLabelsFromPresetNets(presets,row){
+    const nets=Array.isArray(row.presetNets)?row.presetNets:[];
+    return presets.map(preset=>{
+      const n=nets.find(x=>(x.presetId&&x.presetId===preset.id)||(x.presetTitle&&x.presetTitle===preset.title));
+      if(n){
+        const net=num(n.plus)-num(n.minus);
+        if(net>0) return `<span class="plus">${escapeHtml(n.plusName||preset.plusName||"+")} +${Math.abs(net)}</span>`;
+        if(net<0) return `<span class="red">${escapeHtml(n.minusName||preset.minusName||"-")} -${Math.abs(net)}</span>`;
+      }
+      if(preset.id==="smoke"){
+        const net=num(row.smokeNet??row.smoke_net??0);
+        if(net>0) return `<span class="plus">${escapeHtml(preset.plusName||"흡연")} +${Math.abs(net)}</span>`;
+        if(net<0) return `<span class="red">${escapeHtml(preset.minusName||"금연")} -${Math.abs(net)}</span>`;
+      }
+      if(preset.id==="food"){
+        const net=num(row.eatNet??row.foodNet??row.food_net??0);
+        if(net>0) return `<span class="plus">${escapeHtml(preset.plusName||"먹어")} +${Math.abs(net)}</span>`;
+        if(net<0) return `<span class="red">${escapeHtml(preset.minusName||"먹지마")} -${Math.abs(net)}</span>`;
+      }
+      return `<span class="muted">${escapeHtml(preset.title||"처리")} 0</span>`;
+    });
+  }
+
+  function renderAccountRoller(items){
+    rollingItems=items&&items.length?items:[{donor:"-",amount:0}];
+    if(rollingTimer){ clearInterval(rollingTimer); rollingTimer=null; }
+
+    const makeItemHtml=item=>{
+      const donor=normalizeName(item.donor||item.name||"익명");
+      const amount=displayAmount(item.amount??item.accountAmount??item.account_amount??item.total??0);
+      return `<div class="roller-item"><span class="account-donor">${escapeHtml(donor)}</span> <span class="account-sep">:</span> <span class="account-amount">${amount}</span></div>`;
+    };
+
+    const moveToIndex = (index, useTransition=true) => {
+      const item = $track.children[index];
+      const y = item ? item.offsetTop : 0;
+
+      if(useTransition){
+        $track.classList.remove("no-transition");
+      }else{
+        $track.classList.add("no-transition");
+      }
+
+      // offsetTop 기준으로 이동해서 프리즘 스케일/폰트 렌더링 차이에도 누적 오차가 생기지 않음
+      $track.style.transform = `translate3d(0, ${-y}px, 0)`;
+    };
+
+    if(rollingItems.length<=1){
+      rollingIndex=0;
+      $track.innerHTML=rollingItems.map(makeItemHtml).join("");
+      moveToIndex(0, false);
+      return;
+    }
+
+    const renderItems=[...rollingItems,rollingItems[0]];
+    $track.innerHTML=renderItems.map(makeItemHtml).join("");
+
+    rollingIndex=0;
+    moveToIndex(0, false);
+    $track.offsetHeight;
+    $track.classList.remove("no-transition");
+
+    const holdMs=2600;
+    const transitionMs=420;
+
+    rollingTimer=setInterval(()=>{
+      rollingIndex+=1;
+      moveToIndex(rollingIndex, true);
+
+      if(rollingIndex===rollingItems.length){
+        setTimeout(()=>{
+          rollingIndex=0;
+          moveToIndex(0, false);
+          $track.offsetHeight;
+          $track.classList.remove("no-transition");
+        },transitionMs+30);
+      }
+    },holdMs);
+  }
+
+  function renderCreators(creators){
+    const rows=(creators&&creators.length?creators:zeroCreatorsFromSettings(defaultSettings)).slice(0,5);
+    const visiblePresets=(enabledPresets||[]).filter(p=>p.enabled!==false);
+
+    $list.innerHTML=rows.map(row=>{
+      const rawName=normalizeName(row.creator||row.name||"익명");
+      const name=formatCreatorName(rawName);
+      const total=displayAmount(row.total??row.totalAmount??row.total_amount??row.amount??0);
+      const labels=visiblePresets.length?statusLabelsFromPresetNets(visiblePresets,row):[];
+
+      return `
+        <article class="creator-item">
+          <div class="creator-main">
+            <div class="creator-name">${escapeHtml(name)} -</div>
+            <div class="donation-amount">후원(${total})</div>
+          </div>
+          ${labels.length?`<div class="creator-sub">${labels.map(label=>`<span class="state-item">${label}</span>`).join("")}</div>`:``}
+        </article>
+      `;
+    }).join("");
+  }
+
+  function makeDonationAlertHtml(row){
+    const donor=escapeHtml(row.donor||"익명");
+    const creator=escapeHtml(row.creator||"익명");
+    const accountAmount=num(row.accountAmount??row.account_amount);
+    const toonieAmount=num(row.toonieAmount??row.toonie_amount);
+    const totalAmount=num(row.totalAmount??row.total_amount??accountAmount+toonieAmount);
+    const amountText=displayAmount(totalAmount);
+    const checks=Array.isArray(row.checks)?row.checks:[];
+    let optionText="";
+
+    if(checks.length){
+      const ch=checks[checks.length-1];
+      const sign=ch.side==="minus"?"-":"+";
+      const cls=ch.side==="minus"?"alert-minus":"alert-plus";
+      const name=escapeHtml(ch.name||"옵션");
+      const count=Math.abs(num(ch.count));
+      optionText=`<span class="${cls}">${name}${sign}${count}</span>`;
+    }
+
+    return `
+      <div class="alert-donor">${donor}</div>
+      <div class="alert-target">→ ${creator}</div>
+      <div class="alert-line2"><span class="alert-amount">${amountText}</span>${optionText}</div>
+    `;
+  }
+
+  function pickSoundKeyForDonation(row){
+    const checks = Array.isArray(row?.checks) ? row.checks : [];
+    const latestCheck = checks.length ? checks[checks.length - 1] : null;
+
+    // 1순위: 옵션별 사운드
+    if(latestCheck){
+      const presetId = String(latestCheck.presetId || "").toLowerCase();
+      const presetTitle = String(latestCheck.presetTitle || "").toLowerCase();
+      const name = String(latestCheck.name || "").toLowerCase();
+      const side = latestCheck.side === "minus" ? "minus" : "plus";
+
+      const isSmoke = presetId === "smoke" || presetTitle.includes("펴피") || name.includes("흡연") || name.includes("금연");
+      const isFood = presetId === "food" || presetTitle.includes("먹먹") || name.includes("먹어") || name.includes("먹지");
+
+      if(isSmoke && side === "plus") return "smokePlus";
+      if(isSmoke && side === "minus") return "smokeMinus";
+      if(isFood && side === "plus") return "foodPlus";
+      if(isFood && side === "minus") return "foodMinus";
+    }
+
+    // 2순위: 옵션이 없으면 계좌후원 금액별 사운드
+    const accountAmount = num(row?.accountAmount ?? row?.account_amount);
+
+    if(accountAmount >= 100000) return "accountSuper";
+    if(accountAmount >= 50000) return "accountBig";
+    if(accountAmount >= 10000) return "accountMid";
+    if(accountAmount > 0) return "accountSmall";
+
+    // 3순위: 기본 사운드
+    return "default";
+  }
+
+  function playSoundForDonation(row){
+    const key = pickSoundKeyForDonation(row);
+    const audio = soundBank[key] || soundBank.default;
+    if(!audio) return;
+
+    try{
+      audio.pause();
+      audio.currentTime = 0;
+      const p = audio.play();
+      if(p && typeof p.catch === "function") p.catch(() => {});
+    }catch(e){}
+  }
+
+  function playAlertQueue(){
+    if(alertPlaying || !alertQueue.length) return;
+    alertPlaying=true;
+    const alertItem = alertQueue.shift();
+    $alert.innerHTML = alertItem.html;
+    $alert.classList.add("show");
+    playSoundForDonation(alertItem.row);
+
+    clearTimeout(alertTimer);
+    alertTimer=setTimeout(()=>{
+      $alert.classList.remove("show");
+      setTimeout(()=>{
+        alertPlaying=false;
+        playAlertQueue();
+      },350);
+    },2600);
+  }
+
+  function checkLatestOptionAlert(donations){
+    const rows=(donations||[]).slice().sort((a,b)=>new Date(a.createdAt||a.created_at||0)-new Date(b.createdAt||b.created_at||0));
+    if(!rows.length) return;
+
+    if(!lastDonationKey){
+      const latest=rows[rows.length-1];
+      const key=(latest.id||"")+"_"+(latest.createdAt||latest.created_at||"");
+      lastDonationKey=key;
+      localStorage.setItem("overlay_last_alert_key",key);
+      return;
+    }
+
+    let passedLast=false;
+    const newRows=[];
+
+    for(const row of rows){
+      const key=(row.id||"")+"_"+(row.createdAt||row.created_at||"");
+      if(key===lastDonationKey){
+        passedLast=true;
+        continue;
+      }
+      if(passedLast) newRows.push(row);
+    }
+
+    if(!passedLast){
+      const latest=rows[rows.length-1];
+      const key=(latest.id||"")+"_"+(latest.createdAt||latest.created_at||"");
+      lastDonationKey=key;
+      localStorage.setItem("overlay_last_alert_key",key);
+      return;
+    }
+
+    if(!newRows.length) return;
+
+    const last=newRows[newRows.length-1];
+    const lastKey=(last.id||"")+"_"+(last.createdAt||last.created_at||"");
+    lastDonationKey=lastKey;
+    localStorage.setItem("overlay_last_alert_key",lastKey);
+
+    newRows.forEach(row=>alertQueue.push({ html: makeDonationAlertHtml(row), row }));
+    playAlertQueue();
+  }
+
+
+  function testSoundFromQuery(){
+    const testKey = PARAMS.get("testSound");
+    if(!testKey) return;
+    setTimeout(() => {
+      const audio = soundBank[testKey] || soundBank.default;
+      if(!audio) return;
+      try{
+        audio.pause();
+        audio.currentTime = 0;
+        const p = audio.play();
+        if(p && typeof p.catch === "function") p.catch(() => {});
+      }catch(e){}
+    }, 800);
+  }
+
+  async function fetchJson(url){
+    let finalUrl = url;
+    const sep1 = finalUrl.includes("?") ? "&" : "?";
+    finalUrl = finalUrl + sep1 + "station=" + encodeURIComponent(STATION_SLUG);
+    if(ACCESS_TOKEN){
+      const sep = finalUrl.includes("?") ? "&" : "?";
+      finalUrl = finalUrl + sep + "token=" + encodeURIComponent(ACCESS_TOKEN);
+    }
+    const res=await fetch(finalUrl,{cache:"no-store"});
+    if(!res.ok) throw new Error(url+" "+res.status);
+    return res.json();
+  }
+
+  async function loadData(){
+    const params=new URLSearchParams(location.search);
+    if(params.get("demo")==="1") return demoData;
+
+    let settings = defaultSettings;
+    try{
+      const s = await fetchJson(API_SUMMARY);
+      settings = s.settings && Object.keys(s.settings).length ? s.settings : defaultSettings;
+      const accountDonors=(s.accountDonors&&s.accountDonors.length)?s.accountDonors:aggregateAccountDonorsFromDonations(s.donations||[]);
+      return {
+        settings,
+        accountDonors,
+        creators:normalizeCreatorRows({...s, settings}),
+        donations:s.donations||[]
+      };
+    }catch(e){
+      try{
+        settings = await fetchJson(API_SETTINGS);
+        return {
+          settings,
+          accountDonors:[{donor:"-",amount:0}],
+          creators:zeroCreatorsFromSettings(settings),
+          donations:[]
+        };
+      }catch(err){
+        return demoData;
+      }
+    }
+  }
+
+  async function refresh(){
+    let data;
+    try{ data=await loadData(); }
+    catch(e){ data=demoData; }
+
+    const settings = data.settings || defaultSettings;
+    enabledPresets=getEnabledPresets(settings);
+    const creators = data.creators && data.creators.length ? data.creators : zeroCreatorsFromSettings(settings);
+
+    const signature=JSON.stringify({
+      sections:getOverlaySections(settings),
+      notice:settings.notice||"",
+      noticeColors:settings.noticeColors||[],
+      noticeTitle:settings.noticeTitle||"공지",
+      accountDonors:data.accountDonors||[],
+      creators,
+      presets:enabledPresets.map(p=>({id:p.id,enabled:p.enabled,title:p.title,plusName:p.plusName,minusName:p.minusName}))
+    });
+
+    checkLatestOptionAlert(data.donations||[]);
+
+    if(signature!==lastSignature){
+      lastSignature=signature;
+      applySections(settings);
+      renderAccountRoller(data.accountDonors);
+      renderCreators(creators);
+    }
+  }
+
+  refresh();
+  testSoundFromQuery();
+  setInterval(refresh,5000);
+})();
+</script>
+<!-- notice box visible when ON even without text -->
+</body>
+</html>
