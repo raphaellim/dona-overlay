@@ -1184,6 +1184,7 @@ app.post('/api/sound-events', async (req, res) => {
 
     const title = String(req.body?.title || soundFile).trim();
     const message = String(req.body?.message || '').trim();
+    const soundStatus = String(req.body?.mode || req.body?.status || 'immediate') === 'queue' ? 'queued' : 'pending';
 
     const { data, error } = await supabase
       .from('sound_events')
@@ -1192,7 +1193,9 @@ app.post('/api/sound-events', async (req, res) => {
         broadcast_id: ctx.active.id,
         sound_file: soundFile,
         title,
-        message
+        message,
+        played_at: null,
+        status: soundStatus
       })
       .select()
       .single();
@@ -1229,11 +1232,16 @@ app.get('/api/sound-events', async (req, res) => {
       .select('*')
       .eq('station_id', ctx.station.id)
       .eq('broadcast_id', ctx.active.id)
+      .is('played_at', null)
       .order('created_at', { ascending: true })
       .limit(50);
 
-    const after = String(req.query.after || '');
-    if (after) q = q.gt('created_at', after);
+    // overlay는 pending만 재생, admin은 all=1로 queued/pending 전체 대기열 확인
+    if (String(req.query.all || '') !== '1') {
+      q = q.eq('status', 'pending');
+    } else {
+      q = q.in('status', ['queued', 'pending']);
+    }
 
     const { data, error } = await q;
     if (error) throw error;
@@ -1242,6 +1250,8 @@ app.get('/api/sound-events', async (req, res) => {
       events: (data || []).map(row => ({
         id: row.id,
         createdAt: row.created_at,
+        playedAt: row.played_at,
+        status: row.status || 'pending',
         soundFile: row.sound_file,
         title: row.title,
         message: row.message
@@ -1249,6 +1259,75 @@ app.get('/api/sound-events', async (req, res) => {
     });
   } catch (e) {
     res.status(500).json({ error: e.message || '수동 사운드 이벤트 조회 실패' });
+  }
+});
+
+
+
+app.post('/api/sound-events/:id/played', async (req, res) => {
+  try {
+    if (!requireDb(res)) return;
+    const ctx = await getStationContext(req, res);
+    if (!ctx) return;
+    const tokenOk = typeof stationTokenAllowed === 'function' ? await stationTokenAllowed(req, ctx.station) : false;
+    const canUpdate = tokenOk || await operatorAllowed(req, ctx.station, ctx.active);
+    if (!canUpdate) return res.status(403).json({ error: '권한이 없습니다.' });
+    const { data, error } = await supabase.from('sound_events')
+      .update({ played_at: new Date().toISOString(), status: 'played' })
+      .eq('station_id', ctx.station.id)
+      .eq('broadcast_id', ctx.active.id)
+      .eq('id', req.params.id)
+      .select().single();
+    if (error) throw error;
+    res.json({ ok: true, event: data });
+  } catch (e) {
+    res.status(500).json({ error: e.message || '수동 사운드 played 처리 실패' });
+  }
+});
+
+app.delete('/api/sound-events/:id', async (req, res) => {
+  try {
+    if (!requireDb(res)) return;
+    const ctx = await getStationContext(req, res);
+    if (!ctx) return;
+    if (!await operatorAllowed(req, ctx.station, ctx.active)) return res.status(401).json({ error: '방송 비밀번호 또는 방송국 관리자 권한이 필요합니다.' });
+    const { error } = await supabase.from('sound_events').delete()
+      .eq('station_id', ctx.station.id)
+      .eq('broadcast_id', ctx.active.id)
+      .eq('id', req.params.id);
+    if (error) throw error;
+    res.json({ ok: true, deleted: 1 });
+  } catch (e) {
+    res.status(500).json({ error: e.message || '수동 사운드 삭제 실패' });
+  }
+});
+
+
+
+app.post('/api/sound-events/release', async (req, res) => {
+  try {
+    if (!requireDb(res)) return;
+    const ctx = await getStationContext(req, res);
+    if (!ctx) return;
+
+    if (!await operatorAllowed(req, ctx.station, ctx.active)) {
+      return res.status(401).json({ error: '방송 비밀번호 또는 방송국 관리자 권한이 필요합니다.' });
+    }
+
+    const { data, error } = await supabase
+      .from('sound_events')
+      .update({ status: 'pending' })
+      .eq('station_id', ctx.station.id)
+      .eq('broadcast_id', ctx.active.id)
+      .is('played_at', null)
+      .eq('status', 'queued')
+      .select();
+
+    if (error) throw error;
+
+    res.json({ ok: true, count: (data || []).length });
+  } catch (e) {
+    res.status(500).json({ error: e.message || '대기열 전송 실패' });
   }
 });
 

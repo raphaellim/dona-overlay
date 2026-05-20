@@ -969,6 +969,14 @@
     }
   }
 
+  async function markManualSoundPlayed(eventId){
+    if(!eventId) return;
+    try{
+      await fetchJson("/api/sound-events/" + encodeURIComponent(eventId) + "/played", { method:"POST" });
+    }catch(e){}
+  }
+
+
   function playAlertQueue(){
     if(alertShowing || !alertQueue.length) return;
 
@@ -978,6 +986,7 @@
     const alertItem = alertQueue.shift();
     const html = typeof alertItem === "string" ? alertItem : (alertItem.html || "");
     const row = typeof alertItem === "string" ? {} : (alertItem.row || {});
+    const eventId = typeof alertItem === "string" ? "" : (alertItem.eventId || "");
 
     $alert.innerHTML = html;
     $alert.classList.add("show");
@@ -992,6 +1001,7 @@
       if(closed) return;
       closed = true;
       clearTimeout(fallbackTimer);
+      markManualSoundPlayed(eventId);
       $alert.classList.remove("show");
       setTimeout(() => {
         alertShowing = false;
@@ -1074,37 +1084,36 @@
 
 
   function makeManualSoundEventAlertHtml(ev){
-    const title = escapeHtml(ev.title || ev.soundFile || "수동 사운드");
-    const message = escapeHtml(ev.message || "오버레이 재생");
-    const file = escapeHtml(ev.soundFile || "");
+    const donor = escapeHtml(ev.message || "수동재생");
+    const rawFile = String(ev.soundFile || "");
+    const baseName = rawFile.replace(/\.[^.]+$/, "");
+    const soundName = escapeHtml(baseName || ev.title || "사운드");
 
     return `
-      <div class="alert-donor">${title}</div>
-      <div class="alert-target">${message}</div>
-      <div class="alert-line2"><span class="alert-sound-title">${file}</span></div>
+      <div class="alert-donor">${donor}</div>
+      <div class="alert-target">${soundName}</div>
     `;
   }
 
   async function checkManualSoundEvents(){
     try{
-      let url = "/api/sound-events";
-      if(lastSoundEventAt){
-        url += "?after=" + encodeURIComponent(lastSoundEventAt);
-      }
-
-      const data = await fetchJson(url);
+      const data = await fetchJson("/api/sound-events");
       const events = Array.isArray(data.events) ? data.events : [];
       if(!events.length) return;
 
-      events.forEach(ev => {
-        lastSoundEventAt = ev.createdAt || lastSoundEventAt;
-        alertQueue.push({
-          html: makeManualSoundEventAlertHtml(ev),
-          row: { manualSoundFile: ev.soundFile, manualSoundTitle: ev.title }
-        });
-      });
+      const queuedIds = new Set(alertQueue.map(item => item && item.eventId).filter(Boolean));
+      const first = events[0];
 
-      localStorage.setItem("overlay_last_sound_event_at", lastSoundEventAt);
+      if(queuedIds.has(first.id)) return;
+
+      alertQueue.push({
+        eventId:first.id,
+        html: makeManualSoundEventAlertHtml(first),
+        row: {
+          manualSoundFile:first.soundFile,
+          manualSoundTitle:first.title
+        }
+      });
       playAlertQueue();
     }catch(e){}
   }
@@ -1133,7 +1142,7 @@
     }, 800);
   }
 
-  async function fetchJson(url){
+  async function fetchJson(url, options={}){
     let finalUrl = url;
     const sep1 = finalUrl.includes("?") ? "&" : "?";
     finalUrl = finalUrl + sep1 + "station=" + encodeURIComponent(STATION_SLUG);
@@ -1141,7 +1150,11 @@
       const sep = finalUrl.includes("?") ? "&" : "?";
       finalUrl = finalUrl + sep + "token=" + encodeURIComponent(ACCESS_TOKEN);
     }
-    const res=await fetch(finalUrl,{cache:"no-store"});
+    const fetchOptions = Object.assign({cache:"no-store"}, options || {});
+    if(fetchOptions.method && fetchOptions.method !== "GET"){
+      fetchOptions.headers = Object.assign({"Content-Type":"application/json"}, fetchOptions.headers || {});
+    }
+    const res=await fetch(finalUrl, fetchOptions);
     if(!res.ok) throw new Error(url+" "+res.status);
     return res.json();
   }
