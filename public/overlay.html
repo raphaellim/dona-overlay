@@ -591,6 +591,7 @@
   let lastDonationKey = localStorage.getItem("overlay_last_alert_key") || "";
   let lastSoundEventAt = localStorage.getItem("overlay_last_sound_event_at") || new Date().toISOString();
   const overlaySoundBootAt = new Date().toISOString();
+  const claimedSoundEventIds = new Set();
   sessionStorage.setItem("overlay_sound_event_session_start", lastSoundEventAt);
   let alertTimer = null;
   let alertQueue = [];
@@ -1002,7 +1003,6 @@
       if(closed) return;
       closed = true;
       clearTimeout(fallbackTimer);
-      markManualSoundPlayed(eventId);
       $alert.classList.remove("show");
       setTimeout(() => {
         alertShowing = false;
@@ -1085,13 +1085,13 @@
 
 
   function makeManualSoundEventAlertHtml(ev){
-    const donor = escapeHtml(ev.message || "수동재생");
+    const displayTitle = escapeHtml(ev.title || "수동 Alert");
     const rawFile = String(ev.soundFile || "");
     const baseName = rawFile.replace(/\.[^.]+$/, "");
-    const soundName = escapeHtml(baseName || ev.title || "사운드");
+    const soundName = escapeHtml(baseName || "사운드");
 
     return `
-      <div class="alert-donor">${donor}</div>
+      <div class="alert-donor">${displayTitle}</div>
       <div class="alert-target">${soundName}</div>
     `;
   }
@@ -1103,19 +1103,24 @@
       const events = Array.isArray(data.events) ? data.events : [];
       if(!events.length) return;
 
-      const queuedIds = new Set(alertQueue.map(item => item && item.eventId).filter(Boolean));
-      const first = events[0];
+      for(const ev of events){
+        if(!ev || !ev.id) continue;
+        if(claimedSoundEventIds.has(ev.id)) continue;
 
-      if(queuedIds.has(first.id)) return;
+        claimedSoundEventIds.add(ev.id);
 
-      alertQueue.push({
-        eventId:first.id,
-        html: makeManualSoundEventAlertHtml(first),
-        row: {
-          manualSoundFile:first.soundFile,
-          manualSoundTitle:first.title
-        }
-      });
+        // 가져온 즉시 played 처리해서 다음 polling에서 중복으로 다시 잡히지 않게 함
+        markManualSoundPlayed(ev.id);
+
+        alertQueue.push({
+          eventId:ev.id,
+          html: makeManualSoundEventAlertHtml(ev),
+          row: {
+            manualSoundFile:ev.soundFile,
+            manualSoundTitle:ev.title
+          }
+        });
+      }
 
       playAlertQueue();
     }catch(e){}

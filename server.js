@@ -1242,15 +1242,10 @@ app.get('/api/sound-events', async (req, res) => {
       .limit(50);
 
     if (all) {
-      // admin 대기열은 queued/pending 전체 표시
       q = q.in('status', ['queued', 'pending']);
     } else {
-      // overlay는 전송 완료된 pending만 재생
       q = q.eq('status', 'pending');
-      if (after) {
-        // overlay가 켜진 이후 전송된 항목만 가져와서 새로고침 재생 폭주 방지
-        q = q.gt('released_at', after);
-      }
+      if (after) q = q.gt('released_at', after);
     }
 
     const { data, error } = await q;

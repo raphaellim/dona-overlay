@@ -433,3 +433,14 @@ admin.html 수동 사운드 영역에 재생 방식을 추가했습니다.
 - 새로고침해도 기존 pending 항목을 전부 다시 순차 재생하지 않습니다.
 - `대기열 대기` 항목은 `대기열 전송`을 누른 시점에 released_at이 찍히고 그 이후 overlay에서 순차 재생됩니다.
 - 기존 DB에는 `supabase_sound_queue_sync_update.sql`을 1회 실행하세요.
+
+
+## 수동 사운드 중복 재생 / Alert 문구 수정
+
+- overlay polling 중 같은 sound_events 항목이 중복 큐에 들어가던 문제를 수정했습니다.
+- overlay가 이벤트를 가져온 즉시 claimed 처리하고 DB도 played 처리합니다.
+- 같은 노래를 3번 넣으면 정확히 3번만 재생됩니다.
+- 수동 사운드 Alert 문구를 변경했습니다:
+  1줄: admin.html의 `Alert 표시 제목`
+  2줄: 재생 파일명에서 확장자를 제외한 이름
+- 기존 DB에는 `supabase_sound_queue_duplicate_alert_title_update.sql`을 1회 실행하세요.
