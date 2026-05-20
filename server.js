@@ -562,10 +562,14 @@ async function accessGuard(req, res, next) {
       }
     }
 
-    if (req.method === 'GET' && ['/api/settings', '/api/summary', '/api/donations'].includes(pathOnly)) {
+    if (req.method === 'GET' && ['/api/settings', '/api/summary', '/api/donations', '/api/sound-events'].includes(pathOnly)) {
       const station = await getStation(req);
       if (!station) return res.status(404).json({ error: '방송국을 찾을 수 없습니다.' });
       const active = await ensureActiveBroadcast(station.id);
+
+      // overlay.html은 방송국 token으로 내부 API를 조회해야 화면 데이터가 표시됩니다.
+      if (typeof stationTokenAllowed === 'function' && await stationTokenAllowed(req, station)) return next();
+
       if (await viewerAllowed(req, station, active)) return next();
       return res.status(403).json({ error: '시청 권한이 없습니다.' });
     }
