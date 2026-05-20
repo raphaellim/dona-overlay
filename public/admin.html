@@ -3,496 +3,388 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>관리자 입력</title>
+<title>후원 입력 관리자</title>
 <link rel="stylesheet" href="/app.css">
 <style>
-  .money-pair{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:10px;
-  }
-  .entry-head{
-    display:grid;
-    grid-template-columns: 1.35fr .95fr 1.35fr;
-    gap:8px;
-    color:#cbd5e1;
-    font-weight:900;
-    margin:14px 0 8px;
-    padding:0 4px;
-  }
-  .split-row{
-    display:grid;
-    grid-template-columns: 1.35fr .95fr 1.35fr;
-    gap:8px;
-    align-items:center;
-    margin-bottom:8px;
-  }
-  .split-row .creator-name{
-    font-weight:900;
-    background:#0f172a;
-    border:1px solid #475569;
-    border-radius:10px;
-    padding:11px;
-    white-space:nowrap;
-    overflow:hidden;
-    text-overflow:ellipsis;
-  }
-  .bulk-tools{
-    display:flex;
-    gap:8px;
-    flex-wrap:wrap;
-    margin:10px 0;
-  }
-  .total-line{
-    display:flex;
-    justify-content:space-between;
-    gap:10px;
-    padding:12px 14px;
-    border:1px solid #334155;
-    border-radius:12px;
-    background:#0f172a;
-    font-weight:900;
-    margin-top:10px;
-  }
-  .diff-ok{color:#86efac}
-  .diff-bad{color:#fca5a5}
-  .mini{font-size:12px;padding:7px 10px;border-radius:9px}
-  @media(max-width:800px){
-    .money-pair{grid-template-columns:1fr}
-    .entry-head{display:none}
-    .split-row{grid-template-columns:1fr}
-  }
-
-  .manual-sound-grid{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:end;margin:10px 0}
-  .sound-auto-box{background:#08111f;border:1px solid #334155;border-radius:12px;padding:10px 12px;color:#dbeafe;font-weight:900;margin:8px 0}
-  @media(max-width:800px){.manual-sound-grid{grid-template-columns:1fr}}
-
-  .sound-search-wrap{position:relative}
-  .sound-search-results{
-    position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:50;
-    max-height:220px;overflow:auto;background:#070b12;border:1px solid #334155;
-    border-radius:12px;box-shadow:0 14px 32px rgba(0,0,0,.35);display:none
-  }
-  .sound-search-results.show{display:block}
-  .sound-result{padding:10px 12px;border-bottom:1px solid rgba(51,65,85,.7);cursor:pointer;color:#e5e7eb;font-weight:800}
-  .sound-result:hover{background:#1e293b}
-  .sound-result small{display:block;color:#94a3b8;margin-top:2px;font-weight:700}
-  .manual-sound-grid{display:grid;grid-template-columns:1.2fr .85fr auto auto;gap:8px;align-items:end;margin:10px 0}
-  .sound-auto-box{background:#08111f;border:1px solid #334155;border-radius:12px;padding:10px 12px;color:#dbeafe;font-weight:900;margin:8px 0}
-  @media(max-width:900px){.manual-sound-grid{grid-template-columns:1fr}}
-
+:root{
+  --bg:#070b12;--panel:#0b1220;--panel2:#0f172a;--line:#243247;--line2:#334155;
+  --text:#e5e7eb;--muted:#94a3b8;--blue:#2563eb;--green:#16a34a;--red:#dc2626;--pink:#ec4899;--amber:#f59e0b;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,'Noto Sans KR','Malgun Gothic',sans-serif}
+.wrap{max-width:1320px;margin:0 auto;padding:22px}
+.header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px}
+.title{font-size:30px;font-weight:950;letter-spacing:-.06em;line-height:1.1}
+.sub{color:var(--muted);font-size:13px;margin-top:6px;line-height:1.45}
+.nav{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.nav a{color:#dbeafe;text-decoration:none;background:#111827;border:1px solid var(--line2);padding:10px 14px;border-radius:12px;font-weight:900}
+.layout{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(390px,.95fr);gap:14px;align-items:start}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:16px;box-shadow:0 12px 28px rgba(0,0,0,.18);margin-bottom:14px}
+.card h2{font-size:20px;margin:0 0 12px;font-weight:950;letter-spacing:-.05em;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.row{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+label{font-size:13px;color:#cbd5e1;font-weight:900}
+.input,select,textarea{width:100%;background:#070b12;color:var(--text);border:1px solid var(--line2);border-radius:12px;padding:11px 12px;font-size:15px;outline:none}
+.input:focus,select:focus,textarea:focus{border-color:#60a5fa;box-shadow:0 0 0 3px rgba(37,99,235,.18)}
+.btn{border:0;border-radius:12px;padding:10px 13px;font-weight:950;cursor:pointer;background:#334155;color:#fff;white-space:nowrap}
+.btn:hover{filter:brightness(1.08)}.btn.green{background:var(--green)}.btn.blue{background:var(--blue)}.btn.red{background:var(--red)}.btn.amber{background:var(--amber)}.btn.gray{background:#334155}.btn.mini{font-size:12px;padding:7px 9px;border-radius:9px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.status{background:#08111f;border:1px solid var(--line2);border-radius:13px;padding:11px 12px;color:#dbeafe;font-weight:900;line-height:1.45}
+.status.good{border-color:rgba(34,197,94,.45);color:#bbf7d0}.status.warn{border-color:rgba(245,158,11,.45);color:#fde68a}
+.section-title{font-size:15px;font-weight:950;color:#dbeafe;margin:14px 0 8px}
+.money-total{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:10px}
+.total-box{background:#08111f;border:1px solid var(--line2);border-radius:12px;padding:11px 12px;font-weight:950;color:#dbeafe;display:flex;justify-content:space-between;gap:8px}
+.diff-ok{color:#86efac}.diff-bad{color:#fca5a5}
+.entry-head,.split-row{display:grid;grid-template-columns:1.2fr .85fr 1.05fr;gap:8px;align-items:center}.entry-head{color:#cbd5e1;font-weight:900;padding:0 4px;margin:12px 0 8px}.split-row{margin-bottom:8px}.creator-name{font-weight:950;background:var(--panel2);border:1px solid #475569;border-radius:12px;padding:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.hint{color:var(--muted);font-size:13px;line-height:1.45;margin:8px 0 0}
+.sound-panel{border:1px solid rgba(96,165,250,.28);background:linear-gradient(180deg,rgba(15,23,42,.98),rgba(8,17,31,.98));border-radius:16px;padding:13px;margin-top:10px}.sound-row{display:grid;grid-template-columns:1.2fr .85fr auto auto;gap:8px;align-items:end}.sound-auto{background:#07111f;border:1px solid #334155;border-radius:12px;padding:10px 12px;color:#dbeafe;font-weight:950;margin-bottom:10px}.sound-search-wrap{position:relative}.sound-search-results{position:absolute;left:0;right:0;top:calc(100% + 5px);z-index:50;max-height:230px;overflow:auto;background:#070b12;border:1px solid #334155;border-radius:12px;box-shadow:0 16px 34px rgba(0,0,0,.42);display:none}.sound-search-results.show{display:block}.sound-result{padding:11px 12px;border-bottom:1px solid rgba(51,65,85,.72);cursor:pointer;color:#e5e7eb;font-weight:900}.sound-result:hover{background:#1e293b}.sound-result small{display:block;color:#94a3b8;margin-top:3px;font-weight:700}.selected-sound{margin-top:8px;color:#bbf7d0;font-size:13px;font-weight:900;min-height:18px}
+table{width:100%;border-collapse:collapse;font-size:13px}th,td{border-bottom:1px solid #243247;padding:9px 7px;text-align:left}th{color:#cbd5e1;background:#0f172a;position:sticky;top:0}td.num{text-align:right;font-variant-numeric:tabular-nums}.recent-wrap{max-height:450px;overflow:auto;border:1px solid var(--line);border-radius:14px}
+.savebar{position:sticky;bottom:10px;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:12px;background:rgba(15,23,42,.94);border:1px solid var(--line2);border-radius:16px;padding:10px;margin-top:12px;backdrop-filter:blur(4px)}
+@media(max-width:1050px){.layout,.grid2,.grid3,.sound-row,.money-total{grid-template-columns:1fr}.header{flex-direction:column}.nav{justify-content:flex-start}.entry-head{display:none}.split-row{grid-template-columns:1fr}.recent-wrap{max-height:none}}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <div class="top">
-    <div class="title">관리자 입력</div>
+  <div class="header">
+    <div>
+      <div class="title">후원 입력 관리자</div>
+      <div class="sub" id="stationInfo">방송 정보 확인 중...</div>
+    </div>
     <div class="nav">
-      <a href="/control.html">방송컨트롤</a>
+      <a href="/station_control.html">방송국</a>
+      <a href="/control.html">설정</a>
       <a href="/summary.html">합산</a>
-      <a href="/overlay.html?demo=1" target="_blank">OBS화면</a>
+      <a href="/overlay.html" target="_blank">오버레이</a>
     </div>
   </div>
 
-  <div class="grid">
-    <div class="card">
-      <h2>도네이터 입력</h2>
-      <div id="currentBroadcast" class="resultBox">현재 방송 확인 중...</div>
-
-      <div class="row"><label>관리자 PW</label><input id="pw" class="input" type="password" placeholder="기본 1234"></div>
-      <div class="row"><label>도네이터</label><input id="donor" class="input" placeholder="도네이터명"></div>
-
-      <div class="row">
-        <label>도네이터 후원금액</label>
-        <div class="money-pair">
-          <input id="accountTotal" class="input top-money" inputmode="numeric" placeholder="계좌금액 예: 20000">
-          <input id="toonieTotal" class="input top-money" inputmode="numeric" placeholder="투네금액 예: 30000">
+  <div class="layout">
+    <main>
+      <section class="card">
+        <h2>입력 권한</h2>
+        <div class="grid2">
+          <div class="row">
+            <label>방송 비밀번호</label>
+            <input id="broadcastPw" class="input" type="password" placeholder="현재 방송 비밀번호">
+          </div>
+          <div class="row">
+            <label>&nbsp;</label>
+            <button class="btn blue" onclick="loginBroadcast()">방송 비밀번호 저장</button>
+          </div>
         </div>
-      </div>
+        <div class="hint">방송국 관리자로 로그인했으면 비밀번호 없이 입력 가능합니다. 방송 담당자는 현재 방송 비밀번호를 한 번 저장하면 됩니다.</div>
+      </section>
 
-      <div class="row">
-        <label>처리</label>
-        <select id="processType">
-          <option value="후원">후원</option>
-          <option value="흡금">흡금</option>
-          <option value="먹먹마">먹먹마</option>
-        </select>
-      </div>
-
-      <div class="sound-auto-box" id="autoSoundPreview">자동 사운드: 기본</div>
-      <div class="manual-sound-grid">
-        <div class="row sound-search-wrap">
-          <label>수동 사운드 검색</label>
-          <input id="manualSoundSearch" class="input" autocomplete="off" placeholder="예: 9900 / 윈도우 / 대박 검색">
-          <input id="manualSoundFile" type="hidden">
-          <div id="soundSearchResults" class="sound-search-results"></div>
-        </div>
+      <section class="card">
+        <h2>도네이터 / 금액</h2>
         <div class="row">
-          <label>Alert 표시 제목</label>
-          <input id="manualSoundTitle" class="input" placeholder="예: 대박후원 / 윈도우">
+          <label>도네이터명</label>
+          <input id="donor" class="input" placeholder="후원자 이름">
         </div>
-        <button class="btn gray" type="button" onclick="previewManualSound()">미리듣기</button>
-        <button class="btn blue" type="button" onclick="sendManualSound()">오버레이 재생</button>
-      </div>
-      <p class="hint">수동 사운드는 <b>입력 저장과 별개</b>로 동작합니다. 검색 후 “오버레이 재생”을 누르면 후원 저장 없이 overlay에 alert와 사운드만 나갑니다.</p>
-
-        <div class="row">
-          <label>Alert 표시 사운드 제목</label>
-          <input id="manualSoundTitle" class="input" placeholder="예: 대박후원 / 직접재생">
+        <div class="grid3">
+          <div class="row"><label>계좌 총액</label><input id="accountTotal" class="input" inputmode="decimal" placeholder="예: 6.6 또는 66000"></div>
+          <div class="row"><label>투네 총액</label><input id="toonieTotal" class="input" inputmode="decimal" placeholder="예: 2.5 또는 25000"></div>
+          <div class="row"><label>처리 프리셋</label><select id="processType" class="input"><option value="후원">후원</option></select></div>
         </div>
-        <button class="btn gray" type="button" onclick="previewManualSound()">미리듣기</button>
+        <div class="money-total">
+          <div class="total-box"><span>계좌</span><b id="accountPreview">0</b></div>
+          <div class="total-box"><span>투네</span><b id="tooniePreview">0</b></div>
+          <div class="total-box"><span>총합</span><b id="totalPreview">0</b></div>
+        </div>
+        <div class="status warn" id="preview">자동결과: 후원</div>
+
+        <div class="sound-panel">
+          <div class="section-title">수동 사운드 재생</div>
+          <div class="sound-auto" id="autoSoundPreview">자동 사운드: 기본</div>
+          <div class="sound-row">
+            <div class="row sound-search-wrap">
+              <label>수동 사운드 검색</label>
+              <input id="manualSoundSearch" class="input" autocomplete="off" placeholder="예: 9900 / 윈도우 / 대박">
+              <input id="manualSoundFile" type="hidden">
+              <div id="soundSearchResults" class="sound-search-results"></div>
+              <div class="selected-sound" id="selectedSoundText"></div>
+            </div>
+            <div class="row">
+              <label>Alert 표시 제목</label>
+              <input id="manualSoundTitle" class="input" placeholder="예: 대박후원">
+            </div>
+            <button class="btn gray" type="button" onclick="previewManualSound()">미리듣기</button>
+            <button class="btn blue" type="button" onclick="sendManualSound()">오버레이 재생</button>
+          </div>
+          <div class="hint">수동 사운드는 후원 저장과 별개입니다. 저장 없이 오버레이에 alert + 사운드만 보냅니다.</div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>크리에이터별 분배</h2>
+        <div class="entry-head"><div>크리에이터</div><div>금액</div><div>메모</div></div>
+        <div id="splitRows"></div>
+        <div class="money-total">
+          <div class="total-box"><span>분배합계</span><b id="splitPreview">0</b></div>
+          <div class="total-box"><span>차이</span><b id="diffPreview" class="diff-ok">0</b></div>
+          <div class="total-box"><span>입력건수</span><b id="rowCountPreview">0</b></div>
+        </div>
+        <div class="tools">
+          <button class="btn gray" onclick="clearAmounts()">금액 지우기</button>
+          <button class="btn amber" onclick="fillFirstCreator()">첫 크리에이터에 전액</button>
+        </div>
+      </section>
+
+      <div class="savebar">
+        <div class="hint">수동 사운드와 후원 저장은 별개입니다. 저장 버튼은 후원 데이터만 저장합니다.</div>
+        <button class="btn green" onclick="saveBatch()">후원 입력 저장</button>
       </div>
+    </main>
 
-      <div class="bulk-tools">
-        <button class="btn gray mini" onclick="clearAmounts()">크리에이터 금액 초기화</button>
-        <button class="btn gray mini" onclick="fillSame()">크리에이터 동일금액</button>
-      </div>
-
-      <div class="entry-head">
-        <div>크리에이터</div>
-        <div>금액</div>
-        <div>메모</div>
-      </div>
-      <div id="splitRows"></div>
-
-      <div class="total-line">
-        <span>상단 총액</span>
-        <span id="topTotalPreview">계좌 0 / 투네 0 / 합산 0</span>
-      </div>
-      <div class="total-line">
-        <span>크리에이터 분배합</span>
-        <span id="splitTotalPreview">합산 0</span>
-      </div>
-      <div class="resultBox" id="preview">자동결과: 후원</div>
-
-      <p class="hint"><b>금액 입력:</b> 20 = 20,000원 / 6.6 = 6,600원 / 11900 = 11,900원<br>
-        상단에는 도네이터가 보낸 <b>계좌금액/투네금액</b>을 각각 입력하고,
-        아래 크리에이터 줄에는 <b>금액 1칸</b>만 입력하세요.
-        저장 시 계좌/투네는 입력 순서대로 자동 배분됩니다.
-        흡금/먹먹마 선택 시 크리에이터 금액을 기준으로 자동 계산됩니다.
-      </p>
-
-      <button class="btn green" style="width:100%;font-size:18px;margin-top:12px" onclick="saveBatch()">입력 저장</button>
-    </div>
-
-    <div class="card">
-      <h2>최근 입력</h2>
-      <table class="table">
-        <thead><tr><th>도네이터</th><th>크리에이터</th><th>계좌</th><th>투네</th><th>금액</th><th>처리</th><th></th></tr></thead>
-        <tbody id="recent"></tbody>
-      </table>
-    </div>
+    <aside>
+      <section class="card">
+        <h2>최근 입력 <button class="btn mini gray" onclick="loadRecent()">새로고침</button></h2>
+        <div class="recent-wrap">
+          <table>
+            <thead><tr><th>도네이터</th><th>크리에이터</th><th>계좌</th><th>투네</th><th>합계</th><th>처리</th><th></th></tr></thead>
+            <tbody id="recent"></tbody>
+          </table>
+        </div>
+      </section>
+    </aside>
   </div>
 </div>
 
 <script src="/common.js"></script>
 <script>
-let settings;
+let settings = null;
 let soundFiles = [];
 
+function escAttr(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));}
+function man(v){return displayMan(toWon(v)).toFixed(1).replace(/\.0$/,'');}
+function currentBroadcastPassword(){return $('#broadcastPw') ? $('#broadcastPw').value : '';}
 
+async function init(){
+  const savedPw = localStorage.getItem('BROADCAST_PASSWORD_' + getStation()) || '';
+  if(savedPw) $('#broadcastPw').value = savedPw;
+  settings = await api('/api/settings');
+  await loadSoundFiles();
+  renderInfo();
+  renderProcessOptions();
+  renderSplitRows();
+  bindEvents();
+  await loadRecent();
+  updatePreview();
+}
 
+function renderInfo(){
+  const st = settings.station ? `${settings.station.name} / ${settings.station.slug}` : getStation();
+  const bc = settings.broadcast ? settings.broadcast.title : '현재 방송 없음';
+  $('#stationInfo').textContent = `방송국: ${st} · 현재 방송: ${bc}`;
+}
+
+async function loginBroadcast(){
+  try{
+    const pw = currentBroadcastPassword();
+    await api('/api/broadcast-login',{method:'POST',body:JSON.stringify({password:pw})});
+    localStorage.setItem('BROADCAST_PASSWORD_' + getStation(), pw);
+    alert('방송 비밀번호가 저장되었습니다.');
+  }catch(e){alert(e.message)}
+}
 
 async function loadSoundFiles(){
   try{
     const data = await api('/api/sounds');
     soundFiles = (data.sounds || []).map(s => s.file);
-  }catch(e){ soundFiles = []; }
+  }catch(e){soundFiles=[];}
 }
-
-function escAttr(v){
-  return String(v ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
-}
-
-function normalizeSoundKeyword(v){
-  return String(v || '').toLowerCase().replace(/\s+/g, '');
-}
-
-function renderSoundSearchResults(keyword){
-  const box = $('#soundSearchResults');
-  if(!box) return;
-
-  const q = normalizeSoundKeyword(keyword);
-  if(!q){
-    box.classList.remove('show');
-    box.innerHTML = '';
-    return;
-  }
-
-  const matched = soundFiles
-    .filter(file => normalizeSoundKeyword(file).includes(q))
-    .slice(0, 20);
-
-  if(!matched.length){
-    box.innerHTML = `<div class="sound-result"><span>검색 결과 없음</span><small>public/sounds 폴더에 파일을 업로드하세요.</small></div>`;
-    box.classList.add('show');
-    return;
-  }
-
-  box.innerHTML = matched.map(file => `
-    <div class="sound-result" onclick="selectManualSound('${escAttr(file)}')">
-      ${esc(file)}
-      <small>클릭하면 수동 사운드로 선택됩니다.</small>
-    </div>
-  `).join('');
-  box.classList.add('show');
-}
-
-function selectManualSound(file){
-  if($('#manualSoundSearch')) $('#manualSoundSearch').value = file;
-  if($('#soundSearchResults')) $('#soundSearchResults').classList.remove('show');
-  updateSoundPreview();
-}
-
-function getAutoSoundName(){
-  const manual = $('#manualSoundFile') ? $('#manualSoundFile').value.trim() : '';
-  if(manual) return '수동 선택됨: ' + manual;
-
-  const pTitle = $('#processType') ? $('#processType').value : '후원';
-  const preset = findPresetByTitle(pTitle);
-  if(preset && preset.soundFile) return '프리셋 자동: ' + preset.soundFile;
-
-  const account = toWon($('#accountTotal') ? $('#accountTotal').value : 0);
-  const rules = settings?.soundRules?.amountRules || [];
-  const matched = rules
-    .filter(r => account >= Number(r.min || 0) && (!Number(r.max || 0) || account <= Number(r.max || 0)) && r.sound)
-    .sort((a,b) => Number(b.min || 0) - Number(a.min || 0))[0];
-
-  if(matched) return '금액구간 자동: ' + matched.sound;
-  return '기본 자동: ' + (settings?.soundRules?.defaultSound || 'alert.mp3');
-}
-
-function updateSoundPreview(){
-  const box = $('#autoSoundPreview');
-  if(box) box.textContent = '사운드: ' + getAutoSoundName();
-}
-
-function previewManualSound(){
-  const file = $('#manualSoundFile') ? $('#manualSoundFile').value.trim() : '';
-  if(!file) return alert('검색 결과에서 사운드 파일을 먼저 선택하세요.');
-  try{
-    const audio = new Audio('/sounds/' + file.replace(/[\\\\/]/g,''));
-    audio.volume = 0.85;
-    audio.play().catch(()=>alert('브라우저가 소리 재생을 차단했거나 파일을 찾지 못했습니다.'));
-  }catch(e){ alert(e.message); }
-}
-
-async function sendManualSound(){
-  try{
-    const file = $('#manualSoundFile') ? $('#manualSoundFile').value.trim() : '';
-    if(!file) return alert('검색 결과에서 사운드 파일을 먼저 선택하세요.');
-
-    const title = $('#manualSoundTitle') ? $('#manualSoundTitle').value.trim() : '';
-    const message = $('#donor') && $('#donor').value.trim()
-      ? `${$('#donor').value.trim()} 수동 사운드`
-      : '수동 사운드';
-
-    await api('/api/sound-events', {
-      method:'POST',
-      body:JSON.stringify({
-        soundFile:file,
-        title:title || file,
-        message
-      })
-    });
-
-    alert('오버레이로 수동 사운드를 전송했습니다.');
-  }catch(e){ alert(e.message); }
-}
-
-
-
-
-async function loadCurrentBroadcast(){
-  try{
-    const data = await api('/api/broadcasts');
-    $('#currentBroadcast').textContent = data.active ? `현재 방송: ${data.active.title}` : '현재 방송 없음';
-  }catch(e){
-    $('#currentBroadcast').textContent = '현재 방송 확인 실패';
-  }
-}
-
-async function init(){
-  settings = await api('/api/settings');
-  await loadSoundFiles();
-  await loadCurrentBroadcast();
-  const savedPw = localStorage.getItem('ADMIN_PASSWORD') || '';
-  if(savedPw) $('#pw').value = savedPw;
-  renderSplitRows();
-  renderProcessOptions();
-  bindPreview();
-  await loadRecent();
-}
-
-function renderSplitRows(){
-  const wrap = $('#splitRows');
-  const creators = settings.creators || [];
-  wrap.innerHTML = creators.map((name, idx) => `
-    <div class="split-row" data-creator="${esc(name)}">
-      <div class="creator-name">${esc(name)}</div>
-      <input class="input amount" inputmode="numeric" placeholder="금액" data-idx="${idx}">
-      <input class="input memo" placeholder="메모" data-idx="${idx}">
-    </div>
-  `).join('');
-}
-
 
 function renderProcessOptions(){
   const sel = $('#processType');
   const current = sel.value || '후원';
   const presets = (settings.presets || []).filter(p => p.enabled !== false);
-  sel.innerHTML = [
-    `<option value="후원">후원</option>`,
-    ...presets.map(p => `<option value="${esc(p.title)}">${esc(p.title)}</option>`)
-  ].join('');
-  if([...sel.options].some(o => o.value === current)) sel.value = current;
+  sel.innerHTML = [`<option value="후원">후원</option>`, ...presets.map(p=>`<option value="${escAttr(p.title)}">${esc(p.title)}</option>`)].join('');
+  if([...sel.options].some(o=>o.value===current)) sel.value=current;
 }
 
-function findPresetByTitle(title){
-  return (settings.presets || []).find(p => p.enabled !== false && p.title === title);
+function renderSplitRows(){
+  const creators = settings.creators || [];
+  $('#splitRows').innerHTML = creators.map((name,idx)=>`
+    <div class="split-row" data-creator="${escAttr(name)}">
+      <div class="creator-name">${esc(name)}</div>
+      <input class="input amount" inputmode="decimal" placeholder="금액" data-idx="${idx}">
+      <input class="input memo" placeholder="메모" data-idx="${idx}">
+    </div>
+  `).join('');
 }
+
+function findPresetByTitle(title){return (settings.presets || []).find(p => p.enabled !== false && p.title === title);}
 
 function calcPresetPreview(preset, amount){
-  if(!preset || amount <= 0) return '후원';
-  const plusPrice = Number(preset.plusPrice || 0);
-  const minusPrice = Number(preset.minusPrice || 0);
-
-  if(minusPrice > 0 && amount % minusPrice === 0){
-    return `${preset.minusName} ${amount / minusPrice}`;
-  }
-  if(plusPrice > 0 && amount % plusPrice === 0){
-    return `${preset.plusName} ${amount / plusPrice}`;
-  }
+  if(!preset || amount<=0) return '후원';
+  const plus=Number(preset.plusPrice||0), minus=Number(preset.minusPrice||0);
+  if(minus>0 && amount%minus===0) return `${preset.minusName} ${amount/minus}`;
+  if(plus>0 && amount%plus===0) return `${preset.plusName} ${amount/plus}`;
   return `${preset.title} 확인`;
 }
 
-function bindPreview(){
-  $('#processType').addEventListener('input', updatePreview);
-  $('#accountTotal').addEventListener('input', updatePreview);
-  $('#toonieTotal').addEventListener('input', updatePreview);
-  document.querySelectorAll('.amount').forEach(el => el.addEventListener('input', updatePreview));
-  updatePreview();
-  updateSoundPreview();
-}
-
 function getRows(){
-  return Array.from(document.querySelectorAll('.split-row')).map(row => ({
+  return Array.from(document.querySelectorAll('.split-row')).map(row=>({
     creator: row.dataset.creator,
     amount: row.querySelector('.amount').value,
     memo: row.querySelector('.memo').value
   }));
 }
 
-function updatePreview(){
-  const account = toWon($('#accountTotal').value);
-  const toonie = toWon($('#toonieTotal').value);
-  const topTotal = account + toonie;
-  const rows = getRows();
-  const splitTotal = rows.reduce((s,r)=>s+toWon(r.amount),0);
-  const diff = topTotal - splitTotal;
-
-  $('#topTotalPreview').textContent = `계좌 ${displayMan(account).toFixed(1)} / 투네 ${displayMan(toonie).toFixed(1)} / 합산 ${displayMan(topTotal).toFixed(1)}`;
-  $('#splitTotalPreview').innerHTML = `합산 ${displayMan(splitTotal).toFixed(1)} / 차이 <span class="${diff===0?'diff-ok':'diff-bad'}">${displayMan(diff).toFixed(1)}</span>`;
-
-  const p = $('#processType').value || '후원';
-  const prices = settings.prices;
-  const filled = rows.filter(r => toWon(r.amount)>0);
-
-  let msg = '후원';
-  if(p !== '후원' && filled.length){
-    const preset = findPresetByTitle(p);
-    const examples = filled.slice(0,4).map(r => {
-      const amt = toWon(r.amount);
-      return `${r.creator}: ${calcPresetPreview(preset, amt)}`;
+function bindEvents(){
+  ['donor','accountTotal','toonieTotal','processType','manualSoundTitle'].forEach(id=>{
+    const el=$('#'+id); if(el) el.addEventListener('input', updatePreview);
+  });
+  document.querySelectorAll('.amount').forEach(el=>el.addEventListener('input', updatePreview));
+  if($('#manualSoundSearch')){
+    $('#manualSoundSearch').addEventListener('input', e=>{
+      $('#manualSoundFile').value='';
+      renderSoundSearchResults(e.target.value);
+      updateSoundPreview();
     });
-    msg = examples.join(' / ') + (filled.length > 4 ? ` 외 ${filled.length-4}건` : '');
+    $('#manualSoundSearch').addEventListener('focus', e=>renderSoundSearchResults(e.target.value));
   }
-  $('#preview').textContent = '자동결과: ' + msg;
+  document.addEventListener('click', e=>{
+    if(!e.target.closest('.sound-search-wrap') && $('#soundSearchResults')) $('#soundSearchResults').classList.remove('show');
+  });
+}
+
+function updatePreview(){
+  const account=toWon($('#accountTotal').value), toonie=toWon($('#toonieTotal').value), topTotal=account+toonie;
+  const rows=getRows();
+  const splitTotal=rows.reduce((s,r)=>s+toWon(r.amount),0);
+  const diff=topTotal-splitTotal;
+  const filled=rows.filter(r=>toWon(r.amount)>0);
+
+  $('#accountPreview').textContent=displayMan(account).toFixed(1).replace(/\.0$/,'');
+  $('#tooniePreview').textContent=displayMan(toonie).toFixed(1).replace(/\.0$/,'');
+  $('#totalPreview').textContent=displayMan(topTotal).toFixed(1).replace(/\.0$/,'');
+  $('#splitPreview').textContent=displayMan(splitTotal).toFixed(1).replace(/\.0$/,'');
+  $('#diffPreview').textContent=displayMan(diff).toFixed(1).replace(/\.0$/,'');
+  $('#diffPreview').className=diff===0?'diff-ok':'diff-bad';
+  $('#rowCountPreview').textContent=filled.length;
+
+  const p=$('#processType').value || '후원';
+  let msg='후원';
+  if(p!=='후원' && filled.length){
+    const preset=findPresetByTitle(p);
+    msg=filled.slice(0,4).map(r=>`${r.creator}: ${calcPresetPreview(preset,toWon(r.amount))}`).join(' / ');
+    if(filled.length>4) msg += ` 외 ${filled.length-4}명`;
+  }
+  $('#preview').textContent='자동결과: '+msg;
   updateSoundPreview();
+}
+
+function normalizeSoundKeyword(v){return String(v||'').toLowerCase().replace(/\s+/g,'');}
+function renderSoundSearchResults(keyword){
+  const box=$('#soundSearchResults'); if(!box) return;
+  const q=normalizeSoundKeyword(keyword);
+  if(!q){box.classList.remove('show');box.innerHTML='';return;}
+  const matched=soundFiles.filter(file=>normalizeSoundKeyword(file).includes(q)).slice(0,20);
+  if(!matched.length){
+    box.innerHTML=`<div class="sound-result"><span>검색 결과 없음</span><small>public/sounds 폴더에 파일을 업로드하세요.</small></div>`;
+    box.classList.add('show');return;
+  }
+  box.innerHTML=matched.map(file=>`<div class="sound-result" onclick="selectManualSound('${escAttr(file)}')">${esc(file)}<small>클릭하면 수동 사운드로 선택</small></div>`).join('');
+  box.classList.add('show');
+}
+function selectManualSound(file){
+  $('#manualSoundFile').value=file;
+  $('#manualSoundSearch').value=file;
+  $('#soundSearchResults').classList.remove('show');
+  updateSoundPreview();
+}
+function getAutoSoundName(){
+  const manual=$('#manualSoundFile').value.trim();
+  if(manual) return '수동 선택됨: '+manual;
+  const preset=findPresetByTitle($('#processType').value || '후원');
+  if(preset && preset.soundFile) return '프리셋 자동: '+preset.soundFile;
+  const account=toWon($('#accountTotal').value);
+  const rules=settings?.soundRules?.amountRules || [];
+  const matched=rules.filter(r=>account>=Number(r.min||0)&&(!Number(r.max||0)||account<=Number(r.max||0))&&r.sound).sort((a,b)=>Number(b.min||0)-Number(a.min||0))[0];
+  if(matched) return '금액구간 자동: '+matched.sound;
+  return '기본 자동: '+(settings?.soundRules?.defaultSound || 'alert.mp3');
+}
+function updateSoundPreview(){
+  $('#autoSoundPreview').textContent='사운드: '+getAutoSoundName();
+  const f=$('#manualSoundFile').value.trim();
+  $('#selectedSoundText').textContent=f ? `선택됨: ${f}` : '';
+}
+function previewManualSound(){
+  const file=$('#manualSoundFile').value.trim();
+  if(!file) return alert('검색 결과에서 사운드 파일을 먼저 선택하세요.');
+  const audio=new Audio('/sounds/'+file.replace(/[\\/]/g,''));
+  audio.volume=.85;
+  audio.play().catch(()=>alert('브라우저가 소리 재생을 차단했거나 파일을 찾지 못했습니다.'));
+}
+async function sendManualSound(){
+  try{
+    const file=$('#manualSoundFile').value.trim();
+    if(!file) return alert('검색 결과에서 사운드 파일을 먼저 선택하세요.');
+    const title=$('#manualSoundTitle').value.trim() || file;
+    const donor=$('#donor').value.trim();
+    await api('/api/sound-events',{method:'POST',body:JSON.stringify({
+      broadcastPassword: currentBroadcastPassword(),
+      soundFile:file,
+      title,
+      message: donor ? `${donor} 수동 사운드` : '수동 사운드'
+    })});
+    alert('오버레이로 수동 사운드를 전송했습니다.');
+  }catch(e){alert(e.message)}
 }
 
 function clearAmounts(){
   document.querySelectorAll('.amount,.memo').forEach(el=>el.value='');
   updatePreview();
 }
-
-function fillSame(){
-  const v = prompt('크리에이터 동일금액 입력', '');
-  if(v === null) return;
-  document.querySelectorAll('.amount').forEach(el => el.value = v);
+function fillFirstCreator(){
+  const total=toWon($('#accountTotal').value)+toWon($('#toonieTotal').value);
+  const first=document.querySelector('.split-row .amount');
+  if(!first) return;
+  clearAmounts();
+  first.value=total;
   updatePreview();
 }
 
 async function saveBatch(){
   try{
-    const pw = $('#pw').value;
-    localStorage.setItem('ADMIN_PASSWORD', pw);
-
-    const rows = getRows().filter(r => toWon(r.amount)>0);
-    const body = {
-      password: pw,
+    const rows=getRows().filter(r=>toWon(r.amount)>0);
+    const body={
+      broadcastPassword: currentBroadcastPassword(),
       donor: $('#donor').value,
       accountTotal: $('#accountTotal').value,
       toonieTotal: $('#toonieTotal').value,
       processType: $('#processType').value || '후원',
       rows
     };
-    const res = await api('/api/donations/batch', {method:'POST', body:JSON.stringify(body)});
-    $('#donor').value = '';
-    $('#accountTotal').value = '';
-    $('#toonieTotal').value = '';
+    const res=await api('/api/donations/batch',{method:'POST',body:JSON.stringify(body)});
+    $('#donor').value='';$('#accountTotal').value='';$('#toonieTotal').value='';
     clearAmounts();
     await loadRecent();
     alert(`${res.count}건 저장 완료`);
-  }catch(e){
-    alert(e.message);
-  }
+  }catch(e){alert(e.message)}
 }
 
 async function loadRecent(){
-  const s = await api('/api/summary');
-  const rows = (s.donations||[]).slice().reverse().slice(0,14);
-  $('#recent').innerHTML = rows.map(r => `
+  const s=await api('/api/summary');
+  const rows=(s.donations||[]).slice().reverse().slice(0,18);
+  $('#recent').innerHTML=rows.map(r=>`
     <tr>
-      <td>${esc(r.donor)}</td>
-      <td>${esc(r.creator)}</td>
-      <td class="num">${displayMan(r.accountAmount).toFixed(1)}</td>
-      <td class="num">${displayMan(r.toonieAmount).toFixed(1)}</td>
+      <td>${esc(r.donor)}</td><td>${esc(r.creator)}</td>
+      <td class="num">${displayMan(r.accountAmount).toFixed(1).replace(/\.0$/,'')}</td>
+      <td class="num">${displayMan(r.toonieAmount).toFixed(1).replace(/\.0$/,'')}</td>
       <td class="num">${esc(r.displayAmount)}</td>
       <td>${esc(r.resultLabel||r.processType)}</td>
       <td><button class="btn red mini" onclick="delRow('${r.id}')">삭제</button></td>
-    </tr>
-  `).join('');
+    </tr>`).join('');
 }
-
 async function delRow(id){
-  const pw = $('#pw').value;
   if(!confirm('삭제할까요?')) return;
-  await api('/api/donations/'+id, {method:'DELETE', headers:{'x-admin-password':pw}});
+  await api('/api/donations/'+id,{method:'DELETE',body:JSON.stringify({broadcastPassword:currentBroadcastPassword()})});
   await loadRecent();
 }
 
 init();
-
-setTimeout(() => {
-  if($('#manualSoundSearch')){
-    $('#manualSoundSearch').addEventListener('input', e => {
-      if($('#manualSoundFile')) $('#manualSoundFile').value = '';
-      renderSoundSearchResults(e.target.value);
-      updateSoundPreview();
-    });
-    $('#manualSoundSearch').addEventListener('focus', e => renderSoundSearchResults(e.target.value));
-  }
-  if($('#manualSoundTitle')) $('#manualSoundTitle').addEventListener('input', updateSoundPreview);
-  document.addEventListener('click', e => {
-    if(!e.target.closest('.sound-search-wrap') && $('#soundSearchResults')){
-      $('#soundSearchResults').classList.remove('show');
-    }
-  });
-}, 0);
-
 </script>
-
 <script>
 (function preserveStationLinks(){
   const station = new URLSearchParams(location.search).get('station') || localStorage.getItem('STATION_SLUG') || 'default';
@@ -506,6 +398,5 @@ setTimeout(() => {
   });
 })();
 </script>
-
 </body>
 </html>
