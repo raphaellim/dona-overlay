@@ -458,6 +458,53 @@
     line-height:1;
     white-space:nowrap;
   }
+
+  /* Alert 전체 화면 중앙 표시 */
+  .option-alert{
+    position:fixed !important;
+    left:50% !important;
+    top:50% !important;
+    right:auto !important;
+    bottom:auto !important;
+    width:min(520px, calc(100vw - 40px)) !important;
+    min-height:150px !important;
+    transform:translate(-50%, -50%) scale(.94) !important;
+    z-index:9999 !important;
+    display:flex !important;
+    flex-direction:column !important;
+    align-items:center !important;
+    justify-content:center !important;
+    text-align:center !important;
+    pointer-events:none !important;
+  }
+
+  .option-alert.show{
+    transform:translate(-50%, -50%) scale(1) !important;
+  }
+
+  .alert-donor{
+    font-size:44px !important;
+    line-height:1.05 !important;
+    margin-bottom:8px !important;
+  }
+
+  .alert-target{
+    font-size:24px !important;
+    line-height:1.15 !important;
+    margin-bottom:10px !important;
+  }
+
+  .alert-line2{
+    font-size:28px !important;
+    line-height:1.1 !important;
+    flex-wrap:wrap !important;
+  }
+
+  .alert-sound-title{
+    font-size:22px !important;
+    padding:5px 11px !important;
+  }
+
 </style>
 </head>
 <body>
@@ -900,34 +947,90 @@
   }
 
   function playSoundForDonation(row){
-    const file = pickSoundFileForDonation(row);
-    const audio = getAudio(file);
-    if(!audio) return;
+    const file = typeof pickSoundFileForDonation === "function"
+      ? pickSoundFileForDonation(row)
+      : "";
+
+    if(!file) return null;
+
+    const audio = typeof getAudio === "function"
+      ? getAudio(file)
+      : new Audio("/sounds/" + String(file).replace(/[\\\/]/g, ""));
+
+    if(!audio) return null;
 
     try{
       audio.pause();
       audio.currentTime = 0;
       const p = audio.play();
       if(p && typeof p.catch === "function") p.catch(() => {});
-    }catch(e){}
+      return audio;
+    }catch(e){
+      return null;
+    }
   }
 
   function playAlertQueue(){
-    if(alertPlaying || !alertQueue.length) return;
-    alertPlaying=true;
-    const alertItem = alertQueue.shift();
-    $alert.innerHTML = alertItem.html;
-    $alert.classList.add("show");
-    playSoundForDonation(alertItem.row);
+    if(alertShowing || alertPlaying || !alertQueue.length) return;
 
-    clearTimeout(alertTimer);
-    alertTimer=setTimeout(()=>{
+    alertShowing = true;
+    alertPlaying = true;
+
+    const alertItem = alertQueue.shift();
+    const html = typeof alertItem === "string" ? alertItem : (alertItem.html || "");
+    const row = typeof alertItem === "string" ? {} : (alertItem.row || {});
+
+    $alert.innerHTML = html;
+    $alert.classList.add("show");
+
+    const audio = playSoundForDonation(row);
+
+    let closed = false;
+    let minDone = false;
+    let minTimer = null;
+    let fallbackTimer = null;
+
+    const closeAlert = () => {
+      if(closed) return;
+      closed = true;
+      clearTimeout(minTimer);
+      clearTimeout(fallbackTimer);
+
       $alert.classList.remove("show");
-      setTimeout(()=>{
-        alertPlaying=false;
+      setTimeout(() => {
+        alertShowing = false;
+        alertPlaying = false;
         playAlertQueue();
-      },350);
-    },2600);
+      }, 280);
+    };
+
+    // 짧은 효과음도 최소 2.6초는 표시
+    minTimer = setTimeout(() => {
+      minDone = true;
+      if(!audio || audio.ended || audio.paused) closeAlert();
+    }, 2600);
+
+    if(audio){
+      const onEnded = () => {
+        audio.removeEventListener("ended", onEnded);
+        audio.removeEventListener("error", onError);
+        if(minDone) closeAlert();
+      };
+
+      const onError = () => {
+        audio.removeEventListener("ended", onEnded);
+        audio.removeEventListener("error", onError);
+        if(minDone) closeAlert();
+      };
+
+      audio.addEventListener("ended", onEnded);
+      audio.addEventListener("error", onError);
+
+      // 음악이 너무 길어도 overlay를 계속 막지 않도록 최대 20초
+      fallbackTimer = setTimeout(closeAlert, 20000);
+    }else{
+      fallbackTimer = setTimeout(closeAlert, 3200);
+    }
   }
 
   function checkLatestOptionAlert(donations){
