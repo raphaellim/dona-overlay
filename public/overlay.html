@@ -849,6 +849,101 @@
       font-size:20px !important;
     }
   }
+  /* ===== ALERT 위치 강제 보정 - 제일 아래에 넣기 ===== */
+.option-alert{
+  position:fixed !important;
+  left:50% !important;
+  top:50% !important;
+  right:auto !important;
+  bottom:auto !important;
+
+  width:min(760px, calc(100vw - 48px)) !important;
+  min-height:240px !important;
+
+  /* 위쪽 배지 공간 확보 */
+  padding:78px 34px 36px 34px !important;
+
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:center !important;
+  justify-content:center !important;
+  text-align:center !important;
+  gap:16px !important;
+
+  transform:translate(-50%, -50%) scale(.9) !important;
+}
+
+.option-alert.show{
+  transform:translate(-50%, -50%) scale(1) !important;
+}
+
+.option-alert::before{
+  content:"후원알림" !important;
+  top:-24px !important;
+  left:50% !important;
+  transform:translateX(-50%) !important;
+}
+
+/* 후원자명 → 크리에이터 한 줄 중앙 */
+.option-alert .donation-alert-main{
+  width:100% !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  text-align:center !important;
+  flex-wrap:nowrap !important;
+  gap:14px !important;
+}
+
+/* 후원자명 크게 */
+.option-alert .donation-alert-donor{
+  font-size:58px !important;
+  line-height:1.05 !important;
+}
+
+/* 크리에이터 */
+.option-alert .donation-alert-creator{
+  font-size:42px !important;
+  line-height:1.08 !important;
+}
+
+/* 계좌/투네 줄 중앙 */
+.option-alert .donation-alert-source{
+  width:100% !important;
+  display:flex !important;
+  justify-content:center !important;
+  align-items:center !important;
+  text-align:center !important;
+}
+
+/* 모바일 */
+@media (max-width:720px){
+  .option-alert{
+    width:calc(100vw - 28px) !important;
+    min-height:260px !important;
+
+    /* 모바일에서 본문을 더 아래로 */
+    padding:96px 18px 34px 18px !important;
+    gap:18px !important;
+  }
+
+  .option-alert::before{
+    top:-20px !important;
+  }
+
+  .option-alert .donation-alert-main{
+    flex-wrap:wrap !important;
+    gap:10px !important;
+  }
+
+  .option-alert .donation-alert-donor{
+    font-size:42px !important;
+  }
+
+  .option-alert .donation-alert-creator{
+    font-size:30px !important;
+  }
+}
 
 </style>
 </head>
