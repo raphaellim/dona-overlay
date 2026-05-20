@@ -211,34 +211,50 @@
   .muted{color:var(--yellow)}
 
   .option-alert{
-    position:absolute;
-    left:8px;
-    right:8px;
-    top:42px;
-    z-index:50;
-    padding:12px 10px 13px;
-    border-radius:18px;
-    border:2px solid rgba(255,220,95,.92);
-    background:
-      radial-gradient(circle at 12% 20%, rgba(255,255,255,.18), transparent 20%),
-      linear-gradient(135deg, rgba(255,72,152,.94), rgba(105,54,255,.93) 55%, rgba(0,184,255,.92));
-    color:#fff;
-    text-align:center;
-    letter-spacing:-.06em;
-    opacity:0;
-    transform:translateY(-10px) scale(.94);
-    transition:opacity .22s ease, transform .22s cubic-bezier(.2,1.35,.3,1);
-    box-shadow:
-      0 0 0 1px rgba(255,255,255,.24) inset,
-      0 0 18px rgba(255,72,152,.48),
-      0 8px 24px rgba(0,0,0,.34);
-  }
+  position:fixed;
+  left:50%;
+  top:50%;
+  right:auto;
+  bottom:auto;
+  z-index:99999;
+
+  width:min(760px, calc(100vw - 48px));
+  min-height:220px;
+
+  /* 상단 후원알림 배지 공간 확보 */
+  padding:64px 34px 34px 34px;
+
+  border-radius:34px;
+  border:3px solid rgba(255,255,255,.72);
+
+  background:
+    radial-gradient(circle at 18% 0%, rgba(255,255,255,.20), transparent 30%),
+    linear-gradient(135deg, rgba(255,78,147,.96), rgba(105,74,255,.96) 48%, rgba(23,30,54,.98));
+
+  color:#fff;
+  text-align:center;
+  letter-spacing:-.06em;
+
+  display:grid;
+  place-items:center;
+  align-content:center;
+  justify-content:center;
+  gap:14px;
+
+  opacity:0;
+  transform:translate(-50%, -50%) scale(.9);
+  transition:opacity .22s ease, transform .22s cubic-bezier(.2,1.35,.3,1);
+
+  box-shadow:
+    0 28px 90px rgba(0,0,0,.62),
+    0 0 0 8px rgba(255,255,255,.08),
+    inset 0 1px 0 rgba(255,255,255,.30);
+}
 
   .option-alert.show{
-    opacity:1;
-    transform:translateY(0) scale(1);
-    animation:alertPop .42s ease, alertGlow 1.15s ease-in-out infinite alternate;
-  }
+  opacity:1;
+  transform:translate(-50%, -50%) scale(1);
+}
 
   @keyframes alertPop{
     0%{transform:translateY(-10px) scale(.88)}
@@ -713,12 +729,22 @@
   }
 
   @media (max-width:720px){
-    .option-alert{
-      width:calc(100vw - 28px) !important;
-      padding:68px 18px 32px 18px;
-      border-radius:26px !important;
-      min-height:220px;
-    }
+     .option-alert{
+    width:calc(100vw - 28px);
+    min-height:230px;
+
+    /* 모바일에서는 배지랑 본문 사이 여백 더 크게 */
+    padding:76px 18px 34px 18px;
+
+    border-radius:26px;
+    gap:16px;
+  }
+
+  .option-alert::before{
+    top:-20px;
+    font-size:16px;
+    padding:7px 16px;
+  }
     .option-alert .alert-route,
     .option-alert .alert-donor{
       font-size:34px !important;
