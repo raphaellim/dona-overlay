@@ -572,7 +572,7 @@
   }
 
   .option-alert::before{
-    content:"ALERT";
+    content:"후원알림";
     position:absolute;
     top:-18px;
     left:50%;
@@ -727,6 +727,98 @@
     .option-alert .alert-source-badge,
     .option-alert .alert-source-label{
       font-size:18px !important;
+    }
+  }
+
+
+  /* ===== 후원 ALERT 레이아웃 개선 ===== */
+  .option-alert .donation-alert-main{
+    width:100% !important;
+    display:flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+    flex-wrap:nowrap !important;
+    gap:14px !important;
+    text-align:center !important;
+    color:#fff !important;
+  }
+
+  .option-alert .donation-alert-donor{
+    font-size:58px !important;
+    line-height:1.02 !important;
+    font-weight:1000 !important;
+    letter-spacing:-.06em !important;
+    text-shadow:
+      0 3px 0 rgba(0,0,0,.20),
+      0 10px 24px rgba(0,0,0,.40) !important;
+  }
+
+  .option-alert .donation-alert-arrow{
+    display:inline-flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+    min-width:54px !important;
+    height:54px !important;
+    border-radius:999px !important;
+    background:rgba(255,255,255,.18) !important;
+    border:1px solid rgba(255,255,255,.34) !important;
+    font-size:34px !important;
+    line-height:1 !important;
+    box-shadow:0 8px 22px rgba(0,0,0,.25) !important;
+  }
+
+  .option-alert .donation-alert-creator{
+    font-size:42px !important;
+    line-height:1.06 !important;
+    font-weight:950 !important;
+    letter-spacing:-.05em !important;
+    text-shadow:
+      0 2px 0 rgba(0,0,0,.18),
+      0 8px 22px rgba(0,0,0,.36) !important;
+  }
+
+  .option-alert .donation-alert-source{
+    width:100% !important;
+    display:flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+    margin-top:2px !important;
+  }
+
+  .option-alert .donation-alert-source-badge{
+    display:inline-flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+    padding:9px 16px !important;
+    border-radius:999px !important;
+    background:rgba(0,0,0,.30) !important;
+    border:2px solid rgba(255,255,255,.68) !important;
+    color:#fff !important;
+    font-size:26px !important;
+    line-height:1 !important;
+    font-weight:1000 !important;
+    letter-spacing:-.04em !important;
+    box-shadow:0 8px 20px rgba(0,0,0,.22) !important;
+  }
+
+  @media (max-width:720px){
+    .option-alert .donation-alert-main{
+      gap:10px !important;
+      flex-wrap:wrap !important;
+    }
+    .option-alert .donation-alert-donor{
+      font-size:42px !important;
+    }
+    .option-alert .donation-alert-arrow{
+      min-width:42px !important;
+      height:42px !important;
+      font-size:24px !important;
+    }
+    .option-alert .donation-alert-creator{
+      font-size:31px !important;
+    }
+    .option-alert .donation-alert-source-badge{
+      font-size:20px !important;
     }
   }
 
@@ -1121,22 +1213,22 @@
     const toonieAmount = num(row.toonieAmount ?? row.toonie_amount);
 
     let sourceText = "";
-    if(accountAmount > 0 && toonieAmount > 0) sourceText = "계좌+투네";
-    else if(accountAmount > 0) sourceText = "계좌";
-    else if(toonieAmount > 0) sourceText = "투네";
-    else sourceText = "후원";
+    if(accountAmount > 0 && toonieAmount > 0) sourceText = "(계좌+투네)";
+    else if(accountAmount > 0) sourceText = "(계좌)";
+    else if(toonieAmount > 0) sourceText = "(투네)";
+    else sourceText = "(후원)";
 
-    const checks=Array.isArray(row.checks)?row.checks:[];
+    const checks = Array.isArray(row.checks) ? row.checks : [];
     const manualSoundTitle = String(row.manualSoundTitle || row.manual_sound_title || '').trim();
-    let optionText="";
+    let optionText = "";
 
     if(checks.length){
-      const c=checks[checks.length-1];
-      const cls=c.side==="minus"?"minus":"plus";
-      const sign=c.side==="minus"?"-":"+";
-      const name=escapeHtml(c.name||"옵션");
-      const count=Number(c.count||1);
-      optionText=`<span class="${cls}">${name}${sign}${count}</span>`;
+      const c = checks[checks.length - 1];
+      const cls = c.side === "minus" ? "minus" : "plus";
+      const sign = c.side === "minus" ? "-" : "+";
+      const name = escapeHtml(c.name || "옵션");
+      const count = Number(c.count || 1);
+      optionText = `<span class="${cls}">${name}${sign}${count}</span>`;
     }
 
     if(manualSoundTitle){
@@ -1146,11 +1238,13 @@
     }
 
     return `
-      <div class="alert-donor alert-route">
-        <span class="alert-source-badge">(${sourceText})</span>
-        <span>${donor}</span>
-        <span class="alert-arrow">→</span>
-        <span>${creator}</span>
+      <div class="donation-alert-main">
+        <span class="donation-alert-donor">${donor}</span>
+        <span class="donation-alert-arrow">→</span>
+        <span class="donation-alert-creator">${creator}</span>
+      </div>
+      <div class="donation-alert-source">
+        <span class="donation-alert-source-badge">${sourceText}</span>
       </div>
       <div class="alert-line2">${optionText}</div>
     `;
