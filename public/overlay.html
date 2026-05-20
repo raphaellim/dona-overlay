@@ -590,6 +590,7 @@
   let lastSignature = "";
   let lastDonationKey = localStorage.getItem("overlay_last_alert_key") || "";
   let lastSoundEventAt = localStorage.getItem("overlay_last_sound_event_at") || new Date().toISOString();
+  const overlaySoundBootAt = new Date().toISOString();
   sessionStorage.setItem("overlay_sound_event_session_start", lastSoundEventAt);
   let alertTimer = null;
   let alertQueue = [];
@@ -1097,7 +1098,8 @@
 
   async function checkManualSoundEvents(){
     try{
-      const data = await fetchJson("/api/sound-events");
+      const url = "/api/sound-events?after=" + encodeURIComponent(overlaySoundBootAt);
+      const data = await fetchJson(url);
       const events = Array.isArray(data.events) ? data.events : [];
       if(!events.length) return;
 
@@ -1114,6 +1116,7 @@
           manualSoundTitle:first.title
         }
       });
+
       playAlertQueue();
     }catch(e){}
   }

@@ -425,3 +425,11 @@ admin.html 수동 사운드 영역에 재생 방식을 추가했습니다.
   2줄: 재생 파일명에서 확장자를 제외한 이름
 
 기존 DB에는 `supabase_sound_queue_mode_update.sql`을 1회 실행하세요.
+
+
+## overlay 새로고침 시 오래된 수동 사운드 재생 방지
+
+- overlay가 열린 시점을 기준으로 그 이후 `released_at` 된 수동 사운드만 재생합니다.
+- 새로고침해도 기존 pending 항목을 전부 다시 순차 재생하지 않습니다.
+- `대기열 대기` 항목은 `대기열 전송`을 누른 시점에 released_at이 찍히고 그 이후 overlay에서 순차 재생됩니다.
+- 기존 DB에는 `supabase_sound_queue_sync_update.sql`을 1회 실행하세요.

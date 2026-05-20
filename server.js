@@ -1185,6 +1185,7 @@ app.post('/api/sound-events', async (req, res) => {
     const title = String(req.body?.title || soundFile).trim();
     const message = String(req.body?.message || '').trim();
     const soundStatus = String(req.body?.mode || req.body?.status || 'immediate') === 'queue' ? 'queued' : 'pending';
+    const releasedAt = soundStatus === 'pending' ? new Date().toISOString() : null;
 
     const { data, error } = await supabase
       .from('sound_events')
@@ -1195,7 +1196,8 @@ app.post('/api/sound-events', async (req, res) => {
         title,
         message,
         played_at: null,
-        status: soundStatus
+        status: soundStatus,
+        released_at: releasedAt
       })
       .select()
       .single();
@@ -1227,6 +1229,9 @@ app.get('/api/sound-events', async (req, res) => {
     const canView = tokenOk || await operatorAllowed(req, ctx.station, ctx.active);
     if (!canView) return res.status(403).json({ error: '오버레이 토큰이 필요합니다.' });
 
+    const all = String(req.query.all || '') === '1';
+    const after = String(req.query.after || '');
+
     let q = supabase
       .from('sound_events')
       .select('*')
@@ -1236,11 +1241,16 @@ app.get('/api/sound-events', async (req, res) => {
       .order('created_at', { ascending: true })
       .limit(50);
 
-    // overlay는 pending만 재생, admin은 all=1로 queued/pending 전체 대기열 확인
-    if (String(req.query.all || '') !== '1') {
-      q = q.eq('status', 'pending');
-    } else {
+    if (all) {
+      // admin 대기열은 queued/pending 전체 표시
       q = q.in('status', ['queued', 'pending']);
+    } else {
+      // overlay는 전송 완료된 pending만 재생
+      q = q.eq('status', 'pending');
+      if (after) {
+        // overlay가 켜진 이후 전송된 항목만 가져와서 새로고침 재생 폭주 방지
+        q = q.gt('released_at', after);
+      }
     }
 
     const { data, error } = await q;
@@ -1251,6 +1261,7 @@ app.get('/api/sound-events', async (req, res) => {
         id: row.id,
         createdAt: row.created_at,
         playedAt: row.played_at,
+        releasedAt: row.released_at,
         status: row.status || 'pending',
         soundFile: row.sound_file,
         title: row.title,
@@ -1316,7 +1327,7 @@ app.post('/api/sound-events/release', async (req, res) => {
 
     const { data, error } = await supabase
       .from('sound_events')
-      .update({ status: 'pending' })
+      .update({ status: 'pending', released_at: new Date().toISOString() })
       .eq('station_id', ctx.station.id)
       .eq('broadcast_id', ctx.active.id)
       .is('played_at', null)
