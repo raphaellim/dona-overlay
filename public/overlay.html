@@ -551,6 +551,7 @@
   let enabledPresets = [];
   let lastSignature = "";
   let lastDonationKey = localStorage.getItem("overlay_last_alert_key") || "";
+  let lastSoundEventAt = localStorage.getItem("overlay_last_sound_event_at") || "";
   let alertTimer = null;
   let alertQueue = [];
   let alertPlaying = false;
@@ -911,6 +912,16 @@
   }
 
   function playSoundForDonation(row){
+    const manualFile = String(row?.manualSoundFile || row?.manual_sound_file || '').replace(/[\\/]/g,'').trim();
+    if(manualFile){
+      try{
+        const audio = new Audio('/sounds/' + manualFile);
+        audio.volume = 0.85;
+        const p = audio.play();
+        if(p && typeof p.catch === 'function') p.catch(()=>{});
+      }catch(e){}
+      return;
+    }
     const key = pickSoundKeyForDonation(row);
     const audio = soundBank[key] || soundBank.default;
     if(!audio) return;
@@ -984,6 +995,50 @@
     playAlertQueue();
   }
 
+
+
+  function makeManualSoundEventAlertHtml(ev){
+    const title = escapeHtml(ev.title || ev.soundFile || "수동 사운드");
+    const message = escapeHtml(ev.message || "오버레이 재생");
+    const file = escapeHtml(ev.soundFile || "");
+
+    return `
+      <div class="alert-donor">${title}</div>
+      <div class="alert-target">${message}</div>
+      <div class="alert-line2"><span class="alert-sound-title">${file}</span></div>
+    `;
+  }
+
+  async function checkManualSoundEvents(){
+    try{
+      let url = "/api/sound-events";
+      if(lastSoundEventAt){
+        url += "?after=" + encodeURIComponent(lastSoundEventAt);
+      }
+
+      const data = await fetchJson(url);
+      const events = Array.isArray(data.events) ? data.events : [];
+      if(!events.length) return;
+
+      if(!lastSoundEventAt){
+        const latest = events[events.length - 1];
+        lastSoundEventAt = latest.createdAt || "";
+        localStorage.setItem("overlay_last_sound_event_at", lastSoundEventAt);
+        return;
+      }
+
+      events.forEach(ev => {
+        lastSoundEventAt = ev.createdAt || lastSoundEventAt;
+        alertQueue.push({
+          html: makeManualSoundEventAlertHtml(ev),
+          row: { manualSoundFile: ev.soundFile, manualSoundTitle: ev.title }
+        });
+      });
+
+      localStorage.setItem("overlay_last_sound_event_at", lastSoundEventAt);
+      playAlertQueue();
+    }catch(e){}
+  }
 
   function testSoundFromQuery(){
     const testKey = PARAMS.get("testSound");
@@ -1065,6 +1120,7 @@
     });
 
     checkLatestOptionAlert(data.donations||[]);
+    checkManualSoundEvents();
 
     if(signature!==lastSignature){
       lastSignature=signature;

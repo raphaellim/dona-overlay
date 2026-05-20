@@ -67,61 +67,19 @@
   .sound-auto-box{background:#08111f;border:1px solid #334155;border-radius:12px;padding:10px 12px;color:#dbeafe;font-weight:900;margin:8px 0}
   @media(max-width:800px){.manual-sound-grid{grid-template-columns:1fr}}
 
-  .sound-search-wrap{
-    position:relative;
-  }
+  .sound-search-wrap{position:relative}
   .sound-search-results{
-    position:absolute;
-    left:0;
-    right:0;
-    top:calc(100% + 4px);
-    z-index:30;
-    max-height:220px;
-    overflow:auto;
-    background:#070b12;
-    border:1px solid #334155;
-    border-radius:12px;
-    box-shadow:0 14px 32px rgba(0,0,0,.35);
-    display:none;
+    position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:50;
+    max-height:220px;overflow:auto;background:#070b12;border:1px solid #334155;
+    border-radius:12px;box-shadow:0 14px 32px rgba(0,0,0,.35);display:none
   }
-  .sound-search-results.show{
-    display:block;
-  }
-  .sound-result{
-    padding:10px 12px;
-    border-bottom:1px solid rgba(51,65,85,.7);
-    cursor:pointer;
-    color:#e5e7eb;
-    font-weight:800;
-  }
-  .sound-result:hover{
-    background:#1e293b;
-  }
-  .sound-result small{
-    display:block;
-    color:#94a3b8;
-    margin-top:2px;
-    font-weight:700;
-  }
-  .manual-sound-grid{
-    display:grid;
-    grid-template-columns:1.25fr .85fr auto;
-    gap:8px;
-    align-items:end;
-    margin:10px 0;
-  }
-  .sound-auto-box{
-    background:#08111f;
-    border:1px solid #334155;
-    border-radius:12px;
-    padding:10px 12px;
-    color:#dbeafe;
-    font-weight:900;
-    margin:8px 0;
-  }
-  @media(max-width:800px){
-    .manual-sound-grid{grid-template-columns:1fr}
-  }
+  .sound-search-results.show{display:block}
+  .sound-result{padding:10px 12px;border-bottom:1px solid rgba(51,65,85,.7);cursor:pointer;color:#e5e7eb;font-weight:800}
+  .sound-result:hover{background:#1e293b}
+  .sound-result small{display:block;color:#94a3b8;margin-top:2px;font-weight:700}
+  .manual-sound-grid{display:grid;grid-template-columns:1.2fr .85fr auto auto;gap:8px;align-items:end;margin:10px 0}
+  .sound-auto-box{background:#08111f;border:1px solid #334155;border-radius:12px;padding:10px 12px;color:#dbeafe;font-weight:900;margin:8px 0}
+  @media(max-width:900px){.manual-sound-grid{grid-template-columns:1fr}}
 
 </style>
 </head>
@@ -161,22 +119,6 @@
         </select>
       </div>
 
-
-      <div class="sound-auto-box" id="autoSoundPreview">자동 사운드: 기본</div>
-      <div class="manual-sound-grid">
-        <div class="row">
-          <label>수동 사운드 검색</label>
-          <input id="manualSoundFile" class="input" list="soundFiles" placeholder="비워두면 자동 / 업로드된 사운드 검색">
-          <datalist id="soundFiles"></datalist>
-        </div>
-        <div class="row">
-          <label>Alert 표시 사운드 제목</label>
-          <input id="manualSoundTitle" class="input" placeholder="예: 대박후원 / 직접재생">
-        </div>
-        <button class="btn gray" type="button" onclick="previewManualSound()">미리듣기</button>
-      </div>
-
-      
       <div class="sound-auto-box" id="autoSoundPreview">자동 사운드: 기본</div>
       <div class="manual-sound-grid">
         <div class="row sound-search-wrap">
@@ -186,8 +128,17 @@
           <div id="soundSearchResults" class="sound-search-results"></div>
         </div>
         <div class="row">
-          <label>Alert 표시 사운드 제목</label>
+          <label>Alert 표시 제목</label>
           <input id="manualSoundTitle" class="input" placeholder="예: 대박후원 / 윈도우">
+        </div>
+        <button class="btn gray" type="button" onclick="previewManualSound()">미리듣기</button>
+        <button class="btn blue" type="button" onclick="sendManualSound()">오버레이 재생</button>
+      </div>
+      <p class="hint">수동 사운드는 <b>입력 저장과 별개</b>로 동작합니다. 검색 후 “오버레이 재생”을 누르면 후원 저장 없이 overlay에 alert와 사운드만 나갑니다.</p>
+
+        <div class="row">
+          <label>Alert 표시 사운드 제목</label>
+          <input id="manualSoundTitle" class="input" placeholder="예: 대박후원 / 직접재생">
         </div>
         <button class="btn gray" type="button" onclick="previewManualSound()">미리듣기</button>
       </div>
@@ -241,66 +192,16 @@ let soundFiles = [];
 
 
 
+
 async function loadSoundFiles(){
   try{
     const data = await api('/api/sounds');
     soundFiles = (data.sounds || []).map(s => s.file);
-    const list = $('#soundFiles');
-    if(list) list.innerHTML = soundFiles.map(f => `<option value="${esc(f)}"></option>`).join('');
   }catch(e){ soundFiles = []; }
 }
 
-function escAttr(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));}
-
-function manualSoundPayload(){
-  return {
-    manualSoundFile: $('#manualSoundFile') ? $('#manualSoundFile').value.trim() : '',
-    manualSoundTitle: $('#manualSoundTitle') ? $('#manualSoundTitle').value.trim() : ''
-  };
-}
-
-function getAutoSoundName(){
-  const manual = $('#manualSoundFile') ? $('#manualSoundFile').value.trim() : '';
-  if(manual) return '수동: ' + manual;
-
-  const pTitle = $('#processType') ? $('#processType').value : '후원';
-  const preset = findPresetByTitle(pTitle);
-  if(preset && preset.soundFile) return '프리셋: ' + preset.soundFile;
-
-  const account = toWon($('#accountTotal') ? $('#accountTotal').value : 0);
-  const rules = settings?.soundRules?.amountRules || [];
-  const matched = rules
-    .filter(r => account >= Number(r.min || 0) && (!Number(r.max || 0) || account <= Number(r.max || 0)) && r.sound)
-    .sort((a,b) => Number(b.min || 0) - Number(a.min || 0))[0];
-
-  if(matched) return '금액구간: ' + matched.sound;
-  return '기본: ' + (settings?.soundRules?.defaultSound || 'alert.mp3');
-}
-
-function updateSoundPreview(){
-  const box = $('#autoSoundPreview');
-  if(box) box.textContent = '자동 사운드: ' + getAutoSoundName();
-}
-
-function previewManualSound(){
-  const file = $('#manualSoundFile') ? $('#manualSoundFile').value.trim() : '';
-  if(!file) return alert('미리 들을 수동 사운드 파일을 선택하세요.');
-  try{
-    const audio = new Audio('/sounds/' + file.replace(/[\\\\/]/g,''));
-    audio.volume = 0.85;
-    audio.play().catch(()=>alert('브라우저가 소리 재생을 차단했거나 파일을 찾지 못했습니다.'));
-  }catch(e){ alert(e.message); }
-}
-
-
-
-async function loadSoundFiles(){
-  try{
-    const data = await api('/api/sounds');
-    soundFiles = (data.sounds || []).map(s => s.file);
-  }catch(e){
-    soundFiles = [];
-  }
+function escAttr(v){
+  return String(v ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
 }
 
 function normalizeSoundKeyword(v){
@@ -331,33 +232,25 @@ function renderSoundSearchResults(keyword){
   box.innerHTML = matched.map(file => `
     <div class="sound-result" onclick="selectManualSound('${escAttr(file)}')">
       ${esc(file)}
-      <small>클릭하면 이 후원 Alert에 수동 사운드로 사용</small>
+      <small>클릭하면 수동 사운드로 선택됩니다.</small>
     </div>
   `).join('');
   box.classList.add('show');
 }
 
 function selectManualSound(file){
-  if($('#manualSoundFile')) $('#manualSoundFile').value = file;
   if($('#manualSoundSearch')) $('#manualSoundSearch').value = file;
   if($('#soundSearchResults')) $('#soundSearchResults').classList.remove('show');
   updateSoundPreview();
 }
 
-function manualSoundPayload(){
-  return {
-    manualSoundFile: $('#manualSoundFile') ? $('#manualSoundFile').value.trim() : '',
-    manualSoundTitle: $('#manualSoundTitle') ? $('#manualSoundTitle').value.trim() : ''
-  };
-}
-
 function getAutoSoundName(){
   const manual = $('#manualSoundFile') ? $('#manualSoundFile').value.trim() : '';
-  if(manual) return '수동: ' + manual;
+  if(manual) return '수동 선택됨: ' + manual;
 
   const pTitle = $('#processType') ? $('#processType').value : '후원';
-  const preset = typeof findPresetByTitle === 'function' ? findPresetByTitle(pTitle) : null;
-  if(preset && preset.soundFile) return '프리셋: ' + preset.soundFile;
+  const preset = findPresetByTitle(pTitle);
+  if(preset && preset.soundFile) return '프리셋 자동: ' + preset.soundFile;
 
   const account = toWon($('#accountTotal') ? $('#accountTotal').value : 0);
   const rules = settings?.soundRules?.amountRules || [];
@@ -365,8 +258,8 @@ function getAutoSoundName(){
     .filter(r => account >= Number(r.min || 0) && (!Number(r.max || 0) || account <= Number(r.max || 0)) && r.sound)
     .sort((a,b) => Number(b.min || 0) - Number(a.min || 0))[0];
 
-  if(matched) return '금액구간: ' + matched.sound;
-  return '기본: ' + (settings?.soundRules?.defaultSound || 'alert.mp3');
+  if(matched) return '금액구간 자동: ' + matched.sound;
+  return '기본 자동: ' + (settings?.soundRules?.defaultSound || 'alert.mp3');
 }
 
 function updateSoundPreview(){
@@ -383,6 +276,32 @@ function previewManualSound(){
     audio.play().catch(()=>alert('브라우저가 소리 재생을 차단했거나 파일을 찾지 못했습니다.'));
   }catch(e){ alert(e.message); }
 }
+
+async function sendManualSound(){
+  try{
+    const file = $('#manualSoundFile') ? $('#manualSoundFile').value.trim() : '';
+    if(!file) return alert('검색 결과에서 사운드 파일을 먼저 선택하세요.');
+
+    const title = $('#manualSoundTitle') ? $('#manualSoundTitle').value.trim() : '';
+    const message = $('#donor') && $('#donor').value.trim()
+      ? `${$('#donor').value.trim()} 수동 사운드`
+      : '수동 사운드';
+
+    await api('/api/sound-events', {
+      method:'POST',
+      body:JSON.stringify({
+        soundFile:file,
+        title:title || file,
+        message
+      })
+    });
+
+    alert('오버레이로 수동 사운드를 전송했습니다.');
+  }catch(e){ alert(e.message); }
+}
+
+
+
 
 async function loadCurrentBroadcast(){
   try{
@@ -449,8 +368,6 @@ function calcPresetPreview(preset, amount){
 
 function bindPreview(){
   $('#processType').addEventListener('input', updatePreview);
-  if($('#manualSoundFile')) $('#manualSoundFile').addEventListener('input', updateSoundPreview);
-  if($('#manualSoundTitle')) $('#manualSoundTitle').addEventListener('input', updateSoundPreview);
   $('#accountTotal').addEventListener('input', updatePreview);
   $('#toonieTotal').addEventListener('input', updatePreview);
   document.querySelectorAll('.amount').forEach(el => el.addEventListener('input', updatePreview));
@@ -518,7 +435,6 @@ async function saveBatch(){
       accountTotal: $('#accountTotal').value,
       toonieTotal: $('#toonieTotal').value,
       processType: $('#processType').value || '후원',
-      ...manualSoundPayload(),
       rows
     };
     const res = await api('/api/donations/batch', {method:'POST', body:JSON.stringify(body)});
@@ -526,12 +442,6 @@ async function saveBatch(){
     $('#accountTotal').value = '';
     $('#toonieTotal').value = '';
     clearAmounts();
-    if($('#manualSoundSearch')) $('#manualSoundSearch').value = '';
-    if($('#manualSoundFile')) $('#manualSoundFile').value = '';
-    if($('#manualSoundTitle')) $('#manualSoundTitle').value = '';
-    updateSoundPreview();
-    if($('#manualSoundFile')) $('#manualSoundFile').value = '';
-    if($('#manualSoundTitle')) $('#manualSoundTitle').value = '';
     await loadRecent();
     alert(`${res.count}건 저장 완료`);
   }catch(e){
@@ -563,6 +473,24 @@ async function delRow(id){
 }
 
 init();
+
+setTimeout(() => {
+  if($('#manualSoundSearch')){
+    $('#manualSoundSearch').addEventListener('input', e => {
+      if($('#manualSoundFile')) $('#manualSoundFile').value = '';
+      renderSoundSearchResults(e.target.value);
+      updateSoundPreview();
+    });
+    $('#manualSoundSearch').addEventListener('focus', e => renderSoundSearchResults(e.target.value));
+  }
+  if($('#manualSoundTitle')) $('#manualSoundTitle').addEventListener('input', updateSoundPreview);
+  document.addEventListener('click', e => {
+    if(!e.target.closest('.sound-search-wrap') && $('#soundSearchResults')){
+      $('#soundSearchResults').classList.remove('show');
+    }
+  });
+}, 0);
+
 </script>
 
 <script>

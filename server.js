@@ -672,8 +672,6 @@ function makeDonationRow(body, settings, stationId, broadcastId) {
     noeat: check.noeat,
     checks: check.checks,
     result_label: check.label,
-    manual_sound_file: cleanSoundFile(body.manualSoundFile || body.manual_sound_file || ''),
-    manual_sound_title: String(body.manualSoundTitle || body.manual_sound_title || '').trim(),
     memo: String(body.memo || '').trim()
   };
 }
@@ -697,8 +695,6 @@ function dbRowToDonation(row) {
     noeat: row.noeat || 0,
     checks: Array.isArray(row.checks) ? row.checks : [],
     resultLabel: row.result_label || '후원',
-    manualSoundFile: row.manual_sound_file || '',
-    manualSoundTitle: row.manual_sound_title || '',
     memo: row.memo || ''
   };
 }
@@ -1163,6 +1159,92 @@ app.get('/api/sounds', async (req, res) => {
     res.json({ sounds });
   } catch (e) {
     res.status(500).json({ error: e.message || '사운드 목록 조회 실패' });
+  }
+});
+
+
+
+/* 수동 사운드 이벤트: 후원 저장과 별개로 overlay에 사운드/alert만 전송 */
+app.post('/api/sound-events', async (req, res) => {
+  try {
+    if (!requireDb(res)) return;
+    const ctx = await getStationContext(req, res);
+    if (!ctx) return;
+
+    if (!await operatorAllowed(req, ctx.station, ctx.active)) {
+      return res.status(401).json({ error: '방송 비밀번호 또는 방송국 관리자 권한이 필요합니다.' });
+    }
+
+    const soundFile = cleanSoundFile(req.body?.soundFile || '');
+    if (!soundFile) return res.status(400).json({ error: '재생할 사운드 파일을 선택하세요.' });
+
+    const title = String(req.body?.title || soundFile).trim();
+    const message = String(req.body?.message || '').trim();
+
+    const { data, error } = await supabase
+      .from('sound_events')
+      .insert({
+        station_id: ctx.station.id,
+        broadcast_id: ctx.active.id,
+        sound_file: soundFile,
+        title,
+        message
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    res.json({
+      ok: true,
+      event: {
+        id: data.id,
+        createdAt: data.created_at,
+        soundFile: data.sound_file,
+        title: data.title,
+        message: data.message
+      }
+    });
+  } catch (e) {
+    res.status(400).json({ error: e.message || '수동 사운드 전송 실패' });
+  }
+});
+
+app.get('/api/sound-events', async (req, res) => {
+  try {
+    if (!requireDb(res)) return;
+    const ctx = await getStationContext(req, res);
+    if (!ctx) return;
+
+    const tokenOk = typeof stationTokenAllowed === 'function' ? await stationTokenAllowed(req, ctx.station) : false;
+    const canView = tokenOk || await operatorAllowed(req, ctx.station, ctx.active);
+    if (!canView) return res.status(403).json({ error: '오버레이 토큰이 필요합니다.' });
+
+    let q = supabase
+      .from('sound_events')
+      .select('*')
+      .eq('station_id', ctx.station.id)
+      .eq('broadcast_id', ctx.active.id)
+      .order('created_at', { ascending: true })
+      .limit(50);
+
+    const after = String(req.query.after || '');
+    if (after) q = q.gt('created_at', after);
+
+    const { data, error } = await q;
+    if (error) throw error;
+
+    res.json({
+      events: (data || []).map(row => ({
+        id: row.id,
+        createdAt: row.created_at,
+        soundFile: row.sound_file,
+        title: row.title,
+        message: row.message
+      }))
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message || '수동 사운드 이벤트 조회 실패' });
   }
 });
 
