@@ -890,6 +890,59 @@ html,body{
     padding:7px 15px !important;
   }
 }
+  /* ===== 수동사운드 Alert 후원자명 크게 보정 ===== */
+.option-alert > .alert-donor{
+  font-size:58px !important;
+  line-height:1.02 !important;
+  font-weight:1000 !important;
+  letter-spacing:-.06em !important;
+
+  color:#fff3a3 !important;
+  -webkit-text-fill-color:#fff3a3 !important;
+  background:none !important;
+  -webkit-background-clip:initial !important;
+  background-clip:initial !important;
+
+  text-shadow:
+    -2px -2px 0 rgba(0,0,0,.82),
+     2px -2px 0 rgba(0,0,0,.82),
+    -2px  2px 0 rgba(0,0,0,.82),
+     2px  2px 0 rgba(0,0,0,.82),
+     0 0 10px rgba(255,230,100,.70),
+     0 4px 14px rgba(0,0,0,.70) !important;
+
+  filter:none !important;
+  animation:none !important;
+  transform:none !important;
+  margin:0 !important;
+}
+
+/* 수동사운드 파일명은 현재 크기 유지 또는 살짝 정리 */
+.option-alert > .alert-target{
+  font-size:44px !important;
+  line-height:1.05 !important;
+  font-weight:1000 !important;
+  letter-spacing:-.045em !important;
+  color:#ffffff !important;
+
+  text-shadow:
+    -2px -2px 0 rgba(0,0,0,.70),
+     2px -2px 0 rgba(0,0,0,.70),
+    -2px  2px 0 rgba(0,0,0,.70),
+     2px  2px 0 rgba(0,0,0,.70),
+     0 5px 14px rgba(0,0,0,.62) !important;
+
+  margin:0 !important;
+}
+  @media (max-width:720px){
+  .option-alert > .alert-donor{
+    font-size:42px !important;
+  }
+
+  .option-alert > .alert-target{
+    font-size:34px !important;
+  }
+}
 </style>
 </head>
 <body>
