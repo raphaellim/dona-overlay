@@ -1248,13 +1248,13 @@ html,body{
   }
 
   function renderAccountRoller(items){
-    rollingItems=items&&items.length?items:[{donor:"-",amount:0}];
+    rollingItems=items&&items.length?items:[{donor:"/",amount:0}];
     if(rollingTimer){ clearInterval(rollingTimer); rollingTimer=null; }
 
     const makeItemHtml=item=>{
       const donor=normalizeName(item.donor||item.name||"익명");
       const amount=displayAmount(item.amount??item.accountAmount??item.account_amount??item.total??0);
-      return `<div class="roller-item"><span class="account-donor">${escapeHtml(donor)}</span> <span class="account-sep">:</span> <span class="account-amount">${amount}</span></div>`;
+      return `<div class="roller-item"><span class="account-donor">${escapeHtml(donor)}</span> <span class="account-sep">/</span> <span class="account-amount">${amount}</span></div>`;
     };
 
     const moveToIndex = (index, useTransition=true) => {
@@ -1334,9 +1334,9 @@ html,body{
     const toonieAmount = num(row.toonieAmount ?? row.toonie_amount);
 
     let sourceText = "";
-    if(accountAmount > 0 && toonieAmount > 0) sourceText = "(계좌+투네)";
-    else if(accountAmount > 0) sourceText = "(계좌)";
-    else if(toonieAmount > 0) sourceText = "(투네)";
+    if(accountAmount > 0 && toonieAmount > 0) sourceText = "계좌+투네";
+    else if(accountAmount > 0) sourceText = "계좌";
+    else if(toonieAmount > 0) sourceText = "투네";
     else sourceText = "(후원)";
 
     const checks = Array.isArray(row.checks) ? row.checks : [];
