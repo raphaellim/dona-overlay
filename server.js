@@ -1186,6 +1186,7 @@ app.post('/api/sound-events', async (req, res) => {
     const message = String(req.body?.message || '').trim();
     const soundStatus = String(req.body?.mode || req.body?.status || 'immediate') === 'queue' ? 'queued' : 'pending';
     const releasedAt = soundStatus === 'pending' ? new Date().toISOString() : null;
+    const repeatTotal = Math.max(1, Math.min(100, parseInt(req.body?.repeatCount || req.body?.repeat_total || 1, 10) || 1));
 
     const { data, error } = await supabase
       .from('sound_events')
@@ -1197,7 +1198,9 @@ app.post('/api/sound-events', async (req, res) => {
         message,
         played_at: null,
         status: soundStatus,
-        released_at: releasedAt
+        released_at: releasedAt,
+        repeat_total: repeatTotal,
+        repeat_played: 0
       })
       .select()
       .single();
@@ -1209,9 +1212,15 @@ app.post('/api/sound-events', async (req, res) => {
       event: {
         id: data.id,
         createdAt: data.created_at,
+        playedAt: data.played_at,
+        releasedAt: data.released_at,
+        status: data.status || soundStatus,
         soundFile: data.sound_file,
         title: data.title,
-        message: data.message
+        message: data.message,
+        repeatTotal: data.repeat_total || repeatTotal,
+        repeatPlayed: data.repeat_played || 0,
+        repeatRemaining: Math.max(0, (data.repeat_total || repeatTotal) - (data.repeat_played || 0))
       }
     });
   } catch (e) {
@@ -1252,16 +1261,23 @@ app.get('/api/sound-events', async (req, res) => {
     if (error) throw error;
 
     res.json({
-      events: (data || []).map(row => ({
-        id: row.id,
-        createdAt: row.created_at,
-        playedAt: row.played_at,
-        releasedAt: row.released_at,
-        status: row.status || 'pending',
-        soundFile: row.sound_file,
-        title: row.title,
-        message: row.message
-      }))
+      events: (data || []).map(row => {
+        const total = Math.max(1, Number(row.repeat_total || 1));
+        const played = Math.max(0, Number(row.repeat_played || 0));
+        return {
+          id: row.id,
+          createdAt: row.created_at,
+          playedAt: row.played_at,
+          releasedAt: row.released_at,
+          status: row.status || 'pending',
+          soundFile: row.sound_file,
+          title: row.title,
+          message: row.message,
+          repeatTotal: total,
+          repeatPlayed: played,
+          repeatRemaining: Math.max(0, total - played)
+        };
+      })
     });
   } catch (e) {
     res.status(500).json({ error: e.message || '수동 사운드 이벤트 조회 실패' });
@@ -1275,17 +1291,53 @@ app.post('/api/sound-events/:id/played', async (req, res) => {
     if (!requireDb(res)) return;
     const ctx = await getStationContext(req, res);
     if (!ctx) return;
+
     const tokenOk = typeof stationTokenAllowed === 'function' ? await stationTokenAllowed(req, ctx.station) : false;
     const canUpdate = tokenOk || await operatorAllowed(req, ctx.station, ctx.active);
     if (!canUpdate) return res.status(403).json({ error: '권한이 없습니다.' });
-    const { data, error } = await supabase.from('sound_events')
-      .update({ played_at: new Date().toISOString(), status: 'played' })
+
+    const { data: current, error: readError } = await supabase
+      .from('sound_events')
+      .select('*')
       .eq('station_id', ctx.station.id)
       .eq('broadcast_id', ctx.active.id)
       .eq('id', req.params.id)
-      .select().single();
+      .single();
+
+    if (readError) throw readError;
+
+    const total = Math.max(1, Number(current.repeat_total || 1));
+    const nextPlayed = Math.min(total, Math.max(0, Number(current.repeat_played || 0)) + 1);
+    const done = nextPlayed >= total;
+
+    const payload = { repeat_played: nextPlayed };
+    if (done) {
+      payload.played_at = new Date().toISOString();
+      payload.status = 'played';
+    }
+
+    const { data, error } = await supabase
+      .from('sound_events')
+      .update(payload)
+      .eq('station_id', ctx.station.id)
+      .eq('broadcast_id', ctx.active.id)
+      .eq('id', req.params.id)
+      .select()
+      .single();
+
     if (error) throw error;
-    res.json({ ok: true, event: data });
+
+    res.json({
+      ok: true,
+      done,
+      event: {
+        id: data.id,
+        repeatTotal: Number(data.repeat_total || total),
+        repeatPlayed: Number(data.repeat_played || nextPlayed),
+        repeatRemaining: Math.max(0, Number(data.repeat_total || total) - Number(data.repeat_played || nextPlayed)),
+        status: data.status || (done ? 'played' : 'pending')
+      }
+    });
   } catch (e) {
     res.status(500).json({ error: e.message || '수동 사운드 played 처리 실패' });
   }

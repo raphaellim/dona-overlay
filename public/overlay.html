@@ -505,6 +505,35 @@
     padding:5px 11px !important;
   }
 
+
+  .alert-route{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    flex-wrap:wrap;
+    font-weight:950;
+    letter-spacing:-.04em;
+  }
+  .alert-source-badge{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    padding:5px 10px;
+    border-radius:999px;
+    background:rgba(255,255,255,.14);
+    border:1px solid rgba(255,255,255,.24);
+    color:#fff;
+    font-size:.62em;
+    line-height:1;
+    white-space:nowrap;
+  }
+  .alert-arrow{
+    opacity:.9;
+    font-size:.78em;
+    margin:0 2px;
+  }
+
 </style>
 </head>
 <body>
@@ -889,22 +918,28 @@
   }
 
   function makeDonationAlertHtml(row){
-    const donor=escapeHtml(row.donor||"익명");
-    const creator=escapeHtml(row.creator||"익명");
-    const accountAmount=num(row.accountAmount??row.account_amount);
-    const toonieAmount=num(row.toonieAmount??row.toonie_amount);
-    const totalAmount=num(row.totalAmount??row.total_amount??accountAmount+toonieAmount);
-    const amountText=displayAmount(totalAmount);
+    const donor = escapeHtml(row.donor || "후원자");
+    const creator = escapeHtml(row.creator || "크리에이터");
+
+    const accountAmount = num(row.accountAmount ?? row.account_amount);
+    const toonieAmount = num(row.toonieAmount ?? row.toonie_amount);
+
+    let sourceText = "";
+    if(accountAmount > 0 && toonieAmount > 0) sourceText = "계좌+투네";
+    else if(accountAmount > 0) sourceText = "계좌";
+    else if(toonieAmount > 0) sourceText = "투네";
+    else sourceText = "후원";
+
     const checks=Array.isArray(row.checks)?row.checks:[];
     const manualSoundTitle = String(row.manualSoundTitle || row.manual_sound_title || '').trim();
     let optionText="";
 
     if(checks.length){
-      const ch=checks[checks.length-1];
-      const sign=ch.side==="minus"?"-":"+";
-      const cls=ch.side==="minus"?"alert-minus":"alert-plus";
-      const name=escapeHtml(ch.name||"옵션");
-      const count=Math.abs(num(ch.count));
+      const c=checks[checks.length-1];
+      const cls=c.side==="minus"?"minus":"plus";
+      const sign=c.side==="minus"?"-":"+";
+      const name=escapeHtml(c.name||"옵션");
+      const count=Number(c.count||1);
       optionText=`<span class="${cls}">${name}${sign}${count}</span>`;
     }
 
@@ -915,9 +950,13 @@
     }
 
     return `
-      <div class="alert-donor">${donor}</div>
-      <div class="alert-target">→ ${creator}</div>
-      <div class="alert-line2"><span class="alert-amount">${amountText}</span>${optionText}</div>
+      <div class="alert-donor alert-route">
+        <span class="alert-source-badge">(${sourceText})</span>
+        <span>${donor}</span>
+        <span class="alert-arrow">→</span>
+        <span>${creator}</span>
+      </div>
+      <div class="alert-line2">${optionText}</div>
     `;
   }
   function pickSoundFileForDonation(row){
@@ -1090,16 +1129,20 @@
     const baseName = rawFile.replace(/\.[^.]+$/, "");
     const soundName = escapeHtml(baseName || "사운드");
 
+    const total = Math.max(1, Number(ev.repeatTotal || 1));
+    const played = Math.max(0, Number(ev.repeatPlayed || 0));
+    const current = Math.min(total, played + 1);
+    const progress = total > 1 ? `<span class="alert-sound-title">${current}/${total}</span>` : "";
+
     return `
       <div class="alert-donor">${displayTitle}</div>
       <div class="alert-target">${soundName}</div>
+      <div class="alert-line2">${progress}</div>
     `;
   }
 
   async function checkManualSoundEvents(){
     try{
-      // 현재 alert가 재생 중이거나 내부 큐에 남아 있으면 다음 항목을 아직 잡지 않음.
-      // admin 대기열에서 실제 재생 시작된 항목만 1개씩 사라지게 하기 위한 처리.
       if(alertShowing || alertPlaying || alertQueue.length > 0) return;
 
       const url = "/api/sound-events?after=" + encodeURIComponent(overlaySoundBootAt);
@@ -1107,16 +1150,20 @@
       const events = Array.isArray(data.events) ? data.events : [];
       if(!events.length) return;
 
-      const ev = events.find(item => item && item.id && !claimedSoundEventIds.has(item.id));
-      if(!ev) return;
+      const ev = events[0];
+      if(!ev || !ev.id) return;
 
-      claimedSoundEventIds.add(ev.id);
+      const repeatKey = `${ev.id}:${Number(ev.repeatPlayed || 0)}`;
+      if(claimedSoundEventIds.has(repeatKey)) return;
 
-      // 이 항목을 실제 재생 대상으로 잡은 순간 played 처리.
+      claimedSoundEventIds.add(repeatKey);
+
+      // 이 반복 회차를 실제 재생 대상으로 잡은 순간 repeat_played +1
       markManualSoundPlayed(ev.id);
 
       alertQueue.push({
         eventId:ev.id,
+        repeatKey,
         html: makeManualSoundEventAlertHtml(ev),
         row: {
           manualSoundFile:ev.soundFile,
