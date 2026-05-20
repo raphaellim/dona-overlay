@@ -52,6 +52,14 @@
   .mono{
     font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
   }
+
+  .sound-grid{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:8px;
+  }
+  .sound-grid .row{margin-bottom:0}
+  @media(max-width:980px){.sound-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -158,6 +166,19 @@ async function loadSettings(){
   $('#overlayNoticeBox').checked = overlaySections.notice === true;
   $('#overlayCreatorBox').checked = overlaySections.creators !== false;
   if(!settings.presets || !settings.presets.length){settings.presets=[{id:'smoke',enabled:true,title:'펴피지마',plusName:'흡연',plusPrice:11900,minusName:'금연',minusPrice:12000},{id:'food',enabled:true,title:'먹먹마',plusName:'먹어',plusPrice:14000,minusName:'먹지마',minusPrice:15000}];}
+  
+  const soundRules = settings.soundRules || {};
+  $('#soundEnabled').checked = soundRules.enabled !== false;
+  $('#soundDefault').value = soundRules.defaultSound || 'alert.mp3';
+  $('#soundAccountSmall').value = soundRules.accountSmall || 'account_small.mp3';
+  $('#soundAccountMid').value = soundRules.accountMid || 'account_mid.mp3';
+  $('#soundAccountBig').value = soundRules.accountBig || 'account_big.mp3';
+  $('#soundAccountSuper').value = soundRules.accountSuper || 'account_super.mp3';
+  $('#soundSmokePlus').value = soundRules.smokePlus || 'smoke_plus.mp3';
+  $('#soundSmokeMinus').value = soundRules.smokeMinus || 'smoke_minus.mp3';
+  $('#soundFoodPlus').value = soundRules.foodPlus || 'food_plus.mp3';
+  $('#soundFoodMinus').value = soundRules.foodMinus || 'food_minus.mp3';
+
   renderPresets();
   $('#saveHint').textContent = settings.broadcast ? `현재 방송 "${settings.broadcast.title}" 설정을 저장합니다.` : '현재 방송 설정을 저장합니다.';
 }

@@ -62,6 +62,14 @@
     .entry-head{display:none}
     .split-row{grid-template-columns:1fr}
   }
+
+  .manual-sound-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+    margin-top:8px;
+  }
+  @media(max-width:800px){.manual-sound-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -99,6 +107,29 @@
           <option value="먹먹마">먹먹마</option>
         </select>
       </div>
+
+      <div class="manual-sound-grid">
+        <div class="row">
+          <label>수동 사운드</label>
+          <select id="manualSoundKey" class="input">
+            <option value="">자동 선택</option>
+            <option value="default">기본 alert</option>
+            <option value="accountSmall">계좌 1만원 미만</option>
+            <option value="accountMid">계좌 1만원 이상</option>
+            <option value="accountBig">계좌 5만원 이상</option>
+            <option value="accountSuper">계좌 10만원 이상</option>
+            <option value="smokePlus">흡연 사운드</option>
+            <option value="smokeMinus">금연 사운드</option>
+            <option value="foodPlus">먹어 사운드</option>
+            <option value="foodMinus">먹지마 사운드</option>
+          </select>
+        </div>
+        <div class="row">
+          <label>Alert 표시 사운드 제목</label>
+          <input id="manualSoundTitle" class="input" placeholder="예: 대박후원 / 흡연효과음">
+        </div>
+      </div>
+
 
       <div class="bulk-tools">
         <button class="btn gray mini" onclick="clearAmounts()">크리에이터 금액 초기화</button>
@@ -144,6 +175,13 @@
 
 <script src="/common.js"></script>
 <script>
+function manualSoundPayload(){
+  return {
+    manualSoundKey: $('#manualSoundKey') ? $('#manualSoundKey').value : '',
+    manualSoundTitle: $('#manualSoundTitle') ? $('#manualSoundTitle').value : ''
+  };
+}
+
 let settings;
 
 
@@ -276,12 +314,14 @@ async function saveBatch(){
       accountTotal: $('#accountTotal').value,
       toonieTotal: $('#toonieTotal').value,
       processType: $('#processType').value || '후원',
+      ...manualSoundPayload(),
       rows
     };
     const res = await api('/api/donations/batch', {method:'POST', body:JSON.stringify(body)});
     $('#donor').value = '';
     $('#accountTotal').value = '';
     $('#toonieTotal').value = '';
+    if($('#manualSoundTitle')) $('#manualSoundTitle').value = '';
     clearAmounts();
     await loadRecent();
     alert(`${res.count}건 저장 완료`);

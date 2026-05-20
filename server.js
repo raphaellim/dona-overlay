@@ -42,6 +42,18 @@ function defaultSettings() {
     creators: ['빵떠기', '또영', '수박', '몰라', '익명'],
     presets: defaultPresets(),
     prices: { smoke: 11900, nosmoke: 12000, eat: 14000, noeat: 15000 },
+    soundRules: {
+      enabled: true,
+      defaultSound: 'alert.mp3',
+      accountSmall: 'account_small.mp3',
+      accountMid: 'account_mid.mp3',
+      accountBig: 'account_big.mp3',
+      accountSuper: 'account_super.mp3',
+      smokePlus: 'smoke_plus.mp3',
+      smokeMinus: 'smoke_minus.mp3',
+      foodPlus: 'food_plus.mp3',
+      foodMinus: 'food_minus.mp3'
+    },
     stationSettings: {}
   };
 }
@@ -98,6 +110,25 @@ function normalizePreset(p, idx) {
   };
 }
 
+function normalizeSoundRules(raw, base) {
+  const fallback = base || defaultSettings().soundRules;
+  const value = raw && typeof raw === 'object' ? raw : {};
+  const clean = v => String(v || '').replace(/[\\\/]/g, '').trim();
+
+  return {
+    enabled: value.enabled !== false,
+    defaultSound: clean(value.defaultSound) || fallback.defaultSound || 'alert.mp3',
+    accountSmall: clean(value.accountSmall) || fallback.accountSmall || 'account_small.mp3',
+    accountMid: clean(value.accountMid) || fallback.accountMid || 'account_mid.mp3',
+    accountBig: clean(value.accountBig) || fallback.accountBig || 'account_big.mp3',
+    accountSuper: clean(value.accountSuper) || fallback.accountSuper || 'account_super.mp3',
+    smokePlus: clean(value.smokePlus) || fallback.smokePlus || 'smoke_plus.mp3',
+    smokeMinus: clean(value.smokeMinus) || fallback.smokeMinus || 'smoke_minus.mp3',
+    foodPlus: clean(value.foodPlus) || fallback.foodPlus || 'food_plus.mp3',
+    foodMinus: clean(value.foodMinus) || fallback.foodMinus || 'food_minus.mp3'
+  };
+}
+
 function normalizeOverlaySections(raw, base) {
   const fallback = base || { account: true, notice: false, creators: true };
   const value = raw && typeof raw === 'object' ? raw : fallback;
@@ -137,6 +168,7 @@ function normalizeSettings(settings) {
     viewerPassword: String(raw.viewerPassword ?? base.viewerPassword ?? ''),
     viewerToken: String(raw.viewerToken ?? base.viewerToken ?? ''),
     overlaySections: normalizeOverlaySections(raw.overlaySections, base.overlaySections),
+    soundRules: normalizeSoundRules(raw.soundRules, base.soundRules),
     columns: Math.max(1, Math.min(6, Number(raw.columns || base.columns))),
     maxCreators: Math.max(1, Math.min(50, Number(raw.maxCreators || base.maxCreators))),
     creators: Array.isArray(raw.creators) ? raw.creators.map(normName).filter(Boolean) : base.creators,
@@ -154,7 +186,7 @@ function normalizeSettings(settings) {
 const SETTING_FIELDS = [
   'title', 'titleImage', 'noticeTitle', 'notice', 'noticeColors',
   'viewerPassword', 'viewerToken', 'overlaySections',
-  'columns', 'maxCreators', 'creators', 'presets', 'prices'
+  'columns', 'maxCreators', 'creators', 'presets', 'prices', 'soundRules'
 ];
 
 function pickScopedSettings(settings) {
@@ -293,12 +325,17 @@ async function stationAllowed(req, station) {
   return false;
 }
 
-async function overlayAllowed(req, station) {
-  if (await stationAllowed(req, station)) return true;
-  const token = String(req.query.token || req.headers['x-station-token'] || parseCookies(req).station_overlay_token || '');
+
+async function stationTokenAllowed(req, station) {
   const stationToken = String(station?.overlay_token || '');
-  if (!stationToken) return true;
+  if (!stationToken) return false;
+
+  const token = String(req.query.token || req.headers['x-station-token'] || '');
   return !!token && token === stationToken;
+}
+
+async function overlayAllowed(req, station) {
+  return await stationTokenAllowed(req, station);
 }
 
 async function ensureActiveBroadcast(stationId) {
@@ -465,8 +502,6 @@ const VIEWER_HTML = new Set([
 
 async function viewerAllowed(req, station, broadcast) {
   if (await operatorAllowed(req, station, broadcast)) return true;
-  if (await overlayAllowed(req, station)) return true;
-
   const settings = await readEffectiveSettings(station.slug, broadcast.id);
   const viewerPassword = String(settings.viewerPassword || '');
   const viewerToken = String(settings.viewerToken || '');
@@ -504,6 +539,12 @@ async function accessGuard(req, res, next) {
       if (!station) return htmlRedirect(res, `/station_login.html?station=${encodeURIComponent(getStationSlug(req))}`);
 
       const active = await ensureActiveBroadcast(station.id);
+
+      // overlay는 관리자 로그인 여부와 상관없이 방송국 토큰이 있어야만 접근 허용
+      if (pathOnly === '/overlay.html' || pathOnly === '/overlay2.html') {
+        if (await stationTokenAllowed(req, station)) return next();
+        return res.status(403).send('오버레이 토큰이 필요합니다.');
+      }
 
       if (STATION_HTML.has(pathOnly)) {
         if (await operatorAllowed(req, station, active)) return next();
@@ -626,6 +667,8 @@ function makeDonationRow(body, settings, stationId, broadcastId) {
     noeat: check.noeat,
     checks: check.checks,
     result_label: check.label,
+    manual_sound_key: String(body.manualSoundKey || body.manual_sound_key || '').replace(/[^a-zA-Z0-9_-]/g, ''),
+    manual_sound_title: String(body.manualSoundTitle || body.manual_sound_title || '').trim(),
     memo: String(body.memo || '').trim()
   };
 }
@@ -649,6 +692,8 @@ function dbRowToDonation(row) {
     noeat: row.noeat || 0,
     checks: Array.isArray(row.checks) ? row.checks : [],
     resultLabel: row.result_label || '후원',
+    manualSoundKey: row.manual_sound_key || '',
+    manualSoundTitle: row.manual_sound_title || '',
     memo: row.memo || ''
   };
 }
@@ -1133,7 +1178,8 @@ app.post('/api/settings', async (req, res) => {
       columns: body.columns ?? 4,
       maxCreators: body.maxCreators ?? 12,
       creators: Array.isArray(body.creators) ? body.creators.map(normName).filter(Boolean) : [],
-      presets: Array.isArray(body.presets) ? body.presets : []
+      presets: Array.isArray(body.presets) ? body.presets : [],
+      soundRules: normalizeSoundRules(body.soundRules, undefined)
     };
 
     const savedGlobal = await saveEffectiveSettings(ctx.station.slug, ctx.active.id, updates);

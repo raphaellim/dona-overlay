@@ -9,8 +9,8 @@
   :root{
     --account-roll-height:34px;
     --overlay-w:285px;
-    --top:25px;
-    --right:20px;
+    --top:54px;
+    --right:14px;
 
     --pink:rgba(255,138,185,.95);
     --pink-soft:rgba(255,138,185,.36);
@@ -447,6 +447,17 @@
     padding-top:2px !important;
   }
 
+
+  .alert-sound-title{
+    color:#ffffff;
+    background:rgba(255,255,255,.14);
+    border:1px solid rgba(255,255,255,.22);
+    border-radius:999px;
+    padding:3px 8px;
+    font-size:18px;
+    line-height:1;
+    white-space:nowrap;
+  }
 </style>
 </head>
 <body>
@@ -511,28 +522,62 @@
     기본 사운드:
     - alert.mp3
   */
-  const soundFiles = {
-    default: "/sounds/alert.mp3",
+  let soundBank = {};
+  let soundRulesCache = null;
 
-    accountSmall: "/sounds/account_small.mp3",
-    accountMid: "/sounds/account_mid.mp3",
-    accountBig: "/sounds/account_big.mp3",
-    accountSuper: "/sounds/account_super.mp3",
+  function sanitizeSoundFile(name){
+    return String(name || "").replace(/[\\/]/g, "").trim();
+  }
 
-    smokePlus: "/sounds/smoke_plus.mp3",
-    smokeMinus: "/sounds/smoke_minus.mp3",
-    foodPlus: "/sounds/food_plus.mp3",
-    foodMinus: "/sounds/food_minus.mp3"
-  };
+  function buildSoundBank(settings){
+    const rules = settings?.soundRules || {};
+    const fallback = {
+      defaultSound: "alert.mp3",
+      accountSmall: "account_small.mp3",
+      accountMid: "account_mid.mp3",
+      accountBig: "account_big.mp3",
+      accountSuper: "account_super.mp3",
+      smokePlus: "smoke_plus.mp3",
+      smokeMinus: "smoke_minus.mp3",
+      foodPlus: "food_plus.mp3",
+      foodMinus: "food_minus.mp3"
+    };
 
-  const soundBank = Object.fromEntries(
-    Object.entries(soundFiles).map(([key, src]) => {
-      const audio = new Audio(src);
-      audio.volume = 0.85;
-      audio.preload = "auto";
-      return [key, audio];
-    })
-  );
+    soundRulesCache = {
+      enabled: rules.enabled !== false,
+      defaultSound: sanitizeSoundFile(rules.defaultSound) || fallback.defaultSound,
+      accountSmall: sanitizeSoundFile(rules.accountSmall) || fallback.accountSmall,
+      accountMid: sanitizeSoundFile(rules.accountMid) || fallback.accountMid,
+      accountBig: sanitizeSoundFile(rules.accountBig) || fallback.accountBig,
+      accountSuper: sanitizeSoundFile(rules.accountSuper) || fallback.accountSuper,
+      smokePlus: sanitizeSoundFile(rules.smokePlus) || fallback.smokePlus,
+      smokeMinus: sanitizeSoundFile(rules.smokeMinus) || fallback.smokeMinus,
+      foodPlus: sanitizeSoundFile(rules.foodPlus) || fallback.foodPlus,
+      foodMinus: sanitizeSoundFile(rules.foodMinus) || fallback.foodMinus
+    };
+
+    const files = {
+      default: soundRulesCache.defaultSound,
+      accountSmall: soundRulesCache.accountSmall,
+      accountMid: soundRulesCache.accountMid,
+      accountBig: soundRulesCache.accountBig,
+      accountSuper: soundRulesCache.accountSuper,
+      smokePlus: soundRulesCache.smokePlus,
+      smokeMinus: soundRulesCache.smokeMinus,
+      foodPlus: soundRulesCache.foodPlus,
+      foodMinus: soundRulesCache.foodMinus
+    };
+
+    Object.entries(files).forEach(([key, file]) => {
+      const src = "/sounds/" + file;
+      if(!soundBank[key] || !soundBank[key].src.endsWith(src)){
+        const audio = new Audio(src);
+        audio.volume = 0.85;
+        audio.preload = "auto";
+        soundBank[key] = audio;
+      }
+    });
+  }
 
   let rollingItems = [];
   let rollingIndex = 0;
@@ -550,6 +595,18 @@
     noticeColors:["#ffffff", "#ffe066", "#5ecbff", "#ffb4ca", "#ff4d5e"],
     overlaySections:{ account:true, notice:false, creators:true },
     creators:["빵떠기","또영","수박","몰라","익명"],
+    soundRules:{
+      enabled:true,
+      defaultSound:"alert.mp3",
+      accountSmall:"account_small.mp3",
+      accountMid:"account_mid.mp3",
+      accountBig:"account_big.mp3",
+      accountSuper:"account_super.mp3",
+      smokePlus:"smoke_plus.mp3",
+      smokeMinus:"smoke_minus.mp3",
+      foodPlus:"food_plus.mp3",
+      foodMinus:"food_minus.mp3"
+    },
     presets:[
       {id:"smoke",enabled:true,title:"펴피지마",plusName:"흡연",minusName:"금연"},
       {id:"food",enabled:true,title:"먹먹마",plusName:"먹어",minusName:"먹지마"}
@@ -832,6 +889,7 @@
     const totalAmount=num(row.totalAmount??row.total_amount??accountAmount+toonieAmount);
     const amountText=displayAmount(totalAmount);
     const checks=Array.isArray(row.checks)?row.checks:[];
+    const manualSoundTitle = String(row.manualSoundTitle || row.manual_sound_title || '').trim();
     let optionText="";
 
     if(checks.length){
@@ -843,6 +901,12 @@
       optionText=`<span class="${cls}">${name}${sign}${count}</span>`;
     }
 
+    if(manualSoundTitle){
+      optionText = optionText
+        ? `${optionText}<span class="alert-sound-title">${escapeHtml(manualSoundTitle)}</span>`
+        : `<span class="alert-sound-title">${escapeHtml(manualSoundTitle)}</span>`;
+    }
+
     return `
       <div class="alert-donor">${donor}</div>
       <div class="alert-target">→ ${creator}</div>
@@ -851,6 +915,12 @@
   }
 
   function pickSoundKeyForDonation(row){
+    if(soundRulesCache && soundRulesCache.enabled === false) return "";
+
+    // 0순위: admin.html에서 수동으로 선택한 사운드
+    const manualKey = String(row?.manualSoundKey || row?.manual_sound_key || "").trim();
+    if(manualKey && soundBank[manualKey]) return manualKey;
+
     const checks = Array.isArray(row?.checks) ? row.checks : [];
     const latestCheck = checks.length ? checks[checks.length - 1] : null;
 
@@ -1021,6 +1091,7 @@
     catch(e){ data=demoData; }
 
     const settings = data.settings || defaultSettings;
+    buildSoundBank(settings);
     enabledPresets=getEnabledPresets(settings);
     const creators = data.creators && data.creators.length ? data.creators : zeroCreatorsFromSettings(settings);
 
@@ -1028,6 +1099,7 @@
       sections:getOverlaySections(settings),
       notice:settings.notice||"",
       noticeColors:settings.noticeColors||[],
+      soundRules:settings.soundRules||{},
       noticeTitle:settings.noticeTitle||"공지",
       accountDonors:data.accountDonors||[],
       creators,
