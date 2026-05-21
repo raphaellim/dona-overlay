@@ -677,6 +677,28 @@ html,body{
     font-size:34px !important;
   }
 }
+
+/* ===== 크리에이터박스 OFF여도 ALERT 독립 표시 ===== */
+.option-alert{
+  display:flex !important;
+  pointer-events:none !important;
+}
+
+.option-alert.hidden{
+  display:flex !important;
+}
+
+.option-alert.show{
+  display:flex !important;
+  visibility:visible !important;
+  opacity:1 !important;
+}
+
+.overlay-stack.hidden ~ .option-alert,
+.creator-box.hidden ~ .option-alert{
+  display:flex !important;
+}
+
 </style>
 </head>
 <body>
@@ -861,14 +883,20 @@ html,body{
 
   function applySections(settings){
     const sections = getOverlaySections(settings);
-    const notice = normalizeName(settings?.notice || "");
 
+    // 박스 3개만 ON/OFF 처리. ALERT(optionAlert)는 절대 여기서 숨기지 않음.
     $accountBox.classList.toggle("hidden", !sections.account);
-    $creatorBox.classList.toggle("hidden", !sections.creators);
     $noticeBox.classList.toggle("hidden", !sections.notice);
+    $creatorBox.classList.toggle("hidden", !sections.creators);
+
+    // 크리에이터 박스 내부 후원금액 표시 여부
     showCreatorDonations = sections.creatorDonations !== false;
 
-    renderNotice(settings);
+    // stack 전체를 hidden 처리하면 alert까지 영향 받을 수 있으므로 제거
+    const stack = document.querySelector(".overlay-stack");
+    if(stack) stack.classList.remove("hidden");
+
+    ensureAlertIndependent();
   }
 
   function zeroCreatorsFromSettings(settings){
@@ -1168,6 +1196,9 @@ html,body{
     const eventId = typeof alertItem === "string" ? "" : (alertItem.eventId || "");
 
     $alert.innerHTML = html;
+    ensureAlertIndependent();
+    $alert.classList.remove("hidden");
+    ensureAlertIndependent();
     $alert.classList.add("show");
 
     const audio = playSoundForDonation(row);
@@ -1382,6 +1413,25 @@ html,body{
     }
   }
 
+  function ensureAlertIndependent(){
+    const alertEl = document.getElementById("optionAlert");
+    if(!alertEl) return;
+
+    // 오버레이 박스 설정 때문에 hidden/display none이 붙는 상황 방지
+    alertEl.classList.remove("hidden");
+
+    // show 상태일 때는 반드시 보이게 보정
+    if(alertEl.classList.contains("show")){
+      alertEl.style.display = "flex";
+      alertEl.style.visibility = "visible";
+      alertEl.style.opacity = "1";
+    }else{
+      alertEl.style.display = "";
+      alertEl.style.visibility = "";
+      alertEl.style.opacity = "";
+    }
+  }
+
   async function refresh(){
     let data;
     try{ data=await loadData(); }
@@ -1404,6 +1454,7 @@ html,body{
       presets:enabledPresets.map(p=>({id:p.id,enabled:p.enabled,title:p.title,plusName:p.plusName,minusName:p.minusName}))
     });
 
+    ensureAlertIndependent();
     checkLatestOptionAlert(data.donations||[]);
     checkManualSoundEvents();
 
