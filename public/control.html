@@ -93,7 +93,9 @@ textarea{resize:vertical;line-height:1.45}
             <label class="toggle-box"><input type="checkbox" id="overlayAccountBox">계좌박스</label>
             <label class="toggle-box"><input type="checkbox" id="overlayNoticeBox">공지박스</label>
             <label class="toggle-box"><input type="checkbox" id="overlayCreatorBox">크리에이터박스</label>
+            <label class="toggle-box"><input type="checkbox" id="overlayCreatorDonations">크리에이터 후원 표시</label>
           </div>
+          <p class="muted" style="margin-top:8px">크리에이터 후원 표시를 OFF 하면 크리에이터 박스에 후원금액은 숨기고 옵션만 표시합니다.</p>
         </div>
 
         <div class="grid-2" style="margin-top:10px">
@@ -186,6 +188,7 @@ async function loadSettings(){
   $('#overlayAccountBox').checked = overlaySections.account !== false;
   $('#overlayNoticeBox').checked = overlaySections.notice === true;
   $('#overlayCreatorBox').checked = overlaySections.creators !== false;
+  $('#overlayCreatorDonations').checked = overlaySections.creatorDonations !== false;
 
   const soundRules = settings.soundRules || {};
   $('#soundEnabled').checked = soundRules.enabled !== false;
@@ -295,7 +298,8 @@ async function saveSettings(){
       overlaySections: {
         account: $('#overlayAccountBox').checked,
         notice: $('#overlayNoticeBox').checked,
-        creators: $('#overlayCreatorBox').checked
+        creators: $('#overlayCreatorBox').checked,
+        creatorDonations: $('#overlayCreatorDonations').checked
       },
       soundRules: {
         enabled: $('#soundEnabled').checked,
