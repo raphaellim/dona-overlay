@@ -141,8 +141,6 @@ function normalizeOverlaySections(raw, base) {
     account: value.account !== false,
     notice: value.notice === true,
     creators: value.creators !== false,
-    // 크리에이터 박스 안에서 후원금액 표시 여부
-    // false면 크리에이터 이름 + 옵션만 표시
     creatorDonations: value.creatorDonations !== false
   };
 }
@@ -1260,8 +1258,6 @@ app.get('/api/sound-events', async (req, res) => {
     } else {
       q = q.eq('status', 'pending');
 
-      // 일반 새 오버레이는 과거 pending을 다시 재생하지 않음.
-      // 단, player=1 오버레이는 중간에 죽은 queue를 이어받기 위해 includeOld=1 사용.
       if (!includeOld && after) {
         q = q.gt('released_at', after);
       } else if (!includeOld && !after) {
@@ -1283,14 +1279,14 @@ app.get('/api/sound-events', async (req, res) => {
           releasedAt: row.released_at,
           claimedAt: row.claimed_at,
           claimToken: row.claim_token,
+          pauseAfterCurrent: row.pause_after_current === true,
           status: row.status || 'pending',
           soundFile: row.sound_file,
           title: row.title,
           message: row.message,
           repeatTotal: total,
           repeatPlayed: played,
-          repeatRemaining: Math.max(0, total - played),
-          pauseAfterCurrent: row.pause_after_current === true
+          repeatRemaining: Math.max(0, total - played)
         };
       })
     });
@@ -1468,7 +1464,6 @@ app.post('/api/sound-events/:id/played', async (req, res) => {
       payload.played_at = new Date().toISOString();
       payload.status = 'played';
     } else if (pauseAfterCurrent) {
-      // 현재 회차는 정상 완료. 남은 횟수는 queued로 되돌려 재전송 버튼으로 이어서 재생.
       payload.status = 'queued';
       payload.released_at = null;
     } else {

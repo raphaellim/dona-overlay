@@ -636,6 +636,104 @@
   opacity:1 !important;
 }
 
+
+/* ===== 최종 안정화: 공지/ALERT/크리에이터/모바일 ===== */
+.option-alert{
+  display:flex !important;
+  pointer-events:none !important;
+}
+.option-alert.hidden{
+  display:flex !important;
+}
+.option-alert.show{
+  display:flex !important;
+  visibility:visible !important;
+  opacity:1 !important;
+}
+.option-alert .donation-alert-main{
+  width:100% !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  flex-wrap:nowrap !important;
+  white-space:nowrap !important;
+  gap:10px !important;
+  min-width:0 !important;
+}
+.option-alert .donation-alert-donor{
+  flex:0 1 auto !important;
+  min-width:0 !important;
+  max-width:48% !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+}
+.option-alert .donation-alert-creator{
+  flex:0 1 auto !important;
+  min-width:0 !important;
+  max-width:38% !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+}
+.option-alert .donation-alert-arrow{
+  flex:0 0 auto !important;
+}
+.notice-title,
+.notice-text,
+.notice-line{
+  text-align:center !important;
+}
+.notice-text{
+  white-space:normal !important;
+}
+.notice-line{
+  display:block !important;
+  line-height:1.22 !important;
+  margin:2px 0 !important;
+  word-break:keep-all !important;
+}
+.creator-item.options-only .creator-main{
+  justify-content:center !important;
+}
+.creator-item.options-only .creator-name{
+  flex:0 1 auto !important;
+  width:auto !important;
+  min-width:0 !important;
+  max-width:100% !important;
+  text-align:center !important;
+}
+.creator-item.options-only .creator-sub{
+  margin-top:4px !important;
+}
+@media (max-width:720px){
+  .option-alert{
+    width:calc(100vw - 32px) !important;
+    min-height:160px !important;
+    padding:48px 14px 22px 14px !important;
+    gap:8px !important;
+  }
+  .option-alert .donation-alert-main{
+    flex-wrap:nowrap !important;
+    gap:6px !important;
+  }
+  .option-alert .donation-alert-donor{
+    font-size:clamp(28px, 8vw, 39px) !important;
+    max-width:47% !important;
+  }
+  .option-alert .donation-alert-arrow{
+    min-width:30px !important;
+    height:30px !important;
+    font-size:20px !important;
+  }
+  .option-alert .donation-alert-creator{
+    font-size:clamp(22px, 6vw, 29px) !important;
+    max-width:38% !important;
+  }
+  .option-alert .donation-alert-source-badge{
+    font-size:17px !important;
+    padding:6px 12px !important;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -661,10 +759,10 @@
 <div class="creator-list" id="creatorList"></div>
       </section>
     </div>
-    <div class="option-alert" id="optionAlert"></div>
 </div>
   </div>
 
+<div class="option-alert" id="optionAlert"></div>
 <script>
 (() => {
   const API_SUMMARY = "/api/summary";
@@ -1215,7 +1313,6 @@
       const createdMs = new Date(createdRaw || 0).getTime();
       const key = (row.id || "") + "_" + createdRaw + "_" + (row.donor || "") + "_" + (row.creator || "");
 
-      // 새 창/새로고침/서버 웨이크업 때 과거 후원 ALERT 재출력 방지
       if(!createdMs || createdMs < overlayDonationBootAt - 1500) continue;
       if(claimedDonationAlertKeys.has(key)) continue;
 
@@ -1418,6 +1515,7 @@
     if(signature!==lastSignature){
       lastSignature=signature;
       applySections(settings);
+    renderNotice(settings);
       renderAccountRoller(data.accountDonors);
       renderCreators(creators);
     }
