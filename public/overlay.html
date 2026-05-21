@@ -620,20 +620,32 @@
 }
 
 
-/* ===== ALERT 독립 표시 최종 보정 ===== */
+/* ===== 공지/ALERT 최종 안정화 ===== */
 .option-alert{
   display:flex !important;
   pointer-events:none !important;
 }
-
 .option-alert.hidden{
   display:flex !important;
 }
-
 .option-alert.show{
   display:flex !important;
   visibility:visible !important;
   opacity:1 !important;
+}
+.notice-title,
+.notice-text,
+.notice-line{
+  text-align:center !important;
+}
+.notice-text{
+  white-space:normal !important;
+}
+.notice-line{
+  display:block !important;
+  line-height:1.22 !important;
+  margin:2px 0 !important;
+  word-break:keep-all !important;
 }
 
 </style>
@@ -658,11 +670,10 @@
       </section>
 
       <section class="overlay-box creator-box" id="creatorBox">
-<div class="creator-list" id="creatorList"></div>
+        <div class="creator-list" id="creatorList"></div>
       </section>
+      <div class="option-alert" id="optionAlert"></div>
     </div>
-    <div class="option-alert" id="optionAlert"></div>
-</div>
   </div>
 
 <script>
@@ -804,36 +815,34 @@
     if(!titleEl || !textEl) return;
 
     const rawNotice = settings?.notice;
-    let title = "공지사항";
-    let text = "";
-    let colors = [];
+    const noticeObj = rawNotice && typeof rawNotice === "object" ? rawNotice : {};
 
-    if(typeof rawNotice === "string"){
-      text = rawNotice;
-      title = String(settings?.noticeTitle || "공지사항");
-      colors = Array.isArray(settings?.noticeColors) ? settings.noticeColors : [];
-    }else if(rawNotice && typeof rawNotice === "object"){
-      title = String(rawNotice.title ?? settings?.noticeTitle ?? "공지사항");
-      text = String(rawNotice.text ?? settings?.noticeText ?? "");
-      colors = Array.isArray(rawNotice.colors)
-        ? rawNotice.colors
-        : (Array.isArray(settings?.noticeColors) ? settings.noticeColors : []);
-    }else{
-      title = String(settings?.noticeTitle || "공지사항");
-      text = String(settings?.noticeText || "");
-      colors = Array.isArray(settings?.noticeColors) ? settings.noticeColors : [];
-    }
+    const title = String(
+      noticeObj.title ?? settings?.noticeTitle ?? "공지"
+    ).trim();
 
-    text = String(text || "").replace(/\\n/g, "\n");
-    titleEl.textContent = title.trim() || "공지사항";
+    const rawText = typeof rawNotice === "string"
+      ? rawNotice
+      : (noticeObj.text ?? settings?.noticeText ?? "");
+
+    const text = String(rawText || "").replace(/\\n/g, "\n");
+
+    titleEl.textContent = title || "공지";
+
+    const colors = Array.isArray(noticeObj.colors)
+      ? noticeObj.colors
+      : (Array.isArray(settings?.noticeColors) ? settings.noticeColors : []);
+
+    const defaultColor = noticeObj.color || "";
+    const lines = text.split(/\r?\n/);
 
     if(!text.trim()){
       textEl.innerHTML = "";
       return;
     }
 
-    textEl.innerHTML = text.split(/\r?\n/).map((line, idx) => {
-      const color = colors[idx] || "";
+    textEl.innerHTML = lines.map((line, idx) => {
+      const color = colors[idx] || defaultColor || "";
       const style = color ? ` style="color:${escapeHtml(color)}"` : "";
       return `<span class="notice-line"${style}>${escapeHtml(line)}</span>`;
     }).join("");
@@ -842,15 +851,12 @@
   function applySections(settings){
     const sections = getOverlaySections(settings);
 
+    // 박스 3개만 ON/OFF 처리. ALERT는 별도 DOM으로 독립 동작합니다.
     $accountBox.classList.toggle("hidden", !sections.account);
     $noticeBox.classList.toggle("hidden", !sections.notice);
     $creatorBox.classList.toggle("hidden", !sections.creators);
 
     showCreatorDonations = sections.creatorDonations !== false;
-
-    const stack = document.querySelector(".overlay-stack");
-    if(stack) stack.classList.remove("hidden");
-
     ensureAlertIndependent();
   }
 
@@ -1130,10 +1136,7 @@
   async function markManualSoundPlayed(eventId){
     if(!eventId) return;
     try{
-      await fetchJson("/api/sound-events/" + encodeURIComponent(eventId) + "/played", {
-        method:"POST",
-        body:JSON.stringify({ claimToken: CLAIM_TOKEN })
-      });
+      await fetchJson("/api/sound-events/" + encodeURIComponent(eventId) + "/played", { method:"POST" });
     }catch(e){}
   }
 
@@ -1151,7 +1154,6 @@
 
     $alert.innerHTML = html;
     $alert.classList.remove("hidden");
-    ensureAlertIndependent();
     $alert.classList.add("show");
 
     const audio = playSoundForDonation(row);
@@ -1164,7 +1166,6 @@
       if(closed) return;
       closed = true;
       clearTimeout(fallbackTimer);
-      markManualSoundPlayed(eventId);
       $alert.classList.remove("show");
       setTimeout(() => {
         alertShowing = false;
@@ -1254,51 +1255,35 @@
     `;
   }
 
-  async function claimManualSoundEvent(eventId){
-    try{
-      const data = await fetchJson("/api/sound-events/" + encodeURIComponent(eventId) + "/claim", {
-        method:"POST",
-        body:JSON.stringify({ claimToken: CLAIM_TOKEN })
-      });
-      return data && data.claimed === true;
-    }catch(e){
-      return false;
-    }
-  }
-
   async function checkManualSoundEvents(){
     try{
-      if(IS_MONITOR) return;
       if(alertShowing || alertPlaying || alertQueue.length > 0) return;
 
-      const data = await fetchJson("/api/sound-events?includeOld=1");
+      const url = "/api/sound-events?after=" + encodeURIComponent(overlaySoundBootAt);
+      const data = await fetchJson(url);
       const events = Array.isArray(data.events) ? data.events : [];
       if(!events.length) return;
 
-      for(const ev of events){
-        if(!ev || !ev.id) continue;
+      const ev = events[0];
+      if(!ev || !ev.id) return;
 
-        const repeatKey = `${ev.id}:${Number(ev.repeatPlayed || 0)}`;
-        if(claimedSoundEventIds.has(repeatKey)) continue;
+      const repeatKey = `${ev.id}:${Number(ev.repeatPlayed || 0)}`;
+      if(claimedSoundEventIds.has(repeatKey)) return;
 
-        const claimed = await claimManualSoundEvent(ev.id);
-        if(!claimed) continue;
+      claimedSoundEventIds.add(repeatKey);
+      markManualSoundPlayed(ev.id);
 
-        claimedSoundEventIds.add(repeatKey);
+      alertQueue.push({
+        eventId:ev.id,
+        repeatKey,
+        html: makeManualSoundEventAlertHtml(ev),
+        row: {
+          manualSoundFile:ev.soundFile,
+          manualSoundTitle:ev.title
+        }
+      });
 
-        alertQueue.push({
-          eventId:ev.id,
-          repeatKey,
-          html: makeManualSoundEventAlertHtml(ev),
-          row: {
-            manualSoundFile:ev.soundFile,
-            manualSoundTitle:ev.title
-          }
-        });
-
-        playAlertQueue();
-        break;
-      }
+      playAlertQueue();
     }catch(e){}
   }
 
@@ -1377,16 +1362,6 @@
     const alertEl = document.getElementById("optionAlert");
     if(!alertEl) return;
     alertEl.classList.remove("hidden");
-
-    if(alertEl.classList.contains("show")){
-      alertEl.style.display = "flex";
-      alertEl.style.visibility = "visible";
-      alertEl.style.opacity = "1";
-    }else{
-      alertEl.style.display = "";
-      alertEl.style.visibility = "";
-      alertEl.style.opacity = "";
-    }
   }
 
   async function refresh(){
@@ -1399,10 +1374,14 @@
     enabledPresets=getEnabledPresets(settings);
     const creators = data.creators && data.creators.length ? data.creators : zeroCreatorsFromSettings(settings);
 
+    // 공지는 설정 저장 후 즉시 반영되도록 매번 렌더링
+    renderNotice(settings);
+
     const signature=JSON.stringify({
       sections:getOverlaySections(settings),
       creatorDonations:getOverlaySections(settings).creatorDonations,
       notice:settings.notice||"",
+      noticeText:settings.noticeText||"",
       noticeColors:settings.noticeColors||[],
       soundRules:settings.soundRules||{},
       noticeTitle:settings.noticeTitle||"공지",
