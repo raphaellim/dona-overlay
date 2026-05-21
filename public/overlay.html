@@ -737,7 +737,7 @@ body > .option-alert.show,
   };
 
   function num(v){ const n=Number(v||0); return Number.isFinite(n)?n:0; }
-  function displayAmount(won){ const cut=Math.floor(num(won)/1000)/10; return cut.toFixed(1).replace(/\.0$/,""); }
+  function displayAmount(won){return Math.floor(num(won)).toLocaleString("ko-KR");}
   function normalizeName(v){ return String(v??"").replace(/\s+/g," ").trim(); }
   function escapeHtml(str){ return String(str).replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[ch])); }
   function formatCreatorName(name){
