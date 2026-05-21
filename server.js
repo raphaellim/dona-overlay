@@ -1203,7 +1203,8 @@ app.post('/api/sound-events', async (req, res) => {
         status: soundStatus,
         released_at: releasedAt,
         repeat_total: repeatTotal,
-        repeat_played: 0
+        repeat_played: 0,
+        pause_after_current: false
       })
       .select()
       .single();
@@ -1243,6 +1244,7 @@ app.get('/api/sound-events', async (req, res) => {
 
     const all = String(req.query.all || '') === '1';
     const after = String(req.query.after || '');
+    const includeOld = String(req.query.includeOld || '') === '1';
 
     let q = supabase
       .from('sound_events')
@@ -1256,11 +1258,15 @@ app.get('/api/sound-events', async (req, res) => {
     if (all) {
       q = q.in('status', ['queued', 'pending']);
     } else {
-      if (!after) return res.json({ events: [] });
+      q = q.eq('status', 'pending');
 
-      q = q.eq('status', 'pending')
-           .not('released_at', 'is', null)
-           .gt('released_at', after);
+      // 일반 새 오버레이는 과거 pending을 다시 재생하지 않음.
+      // 단, player=1 오버레이는 중간에 죽은 queue를 이어받기 위해 includeOld=1 사용.
+      if (!includeOld && after) {
+        q = q.gt('released_at', after);
+      } else if (!includeOld && !after) {
+        return res.json({ events: [] });
+      }
     }
 
     const { data, error } = await q;
@@ -1275,13 +1281,16 @@ app.get('/api/sound-events', async (req, res) => {
           createdAt: row.created_at,
           playedAt: row.played_at,
           releasedAt: row.released_at,
+          claimedAt: row.claimed_at,
+          claimToken: row.claim_token,
           status: row.status || 'pending',
           soundFile: row.sound_file,
           title: row.title,
           message: row.message,
           repeatTotal: total,
           repeatPlayed: played,
-          repeatRemaining: Math.max(0, total - played)
+          repeatRemaining: Math.max(0, total - played),
+          pauseAfterCurrent: row.pause_after_current === true
         };
       })
     });
@@ -1290,6 +1299,131 @@ app.get('/api/sound-events', async (req, res) => {
   }
 });
 
+
+
+
+
+app.post('/api/sound-events/pause', async (req, res) => {
+  try {
+    if (!requireDb(res)) return;
+    const ctx = await getStationContext(req, res);
+    if (!ctx) return;
+
+    if (!await operatorAllowed(req, ctx.station, ctx.active)) {
+      return res.status(401).json({ error: '방송 비밀번호 또는 방송국 관리자 권한이 필요합니다.' });
+    }
+
+    // 아직 claim되지 않은 pending은 즉시 queued로 되돌림
+    const { error: unclaimedError } = await supabase
+      .from('sound_events')
+      .update({
+        status: 'queued',
+        released_at: null,
+        claim_token: null,
+        claimed_at: null,
+        pause_after_current: false
+      })
+      .eq('station_id', ctx.station.id)
+      .eq('broadcast_id', ctx.active.id)
+      .eq('status', 'pending')
+      .is('played_at', null)
+      .is('claim_token', null);
+
+    if (unclaimedError) throw unclaimedError;
+
+    // 현재 재생 중으로 claim된 항목은 이번 회차 끝난 뒤 queued로 멈춤
+    const { data, error } = await supabase
+      .from('sound_events')
+      .update({ pause_after_current: true })
+      .eq('station_id', ctx.station.id)
+      .eq('broadcast_id', ctx.active.id)
+      .eq('status', 'pending')
+      .is('played_at', null)
+      .not('claim_token', 'is', null)
+      .select();
+
+    if (error) throw error;
+
+    res.json({ ok: true, pauseAfterCurrent: (data || []).length });
+  } catch (e) {
+    res.status(500).json({ error: e.message || '대기열 멈춤 실패' });
+  }
+});
+
+
+app.post('/api/sound-events/:id/claim', async (req, res) => {
+  try {
+    if (!requireDb(res)) return;
+    const ctx = await getStationContext(req, res);
+    if (!ctx) return;
+
+    const tokenOk = typeof stationTokenAllowed === 'function' ? await stationTokenAllowed(req, ctx.station) : false;
+    const canUpdate = tokenOk || await operatorAllowed(req, ctx.station, ctx.active);
+    if (!canUpdate) return res.status(403).json({ error: '권한이 없습니다.' });
+
+    const claimToken = String(req.body?.claimToken || '').trim();
+    if (!claimToken) return res.status(400).json({ error: 'claimToken이 필요합니다.' });
+
+    const now = new Date();
+    const expiredBefore = new Date(now.getTime() - 90000).toISOString();
+
+    const { data: current, error: readError } = await supabase
+      .from('sound_events')
+      .select('*')
+      .eq('station_id', ctx.station.id)
+      .eq('broadcast_id', ctx.active.id)
+      .eq('id', req.params.id)
+      .is('played_at', null)
+      .eq('status', 'pending')
+      .single();
+
+    if (readError) throw readError;
+
+    const claimedAt = current.claimed_at ? new Date(current.claimed_at).toISOString() : null;
+    const canClaim =
+      !current.claim_token ||
+      current.claim_token === claimToken ||
+      !claimedAt ||
+      claimedAt < expiredBefore;
+
+    if (!canClaim) {
+      return res.json({
+        ok: false,
+        claimed: false,
+        reason: 'already_claimed',
+        claimedAt: current.claimed_at,
+        claimToken: current.claim_token
+      });
+    }
+
+    const { data, error } = await supabase
+      .from('sound_events')
+      .update({
+        claim_token: claimToken,
+        claimed_at: now.toISOString()
+      })
+      .eq('station_id', ctx.station.id)
+      .eq('broadcast_id', ctx.active.id)
+      .eq('id', req.params.id)
+      .is('played_at', null)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    res.json({
+      ok: true,
+      claimed: true,
+      event: {
+        id: data.id,
+        claimedAt: data.claimed_at,
+        claimToken: data.claim_token
+      }
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message || '수동 사운드 claim 실패' });
+  }
+});
 
 
 app.post('/api/sound-events/:id/played', async (req, res) => {
@@ -1302,6 +1436,8 @@ app.post('/api/sound-events/:id/played', async (req, res) => {
     const canUpdate = tokenOk || await operatorAllowed(req, ctx.station, ctx.active);
     if (!canUpdate) return res.status(403).json({ error: '권한이 없습니다.' });
 
+    const claimToken = String(req.body?.claimToken || '').trim();
+
     const { data: current, error: readError } = await supabase
       .from('sound_events')
       .select('*')
@@ -1312,14 +1448,31 @@ app.post('/api/sound-events/:id/played', async (req, res) => {
 
     if (readError) throw readError;
 
+    if (claimToken && current.claim_token && current.claim_token !== claimToken) {
+      return res.json({ ok: false, done: false, reason: 'claim_token_mismatch' });
+    }
+
     const total = Math.max(1, Number(current.repeat_total || 1));
     const nextPlayed = Math.min(total, Math.max(0, Number(current.repeat_played || 0)) + 1);
     const done = nextPlayed >= total;
+    const pauseAfterCurrent = current.pause_after_current === true;
 
-    const payload = { repeat_played: nextPlayed };
+    const payload = {
+      repeat_played: nextPlayed,
+      claim_token: null,
+      claimed_at: null,
+      pause_after_current: false
+    };
+
     if (done) {
       payload.played_at = new Date().toISOString();
       payload.status = 'played';
+    } else if (pauseAfterCurrent) {
+      // 현재 회차는 정상 완료. 남은 횟수는 queued로 되돌려 재전송 버튼으로 이어서 재생.
+      payload.status = 'queued';
+      payload.released_at = null;
+    } else {
+      payload.status = 'pending';
     }
 
     const { data, error } = await supabase
@@ -1336,12 +1489,13 @@ app.post('/api/sound-events/:id/played', async (req, res) => {
     res.json({
       ok: true,
       done,
+      paused: !done && pauseAfterCurrent,
       event: {
         id: data.id,
         repeatTotal: Number(data.repeat_total || total),
         repeatPlayed: Number(data.repeat_played || nextPlayed),
         repeatRemaining: Math.max(0, Number(data.repeat_total || total) - Number(data.repeat_played || nextPlayed)),
-        status: data.status || (done ? 'played' : 'pending')
+        status: data.status || (done ? 'played' : pauseAfterCurrent ? 'queued' : 'pending')
       }
     });
   } catch (e) {
@@ -1380,7 +1534,7 @@ app.post('/api/sound-events/release', async (req, res) => {
 
     const { data, error } = await supabase
       .from('sound_events')
-      .update({ status: 'pending', released_at: new Date().toISOString() })
+      .update({ status: 'pending', released_at: new Date().toISOString(), claim_token: null, claimed_at: null, pause_after_current: false })
       .eq('station_id', ctx.station.id)
       .eq('broadcast_id', ctx.active.id)
       .is('played_at', null)

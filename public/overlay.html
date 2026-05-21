@@ -619,35 +619,6 @@
   }
 }
 
-
-/* ===== 공지/ALERT 최종 안정화 ===== */
-.option-alert{
-  display:flex !important;
-  pointer-events:none !important;
-}
-.option-alert.hidden{
-  display:flex !important;
-}
-.option-alert.show{
-  display:flex !important;
-  visibility:visible !important;
-  opacity:1 !important;
-}
-.notice-title,
-.notice-text,
-.notice-line{
-  text-align:center !important;
-}
-.notice-text{
-  white-space:normal !important;
-}
-.notice-line{
-  display:block !important;
-  line-height:1.22 !important;
-  margin:2px 0 !important;
-  word-break:keep-all !important;
-}
-
 </style>
 </head>
 <body>
@@ -670,9 +641,9 @@
       </section>
 
       <section class="overlay-box creator-box" id="creatorBox">
+        <div class="option-alert" id="optionAlert"></div>
         <div class="creator-list" id="creatorList"></div>
       </section>
-      <div class="option-alert" id="optionAlert"></div>
     </div>
   </div>
 
@@ -814,26 +785,13 @@
     const textEl = document.querySelector(".notice-text");
     if(!titleEl || !textEl) return;
 
-    const rawNotice = settings?.notice;
-    const noticeObj = rawNotice && typeof rawNotice === "object" ? rawNotice : {};
+    const notice = settings?.notice || {};
+    const title = String(notice.title ?? settings?.noticeTitle ?? "공지사항").trim();
+    const text = String(notice.text ?? settings?.noticeText ?? "").replace(/\\n/g, "\n");
 
-    const title = String(
-      noticeObj.title ?? settings?.noticeTitle ?? "공지"
-    ).trim();
+    titleEl.textContent = title || "공지사항";
 
-    const rawText = typeof rawNotice === "string"
-      ? rawNotice
-      : (noticeObj.text ?? settings?.noticeText ?? "");
-
-    const text = String(rawText || "").replace(/\\n/g, "\n");
-
-    titleEl.textContent = title || "공지";
-
-    const colors = Array.isArray(noticeObj.colors)
-      ? noticeObj.colors
-      : (Array.isArray(settings?.noticeColors) ? settings.noticeColors : []);
-
-    const defaultColor = noticeObj.color || "";
+    const colors = Array.isArray(notice.colors) ? notice.colors : [];
     const lines = text.split(/\r?\n/);
 
     if(!text.trim()){
@@ -842,7 +800,7 @@
     }
 
     textEl.innerHTML = lines.map((line, idx) => {
-      const color = colors[idx] || defaultColor || "";
+      const color = colors[idx] || notice.color || "";
       const style = color ? ` style="color:${escapeHtml(color)}"` : "";
       return `<span class="notice-line"${style}>${escapeHtml(line)}</span>`;
     }).join("");
@@ -850,14 +808,14 @@
 
   function applySections(settings){
     const sections = getOverlaySections(settings);
+    const notice = normalizeName(settings?.notice || "");
 
-    // 박스 3개만 ON/OFF 처리. ALERT는 별도 DOM으로 독립 동작합니다.
     $accountBox.classList.toggle("hidden", !sections.account);
-    $noticeBox.classList.toggle("hidden", !sections.notice);
     $creatorBox.classList.toggle("hidden", !sections.creators);
-
+    $noticeBox.classList.toggle("hidden", !sections.notice);
     showCreatorDonations = sections.creatorDonations !== false;
-    ensureAlertIndependent();
+
+    renderNotice(settings);
   }
 
   function zeroCreatorsFromSettings(settings){
@@ -1136,7 +1094,10 @@
   async function markManualSoundPlayed(eventId){
     if(!eventId) return;
     try{
-      await fetchJson("/api/sound-events/" + encodeURIComponent(eventId) + "/played", { method:"POST" });
+      await fetchJson("/api/sound-events/" + encodeURIComponent(eventId) + "/played", {
+        method:"POST",
+        body:JSON.stringify({ claimToken: CLAIM_TOKEN })
+      });
     }catch(e){}
   }
 
@@ -1153,7 +1114,6 @@
     const eventId = typeof alertItem === "string" ? "" : (alertItem.eventId || "");
 
     $alert.innerHTML = html;
-    $alert.classList.remove("hidden");
     $alert.classList.add("show");
 
     const audio = playSoundForDonation(row);
@@ -1166,6 +1126,7 @@
       if(closed) return;
       closed = true;
       clearTimeout(fallbackTimer);
+      markManualSoundPlayed(eventId);
       $alert.classList.remove("show");
       setTimeout(() => {
         alertShowing = false;
@@ -1255,35 +1216,51 @@
     `;
   }
 
+  async function claimManualSoundEvent(eventId){
+    try{
+      const data = await fetchJson("/api/sound-events/" + encodeURIComponent(eventId) + "/claim", {
+        method:"POST",
+        body:JSON.stringify({ claimToken: CLAIM_TOKEN })
+      });
+      return data && data.claimed === true;
+    }catch(e){
+      return false;
+    }
+  }
+
   async function checkManualSoundEvents(){
     try{
+      if(IS_MONITOR) return;
       if(alertShowing || alertPlaying || alertQueue.length > 0) return;
 
-      const url = "/api/sound-events?after=" + encodeURIComponent(overlaySoundBootAt);
-      const data = await fetchJson(url);
+      const data = await fetchJson("/api/sound-events?includeOld=1");
       const events = Array.isArray(data.events) ? data.events : [];
       if(!events.length) return;
 
-      const ev = events[0];
-      if(!ev || !ev.id) return;
+      for(const ev of events){
+        if(!ev || !ev.id) continue;
 
-      const repeatKey = `${ev.id}:${Number(ev.repeatPlayed || 0)}`;
-      if(claimedSoundEventIds.has(repeatKey)) return;
+        const repeatKey = `${ev.id}:${Number(ev.repeatPlayed || 0)}`;
+        if(claimedSoundEventIds.has(repeatKey)) continue;
 
-      claimedSoundEventIds.add(repeatKey);
-      markManualSoundPlayed(ev.id);
+        const claimed = await claimManualSoundEvent(ev.id);
+        if(!claimed) continue;
 
-      alertQueue.push({
-        eventId:ev.id,
-        repeatKey,
-        html: makeManualSoundEventAlertHtml(ev),
-        row: {
-          manualSoundFile:ev.soundFile,
-          manualSoundTitle:ev.title
-        }
-      });
+        claimedSoundEventIds.add(repeatKey);
 
-      playAlertQueue();
+        alertQueue.push({
+          eventId:ev.id,
+          repeatKey,
+          html: makeManualSoundEventAlertHtml(ev),
+          row: {
+            manualSoundFile:ev.soundFile,
+            manualSoundTitle:ev.title
+          }
+        });
+
+        playAlertQueue();
+        break;
+      }
     }catch(e){}
   }
 
@@ -1374,14 +1351,10 @@
     enabledPresets=getEnabledPresets(settings);
     const creators = data.creators && data.creators.length ? data.creators : zeroCreatorsFromSettings(settings);
 
-    // 공지는 설정 저장 후 즉시 반영되도록 매번 렌더링
-    renderNotice(settings);
-
     const signature=JSON.stringify({
       sections:getOverlaySections(settings),
       creatorDonations:getOverlaySections(settings).creatorDonations,
       notice:settings.notice||"",
-      noticeText:settings.noticeText||"",
       noticeColors:settings.noticeColors||[],
       soundRules:settings.soundRules||{},
       noticeTitle:settings.noticeTitle||"공지",
