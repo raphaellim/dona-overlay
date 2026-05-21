@@ -780,10 +780,7 @@
 
     const map = new Map();
     zeroCreatorsFromSettings(settings).forEach(c => map.set(c.creator, c));
-
-    // 컨트롤에 등록된 크리에이터가 없으면 아무도 표시하지 않습니다.
-    // 과거 후원 데이터/summary에 예전 이름이 남아 있어도 여기서 차단됩니다.
-    if(!allowed.size) return [];
+    if(!allowed.size) return Array.from(map.values()).slice(0,5);
 
     (donations||[]).forEach(d=>{
       const creator=normalizeName(d.creator||"");
@@ -822,19 +819,18 @@
       .map(normalizeName)
       .filter(Boolean));
 
-    if(!allowed.size) return [];
-
     const rows = Array.isArray(summary?.creators)
       ? summary.creators
       : (Array.isArray(summary?.creatorSummary) ? summary.creatorSummary : []);
 
     const cleaned = rows
       .map(row => ({...row, creator: normalizeName(row.creator || row.name || "")}))
-      .filter(row => row.creator && allowed.has(row.creator));
+      .filter(row => row.creator && (!allowed.size || allowed.has(row.creator)));
 
     if(cleaned.length) return cleaned.slice(0,5);
 
-    return aggregateCreatorsFromDonations(summary?.donations||[], settings);
+    const aggregated = aggregateCreatorsFromDonations(summary?.donations||[], settings);
+    return aggregated.length ? aggregated : zeroCreatorsFromSettings(settings);
   }
 
   function statusLabelsFromPresetNets(presets,row){
@@ -1252,9 +1248,19 @@
     }catch(e){
       try{
         const settings = await fetchJson(API_SETTINGS);
-        return { settings, accountDonors:[], creators:zeroCreatorsFromSettings(settings), donations:[] };
+        return {
+          settings,
+          accountDonors:[],
+          creators:zeroCreatorsFromSettings(settings),
+          donations:[]
+        };
       }catch(err){
-        return { settings: defaultSettings, accountDonors: [], creators: [], donations: [] };
+        return {
+          settings: defaultSettings,
+          accountDonors: [],
+          creators: [],
+          donations: []
+        };
       }
     }
   }
