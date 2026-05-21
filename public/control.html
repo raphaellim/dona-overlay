@@ -93,9 +93,7 @@ textarea{resize:vertical;line-height:1.45}
             <label class="toggle-box"><input type="checkbox" id="overlayAccountBox">계좌박스</label>
             <label class="toggle-box"><input type="checkbox" id="overlayNoticeBox">공지박스</label>
             <label class="toggle-box"><input type="checkbox" id="overlayCreatorBox">크리에이터박스</label>
-            <label class="toggle-box"><input type="checkbox" id="overlayCreatorDonations">크리에이터 후원 표시</label>
           </div>
-          <p class="muted" style="margin-top:8px">크리에이터 후원 표시를 OFF 하면 크리에이터 박스에 후원금액은 숨기고 옵션만 표시합니다.</p>
         </div>
 
         <div class="grid-2" style="margin-top:10px">
@@ -107,7 +105,7 @@ textarea{resize:vertical;line-height:1.45}
       <section class="card">
         <h2>크리에이터 목록</h2>
         <p class="muted">한 줄에 한 명씩 입력하세요.</p>
-        <textarea id="creators" class="input creator-area" placeholder="빵떠기&#10;또영&#10;수박"></textarea>
+        <textarea id="creators" class="input creator-area" placeholder="크리에이터1&#10;크리에이터2&#10;크리에이터3"></textarea>
       </section>
     </div>
 
@@ -188,7 +186,6 @@ async function loadSettings(){
   $('#overlayAccountBox').checked = overlaySections.account !== false;
   $('#overlayNoticeBox').checked = overlaySections.notice === true;
   $('#overlayCreatorBox').checked = overlaySections.creators !== false;
-  $('#overlayCreatorDonations').checked = overlaySections.creatorDonations !== false;
 
   const soundRules = settings.soundRules || {};
   $('#soundEnabled').checked = soundRules.enabled !== false;
@@ -298,8 +295,7 @@ async function saveSettings(){
       overlaySections: {
         account: $('#overlayAccountBox').checked,
         notice: $('#overlayNoticeBox').checked,
-        creators: $('#overlayCreatorBox').checked,
-        creatorDonations: $('#overlayCreatorDonations').checked
+        creators: $('#overlayCreatorBox').checked
       },
       soundRules: {
         enabled: $('#soundEnabled').checked,

@@ -506,35 +506,7 @@
   }
 
 
-  /* 크리에이터 박스: 후원금액 숨김/옵션만 표시 모드 */
-  .creator-item.options-only .creator-main{
-    justify-content:center !important;
-  }
-  .creator-item.options-only .creator-name{
-    flex:0 1 auto !important;
-    width:auto !important;
-    min-width:0 !important;
-    max-width:100% !important;
-    text-align:center !important;
-  }
-  .creator-item.options-only .creator-sub{
-    margin-top:4px !important;
-  }
-
-
-/* ===== 최종 보정: 모바일 ALERT 한줄 유지 / 공지 정확 표시 / 옵션만 표시 ===== */
-.option-alert{
-  display:flex !important;
-  pointer-events:none !important;
-}
-.option-alert.hidden{
-  display:flex !important;
-}
-.option-alert.show{
-  display:flex !important;
-  visibility:visible !important;
-  opacity:1 !important;
-}
+/* ===== rollback working: 수동사운드 복구 + 크리에이터 설정값만 표시 ===== */
 .option-alert .donation-alert-main{
   width:100% !important;
   display:flex !important;
@@ -562,40 +534,14 @@
 .option-alert .donation-alert-arrow{
   flex:0 0 auto !important;
 }
-.notice-title,
-.notice-text,
-.notice-line{
-  text-align:center !important;
-}
-.notice-text{
-  white-space:normal !important;
-}
-.notice-line{
-  display:block !important;
-  line-height:1.22 !important;
-  margin:2px 0 !important;
-  word-break:keep-all !important;
-}
-.creator-item.options-only .creator-main{
-  justify-content:center !important;
-}
+.creator-item.options-only .creator-main{justify-content:center !important;}
 .creator-item.options-only .creator-name{
   flex:0 1 auto !important;
   width:auto !important;
-  min-width:0 !important;
   max-width:100% !important;
   text-align:center !important;
 }
-.creator-item.options-only .creator-sub{
-  margin-top:4px !important;
-}
-@media (max-width:720px){
-  .option-alert{
-    width:calc(100vw - 32px) !important;
-    min-height:160px !important;
-    padding:48px 14px 22px 14px !important;
-    gap:8px !important;
-  }
+@media(max-width:720px){
   .option-alert .donation-alert-main{
     flex-wrap:nowrap !important;
     gap:6px !important;
@@ -613,39 +559,6 @@
     font-size:clamp(22px, 6vw, 29px) !important;
     max-width:38% !important;
   }
-  .option-alert .donation-alert-source-badge{
-    font-size:17px !important;
-    padding:6px 12px !important;
-  }
-}
-
-
-/* ===== 공지/ALERT 최종 안정화 ===== */
-.option-alert{
-  display:flex !important;
-  pointer-events:none !important;
-}
-.option-alert.hidden{
-  display:flex !important;
-}
-.option-alert.show{
-  display:flex !important;
-  visibility:visible !important;
-  opacity:1 !important;
-}
-.notice-title,
-.notice-text,
-.notice-line{
-  text-align:center !important;
-}
-.notice-text{
-  white-space:normal !important;
-}
-.notice-line{
-  display:block !important;
-  line-height:1.22 !important;
-  margin:2px 0 !important;
-  word-break:keep-all !important;
 }
 
 </style>
@@ -670,9 +583,9 @@
       </section>
 
       <section class="overlay-box creator-box" id="creatorBox">
+        <div class="option-alert" id="optionAlert"></div>
         <div class="creator-list" id="creatorList"></div>
       </section>
-      <div class="option-alert" id="optionAlert"></div>
     </div>
   </div>
 
@@ -683,6 +596,7 @@
   const PARAMS = new URLSearchParams(location.search);
   const ACCESS_TOKEN = PARAMS.get("token") || "";
   const STATION_SLUG = PARAMS.get("station") || "default";
+  const IS_MONITOR = PARAMS.get("monitor") === "1";
 
   const $accountBox = document.getElementById("accountBox");
   const $noticeBox = document.getElementById("noticeBox");
@@ -732,8 +646,6 @@
   let enabledPresets = [];
   let lastSignature = "";
   let lastDonationKey = localStorage.getItem("overlay_last_alert_key") || "";
-  const overlayDonationBootAt = Date.now();
-  const claimedDonationAlertKeys = new Set();
   let lastSoundEventAt = localStorage.getItem("overlay_last_sound_event_at") || new Date().toISOString();
   const overlaySoundBootAt = new Date().toISOString();
   const claimedSoundEventIds = new Set();
@@ -747,7 +659,7 @@
     noticeTitle:"공지",
     notice:"",
     noticeColors:["#ffffff", "#ffe066", "#5ecbff", "#ffb4ca", "#ff4d5e"],
-    overlaySections:{ account:true, notice:false, creators:true, creatorDonations:true },
+    overlaySections:{ account:true, notice:false, creators:true },
     soundRules:{
       enabled:true,
       defaultSound:"alert.mp3",
@@ -769,16 +681,10 @@
     settings:{
       ...defaultSettings,
       notice:"오늘 룰 확인하고 후원해주세요",
-      overlaySections:{account:true,notice:true,creators:true,creatorDonations:true}
+      overlaySections:{account:true,notice:true,creators:true}
     },
     accountDonors:[{donor:"열려",amount:36000},{donor:"이잉",amount:123400}],
-    creators:[
-      {creator:"빵떠기",total:36000,presetNets:[{presetId:"smoke",plus:2,minus:0,plusName:"흡연",minusName:"금연"}]},
-      {creator:"또영",total:0,presetNets:[]},
-      {creator:"수박",total:0,presetNets:[]},
-      {creator:"몰라",total:0,presetNets:[]},
-      {creator:"익명",total:0,presetNets:[]}
-    ],
+    creators:[],
     donations:[]
   };
 
@@ -803,66 +709,54 @@
     return {
       account: s.account !== false,
       notice: s.notice === true,
-      creators: s.creators !== false,
-      creatorDonations: s.creatorDonations !== false
+      creators: s.creators !== false
     };
   }
 
 
   function renderNotice(settings){
-    const titleEl = document.querySelector(".notice-title");
-    const textEl = document.querySelector(".notice-text");
-    if(!titleEl || !textEl) return;
+    const title = normalizeName(settings?.noticeTitle || "공지");
+    const notice = String(settings?.notice || "").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+    const colors = Array.isArray(settings?.noticeColors) ? settings.noticeColors : ["#ffffff", "#ffe066", "#5ecbff", "#ffb4ca", "#ff4d5e"];
 
-    const rawNotice = settings?.notice;
-    const noticeObj = rawNotice && typeof rawNotice === "object" ? rawNotice : {};
+    if($noticeTitleText) $noticeTitleText.textContent = title;
 
-    const title = String(
-      noticeObj.title ?? settings?.noticeTitle ?? "공지"
-    ).trim();
+    const lines = notice
+      .split("\n")
+      .map(v => v.trim())
+      .filter(Boolean);
 
-    const rawText = typeof rawNotice === "string"
-      ? rawNotice
-      : (noticeObj.text ?? settings?.noticeText ?? "");
-
-    const text = String(rawText || "").replace(/\\n/g, "\n");
-
-    titleEl.textContent = title || "공지";
-
-    const colors = Array.isArray(noticeObj.colors)
-      ? noticeObj.colors
-      : (Array.isArray(settings?.noticeColors) ? settings.noticeColors : []);
-
-    const defaultColor = noticeObj.color || "";
-    const lines = text.split(/\r?\n/);
-
-    if(!text.trim()){
-      textEl.innerHTML = "";
+    if(!lines.length){
+      $noticeText.innerHTML = `<span class="notice-line" style="color:${colors[0] || '#ffffff'}">공지문구 없음</span>`;
       return;
     }
 
-    textEl.innerHTML = lines.map((line, idx) => {
-      const color = colors[idx] || defaultColor || "";
-      const style = color ? ` style="color:${escapeHtml(color)}"` : "";
-      return `<span class="notice-line"${style}>${escapeHtml(line)}</span>`;
+    $noticeText.innerHTML = lines.slice(0, 5).map((line, idx) => {
+      const color = colors[idx] || colors[0] || "#ffffff";
+      return `<span class="notice-line" style="color:${escapeHtml(color)}">${escapeHtml(line)}</span>`;
     }).join("");
   }
 
   function applySections(settings){
     const sections = getOverlaySections(settings);
+    const notice = normalizeName(settings?.notice || "");
 
-    // 박스 3개만 ON/OFF 처리. ALERT는 별도 DOM으로 독립 동작합니다.
     $accountBox.classList.toggle("hidden", !sections.account);
-    $noticeBox.classList.toggle("hidden", !sections.notice);
     $creatorBox.classList.toggle("hidden", !sections.creators);
+    $noticeBox.classList.toggle("hidden", !sections.notice);
 
-    showCreatorDonations = sections.creatorDonations !== false;
-    ensureAlertIndependent();
+    renderNotice(settings);
   }
 
   function zeroCreatorsFromSettings(settings){
     const creators = Array.isArray(settings?.creators) ? settings.creators : [];
-    return creators.map(name => ({ creator:name, total:0, presetNets:[] }));
+    return creators.map(name => ({
+      creator: normalizeName(name),
+      total: 0,
+      smokeNet: 0,
+      eatNet: 0,
+      presetNets: []
+    })).filter(row => row.creator);
   }
 
   function aggregateAccountDonorsFromDonations(donations){
@@ -880,16 +774,26 @@
   }
 
   function aggregateCreatorsFromDonations(donations, settings){
-    const map=new Map();
+    const allowed = new Set((Array.isArray(settings?.creators) ? settings.creators : [])
+      .map(normalizeName)
+      .filter(Boolean));
+
+    const map = new Map();
     zeroCreatorsFromSettings(settings).forEach(c => map.set(c.creator, c));
 
+    // 컨트롤에 등록된 크리에이터가 없으면 아무도 표시하지 않습니다.
+    // 과거 후원 데이터/summary에 예전 이름이 남아 있어도 여기서 차단됩니다.
+    if(!allowed.size) return [];
+
     (donations||[]).forEach(d=>{
-      const creator=normalizeName(d.creator||"익명");
+      const creator=normalizeName(d.creator||"");
+      if(!creator || !allowed.has(creator)) return;
+
       const account=num(d.accountAmount??d.account_amount);
       const toonie=num(d.toonieAmount??d.toonie_amount);
       const total=num(d.totalAmount??d.total_amount??account+toonie);
-      if(!map.has(creator)) map.set(creator,{creator,total:0,smokeNet:0,eatNet:0,presetNets:[]});
-      const row=map.get(creator);
+
+      const row=map.get(creator) || {creator,total:0,smokeNet:0,eatNet:0,presetNets:[]};
       row.total+=total;
       row.smokeNet+=num(d.smoke||0)-num(d.nosmoke||0);
       row.eatNet+=num(d.eat||0)-num(d.noeat||0);
@@ -902,42 +806,35 @@
           n={presetId:ch.presetId,presetTitle:ch.presetTitle,plusName:"",minusName:"",plus:0,minus:0};
           row.presetNets.push(n);
         }
-        if(ch.side==="plus"){ n.plusName=ch.name; n.plus+=num(ch.count); }
-        else { n.minusName=ch.name; n.minus+=num(ch.count); }
+        if(ch.side==="minus"){ n.minus += num(ch.count||1); n.minusName=ch.name||n.minusName; }
+        else { n.plus += num(ch.count||1); n.plusName=ch.name||n.plusName; }
       });
+
+      map.set(creator,row);
     });
 
     return Array.from(map.values()).slice(0,5);
   }
 
   function normalizeCreatorRows(summary){
-    const settings=summary.settings||defaultSettings;
-    const donations=summary.donations||[];
-    const byName=new Map();
+    const settings = summary?.settings || defaultSettings;
+    const allowed = new Set((Array.isArray(settings?.creators) ? settings.creators : [])
+      .map(normalizeName)
+      .filter(Boolean));
 
-    zeroCreatorsFromSettings(settings).forEach(c => byName.set(c.creator, c));
+    if(!allowed.size) return [];
 
-    (summary.creators||summary.creatorSummary||summary.creator_summary||[]).forEach(c=>{
-      const name=normalizeName(c.creator||c.name);
-      if(!name) return;
-      const base=byName.get(name)||{creator:name,total:0,smokeNet:0,eatNet:0,presetNets:[]};
-      base.total=num(c.total??c.totalAmount??c.total_amount??c.amount??base.total);
-      base.smokeNet=num(c.smokeNet??c.smoke_net??base.smokeNet);
-      base.eatNet=num(c.eatNet??c.foodNet??c.food_net??base.eatNet);
-      base.presetNets=(Array.isArray(c.presetNets)&&c.presetNets.length)?c.presetNets:base.presetNets;
-      byName.set(name,base);
-    });
+    const rows = Array.isArray(summary?.creators)
+      ? summary.creators
+      : (Array.isArray(summary?.creatorSummary) ? summary.creatorSummary : []);
 
-    aggregateCreatorsFromDonations(donations, settings).forEach(c=>{
-      const old=byName.get(c.creator)||c;
-      old.total = c.total;
-      old.smokeNet = c.smokeNet;
-      old.eatNet = c.eatNet;
-      old.presetNets = c.presetNets;
-      byName.set(c.creator, old);
-    });
+    const cleaned = rows
+      .map(row => ({...row, creator: normalizeName(row.creator || row.name || "")}))
+      .filter(row => row.creator && allowed.has(row.creator));
 
-    return Array.from(byName.values()).slice(0,5);
+    if(cleaned.length) return cleaned.slice(0,5);
+
+    return aggregateCreatorsFromDonations(summary?.donations||[], settings);
   }
 
   function statusLabelsFromPresetNets(presets,row){
@@ -1021,7 +918,7 @@
   }
 
   function renderCreators(creators){
-    const rows = (Array.isArray(creators) ? creators : []).slice(0,5);
+    const rows=(Array.isArray(creators)?creators:[]).slice(0,5);
     const visiblePresets=(enabledPresets||[]).filter(p=>p.enabled!==false);
 
     if(!rows.length){
@@ -1153,7 +1050,6 @@
     const eventId = typeof alertItem === "string" ? "" : (alertItem.eventId || "");
 
     $alert.innerHTML = html;
-    $alert.classList.remove("hidden");
     $alert.classList.add("show");
 
     const audio = playSoundForDonation(row);
@@ -1203,35 +1099,45 @@
   }
 
   function checkLatestOptionAlert(donations){
-    const rows = (donations || [])
-      .slice()
-      .sort((a,b) => new Date(a.createdAt || a.created_at || 0) - new Date(b.createdAt || b.created_at || 0));
-
+    const rows=(donations||[]).slice().sort((a,b)=>new Date(a.createdAt||a.created_at||0)-new Date(b.createdAt||b.created_at||0));
     if(!rows.length) return;
 
-    const newRows = [];
+    if(!lastDonationKey){
+      const latest=rows[rows.length-1];
+      const key=(latest.id||"")+"_"+(latest.createdAt||latest.created_at||"");
+      lastDonationKey=key;
+      localStorage.setItem("overlay_last_alert_key",key);
+      return;
+    }
+
+    let passedLast=false;
+    const newRows=[];
 
     for(const row of rows){
-      const createdRaw = row.createdAt || row.created_at || "";
-      const createdMs = new Date(createdRaw || 0).getTime();
-      const key = (row.id || "") + "_" + createdRaw + "_" + (row.donor || "") + "_" + (row.creator || "");
+      const key=(row.id||"")+"_"+(row.createdAt||row.created_at||"");
+      if(key===lastDonationKey){
+        passedLast=true;
+        continue;
+      }
+      if(passedLast) newRows.push(row);
+    }
 
-      // 새 창/새로고침/서버 웨이크업 때 과거 후원 ALERT 재출력 방지
-      if(!createdMs || createdMs < overlayDonationBootAt - 1500) continue;
-      if(claimedDonationAlertKeys.has(key)) continue;
-
-      claimedDonationAlertKeys.add(key);
-      newRows.push(row);
+    if(!passedLast){
+      const latest=rows[rows.length-1];
+      const key=(latest.id||"")+"_"+(latest.createdAt||latest.created_at||"");
+      lastDonationKey=key;
+      localStorage.setItem("overlay_last_alert_key",key);
+      return;
     }
 
     if(!newRows.length) return;
 
-    const last = newRows[newRows.length - 1];
-    const lastKey = (last.id || "") + "_" + (last.createdAt || last.created_at || "");
-    lastDonationKey = lastKey;
-    localStorage.setItem("overlay_last_alert_key", lastKey);
+    const last=newRows[newRows.length-1];
+    const lastKey=(last.id||"")+"_"+(last.createdAt||last.created_at||"");
+    lastDonationKey=lastKey;
+    localStorage.setItem("overlay_last_alert_key",lastKey);
 
-    newRows.forEach(row => alertQueue.push({ html: makeDonationAlertHtml(row), row }));
+    newRows.forEach(row=>alertQueue.push({ html: makeDonationAlertHtml(row), row }));
     playAlertQueue();
   }
 
@@ -1257,6 +1163,7 @@
 
   async function checkManualSoundEvents(){
     try{
+      if(IS_MONITOR) return;
       if(alertShowing || alertPlaying || alertQueue.length > 0) return;
 
       const url = "/api/sound-events?after=" + encodeURIComponent(overlaySoundBootAt);
@@ -1332,10 +1239,9 @@
     const params=new URLSearchParams(location.search);
     if(params.get("demo")==="1") return demoData;
 
-    let settings = defaultSettings;
     try{
       const s = await fetchJson(API_SUMMARY);
-      settings = s.settings && Object.keys(s.settings).length ? s.settings : defaultSettings;
+      const settings = s.settings && Object.keys(s.settings).length ? s.settings : defaultSettings;
       const accountDonors=(s.accountDonors&&s.accountDonors.length)?s.accountDonors:aggregateAccountDonorsFromDonations(s.donations||[]);
       return {
         settings,
@@ -1345,43 +1251,27 @@
       };
     }catch(e){
       try{
-        settings = await fetchJson(API_SETTINGS);
-        return {
-          settings,
-          accountDonors:[{donor:"-",amount:0}],
-          creators:zeroCreatorsFromSettings(settings),
-          donations:[]
-        };
+        const settings = await fetchJson(API_SETTINGS);
+        return { settings, accountDonors:[], creators:zeroCreatorsFromSettings(settings), donations:[] };
       }catch(err){
-        return demoData;
+        return { settings: defaultSettings, accountDonors: [], creators: [], donations: [] };
       }
     }
-  }
-
-  function ensureAlertIndependent(){
-    const alertEl = document.getElementById("optionAlert");
-    if(!alertEl) return;
-    alertEl.classList.remove("hidden");
   }
 
   async function refresh(){
     let data;
     try{ data=await loadData(); }
-    catch(e){ data=demoData; }
+    catch(e){ data={settings:defaultSettings,accountDonors:[],creators:[],donations:[]}; }
 
     const settings = data.settings || defaultSettings;
     cacheSoundRules(settings);
     enabledPresets=getEnabledPresets(settings);
     const creators = data.creators && data.creators.length ? data.creators : zeroCreatorsFromSettings(settings);
 
-    // 공지는 설정 저장 후 즉시 반영되도록 매번 렌더링
-    renderNotice(settings);
-
     const signature=JSON.stringify({
       sections:getOverlaySections(settings),
-      creatorDonations:getOverlaySections(settings).creatorDonations,
       notice:settings.notice||"",
-      noticeText:settings.noticeText||"",
       noticeColors:settings.noticeColors||[],
       soundRules:settings.soundRules||{},
       noticeTitle:settings.noticeTitle||"공지",
@@ -1390,7 +1280,6 @@
       presets:enabledPresets.map(p=>({id:p.id,enabled:p.enabled,title:p.title,plusName:p.plusName,minusName:p.minusName}))
     });
 
-    ensureAlertIndependent();
     checkLatestOptionAlert(data.donations||[]);
     checkManualSoundEvents();
 

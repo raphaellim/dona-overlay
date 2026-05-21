@@ -38,7 +38,7 @@ function defaultSettings() {
     noticeColors: ['#ffffff', '#ffe066', '#5ecbff', '#ffb4ca', '#ff4d5e'],
     viewerPassword: '',
     viewerToken: '',
-    overlaySections: { account: true, notice: false, creators: true, creatorDonations: true },
+    overlaySections: { account: true, notice: false, creators: true },
     columns: 4,
     maxCreators: 12,
     creators: [],
@@ -141,8 +141,6 @@ function normalizeOverlaySections(raw, base) {
     account: value.account !== false,
     notice: value.notice === true,
     creators: value.creators !== false,
-    // 크리에이터 박스 안에서 후원금액 표시 여부
-    // false면 크리에이터 이름 + 옵션만 표시
     creatorDonations: value.creatorDonations !== false
   };
 }
@@ -436,11 +434,22 @@ async function readEffectiveSettings(stationSlug, broadcastId) {
   const stationMap = global.stationSettings || {};
   const stationSettings = stationMap[stationSlug] || {};
   const scoped = broadcastId && stationSettings[broadcastId] ? stationSettings[broadcastId] : {};
-  return normalizeSettings({
+
+  const merged = {
     ...global,
     ...scoped,
     stationSettings: global.stationSettings || {}
-  });
+  };
+
+  // 중요: 크리에이터 목록은 control.html이 저장한 현재 방송 scoped 값만 사용합니다.
+  // 루트 data.creators에 예전 값이 남아 있어도 현재 방송 오버레이로 흘러가지 않게 막습니다.
+  if (broadcastId) {
+    merged.creators = Array.isArray(scoped.creators) ? scoped.creators : [];
+  } else {
+    merged.creators = Array.isArray(global.creators) ? global.creators : [];
+  }
+
+  return normalizeSettings(merged);
 }
 
 async function saveEffectiveSettings(stationSlug, broadcastId, updates) {
@@ -449,6 +458,16 @@ async function saveEffectiveSettings(stationSlug, broadcastId, updates) {
   const stationBucket = { ...(stationSettings[stationSlug] || {}) };
   const current = await readEffectiveSettings(stationSlug, broadcastId);
   const effective = normalizeSettings({ ...current, ...(updates || {}) });
+
+  // 컨트롤에서 넘어온 creators가 있으면 그 값을 그대로 현재 방송 설정에 저장합니다.
+  // 없으면 기존 scoped 값을 유지하고, 루트 creators는 절대 끌어오지 않습니다.
+  if (updates && Object.prototype.hasOwnProperty.call(updates, 'creators')) {
+    effective.creators = Array.isArray(updates.creators) ? updates.creators.map(normName).filter(Boolean) : [];
+  } else if (broadcastId && stationBucket[broadcastId] && Array.isArray(stationBucket[broadcastId].creators)) {
+    effective.creators = stationBucket[broadcastId].creators.map(normName).filter(Boolean);
+  } else if (broadcastId) {
+    effective.creators = [];
+  }
 
   stationBucket[broadcastId] = pickScopedSettings(effective);
   stationSettings[stationSlug] = stationBucket;
@@ -1256,11 +1275,9 @@ app.get('/api/sound-events', async (req, res) => {
     if (all) {
       q = q.in('status', ['queued', 'pending']);
     } else {
-      if (!after) return res.json({ events: [] });
-
-      q = q.eq('status', 'pending')
-           .not('released_at', 'is', null)
-           .gt('released_at', after);
+      q = q.eq('status', 'pending');
+      if (after) q = q.gt('released_at', after);
+      else return res.json({ events: [] });
     }
 
     const { data, error } = await q;
@@ -1317,6 +1334,7 @@ app.post('/api/sound-events/:id/played', async (req, res) => {
     const done = nextPlayed >= total;
 
     const payload = { repeat_played: nextPlayed };
+
     if (done) {
       payload.played_at = new Date().toISOString();
       payload.status = 'played';
@@ -1426,7 +1444,7 @@ app.post('/api/settings', async (req, res) => {
       noticeColors: Array.isArray(body.noticeColors) ? body.noticeColors.slice(0, 5) : undefined,
       viewerPassword: String(body.viewerPassword ?? ''),
       viewerToken: String(body.viewerToken ?? ''),
-      overlaySections: normalizeOverlaySections(body.overlaySections, { account: true, notice: false, creators: true, creatorDonations: true }),
+      overlaySections: normalizeOverlaySections(body.overlaySections, { account: true, notice: false, creators: true }),
       columns: body.columns ?? 4,
       maxCreators: body.maxCreators ?? 12,
       creators: Array.isArray(body.creators) ? body.creators.map(normName).filter(Boolean) : [],

@@ -5,13 +5,7 @@
     "notice": "",
     "columns": 4,
     "maxCreators": 12,
-    "creators": [
-      "빵떠기",
-      "또영",
-      "수박",
-      "몰라",
-      "익명"
-    ],
+    "creators": [],
     "prices": {
       "smoke": 11900,
       "nosmoke": 12000,
