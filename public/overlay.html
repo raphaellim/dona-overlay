@@ -619,6 +619,23 @@
   }
 }
 
+
+/* ===== ALERT 독립 표시 최종 보정 ===== */
+.option-alert{
+  display:flex !important;
+  pointer-events:none !important;
+}
+
+.option-alert.hidden{
+  display:flex !important;
+}
+
+.option-alert.show{
+  display:flex !important;
+  visibility:visible !important;
+  opacity:1 !important;
+}
+
 </style>
 </head>
 <body>
@@ -641,10 +658,11 @@
       </section>
 
       <section class="overlay-box creator-box" id="creatorBox">
-        <div class="option-alert" id="optionAlert"></div>
-        <div class="creator-list" id="creatorList"></div>
+<div class="creator-list" id="creatorList"></div>
       </section>
     </div>
+    <div class="option-alert" id="optionAlert"></div>
+</div>
   </div>
 
 <script>
@@ -785,22 +803,37 @@
     const textEl = document.querySelector(".notice-text");
     if(!titleEl || !textEl) return;
 
-    const notice = settings?.notice || {};
-    const title = String(notice.title ?? settings?.noticeTitle ?? "공지사항").trim();
-    const text = String(notice.text ?? settings?.noticeText ?? "").replace(/\\n/g, "\n");
+    const rawNotice = settings?.notice;
+    let title = "공지사항";
+    let text = "";
+    let colors = [];
 
-    titleEl.textContent = title || "공지사항";
+    if(typeof rawNotice === "string"){
+      text = rawNotice;
+      title = String(settings?.noticeTitle || "공지사항");
+      colors = Array.isArray(settings?.noticeColors) ? settings.noticeColors : [];
+    }else if(rawNotice && typeof rawNotice === "object"){
+      title = String(rawNotice.title ?? settings?.noticeTitle ?? "공지사항");
+      text = String(rawNotice.text ?? settings?.noticeText ?? "");
+      colors = Array.isArray(rawNotice.colors)
+        ? rawNotice.colors
+        : (Array.isArray(settings?.noticeColors) ? settings.noticeColors : []);
+    }else{
+      title = String(settings?.noticeTitle || "공지사항");
+      text = String(settings?.noticeText || "");
+      colors = Array.isArray(settings?.noticeColors) ? settings.noticeColors : [];
+    }
 
-    const colors = Array.isArray(notice.colors) ? notice.colors : [];
-    const lines = text.split(/\r?\n/);
+    text = String(text || "").replace(/\\n/g, "\n");
+    titleEl.textContent = title.trim() || "공지사항";
 
     if(!text.trim()){
       textEl.innerHTML = "";
       return;
     }
 
-    textEl.innerHTML = lines.map((line, idx) => {
-      const color = colors[idx] || notice.color || "";
+    textEl.innerHTML = text.split(/\r?\n/).map((line, idx) => {
+      const color = colors[idx] || "";
       const style = color ? ` style="color:${escapeHtml(color)}"` : "";
       return `<span class="notice-line"${style}>${escapeHtml(line)}</span>`;
     }).join("");
@@ -808,14 +841,17 @@
 
   function applySections(settings){
     const sections = getOverlaySections(settings);
-    const notice = normalizeName(settings?.notice || "");
 
     $accountBox.classList.toggle("hidden", !sections.account);
-    $creatorBox.classList.toggle("hidden", !sections.creators);
     $noticeBox.classList.toggle("hidden", !sections.notice);
+    $creatorBox.classList.toggle("hidden", !sections.creators);
+
     showCreatorDonations = sections.creatorDonations !== false;
 
-    renderNotice(settings);
+    const stack = document.querySelector(".overlay-stack");
+    if(stack) stack.classList.remove("hidden");
+
+    ensureAlertIndependent();
   }
 
   function zeroCreatorsFromSettings(settings){
@@ -1114,6 +1150,8 @@
     const eventId = typeof alertItem === "string" ? "" : (alertItem.eventId || "");
 
     $alert.innerHTML = html;
+    $alert.classList.remove("hidden");
+    ensureAlertIndependent();
     $alert.classList.add("show");
 
     const audio = playSoundForDonation(row);
@@ -1339,6 +1377,16 @@
     const alertEl = document.getElementById("optionAlert");
     if(!alertEl) return;
     alertEl.classList.remove("hidden");
+
+    if(alertEl.classList.contains("show")){
+      alertEl.style.display = "flex";
+      alertEl.style.visibility = "visible";
+      alertEl.style.opacity = "1";
+    }else{
+      alertEl.style.display = "";
+      alertEl.style.visibility = "";
+      alertEl.style.opacity = "";
+    }
   }
 
   async function refresh(){
