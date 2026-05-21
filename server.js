@@ -41,7 +41,7 @@ function defaultSettings() {
     overlaySections: { account: true, notice: false, creators: true, creatorDonations: true },
     columns: 4,
     maxCreators: 12,
-    creators: ['빵떠기', '또영', '수박', '몰라', '익명'],
+    creators: [],
     presets: defaultPresets(),
     prices: { smoke: 11900, nosmoke: 12000, eat: 14000, noeat: 15000 },
     soundRules: {
