@@ -154,19 +154,6 @@ textarea{resize:vertical;line-height:1.45}
 
   .repeat-row{display:grid;grid-template-columns:1fr 110px;gap:8px;align-items:end;margin-top:8px}
   .count-pill{display:inline-flex;align-items:center;border-radius:999px;padding:2px 8px;font-size:12px;font-weight:950;margin-left:6px;background:rgba(236,72,153,.18);color:#f9a8d4;border:1px solid rgba(236,72,153,.38)}
-
-  .queue-control-actions{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:8px;
-    margin-top:8px;
-  }
-  .status-badge.pause{
-    background:rgba(245,158,11,.18);
-    color:#fcd34d;
-    border:1px solid rgba(245,158,11,.42);
-  }
-
 </style>
 </head>
 <body>
@@ -298,10 +285,6 @@ textarea{resize:vertical;line-height:1.45}
         <div class="queue-actions">
           <button class="btn blue" onclick="releaseManualSoundQueue()">대기열 전송</button>
           <button class="btn gray" onclick="loadManualSoundQueue()">새로고침</button>
-        </div>
-        <div class="queue-control-actions">
-          <button class="btn blue" onclick="releaseManualSoundQueue()">재전송</button>
-          <button class="btn red" onclick="pauseManualSoundQueue()">멈춤</button>
         </div>
         <div class="sound-queue-list" id="manualSoundQueue"></div>
       </section>
@@ -559,8 +542,7 @@ async function loadManualSoundQueue(){
     }
     box.innerHTML = events.map((ev, idx) => {
       const status = ev.status === 'queued' ? 'queued' : 'pending';
-      const statusText = ev.pauseAfterCurrent ? '멈춤예약' : (status === 'queued' ? '대기' : '전송됨');
-      const statusClass = ev.pauseAfterCurrent ? 'pause' : status;
+      const statusText = status === 'queued' ? '대기' : '전송됨';
       const total = Number(ev.repeatTotal || 1);
       const played = Number(ev.repeatPlayed || 0);
       const remain = Math.max(0, Number(ev.repeatRemaining ?? (total - played)));
@@ -569,7 +551,7 @@ async function loadManualSoundQueue(){
       return `
         <div class="sound-queue-item">
           <div>
-            <div class="sound-queue-title">${idx + 1}. ${esc(ev.title || ev.soundFile)} ${countText}<span class="status-badge ${statusClass}">${statusText}</span></div>
+            <div class="sound-queue-title">${idx + 1}. ${esc(ev.title || ev.soundFile)} ${countText}<span class="status-badge ${status}">${statusText}</span></div>
             <div class="sound-queue-sub">${esc(ev.soundFile)}${progressText} · ${new Date(ev.createdAt).toLocaleTimeString('ko-KR')}</div>
           </div>
           <button class="btn red mini" onclick="cancelManualSound('${ev.id}')">취소</button>
@@ -594,14 +576,6 @@ async function cancelManualSound(id){
 function getManualSoundMode(){
   const checked = document.querySelector('input[name="manualSoundMode"]:checked');
   return checked ? checked.value : 'immediate';
-}
-
-async function pauseManualSoundQueue(){
-  try{
-    await api('/api/sound-events/pause', { method:'POST', body:JSON.stringify({}) });
-    await loadManualSoundQueue();
-    alert('현재 재생 회차 종료 후 대기열을 멈춥니다.');
-  }catch(e){ alert(e.message); }
 }
 
 async function releaseManualSoundQueue(){
