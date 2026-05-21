@@ -547,98 +547,51 @@ html,body{
   .creator-sub{font-size:22px;gap:9px}
   .notice-text{font-size:19px}
 }
-  /* ===== ALERT 시인성 + 후원자명 화려한 선명 버전 ===== */
 
-/* ALERT 박스 크기/중앙 정렬 */
+
+/* 크리에이터 박스: 후원금액 숨김/옵션만 표시 모드 */
+.creator-item.options-only .creator-main{
+  justify-content:center !important;
+}
+.creator-item.options-only .creator-name{
+  flex:0 1 auto !important;
+  width:auto !important;
+  min-width:0 !important;
+  max-width:100% !important;
+  text-align:center !important;
+}
+.creator-item.options-only .creator-sub{
+  margin-top:4px !important;
+}
+
+
+/* ===== ALERT 최종 가독성 보정 ===== */
 .option-alert{
-  position:fixed !important;
-  left:50% !important;
-  top:50% !important;
-  right:auto !important;
-  bottom:auto !important;
-
   width:min(620px, calc(100vw - 40px)) !important;
   min-height:175px !important;
   padding:50px 28px 26px 28px !important;
-
-  display:flex !important;
-  flex-direction:column !important;
-  align-items:center !important;
-  justify-content:center !important;
-  text-align:center !important;
-  gap:10px !important;
-
   border-radius:26px !important;
-  border:3px solid rgba(255,255,255,.72) !important;
-
-  background:
-    radial-gradient(circle at 18% 0%, rgba(255,255,255,.22), transparent 30%),
-    linear-gradient(135deg, rgba(255,78,147,.96), rgba(105,74,255,.96) 48%, rgba(23,30,54,.98)) !important;
-
-  box-shadow:
-    0 24px 70px rgba(0,0,0,.60),
-    0 0 0 6px rgba(255,255,255,.07),
-    inset 0 1px 0 rgba(255,255,255,.30) !important;
-
-  opacity:0 !important;
-  transform:translate(-50%, -50%) scale(.92) !important;
-  transition:opacity .18s ease, transform .22s cubic-bezier(.2,1.25,.35,1) !important;
-  pointer-events:none !important;
-  z-index:99999 !important;
+  gap:10px !important;
 }
 
-.option-alert.show{
-  opacity:1 !important;
-  transform:translate(-50%, -50%) scale(1) !important;
-}
-
-/* 상단 배지 */
 .option-alert::before{
   content:"후원알림" !important;
-  position:absolute !important;
   top:-20px !important;
-  left:50% !important;
-  transform:translateX(-50%) !important;
-
-  padding:6px 16px !important;
-  border-radius:999px !important;
-  background:#111827 !important;
-  border:2px solid rgba(255,255,255,.78) !important;
-  color:#fff !important;
-
   font-size:16px !important;
-  line-height:1 !important;
-  font-weight:1000 !important;
-  letter-spacing:-.02em !important;
-
-  box-shadow:0 10px 26px rgba(0,0,0,.38) !important;
+  padding:6px 16px !important;
 }
 
-/* 후원자 → 크리에이터 한 줄 */
-.option-alert .donation-alert-main{
-  width:100% !important;
-  display:flex !important;
-  align-items:center !important;
-  justify-content:center !important;
-  flex-wrap:nowrap !important;
-  gap:12px !important;
-  text-align:center !important;
-}
-
-/* 후원자명: 화려하지만 안 뭉개지는 버전 */
+/* 후원 Alert 후원자명: 뭉개지지 않는 화려한 버전 */
 .option-alert .donation-alert-donor{
   font-size:56px !important;
   line-height:1.02 !important;
   font-weight:1000 !important;
   letter-spacing:-.06em !important;
-
   color:#fff3a3 !important;
   -webkit-text-fill-color:#fff3a3 !important;
   background:none !important;
   -webkit-background-clip:initial !important;
   background-clip:initial !important;
-
-  /* 선명한 외곽선 + 금빛 포인트 */
   text-shadow:
     -2px -2px 0 rgba(0,0,0,.82),
      2px -2px 0 rgba(0,0,0,.82),
@@ -646,198 +599,62 @@ html,body{
      2px  2px 0 rgba(0,0,0,.82),
      0 0 10px rgba(255,230,100,.70),
      0 4px 14px rgba(0,0,0,.70) !important;
-
   filter:none !important;
   animation:donorSharpPulse 1.25s ease-in-out infinite alternate !important;
   transform-origin:center !important;
 }
 
-/* 네온 점 제거 */
 .option-alert .donation-alert-donor::after{
   content:none !important;
   display:none !important;
 }
 
-/* 후원자명 살짝 반짝임 - 글자 뭉개짐 없음 */
 @keyframes donorSharpPulse{
   0%{
     color:#fff3a3;
     -webkit-text-fill-color:#fff3a3;
     transform:scale(1);
-    text-shadow:
-      -2px -2px 0 rgba(0,0,0,.82),
-       2px -2px 0 rgba(0,0,0,.82),
-      -2px  2px 0 rgba(0,0,0,.82),
-       2px  2px 0 rgba(0,0,0,.82),
-       0 0 8px rgba(255,230,100,.55),
-       0 4px 14px rgba(0,0,0,.70);
   }
   100%{
     color:#ffffff;
     -webkit-text-fill-color:#ffffff;
     transform:scale(1.025);
-    text-shadow:
-      -2px -2px 0 rgba(0,0,0,.86),
-       2px -2px 0 rgba(0,0,0,.86),
-      -2px  2px 0 rgba(0,0,0,.86),
-       2px  2px 0 rgba(0,0,0,.86),
-       0 0 14px rgba(255,245,160,.85),
-       0 4px 16px rgba(0,0,0,.75);
   }
 }
 
-/* 화살표 */
-.option-alert .donation-alert-arrow{
-  display:inline-flex !important;
-  align-items:center !important;
-  justify-content:center !important;
-
-  min-width:42px !important;
-  height:42px !important;
-  border-radius:999px !important;
-
-  background:rgba(255,255,255,.20) !important;
-  border:1px solid rgba(255,255,255,.38) !important;
-
-  color:#fff !important;
-  font-size:28px !important;
-  line-height:1 !important;
+/* 수동 사운드 Alert 제목 */
+.option-alert > .alert-donor{
+  font-size:58px !important;
+  line-height:1.02 !important;
   font-weight:1000 !important;
-
-  box-shadow:0 7px 18px rgba(0,0,0,.25) !important;
-}
-
-/* 크리에이터명 */
-.option-alert .donation-alert-creator{
-  font-size:38px !important;
-  line-height:1.05 !important;
-  font-weight:1000 !important;
-  letter-spacing:-.055em !important;
-
-  color:#ffffff !important;
+  letter-spacing:-.06em !important;
+  color:#fff3a3 !important;
+  -webkit-text-fill-color:#fff3a3 !important;
+  background:none !important;
+  -webkit-background-clip:initial !important;
+  background-clip:initial !important;
   text-shadow:
-    -1.5px -1.5px 0 rgba(0,0,0,.68),
-     1.5px -1.5px 0 rgba(0,0,0,.68),
-    -1.5px  1.5px 0 rgba(0,0,0,.68),
-     1.5px  1.5px 0 rgba(0,0,0,.68),
-     0 4px 12px rgba(0,0,0,.62) !important;
+    -2px -2px 0 rgba(0,0,0,.82),
+     2px -2px 0 rgba(0,0,0,.82),
+    -2px  2px 0 rgba(0,0,0,.82),
+     2px  2px 0 rgba(0,0,0,.82),
+     0 0 10px rgba(255,230,100,.70),
+     0 4px 14px rgba(0,0,0,.70) !important;
+  filter:none !important;
+  animation:none !important;
+  transform:none !important;
+  margin:0 !important;
 }
 
-/* 계좌/투네 줄 */
-.option-alert .donation-alert-source{
-  width:100% !important;
-  display:flex !important;
-  align-items:center !important;
-  justify-content:center !important;
-  text-align:center !important;
-}
-
-.option-alert .donation-alert-source-badge{
-  display:inline-flex !important;
-  align-items:center !important;
-  justify-content:center !important;
-
-  padding:7px 14px !important;
-  border-radius:999px !important;
-
-  background:rgba(0,0,0,.34) !important;
-  border:2px solid rgba(255,255,255,.62) !important;
-
-  color:#fff !important;
-  font-size:22px !important;
-  line-height:1 !important;
-  font-weight:1000 !important;
-  letter-spacing:-.04em !important;
-
-  box-shadow:0 7px 18px rgba(0,0,0,.24) !important;
-}
-
-/* 옵션 / 반복 카운트 / 사운드명 */
-.option-alert .alert-line2{
-  width:100% !important;
-  min-height:28px !important;
-
-  display:flex !important;
-  align-items:center !important;
-  justify-content:center !important;
-  flex-wrap:wrap !important;
-  gap:9px !important;
-
-  color:#fff !important;
-  font-size:28px !important;
+.option-alert > .alert-target{
+  font-size:44px !important;
   line-height:1.05 !important;
   font-weight:1000 !important;
   letter-spacing:-.045em !important;
-
-  text-shadow:
-    -1.5px -1.5px 0 rgba(0,0,0,.65),
-     1.5px -1.5px 0 rgba(0,0,0,.65),
-    -1.5px  1.5px 0 rgba(0,0,0,.65),
-     1.5px  1.5px 0 rgba(0,0,0,.65),
-     0 4px 12px rgba(0,0,0,.60) !important;
-}
-
-/* 옵션 색상 */
-.option-alert .alert-line2 .plus,
-.option-alert .alert-line2 .minus{
-  display:inline-flex !important;
-  align-items:center !important;
-  justify-content:center !important;
-
-  padding:7px 15px !important;
-  border-radius:16px !important;
-
-  color:#fff !important;
-  font-size:28px !important;
-  line-height:1 !important;
-  font-weight:1000 !important;
-
-  border:2px solid rgba(255,255,255,.62) !important;
-  box-shadow:0 7px 16px rgba(0,0,0,.28) !important;
-}
-
-.option-alert .alert-line2 .plus{
-  background:linear-gradient(135deg, #22c55e, #16a34a) !important;
-}
-
-.option-alert .alert-line2 .minus{
-  background:linear-gradient(135deg, #ef4444, #dc2626) !important;
-}
-
-/* 사운드 재생 파일명 / 1/10 카운트 */
-.option-alert .alert-target{
-  font-size:48px !important;
-  line-height:1.05 !important;
-  font-weight:1000 !important;
   color:#ffffff !important;
-  text-shadow:
-    -2px -2px 0 rgba(0,0,0,.72),
-     2px -2px 0 rgba(0,0,0,.72),
-    -2px  2px 0 rgba(0,0,0,.72),
-     2px  2px 0 rgba(0,0,0,.72),
-     0 5px 14px rgba(0,0,0,.65) !important;
+  margin:0 !important;
 }
 
-.option-alert .alert-sound-title{
-  display:inline-flex !important;
-  align-items:center !important;
-  justify-content:center !important;
-
-  padding:8px 18px !important;
-  border-radius:999px !important;
-
-  background:rgba(0,0,0,.36) !important;
-  border:2px solid rgba(255,255,255,.60) !important;
-
-  color:#fff !important;
-  font-size:32px !important;
-  line-height:1 !important;
-  font-weight:1000 !important;
-
-  box-shadow:0 7px 18px rgba(0,0,0,.26) !important;
-}
-
-/* 모바일 */
 @media (max-width:720px){
   .option-alert{
     width:calc(100vw - 32px) !important;
@@ -847,96 +664,13 @@ html,body{
     gap:9px !important;
   }
 
-  .option-alert::before{
-    top:-18px !important;
-    font-size:15px !important;
-    padding:6px 14px !important;
-  }
-
-  .option-alert .donation-alert-main{
-    flex-wrap:wrap !important;
-    gap:8px !important;
-  }
-
-  .option-alert .donation-alert-donor{
+  .option-alert .donation-alert-donor,
+  .option-alert > .alert-donor{
     font-size:39px !important;
-  }
-
-  .option-alert .donation-alert-arrow{
-    min-width:34px !important;
-    height:34px !important;
-    font-size:22px !important;
   }
 
   .option-alert .donation-alert-creator{
     font-size:29px !important;
-  }
-
-  .option-alert .donation-alert-source-badge{
-    font-size:18px !important;
-    padding:6px 12px !important;
-  }
-
-  .option-alert .alert-target{
-    font-size:36px !important;
-  }
-
-  .option-alert .alert-line2{
-    font-size:23px !important;
-  }
-
-  .option-alert .alert-sound-title{
-    font-size:26px !important;
-    padding:7px 15px !important;
-  }
-}
-  /* ===== 수동사운드 Alert 후원자명 크게 보정 ===== */
-.option-alert > .alert-donor{
-  font-size:58px !important;
-  line-height:1.02 !important;
-  font-weight:1000 !important;
-  letter-spacing:-.06em !important;
-
-  color:#fff3a3 !important;
-  -webkit-text-fill-color:#fff3a3 !important;
-  background:none !important;
-  -webkit-background-clip:initial !important;
-  background-clip:initial !important;
-
-  text-shadow:
-    -2px -2px 0 rgba(0,0,0,.82),
-     2px -2px 0 rgba(0,0,0,.82),
-    -2px  2px 0 rgba(0,0,0,.82),
-     2px  2px 0 rgba(0,0,0,.82),
-     0 0 10px rgba(255,230,100,.70),
-     0 4px 14px rgba(0,0,0,.70) !important;
-
-  filter:none !important;
-  animation:none !important;
-  transform:none !important;
-  margin:0 !important;
-}
-
-/* 수동사운드 파일명은 현재 크기 유지 또는 살짝 정리 */
-.option-alert > .alert-target{
-  font-size:44px !important;
-  line-height:1.05 !important;
-  font-weight:1000 !important;
-  letter-spacing:-.045em !important;
-  color:#ffffff !important;
-
-  text-shadow:
-    -2px -2px 0 rgba(0,0,0,.70),
-     2px -2px 0 rgba(0,0,0,.70),
-    -2px  2px 0 rgba(0,0,0,.70),
-     2px  2px 0 rgba(0,0,0,.70),
-     0 5px 14px rgba(0,0,0,.62) !important;
-
-  margin:0 !important;
-}
-  @media (max-width:720px){
-  .option-alert > .alert-donor{
-    font-size:42px !important;
   }
 
   .option-alert > .alert-target{
@@ -1040,7 +774,7 @@ html,body{
     noticeTitle:"공지",
     notice:"",
     noticeColors:["#ffffff", "#ffe066", "#5ecbff", "#ffb4ca", "#ff4d5e"],
-    overlaySections:{ account:true, notice:false, creators:true },
+    overlaySections:{ account:true, notice:false, creators:true, creatorDonations:true },
     soundRules:{
       enabled:true,
       defaultSound:"alert.mp3",
@@ -1062,7 +796,7 @@ html,body{
     settings:{
       ...defaultSettings,
       notice:"오늘 룰 확인하고 후원해주세요",
-      overlaySections:{account:true,notice:true,creators:true}
+      overlaySections:{account:true,notice:true,creators:true,creatorDonations:true}
     },
     accountDonors:[{donor:"열려",amount:36000},{donor:"이잉",amount:123400}],
     creators:[
@@ -1096,7 +830,8 @@ html,body{
     return {
       account: s.account !== false,
       notice: s.notice === true,
-      creators: s.creators !== false
+      creators: s.creators !== false,
+      creatorDonations: s.creatorDonations !== false
     };
   }
 
@@ -1131,6 +866,7 @@ html,body{
     $accountBox.classList.toggle("hidden", !sections.account);
     $creatorBox.classList.toggle("hidden", !sections.creators);
     $noticeBox.classList.toggle("hidden", !sections.notice);
+    showCreatorDonations = sections.creatorDonations !== false;
 
     renderNotice(settings);
   }
@@ -1248,13 +984,13 @@ html,body{
   }
 
   function renderAccountRoller(items){
-    rollingItems=items&&items.length?items:[{donor:"/",amount:0}];
+    rollingItems=items&&items.length?items:[{donor:"-",amount:0}];
     if(rollingTimer){ clearInterval(rollingTimer); rollingTimer=null; }
 
     const makeItemHtml=item=>{
       const donor=normalizeName(item.donor||item.name||"익명");
       const amount=displayAmount(item.amount??item.accountAmount??item.account_amount??item.total??0);
-      return `<div class="roller-item"><span class="account-donor">${escapeHtml(donor)}</span> <span class="account-sep">/</span> <span class="account-amount">${amount}</span></div>`;
+      return `<div class="roller-item"><span class="account-donor">${escapeHtml(donor)}</span> <span class="account-sep">:</span> <span class="account-amount">${amount}</span></div>`;
     };
 
     const moveToIndex = (index, useTransition=true) => {
@@ -1313,12 +1049,15 @@ html,body{
       const name=formatCreatorName(rawName);
       const total=displayAmount(row.total??row.totalAmount??row.total_amount??row.amount??0);
       const labels=visiblePresets.length?statusLabelsFromPresetNets(visiblePresets,row):[];
+      const donationHtml = showCreatorDonations
+        ? `<div class="donation-amount">후원(${total})</div>`
+        : ``;
 
       return `
-        <article class="creator-item">
+        <article class="creator-item ${showCreatorDonations ? "" : "options-only"}">
           <div class="creator-main">
-            <div class="creator-name">${escapeHtml(name)} -</div>
-            <div class="donation-amount">후원(${total})</div>
+            <div class="creator-name">${escapeHtml(name)}${showCreatorDonations ? " -" : ""}</div>
+            ${donationHtml}
           </div>
           ${labels.length?`<div class="creator-sub">${labels.map(label=>`<span class="state-item">${label}</span>`).join("")}</div>`:``}
         </article>
@@ -1327,29 +1066,23 @@ html,body{
   }
 
   function makeDonationAlertHtml(row){
-    const donor = escapeHtml(row.donor || "후원자");
-    const creator = escapeHtml(row.creator || "크리에이터");
-
-    const accountAmount = num(row.accountAmount ?? row.account_amount);
-    const toonieAmount = num(row.toonieAmount ?? row.toonie_amount);
-
-    let sourceText = "";
-    if(accountAmount > 0 && toonieAmount > 0) sourceText = "계좌+투네";
-    else if(accountAmount > 0) sourceText = "계좌";
-    else if(toonieAmount > 0) sourceText = "투네";
-    else sourceText = "(후원)";
-
-    const checks = Array.isArray(row.checks) ? row.checks : [];
+    const donor=escapeHtml(row.donor||"익명");
+    const creator=escapeHtml(row.creator||"익명");
+    const accountAmount=num(row.accountAmount??row.account_amount);
+    const toonieAmount=num(row.toonieAmount??row.toonie_amount);
+    const totalAmount=num(row.totalAmount??row.total_amount??accountAmount+toonieAmount);
+    const amountText=displayAmount(totalAmount);
+    const checks=Array.isArray(row.checks)?row.checks:[];
     const manualSoundTitle = String(row.manualSoundTitle || row.manual_sound_title || '').trim();
-    let optionText = "";
+    let optionText="";
 
     if(checks.length){
-      const c = checks[checks.length - 1];
-      const cls = c.side === "minus" ? "minus" : "plus";
-      const sign = c.side === "minus" ? "-" : "+";
-      const name = escapeHtml(c.name || "옵션");
-      const count = Number(c.count || 1);
-      optionText = `<span class="${cls}">${name}${sign}${count}</span>`;
+      const ch=checks[checks.length-1];
+      const sign=ch.side==="minus"?"-":"+";
+      const cls=ch.side==="minus"?"alert-minus":"alert-plus";
+      const name=escapeHtml(ch.name||"옵션");
+      const count=Math.abs(num(ch.count));
+      optionText=`<span class="${cls}">${name}${sign}${count}</span>`;
     }
 
     if(manualSoundTitle){
@@ -1359,15 +1092,9 @@ html,body{
     }
 
     return `
-      <div class="donation-alert-main">
-        <span class="donation-alert-donor">${donor}</span>
-        <span class="donation-alert-arrow">→</span>
-        <span class="donation-alert-creator">${creator}</span>
-      </div>
-      <div class="donation-alert-source">
-        <span class="donation-alert-source-badge">${sourceText}</span>
-      </div>
-      <div class="alert-line2">${optionText}</div>
+      <div class="alert-donor">${donor}</div>
+      <div class="alert-target">→ ${creator}</div>
+      <div class="alert-line2"><span class="alert-amount">${amountText}</span>${optionText}</div>
     `;
   }
   function pickSoundFileForDonation(row){
@@ -1568,8 +1295,6 @@ html,body{
       if(claimedSoundEventIds.has(repeatKey)) return;
 
       claimedSoundEventIds.add(repeatKey);
-
-      // 이 반복 회차를 실제 재생 대상으로 잡은 순간 repeat_played +1
       markManualSoundPlayed(ev.id);
 
       alertQueue.push({
@@ -1669,6 +1394,7 @@ html,body{
 
     const signature=JSON.stringify({
       sections:getOverlaySections(settings),
+      creatorDonations:getOverlaySections(settings).creatorDonations,
       notice:settings.notice||"",
       noticeColors:settings.noticeColors||[],
       soundRules:settings.soundRules||{},

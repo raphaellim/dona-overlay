@@ -38,7 +38,7 @@ function defaultSettings() {
     noticeColors: ['#ffffff', '#ffe066', '#5ecbff', '#ffb4ca', '#ff4d5e'],
     viewerPassword: '',
     viewerToken: '',
-    overlaySections: { account: true, notice: false, creators: true },
+    overlaySections: { account: true, notice: false, creators: true, creatorDonations: true },
     columns: 4,
     maxCreators: 12,
     creators: ['빵떠기', '또영', '수박', '몰라', '익명'],
@@ -135,12 +135,15 @@ function normalizeSoundRules(raw, base) {
 }
 
 function normalizeOverlaySections(raw, base) {
-  const fallback = base || { account: true, notice: false, creators: true };
+  const fallback = base || { account: true, notice: false, creators: true, creatorDonations: true };
   const value = raw && typeof raw === 'object' ? raw : fallback;
   return {
     account: value.account !== false,
     notice: value.notice === true,
-    creators: value.creators !== false
+    creators: value.creators !== false,
+    // 크리에이터 박스 안에서 후원금액 표시 여부
+    // false면 크리에이터 이름 + 옵션만 표시
+    creatorDonations: value.creatorDonations !== false
   };
 }
 
@@ -1253,8 +1256,11 @@ app.get('/api/sound-events', async (req, res) => {
     if (all) {
       q = q.in('status', ['queued', 'pending']);
     } else {
-      q = q.eq('status', 'pending');
-      if (after) q = q.gt('released_at', after);
+      if (!after) return res.json({ events: [] });
+
+      q = q.eq('status', 'pending')
+           .not('released_at', 'is', null)
+           .gt('released_at', after);
     }
 
     const { data, error } = await q;
@@ -1420,7 +1426,7 @@ app.post('/api/settings', async (req, res) => {
       noticeColors: Array.isArray(body.noticeColors) ? body.noticeColors.slice(0, 5) : undefined,
       viewerPassword: String(body.viewerPassword ?? ''),
       viewerToken: String(body.viewerToken ?? ''),
-      overlaySections: normalizeOverlaySections(body.overlaySections, { account: true, notice: false, creators: true }),
+      overlaySections: normalizeOverlaySections(body.overlaySections, { account: true, notice: false, creators: true, creatorDonations: true }),
       columns: body.columns ?? 4,
       maxCreators: body.maxCreators ?? 12,
       creators: Array.isArray(body.creators) ? body.creators.map(normName).filter(Boolean) : [],
