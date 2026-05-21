@@ -561,6 +561,23 @@
   }
 }
 
+
+/* ===== 공지 표시 보정 ===== */
+.notice-title,
+.notice-text,
+.notice-line{
+  text-align:center !important;
+}
+.notice-text{
+  white-space:normal !important;
+}
+.notice-line{
+  display:block !important;
+  line-height:1.22 !important;
+  margin:2px 0 !important;
+  word-break:keep-all !important;
+}
+
 </style>
 </head>
 <body>
@@ -717,25 +734,43 @@
 
 
   function renderNotice(settings){
-    const title = normalizeName(settings?.noticeTitle || "공지");
-    const notice = String(settings?.notice || "").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
-    const colors = Array.isArray(settings?.noticeColors) ? settings.noticeColors : ["#ffffff", "#ffe066", "#5ecbff", "#ffb4ca", "#ff4d5e"];
+    const titleEl = document.querySelector(".notice-title");
+    const textEl = document.querySelector(".notice-text");
+    if(!titleEl || !textEl) return;
 
-    if($noticeTitleText) $noticeTitleText.textContent = title;
+    const rawNotice = settings?.notice;
+    let title = "공지사항";
+    let text = "";
+    let colors = [];
 
-    const lines = notice
-      .split("\n")
-      .map(v => v.trim())
-      .filter(Boolean);
+    if(typeof rawNotice === "string"){
+      text = rawNotice;
+      title = String(settings?.noticeTitle || settings?.notice_title || "공지사항");
+      colors = Array.isArray(settings?.noticeColors) ? settings.noticeColors : [];
+    }else if(rawNotice && typeof rawNotice === "object"){
+      title = String(rawNotice.title ?? settings?.noticeTitle ?? settings?.notice_title ?? "공지사항");
+      text = String(rawNotice.text ?? rawNotice.content ?? settings?.noticeText ?? settings?.notice_text ?? "");
+      colors = Array.isArray(rawNotice.colors)
+        ? rawNotice.colors
+        : (Array.isArray(settings?.noticeColors) ? settings.noticeColors : []);
+    }else{
+      title = String(settings?.noticeTitle || settings?.notice_title || "공지사항");
+      text = String(settings?.noticeText || settings?.notice_text || "");
+      colors = Array.isArray(settings?.noticeColors) ? settings.noticeColors : [];
+    }
 
-    if(!lines.length){
-      $noticeText.innerHTML = `<span class="notice-line" style="color:${colors[0] || '#ffffff'}">공지문구 없음</span>`;
+    text = String(text || "").replace(/\\n/g, "\n");
+    titleEl.textContent = title.trim() || "공지사항";
+
+    if(!text.trim()){
+      textEl.innerHTML = "";
       return;
     }
 
-    $noticeText.innerHTML = lines.slice(0, 5).map((line, idx) => {
-      const color = colors[idx] || colors[0] || "#ffffff";
-      return `<span class="notice-line" style="color:${escapeHtml(color)}">${escapeHtml(line)}</span>`;
+    textEl.innerHTML = text.split(/\r?\n/).map((line, idx) => {
+      const color = colors[idx] || "";
+      const style = color ? ` style="color:${escapeHtml(color)}"` : "";
+      return `<span class="notice-line"${style}>${escapeHtml(line)}</span>`;
     }).join("");
   }
 
@@ -1299,6 +1334,7 @@
     if(signature!==lastSignature){
       lastSignature=signature;
       applySections(settings);
+    renderNotice(settings);
       renderAccountRoller(data.accountDonors);
       renderCreators(creators);
     }
