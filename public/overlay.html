@@ -590,6 +590,7 @@
   </div>
 
 <script>
+  let showCreatorDonations = true;
 (() => {
   const API_SUMMARY = "/api/summary";
   const API_SETTINGS = "/api/settings";
@@ -709,7 +710,8 @@
     return {
       account: s.account !== false,
       notice: s.notice === true,
-      creators: s.creators !== false
+      creators: s.creators !== false,
+      creatorDonations: s.creatorDonations !== false
     };
   }
 
@@ -739,13 +741,17 @@
 
   function applySections(settings){
     const sections = getOverlaySections(settings);
-    const notice = normalizeName(settings?.notice || "");
 
     $accountBox.classList.toggle("hidden", !sections.account);
-    $creatorBox.classList.toggle("hidden", !sections.creators);
     $noticeBox.classList.toggle("hidden", !sections.notice);
+    $creatorBox.classList.toggle("hidden", !sections.creators);
 
-    renderNotice(settings);
+    showCreatorDonations = sections.creatorDonations !== false;
+
+    const stack = document.querySelector(".overlay-stack");
+    if(stack) stack.classList.remove("hidden");
+
+    if(typeof ensureAlertIndependent === "function") ensureAlertIndependent();
   }
 
   function zeroCreatorsFromSettings(settings){
@@ -927,14 +933,15 @@
       const name=formatCreatorName(rawName);
       const total=displayAmount(row.total??row.totalAmount??row.total_amount??row.amount??0);
       const labels=visiblePresets.length?statusLabelsFromPresetNets(visiblePresets,row):[];
-      const donationHtml = showCreatorDonations
+      const showDonation = (typeof showCreatorDonations === 'undefined') ? true : showCreatorDonations;
+      const donationHtml = showDonation
         ? `<div class="donation-amount">후원(${total})</div>`
         : ``;
 
       return `
-        <article class="creator-item ${showCreatorDonations ? "" : "options-only"}">
+        <article class="creator-item ${showDonation ? "" : "options-only"}">
           <div class="creator-main">
-            <div class="creator-name">${escapeHtml(name)}${showCreatorDonations ? " -" : ""}</div>
+            <div class="creator-name">${escapeHtml(name)}${showDonation ? " -" : ""}</div>
             ${donationHtml}
           </div>
           ${labels.length?`<div class="creator-sub">${labels.map(label=>`<span class="state-item">${label}</span>`).join("")}</div>`:``}
