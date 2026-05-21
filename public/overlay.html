@@ -578,6 +578,36 @@
   word-break:keep-all !important;
 }
 
+
+/* ===== ALERT 완전 독립 표시: 크리에이터박스 OFF 영향 차단 ===== */
+#overlayAlertRoot{
+  position:fixed !important;
+  inset:0 !important;
+  z-index:99999 !important;
+  pointer-events:none !important;
+}
+
+#overlayAlertRoot .option-alert,
+body > .option-alert,
+.option-alert{
+  display:flex !important;
+  pointer-events:none !important;
+}
+
+#overlayAlertRoot .option-alert.hidden,
+body > .option-alert.hidden,
+.option-alert.hidden{
+  display:flex !important;
+}
+
+#overlayAlertRoot .option-alert.show,
+body > .option-alert.show,
+.option-alert.show{
+  display:flex !important;
+  visibility:visible !important;
+  opacity:1 !important;
+}
+
 </style>
 </head>
 <body>
@@ -600,12 +630,12 @@
       </section>
 
       <section class="overlay-box creator-box" id="creatorBox">
-        <div class="option-alert" id="optionAlert"></div>
-        <div class="creator-list" id="creatorList"></div>
+<div class="creator-list" id="creatorList"></div>
       </section>
     </div>
   </div>
 
+<div class="option-alert" id="optionAlert"></div>
 <script>
   let showCreatorDonations = true;
 (() => {
@@ -777,16 +807,16 @@
   function applySections(settings){
     const sections = getOverlaySections(settings);
 
-    $accountBox.classList.toggle("hidden", !sections.account);
-    $noticeBox.classList.toggle("hidden", !sections.notice);
-    $creatorBox.classList.toggle("hidden", !sections.creators);
+    if($accountBox) $accountBox.classList.toggle("hidden", !sections.account);
+    if($noticeBox) $noticeBox.classList.toggle("hidden", !sections.notice);
+    if($creatorBox) $creatorBox.classList.toggle("hidden", !sections.creators);
 
     showCreatorDonations = sections.creatorDonations !== false;
 
     const stack = document.querySelector(".overlay-stack");
     if(stack) stack.classList.remove("hidden");
 
-    if(typeof ensureAlertIndependent === "function") ensureAlertIndependent();
+    ensureAlertIndependent();
   }
 
   function zeroCreatorsFromSettings(settings){
@@ -1088,6 +1118,8 @@
     const eventId = typeof alertItem === "string" ? "" : (alertItem.eventId || "");
 
     $alert.innerHTML = html;
+    ensureAlertIndependent();
+    $alert.classList.remove("hidden");
     $alert.classList.add("show");
 
     const audio = playSoundForDonation(row);
@@ -1307,6 +1339,34 @@
     }
   }
 
+  function ensureAlertIndependent(){
+    let alertEl = document.getElementById("optionAlert");
+    if(!alertEl) return;
+
+    // 혹시 creatorBox 안에 들어가 있으면 body 바로 아래로 빼냄
+    if(alertEl.parentElement && alertEl.parentElement.id !== "overlayAlertRoot"){
+      let root = document.getElementById("overlayAlertRoot");
+      if(!root){
+        root = document.createElement("div");
+        root.id = "overlayAlertRoot";
+        document.body.appendChild(root);
+      }
+      root.appendChild(alertEl);
+    }
+
+    alertEl.classList.remove("hidden");
+
+    if(alertEl.classList.contains("show")){
+      alertEl.style.display = "flex";
+      alertEl.style.visibility = "visible";
+      alertEl.style.opacity = "1";
+    }else{
+      alertEl.style.display = "";
+      alertEl.style.visibility = "";
+      alertEl.style.opacity = "";
+    }
+  }
+
   async function refresh(){
     let data;
     try{ data=await loadData(); }
@@ -1328,6 +1388,7 @@
       presets:enabledPresets.map(p=>({id:p.id,enabled:p.enabled,title:p.title,plusName:p.plusName,minusName:p.minusName}))
     });
 
+    ensureAlertIndependent();
     checkLatestOptionAlert(data.donations||[]);
     checkManualSoundEvents();
 
