@@ -607,6 +607,62 @@ body > .option-alert.show,
   visibility:visible !important;
   opacity:1 !important;
 }
+/* ===== 계좌후원 이름 ♥ 금액 표시 ===== */
+.roller-item{
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:7px !important;
+  white-space:nowrap !important;
+}
+
+.account-donor{
+  font-weight:1000 !important;
+}
+
+.account-heart{
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  font-size:0.9em !important;
+  line-height:1 !important;
+  transform:translateY(1px);
+  text-shadow:
+    0 0 7px rgba(255,255,255,.45),
+    0 3px 8px rgba(0,0,0,.35) !important;
+}
+
+/* 1만원 이하 */
+.account-heart.heart-lv1{
+  color:#60a5fa !important;
+}
+
+/* 5만원 이하 */
+.account-heart.heart-lv2{
+  color:#34d399 !important;
+}
+
+/* 10만원 이하 */
+.account-heart.heart-lv3{
+  color:#facc15 !important;
+}
+
+/* 10만원 초과 */
+.account-heart.heart-lv4{
+  color:#ff4fd8 !important;
+  text-shadow:
+    0 0 8px rgba(255,79,216,.85),
+    0 0 16px rgba(255,79,216,.55),
+    0 3px 8px rgba(0,0,0,.35) !important;
+}
+
+/* 금액은 이름보다 살짝 작게 */
+.account-amount{
+  font-size:0.78em !important;
+  font-weight:900 !important;
+  letter-spacing:-.05em !important;
+  opacity:.95 !important;
+}
 
 </style>
 </head>
@@ -738,6 +794,12 @@ body > .option-alert.show,
 
   function num(v){ const n=Number(v||0); return Number.isFinite(n)?n:0; }
   function displayAmount(won){return Math.floor(num(won)).toLocaleString("ko-KR");}
+  function accountHeartClass(amount){const v = num(amount);
+  if(v <= 10000) return "heart-lv1";    // 1만원 이하
+  if(v <= 50000) return "heart-lv2";    // 5만원 이하
+  if(v <= 100000) return "heart-lv3";   // 10만원 이하
+  return "heart-lv4";                   // 10만원 초과
+}
   function normalizeName(v){ return String(v??"").replace(/\s+/g," ").trim(); }
   function escapeHtml(str){ return String(str).replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[ch])); }
   function formatCreatorName(name){
@@ -932,10 +994,19 @@ body > .option-alert.show,
     if(rollingTimer){ clearInterval(rollingTimer); rollingTimer=null; }
 
     const makeItemHtml=item=>{
-      const donor=normalizeName(item.donor||item.name||"익명");
-      const amount=displayAmount(item.amount??item.accountAmount??item.account_amount??item.total??0);
-      return `<div class="roller-item"><span class="account-donor">${escapeHtml(donor)}</span> <span class="account-sep">:</span> <span class="account-amount">${amount}</span></div>`;
-    };
+  const donor=normalizeName(item.donor||item.name||"익명");
+  const rawAmount=item.amount??item.accountAmount??item.account_amount??item.total??0;
+  const amount=displayAmount(rawAmount);
+  const heartClass=accountHeartClass(rawAmount);
+
+  return `
+    <div class="roller-item">
+      <span class="account-donor">${escapeHtml(donor)}</span>
+      <span class="account-heart ${heartClass}">♥</span>
+      <span class="account-amount">${amount}</span>
+    </div>
+  `;
+};
 
     const moveToIndex = (index, useTransition=true) => {
       const item = $track.children[index];
