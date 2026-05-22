@@ -582,16 +582,30 @@
 /* ===== ALERT 완전 독립 표시: 크리에이터박스 OFF 영향 차단 ===== */
 #overlayAlertRoot{
   position:fixed !important;
-  inset:0 !important;
+  left:var(--alert-left, 0px) !important;
+  top:var(--alert-top, 0px) !important;
+  width:var(--alert-width, 520px) !important;
+  height:var(--alert-height, 220px) !important;
   z-index:99999 !important;
   pointer-events:none !important;
+  overflow:visible !important;
 }
 
-#overlayAlertRoot .option-alert,
-body > .option-alert,
-.option-alert{
-  display:flex !important;
-  pointer-events:none !important;
+#overlayAlertRoot .option-alert{
+  position:absolute !important;
+  left:50% !important;
+  top:50% !important;
+  right:auto !important;
+  bottom:auto !important;
+
+  width:calc(100% - 20px) !important;
+  max-width:100% !important;
+
+  transform:translate(-50%, -50%) scale(.92) !important;
+}
+
+#overlayAlertRoot .option-alert.show{
+  transform:translate(-50%, -50%) scale(1) !important;
 }
 
 #overlayAlertRoot .option-alert.hidden,
@@ -1466,32 +1480,41 @@ body > .option-alert.show,
   }
 
   function ensureAlertIndependent(){
-    let alertEl = document.getElementById("optionAlert");
-    if(!alertEl) return;
+  const root = document.getElementById("overlayAlertRoot");
+  let alertEl = document.getElementById("optionAlert");
+  if(!alertEl) return;
 
-    // 혹시 creatorBox 안에 들어가 있으면 body 바로 아래로 빼냄
-    if(alertEl.parentElement && alertEl.parentElement.id !== "overlayAlertRoot"){
-      let root = document.getElementById("overlayAlertRoot");
-      if(!root){
-        root = document.createElement("div");
-        root.id = "overlayAlertRoot";
-        document.body.appendChild(root);
-      }
-      root.appendChild(alertEl);
-    }
-
-    alertEl.classList.remove("hidden");
-
-    if(alertEl.classList.contains("show")){
-      alertEl.style.display = "flex";
-      alertEl.style.visibility = "visible";
-      alertEl.style.opacity = "1";
-    }else{
-      alertEl.style.display = "";
-      alertEl.style.visibility = "";
-      alertEl.style.opacity = "";
-    }
+  if(root && alertEl.parentElement !== root){
+    root.appendChild(alertEl);
   }
+
+  // ALERT 기준 박스: 공지박스 우선
+  const baseBox =
+    document.querySelector(".notice-box") ||
+    document.querySelector(".account-box") ||
+    document.querySelector(".overlay-stack");
+
+  if(root && baseBox){
+    const rect = baseBox.getBoundingClientRect();
+
+    root.style.setProperty("--alert-left", rect.left + "px");
+    root.style.setProperty("--alert-top", rect.top + "px");
+    root.style.setProperty("--alert-width", rect.width + "px");
+    root.style.setProperty("--alert-height", rect.height + "px");
+  }
+
+  alertEl.classList.remove("hidden");
+
+  if(alertEl.classList.contains("show")){
+    alertEl.style.display = "flex";
+    alertEl.style.visibility = "visible";
+    alertEl.style.opacity = "1";
+  }else{
+    alertEl.style.display = "";
+    alertEl.style.visibility = "";
+    alertEl.style.opacity = "";
+  }
+}
 
   async function refresh(){
     let data;
@@ -1531,6 +1554,11 @@ body > .option-alert.show,
   testSoundFromQuery();
   setInterval(refresh,5000);
 })();
+  window.addEventListener("resize", () => {
+  if(typeof ensureAlertIndependent === "function"){
+    ensureAlertIndependent();
+  }
+});
 </script>
 <!-- notice box visible when ON even without text -->
 </body>
