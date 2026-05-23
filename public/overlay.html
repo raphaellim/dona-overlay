@@ -108,7 +108,20 @@ html,body{
 .creator-sub{display:flex;justify-content:center;align-items:center!important;gap:10px;width:100%;margin-top:2px;padding-top:2px!important;font-size:23px;line-height:1!important;font-weight:900;letter-spacing:-.065em;text-align:center;text-shadow:none!important;filter:none!important}.creator-item.options-only .creator-main{justify-content:center!important}.creator-item.options-only .creator-name{flex:0 1 auto!important;width:auto!important;max-width:100%!important;text-align:center!important}.state-item{white-space:nowrap;min-width:0;text-align:center}.plus{color:var(--plus-blue)}.blue,.red{color:var(--minus-red)}.muted{color:var(--yellow)}
 
 /* ===== ALERT ===== */
-#overlayAlertRoot{position:fixed!important;left:var(--alert-left,8px)!important;top:var(--alert-top,80px)!important;width:var(--alert-width,420px)!important;height:var(--alert-height,170px)!important;right:auto!important;bottom:auto!important;inset:auto!important;z-index:999999!important;pointer-events:none!important;overflow:visible!important;transform:none!important}
+#overlayAlertRoot{
+  position:fixed !important;
+  left:var(--alert-left, 8px) !important;
+  top:var(--alert-top, 80px) !important;
+  width:var(--alert-width, 420px) !important;
+  height:var(--alert-height, 170px) !important;
+  right:auto !important;
+  bottom:auto !important;
+  inset:auto !important;
+  z-index:999999 !important;
+  pointer-events:none !important;
+  overflow:visible !important;
+  transform:none !important;
+}
 .option-alert{
   position:absolute!important;
   left:0!important;
@@ -180,20 +193,20 @@ html,body{
   right:auto !important;
   bottom:auto !important;
   inset:auto !important;
-
   width:calc(100% - 12px) !important;
   max-width:calc(100% - 12px) !important;
   min-width:0 !important;
-
   margin:0 !important;
   transform:translateX(-50%) scale(.92) !important;
   transform-origin:top center !important;
 }
 
+
 #overlayAlertRoot > #optionAlert.option-alert.show,
 #overlayAlertRoot #optionAlert.option-alert.show{
   transform:translateX(-50%) scale(1) !important;
 }
+
 /* ===== ALERT 좌측 반쪽/창끝 밀림 최종 복구 ===== */
 #overlayAlertRoot{
   position:fixed !important;
@@ -226,6 +239,10 @@ html,body{
 #overlayAlertRoot #optionAlert.option-alert.show{
   transform:scale(1) !important;
 }
+  body > #optionAlert.option-alert{
+  position:fixed !important;
+}
+
 </style>
 </head>
 <body>
@@ -1130,82 +1147,50 @@ html,body{
     }
   }
 
- function ensureAlertIndependent(){
-  const root = document.getElementById("overlayAlertRoot");
-  const alertEl = document.getElementById("optionAlert");
-  if(!root || !alertEl) return;
+function ensureAlertIndependent(){
+    const root = document.getElementById("overlayAlertRoot");
+    let alertEl = document.getElementById("optionAlert");
+    if(!alertEl) return;
 
-  if(alertEl.parentElement !== root){
-    root.appendChild(alertEl);
+    if(root && alertEl.parentElement !== root){
+      root.appendChild(alertEl);
+    }
+
+    const accountBox = document.getElementById("accountBox");
+    const stack = document.querySelector(".overlay-stack");
+    const baseBox = accountBox && !accountBox.classList.contains("hidden") ? accountBox : stack;
+
+    if(root && baseBox){
+      const rect = baseBox.getBoundingClientRect();
+      const vw = window.innerWidth || document.documentElement.clientWidth || rect.width;
+      const left = Math.max(8, Math.round(rect.left));
+      const width = Math.max(240, Math.min(Math.round(rect.width), vw - left - 8));
+      root.style.setProperty("--alert-left", left + "px");
+      root.style.setProperty("--alert-top", Math.round(rect.bottom + 8) + "px");
+      root.style.setProperty("--alert-width", width + "px");
+      root.style.setProperty("--alert-height", "170px");
+    }
+
+    alertEl.classList.remove("hidden");
+    alertEl.style.position = "absolute";
+    alertEl.style.left = "50%";
+    alertEl.style.top = "0";
+    alertEl.style.right = "auto";
+    alertEl.style.bottom = "auto";
+    alertEl.style.margin = "0";
+
+    if(alertEl.classList.contains("show")){
+      alertEl.style.display = "flex";
+      alertEl.style.visibility = "visible";
+      alertEl.style.opacity = "1";
+      alertEl.style.transform = "translateX(-50%) scale(1)";
+    }else{
+      alertEl.style.display = "";
+      alertEl.style.visibility = "";
+      alertEl.style.opacity = "";
+      alertEl.style.transform = "translateX(-50%) scale(.92)";
+    }
   }
-
-  const accountBox = document.getElementById("accountBox");
-  const stack = document.querySelector(".overlay-stack");
-
-  const isVisible = (el) => {
-    if(!el || el.classList.contains("hidden")) return false;
-    const st = window.getComputedStyle(el);
-    if(st.display === "none" || st.visibility === "hidden") return false;
-    const r = el.getBoundingClientRect();
-    return r.width > 0 && r.height > 0;
-  };
-
-  const baseBox = isVisible(accountBox) ? accountBox : stack;
-  if(!baseBox) return;
-
-  const rect = baseBox.getBoundingClientRect();
-  const vw = window.innerWidth || document.documentElement.clientWidth || 1920;
-
-  let left = Math.round(rect.left);
-  let top = Math.round(rect.bottom + 8);
-  let width = Math.round(rect.width);
-
-  if(!Number.isFinite(left)) left = 8;
-  if(!Number.isFinite(top)) top = 80;
-  if(!Number.isFinite(width) || width < 240) width = 285;
-
-  left = Math.max(8, Math.min(left, vw - 248));
-  width = Math.max(240, Math.min(width, vw - left - 8));
-
-  root.style.position = "fixed";
-  root.style.left = left + "px";
-  root.style.top = top + "px";
-  root.style.width = width + "px";
-  root.style.height = "170px";
-  root.style.right = "auto";
-  root.style.bottom = "auto";
-  root.style.inset = "auto";
-  root.style.zIndex = "999999";
-  root.style.pointerEvents = "none";
-  root.style.overflow = "visible";
-  root.style.transform = "none";
-
-  alertEl.classList.remove("hidden");
-  alertEl.style.position = "absolute";
-  alertEl.style.left = "0";
-  alertEl.style.top = "0";
-  alertEl.style.right = "auto";
-  alertEl.style.bottom = "auto";
-  alertEl.style.inset = "auto";
-  alertEl.style.width = "100%";
-  alertEl.style.maxWidth = "100%";
-  alertEl.style.minWidth = "0";
-  alertEl.style.margin = "0";
-  alertEl.style.transformOrigin = "top center";
-
-  if(alertEl.classList.contains("show")){
-    alertEl.style.display = "flex";
-    alertEl.style.visibility = "visible";
-    alertEl.style.opacity = "1";
-    alertEl.style.transform = "scale(1)";
-  }else{
-    alertEl.style.display = "";
-    alertEl.style.visibility = "";
-    alertEl.style.opacity = "";
-    alertEl.style.transform = "scale(.92)";
-  }
-}
-
   
   function updateBroadcastTimer(){
     if(!$broadcastTimerValue) return;
