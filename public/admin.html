@@ -172,6 +172,34 @@ textarea{resize:vertical;line-height:1.45}
   .status-pill.done{color:#86efac;border-color:#22c55e55;background:#14532d22}
   @media(max-width:900px){.manage-grid,.karaoke-inline,.karaoke-song-inline{grid-template-columns:1fr}}
 
+
+/* ===== 노래방/펀딩 UX 보정 ===== */
+#karaokeAdminCard .manage-grid{
+  grid-template-columns:1fr !important;
+}
+#karaokeAdminCard .karaoke-inline,
+#karaokeAdminCard .karaoke-song-inline{
+  grid-template-columns:1.4fr 120px 100px auto !important;
+}
+#karaokeAdminCard input,
+#karaokeAdminCard select{
+  min-height:42px !important;
+  font-size:15px !important;
+}
+#karaokeSongTitle{
+  min-width:220px !important;
+}
+#karaokeSongNick,
+#karaokeCoinNick{
+  min-width:170px !important;
+}
+@media(max-width:900px){
+  #karaokeAdminCard .karaoke-inline,
+  #karaokeAdminCard .karaoke-song-inline{
+    grid-template-columns:1fr !important;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -230,19 +258,6 @@ textarea{resize:vertical;line-height:1.45}
             <input id="toonieTotal" class="input" inputmode="decimal" placeholder="예: 2.5 또는 25000">
           </div>
         </div>
-
-        
-        <div class="grid-2">
-          <div class="row">
-            <label>펀딩 선택</label>
-            <select id="fundingSelect" class="input"></select>
-          </div>
-          <div class="row">
-            <label>펀딩 반영 단위</label>
-            <input id="fundingUnits" class="input" type="number" min="0" placeholder="비우면 후원금 / 1만원 자동">
-          </div>
-        </div>
-
         <div id="preview" class="resultBox">자동결과: -</div>
 
         <div class="sub-card">
@@ -320,12 +335,12 @@ textarea{resize:vertical;line-height:1.45}
       </section>
 
       
-      <section class="card">
+      <section class="card" id="karaokeAdminCard">
         <h2>노래방 관리</h2>
         <p class="muted">코인추가 후 코인이 있는 닉네임만 선곡 리스트에 추가할 수 있습니다.</p>
         <div class="grid-2">
           <div class="row"><label>노래방 제목</label><input id="karaokeTitle" class="input" placeholder="노래방 공지 알림판"></div>
-          <div class="row"><label>흐르는 공지</label><input id="karaokeTicker" class="input" placeholder="신청곡은 채팅으로 남겨주세요"></div>
+          <div class="row"><label>간단알림</label><input id="karaokeNotice" class="input" placeholder="예: 노래문의필수 / 노래 1절1만·완곡2만"></div>
         </div>
         <div class="manage-grid">
           <div class="manage-panel">
@@ -444,9 +459,15 @@ function renderFundingSelect(){
   box.innerHTML = `<option value="">펀딩 반영 안함</option>` + items.filter(f=>f.enabled!==false).map(f => `<option value="${escAttr(f.id)}">${esc(f.title)} ${Number(f.current||0)}/${Number(f.target||0)}</option>`).join('');
 }
 function renderKaraokeManager(){
+  const card = $('#karaokeAdminCard');
+  const karaokeOn = settings?.overlaySections?.karaoke === true;
+  if(card) card.style.display = karaokeOn ? '' : 'none';
+  if(!karaokeOn) return;
+
   const data = getKaraokeData();
   if($('#karaokeTitle')) $('#karaokeTitle').value = data.title || '노래방 공지 알림판';
-  if($('#karaokeTicker')) $('#karaokeTicker').value = data.ticker || '';
+  if($('#karaokeNotice')) $('#karaokeNotice').value = data.notice || data.ticker || '';
+
   const userBox = $('#karaokeUserList');
   if(userBox){
     userBox.innerHTML = data.users.length ? data.users.map(u => `
@@ -459,6 +480,7 @@ function renderKaraokeManager(){
         </div>
       </div>`).join('') : `<div class="resultBox">코인을 추가한 닉네임이 없습니다.</div>`;
   }
+
   const songBox = $('#karaokeSongList');
   if(songBox){
     const activeSongs = data.songs.filter(s => s.status !== '삭제');
@@ -480,7 +502,7 @@ function renderKaraokeManager(){
 function syncKaraokeInputs(){
   const data=getKaraokeData();
   if($('#karaokeTitle')) data.title=$('#karaokeTitle').value.trim()||'노래방 공지 알림판';
-  if($('#karaokeTicker')) data.ticker=$('#karaokeTicker').value.trim();
+  if($('#karaokeNotice')) data.notice=$('#karaokeNotice').value.trim();
 }
 function addKaraokeCoin(){
   const data=getKaraokeData();
@@ -538,7 +560,6 @@ async function init(){
   await loadSettings();
   await loadSoundFiles();
   renderProcessOptions();
-  renderFundingSelect();
   renderKaraokeManager();
   renderSplitRows();
   bindInputs();
@@ -563,9 +584,12 @@ async function loadSoundFiles(){
 
 function renderProcessOptions(){
   const presets = settings?.presets || [];
+  const fundings = (settings?.fundingData?.items || []).filter(f => f.enabled !== false);
+
   $('#processType').innerHTML = [
     `<option value="후원">후원</option>`,
-    ...presets.filter(p => p.enabled !== false).map(p => `<option value="${escAttr(p.title)}">${esc(p.title)}</option>`)
+    ...presets.filter(p => p.enabled !== false).map(p => `<option value="${escAttr(p.title)}">${esc(p.title)}</option>`),
+    ...fundings.map(f => `<option value="funding:${escAttr(f.id)}">펀딩: ${esc(f.title)} ${Number(f.current||0)}/${Number(f.target||0)}</option>`)
   ].join('');
 }
 
@@ -840,14 +864,18 @@ async function saveBatch(){
     const donor = $('#donor').value.trim();
     if(!donor) return alert('도네이터명을 입력하세요.');
 
+    const selectedProcess = $('#processType').value || '후원';
+    const isFunding = selectedProcess.startsWith('funding:');
+    const fundingId = isFunding ? selectedProcess.replace('funding:', '') : '';
+
     const body = {
       donor,
-      processType: $('#processType').value || '후원',
+      processType: isFunding ? '후원' : selectedProcess,
       accountTotal: $('#accountTotal').value,
       toonieTotal: $('#toonieTotal').value,
       rows: collectRows(),
-      fundingId: $('#fundingSelect') ? $('#fundingSelect').value : '',
-      fundingUnits: $('#fundingUnits') ? $('#fundingUnits').value : ''
+      fundingId,
+      fundingUnits: ''
     };
 
     await api('/api/donations/batch', {
@@ -858,6 +886,8 @@ async function saveBatch(){
     alert('저장 완료');
     $('#donor').value = '';
     clearAmounts();
+    await loadSettings();
+    renderProcessOptions();
     await loadRecent();
   }catch(e){ alert(e.message); }
 }

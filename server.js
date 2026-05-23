@@ -193,7 +193,7 @@ function normalizeKaraokeData(raw) {
 
   return {
     title: String(value.title || '노래방 공지 알림판'),
-    ticker: String(value.ticker || '신청곡은 채팅으로 남겨주세요'),
+    notice: String(value.notice || value.ticker || '노래문의필수'),
     users,
     songs
   };

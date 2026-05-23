@@ -903,6 +903,160 @@ body > .option-alert.show,
   pointer-events:none;
 }
 
+
+/* ===== KARAOKE CARD REFINE ===== */
+.karaoke-box{
+  border:2px solid rgba(255,95,180,.82) !important;
+  border-radius:18px !important;
+  background:linear-gradient(180deg, rgba(30,30,34,.78), rgba(20,20,24,.72)) !important;
+  box-shadow:0 0 0 1px rgba(255,255,255,.16) inset, 0 0 18px rgba(255,80,170,.42) !important;
+  padding:12px 14px !important;
+  text-align:left !important;
+  max-height:none !important;
+}
+
+.karaoke-mini-title{
+  text-align:center;
+  font-size:12px;
+  color:#ff9bd6;
+  font-weight:1000;
+  margin-bottom:4px;
+}
+
+.karaoke-title{
+  text-align:center !important;
+  font-size:22px !important;
+  color:#f5ff46 !important;
+  font-weight:1000 !important;
+  line-height:1.15 !important;
+  text-shadow:0 0 8px rgba(245,255,70,.45) !important;
+}
+
+.karaoke-notice{
+  margin-top:4px;
+  text-align:center !important;
+  color:#f5ff46;
+  font-size:18px;
+  font-weight:1000;
+  line-height:1.15;
+}
+
+.karaoke-current{
+  margin-top:8px !important;
+  text-align:left !important;
+  font-size:18px !important;
+  line-height:1.18 !important;
+  color:#38f5ff !important;
+  font-weight:1000 !important;
+}
+
+.karaoke-current b{
+  color:#38f5ff;
+}
+
+.karaoke-current span{
+  color:#fff;
+}
+
+.karaoke-current em{
+  color:#38ff72;
+  font-style:normal;
+  margin-left:4px;
+}
+
+.karaoke-reserve-title{
+  margin-top:7px;
+  color:#38ff72;
+  text-align:left;
+  font-size:18px;
+  font-weight:1000;
+}
+
+.karaoke-queue{
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:stretch !important;
+  gap:4px !important;
+  margin-top:5px !important;
+  text-align:left !important;
+  overflow:visible !important;
+}
+
+.karaoke-song-row{
+  display:grid;
+  grid-template-columns:42px 1fr auto;
+  gap:6px;
+  align-items:center;
+  color:#fff;
+  font-size:16px;
+  font-weight:900;
+  line-height:1.15;
+  min-width:0;
+}
+
+.karaoke-song-row span{
+  color:#fff1a8;
+  white-space:nowrap;
+}
+
+.karaoke-song-row b{
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  color:#fff;
+}
+
+.karaoke-song-row em{
+  font-style:normal;
+  color:#e8e8e8;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  max-width:110px;
+}
+
+.karaoke-song-row.hold{
+  opacity:.72;
+}
+
+.karaoke-coin-ticker{
+  width:100%;
+  overflow:hidden;
+  white-space:nowrap;
+  margin-top:9px;
+  border-radius:999px;
+  background:rgba(255,255,255,.10);
+  border:1px solid rgba(255,255,255,.18);
+}
+
+.karaoke-coin-ticker span{
+  display:inline-block;
+  padding-left:100%;
+  font-size:16px;
+  line-height:30px;
+  font-weight:1000;
+  color:#fff;
+  animation:karaokeTickerMove 18s linear infinite;
+}
+
+.notice-text,
+.notice-line,
+.funding-title,
+.funding-value{
+  text-align:left !important;
+}
+
+/* ALERT cut 방지: 전체 스택 안에서만 표시 */
+#overlayAlertRoot{
+  left:var(--alert-left, 8px) !important;
+  width:var(--alert-width, 420px) !important;
+  overflow:visible !important;
+}
+#overlayAlertRoot #optionAlert.option-alert{
+  width:calc(100% - 16px) !important;
+  max-width:calc(100% - 16px) !important;
+}
+
 </style>
 </head>
 <body>
@@ -938,13 +1092,13 @@ body > .option-alert.show,
       </section>
 
       <section class="overlay-box karaoke-box hidden" id="karaokeBox">
+        <div class="karaoke-mini-title">빵떠기노래방</div>
         <div class="karaoke-title" id="karaokeTitleText">노래방 공지 알림판</div>
-        <div class="karaoke-current" id="karaokeCurrentText">진행중</div>
-        <div class="karaoke-queue" id="karaokeQueueList">
-          <span class="queue-label">예약순번</span>
-        </div>
-        <div class="karaoke-coin" id="karaokeCoinText">현재 코인보유</div>
-        <div class="karaoke-ticker"><span id="karaokeTickerText">우에서 좌로 흐르는 한줄</span></div>
+        <div class="karaoke-notice" id="karaokeNoticeText">노래문의필수</div>
+        <div class="karaoke-current" id="karaokeCurrentText">진행중-</div>
+        <div class="karaoke-reserve-title">예약현황</div>
+        <div class="karaoke-queue" id="karaokeQueueList"></div>
+        <div class="karaoke-coin-ticker"><span id="karaokeTickerText">코인보유 없음</span></div>
       </section>
 
 
@@ -973,6 +1127,7 @@ body > .option-alert.show,
   const $karaokeBox = document.getElementById("karaokeBox");
   const $karaokeTitleText = document.getElementById("karaokeTitleText");
   const $karaokeCurrentText = document.getElementById("karaokeCurrentText");
+  const $karaokeNoticeText = document.getElementById("karaokeNoticeText");
   const $karaokeQueueList = document.getElementById("karaokeQueueList");
   const $karaokeCoinText = document.getElementById("karaokeCoinText");
   const $karaokeTickerText = document.getElementById("karaokeTickerText");
@@ -1136,39 +1291,38 @@ body > .option-alert.show,
   function renderKaraoke(settings){
     const data = settings?.karaokeData || {};
     const users = Array.isArray(data.users) ? data.users : [];
-    const songs = Array.isArray(data.songs) ? data.songs.filter(s => s.status !== "삭제") : [];
+    const songs = Array.isArray(data.songs) ? data.songs.filter(s => s.status !== "삭제" && s.status !== "완료") : [];
 
     if($karaokeTitleText) $karaokeTitleText.textContent = data.title || "노래방 공지 알림판";
+    if($karaokeNoticeText) $karaokeNoticeText.textContent = data.notice || data.ticker || "노래문의필수";
 
     const running = songs.find(s => s.status === "진행");
     if($karaokeCurrentText){
-      $karaokeCurrentText.textContent = running
-        ? `진행중: ${running.nick} - ${running.title}`
-        : "진행중";
+      $karaokeCurrentText.innerHTML = running
+        ? `<b>진행중</b> <span>${escapeHtml(running.title)}</span> <em>${escapeHtml(running.nick)}</em>`
+        : `<b>진행중-</b>`;
     }
 
     if($karaokeQueueList){
-      const queue = songs.filter(s => s.status === "대기" || s.status === "보류").slice(0, 4);
-      $karaokeQueueList.innerHTML = `<span class="queue-label">예약순번</span>` + (
-        queue.length
-          ? queue.map((s, idx) => `<span class="queue-num ${s.status === "보류" ? "hold" : ""}">${idx+1}. ${escapeHtml(s.nick)} ${escapeHtml(s.title)}</span>`).join("")
-          : `<span class="queue-empty">대기 없음</span>`
-      );
+      const queue = songs.filter(s => s.status === "대기" || s.status === "보류").slice(0, 6);
+      $karaokeQueueList.innerHTML = queue.length
+        ? queue.map((s, idx) => `<div class="karaoke-song-row ${s.status === "보류" ? "hold" : ""}"><span>${idx+1}번</span><b>${escapeHtml(s.title)}</b><em>${escapeHtml(s.nick)}${s.status === "보류" ? "(보류)" : ""}</em></div>`).join("")
+        : `<div class="queue-empty">예약 없음</div>`;
     }
 
-    if($karaokeCoinText){
-      const totals = users.reduce((acc, u) => {
-        const c = u.coins || {};
-        acc.verse += Number(c.verse || 0);
-        acc.full += Number(c.full || 0);
-        acc.special += Number(c.special || 0);
-        return acc;
-      }, {verse:0, full:0, special:0});
-
-      $karaokeCoinText.textContent = `현재 코인보유 1절 ${totals.verse} · 완곡 ${totals.full} · 스페셜 ${totals.special}`;
+    if($karaokeTickerText){
+      const coinText = users.length
+        ? users.map(u => {
+            const c = u.coins || {};
+            const parts = [];
+            if(Number(c.verse||0)>0) parts.push(`1절${Number(c.verse||0)}`);
+            if(Number(c.full||0)>0) parts.push(`완곡${Number(c.full||0)}`);
+            if(Number(c.special||0)>0) parts.push(`스페셜${Number(c.special||0)}`);
+            return parts.length ? `${u.nick}-${parts.join("/")}` : "";
+          }).filter(Boolean).join(" / ")
+        : "코인보유 없음";
+      $karaokeTickerText.textContent = coinText || "코인보유 없음";
     }
-
-    if($karaokeTickerText) $karaokeTickerText.textContent = data.ticker || "신청곡은 채팅으로 남겨주세요";
   }
 
 
@@ -1772,33 +1926,22 @@ body > .option-alert.show,
       root.appendChild(alertEl);
     }
 
-    const noticeBox = document.getElementById("noticeBox");
-    const accountBox = document.getElementById("accountBox");
-    const creatorBox = document.getElementById("creatorBox");
     const stack = document.querySelector(".overlay-stack");
-
-    const isVisible = el => {
-      if(!el || el.classList.contains("hidden")) return false;
-      const rect = el.getBoundingClientRect();
-      return rect.width > 0 && rect.height > 0;
-    };
-
-    const baseBox =
-      (isVisible(noticeBox) && noticeBox) ||
-      (isVisible(accountBox) && accountBox) ||
-      (isVisible(creatorBox) && creatorBox) ||
-      stack;
+    const baseBox = stack || document.body;
 
     if(root && baseBox){
       const rect = baseBox.getBoundingClientRect();
-      root.style.setProperty("--alert-left", Math.round(rect.left) + "px");
+      const vw = window.innerWidth || document.documentElement.clientWidth || rect.width;
+      const left = Math.max(8, Math.round(rect.left));
+      const width = Math.max(240, Math.min(Math.round(rect.width), vw - left - 8));
+
+      root.style.setProperty("--alert-left", left + "px");
       root.style.setProperty("--alert-top", Math.round(rect.top) + "px");
-      root.style.setProperty("--alert-width", Math.round(rect.width) + "px");
-      root.style.setProperty("--alert-height", Math.round(rect.height) + "px");
+      root.style.setProperty("--alert-width", width + "px");
+      root.style.setProperty("--alert-height", Math.round(rect.height || 220) + "px");
     }
 
     alertEl.classList.remove("hidden");
-
     alertEl.style.position = "absolute";
     alertEl.style.left = "50%";
     alertEl.style.top = "50%";
