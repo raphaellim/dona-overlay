@@ -550,9 +550,13 @@ function deleteKaraokeUser(nick){const data=getKaraokeData(); if(!confirm(`${nic
 async function saveKaraokeData(){
   try{
     syncKaraokeInputs();
-    await api('/api/karaoke-data',{method:'POST',body:JSON.stringify({karaokeData:getKaraokeData()})});
+    const saved = await api('/api/karaoke-data',{method:'POST',body:JSON.stringify({karaokeData:getKaraokeData()})});
+    if(saved && saved.karaokeData){
+      settings.karaokeData = saved.karaokeData;
+    }
     alert('노래방 저장 완료');
     await loadSettings();
+    renderKaraokeManager();
   }catch(e){alert(e.message)}
 }
 

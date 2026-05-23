@@ -503,13 +503,25 @@ function renderFundingManager(){
 }
 
 function collectFundingData(){
-  const items = Array.from(document.querySelectorAll('#fundingList .sound-rule')).map((row, idx) => ({
-    id: getFundingData().items[idx]?.id || ('fund_' + Date.now() + '_' + idx),
-    title: row.querySelector('.fund-title').value.trim(),
-    current: Math.max(0, Number(row.querySelector('.fund-current').value || 0)),
-    target: Math.max(0, Number(row.querySelector('.fund-target').value || 0)),
-    enabled: row.querySelector('.fund-enabled').value !== 'false'
-  })).filter(f => f.title);
+  const current = getFundingData();
+  const items = Array.from(document.querySelectorAll('#fundingList .sound-rule')).map((row, idx) => {
+    const titleEl = row.querySelector('.fund-title');
+    const currentEl = row.querySelector('.fund-current');
+    const targetEl = row.querySelector('.fund-target');
+    const enabledEl = row.querySelector('.fund-enabled');
+
+    const title = titleEl ? titleEl.value.trim() : '';
+    if(!title) return null;
+
+    return {
+      id: current.items[idx]?.id || ('fund_' + Date.now() + '_' + idx),
+      title,
+      current: Math.max(0, Number(currentEl ? currentEl.value : 0) || 0),
+      target: Math.max(0, Number(targetEl ? targetEl.value : 0) || 0),
+      enabled: enabledEl ? enabledEl.value !== 'false' : true
+    };
+  }).filter(Boolean);
+
   return {items};
 }
 

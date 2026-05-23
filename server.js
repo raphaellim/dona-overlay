@@ -1568,9 +1568,10 @@ app.post('/api/karaoke-data', async (req, res) => {
     if (!await operatorAllowed(req, ctx.station, ctx.active)) {
       return res.status(401).json({ error: '방송 비밀번호 또는 방송국 관리자 권한이 필요합니다.' });
     }
-    const current = await readEffectiveSettings(ctx.station.slug, ctx.active.id);
+
     const karaokeData = normalizeKaraokeData(req.body.karaokeData || req.body || {});
     await saveSharedGlobalSettings({ karaokeData });
+
     const effective = await readEffectiveSettings(ctx.station.slug, ctx.active.id);
     res.json({ ok: true, karaokeData: effective.karaokeData });
   } catch (e) {
@@ -1586,9 +1587,10 @@ app.post('/api/funding-data', async (req, res) => {
     if (!await operatorAllowed(req, ctx.station, ctx.active)) {
       return res.status(401).json({ error: '방송 비밀번호 또는 방송국 관리자 권한이 필요합니다.' });
     }
-    const current = await readEffectiveSettings(ctx.station.slug, ctx.active.id);
+
     const fundingData = normalizeFundingData(req.body.fundingData || req.body || {});
     await saveSharedGlobalSettings({ fundingData });
+
     const effective = await readEffectiveSettings(ctx.station.slug, ctx.active.id);
     res.json({ ok: true, fundingData: effective.fundingData });
   } catch (e) {

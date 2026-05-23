@@ -1057,6 +1057,25 @@ body > .option-alert.show,
   max-width:calc(100% - 16px) !important;
 }
 
+
+/* ===== 오류 수정: 노래방/ALERT 보정 ===== */
+.karaoke-mini-title{
+  display:none !important;
+}
+
+.queue-empty{
+  display:block !important;
+  padding:4px 0 !important;
+  color:rgba(255,255,255,.68) !important;
+  font-size:15px !important;
+  font-weight:900 !important;
+  text-align:left !important;
+}
+
+.karaoke-title{
+  margin-top:0 !important;
+}
+
 </style>
 </head>
 <body>
@@ -1092,8 +1111,7 @@ body > .option-alert.show,
       </section>
 
       <section class="overlay-box karaoke-box hidden" id="karaokeBox">
-        <div class="karaoke-mini-title">빵떠기노래방</div>
-        <div class="karaoke-title" id="karaokeTitleText">노래방 공지 알림판</div>
+<div class="karaoke-title" id="karaokeTitleText">노래방 공지 알림판</div>
         <div class="karaoke-notice" id="karaokeNoticeText">노래문의필수</div>
         <div class="karaoke-current" id="karaokeCurrentText">진행중-</div>
         <div class="karaoke-reserve-title">예약현황</div>
