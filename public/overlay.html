@@ -741,11 +741,95 @@ body > .option-alert.show,
   }
 }
 
+
+/* ===== V1 PLUS FIX: 타이머/펀딩/노래방을 계좌후원 박스 스택 안으로 배치 ===== */
+.overlay-stack{
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:stretch !important;
+  gap:10px !important;
+}
+
+/* 기존 timer absolute/top/left/transform 무력화 */
+.broadcast-timer-box{
+  position:relative !important;
+  top:auto !important;
+  left:auto !important;
+  right:auto !important;
+  bottom:auto !important;
+  transform:none !important;
+  width:100% !important;
+  box-sizing:border-box !important;
+  z-index:1 !important;
+  pointer-events:none !important;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  padding:8px 18px !important;
+  border-radius:18px !important;
+  background:rgba(0,0,0,.58) !important;
+  border:1px solid rgba(255,255,255,.28) !important;
+  color:#fff !important;
+  box-shadow:0 8px 24px rgba(0,0,0,.35) !important;
+}
+
+.broadcast-timer-box.hidden,
+.karaoke-box.hidden,
+.funding-box.hidden{
+  display:none !important;
+}
+
+.karaoke-box,
+.funding-box{
+  position:relative !important;
+  width:100% !important;
+  max-width:100% !important;
+  box-sizing:border-box !important;
+  z-index:1 !important;
+}
+
+/* 세로 모니터에서도 박스 밖으로 안 늘어나게 고정 */
+.karaoke-box{
+  max-height:220px !important;
+}
+
+.karaoke-title,
+.funding-title{
+  white-space:nowrap !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+}
+
+.karaoke-current,
+.karaoke-coin{
+  white-space:nowrap !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+}
+
+@media(max-width:720px){
+  .overlay-stack{
+    gap:8px !important;
+  }
+
+  .broadcast-timer-box{
+    padding:7px 14px !important;
+    border-radius:16px !important;
+  }
+}
+
 </style>
 </head>
 <body>
   <div class="overlay-root">
     <div class="overlay-stack">
+      <section class="overlay-box broadcast-timer-box hidden" id="broadcastTimerBox">
+        <span class="timer-label">방송시간</span>
+        <span class="timer-value" id="broadcastTimerValue">00:00:00</span>
+      </section>
+
+
       <section class="overlay-box account-box" id="accountBox">
         <div class="account-row">
           <div class="account-title">계좌후원</div>
@@ -757,41 +841,39 @@ body > .option-alert.show,
         </div>
       </section>
 
+      <section class="overlay-box funding-box hidden" id="fundingBox">
+        <div class="funding-title">펀딩 현황</div>
+        <div class="funding-value">0 / 0</div>
+      </section>
+
+
+
       <section class="overlay-box notice-box" id="noticeBox">
         <div class="notice-title" id="noticeTitleText">공지</div>
         <div class="notice-text" id="noticeText"></div>
       </section>
+
+      <section class="overlay-box karaoke-box hidden" id="karaokeBox">
+        <div class="karaoke-title">노래방 공지 알림판</div>
+        <div class="karaoke-current">진행중</div>
+        <div class="karaoke-queue">
+          <span class="queue-label">예약순번</span>
+          <span class="queue-num">1</span>
+          <span class="queue-num">2</span>
+          <span class="queue-num">3</span>
+          <span class="queue-num">4</span>
+        </div>
+        <div class="karaoke-coin">현재 코인보유</div>
+        <div class="karaoke-ticker"><span>우에서 좌로 흐르는 한줄</span></div>
+      </section>
+
+
 
       <section class="overlay-box creator-box" id="creatorBox">
 <div class="creator-list" id="creatorList"></div>
       </section>
     </div>
   </div>
-
-  <section class="broadcast-timer-box hidden" id="broadcastTimerBox">
-    <span class="timer-label">방송시간</span>
-    <span class="timer-value" id="broadcastTimerValue">00:00:00</span>
-  </section>
-
-  <section class="karaoke-box hidden" id="karaokeBox">
-    <div class="karaoke-title">노래방 공지 알림판</div>
-    <div class="karaoke-current">진행중</div>
-    <div class="karaoke-queue">
-      <span class="queue-label">예약순번</span>
-      <span class="queue-num">1</span>
-      <span class="queue-num">2</span>
-      <span class="queue-num">3</span>
-      <span class="queue-num">4</span>
-    </div>
-    <div class="karaoke-coin">현재 코인보유</div>
-    <div class="karaoke-ticker"><span>우에서 좌로 흐르는 한줄</span></div>
-  </section>
-
-  <section class="funding-box hidden" id="fundingBox">
-    <div class="funding-title">펀딩 현황</div>
-    <div class="funding-value">0 / 0</div>
-  </section>
-
 <div id="overlayAlertRoot"><div class="option-alert" id="optionAlert"></div></div>
 <script>
   let showCreatorDonations = true;
@@ -973,13 +1055,12 @@ body > .option-alert.show,
   function applySections(settings){
     const sections = getOverlaySections(settings);
 
-    if($accountBox) $accountBox.classList.toggle("hidden", !sections.account);
-    if($noticeBox) $noticeBox.classList.toggle("hidden", !sections.notice);
-    if($creatorBox) $creatorBox.classList.toggle("hidden", !sections.creators);
-
-    if($karaokeBox) $karaokeBox.classList.toggle("hidden", !sections.karaoke);
-    if($fundingBox) $fundingBox.classList.toggle("hidden", !sections.funding);
     if($broadcastTimerBox) $broadcastTimerBox.classList.toggle("hidden", !sections.broadcastTimer);
+    if($accountBox) $accountBox.classList.toggle("hidden", !sections.account);
+    if($fundingBox) $fundingBox.classList.toggle("hidden", !sections.funding);
+    if($noticeBox) $noticeBox.classList.toggle("hidden", !sections.notice);
+    if($karaokeBox) $karaokeBox.classList.toggle("hidden", !sections.karaoke);
+    if($creatorBox) $creatorBox.classList.toggle("hidden", !sections.creators);
 
     showCreatorDonations = sections.creatorDonations !== false;
 
