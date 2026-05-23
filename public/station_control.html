@@ -28,10 +28,6 @@ body{background:#070b12;color:#e5e7eb}.wrap{max-width:1180px;margin:0 auto;paddi
       <div class="row"><label>방송 제목</label><input id="broadcastTitle" class="input" placeholder="0518 여행방송"></div>
       <div class="row"><label>방송 비밀번호</label><input id="broadcastPw" class="input" placeholder="이 방송 입력/설정용 비밀번호"></div>
       <button class="btn green" onclick="createBroadcast()">새 방송 생성/선택</button>
-      <div class="grid" style="margin-top:10px">
-        <button class="btn blue" onclick="startBroadcastTimer()">방송시작</button>
-        <button class="btn red" onclick="endBroadcastTimer()">방송종료</button>
-      </div>
       <hr style="border-color:#334155;margin:16px 0">
       <h2>현재 방송 비밀번호 입력</h2>
       <div class="row"><label>선택한 방송 비밀번호</label><input id="loginBroadcastPw" class="input" type="password"></div>
@@ -66,18 +62,30 @@ async function load(){
   render();
 }
 function render(){
-  document.getElementById('broadcasts').innerHTML=broadcasts.map(b=>`
-    <div class="broadcast ${b.isActive?'active':''}">
-      <div>
-        <b>${esc(b.title)}</b> ${b.isActive?'<span class="muted">현재</span>':''}<br>
-        <span class="muted">${new Date(b.createdAt).toLocaleString('ko-KR')} / 비번 ${b.hasPassword?'있음':'없음'}</span>
+  document.getElementById('broadcasts').innerHTML=broadcasts.map(b=>{
+    const timer = b.timer || b.broadcastTimerData || {};
+    const running = timer.running === true;
+    const elapsed = Number(timer.elapsedMs || 0);
+    const sec = Math.floor(elapsed / 1000);
+    const h = String(Math.floor(sec / 3600)).padStart(2,'0');
+    const m = String(Math.floor((sec % 3600) / 60)).padStart(2,'0');
+    const s = String(sec % 60).padStart(2,'0');
+
+    return `
+      <div class="broadcast ${b.isActive?'active':''}">
+        <div>
+          <b>${esc(b.title)}</b> ${b.isActive?'<span class="muted">현재</span>':''} ${running?'<span class="muted">타이머 실행중</span>':''}<br>
+          <span class="muted">${new Date(b.createdAt).toLocaleString('ko-KR')} / 비번 ${b.hasPassword?'있음':'없음'} / 누적 ${h}:${m}:${s}</span>
+        </div>
+        <div>
+          ${b.isActive?'':`<button class="btn blue mini" onclick="activateBroadcast('${b.id}')">선택</button>`}
+          <button class="btn blue mini" onclick="startBroadcastTimer('${b.id}')">방송시작</button>
+          <button class="btn mini" onclick="endBroadcastTimer('${b.id}')">방송종료</button>
+          <button class="btn red mini" onclick="deleteBroadcast('${b.id}')">삭제</button>
+        </div>
       </div>
-      <div>
-        ${b.isActive?'':`<button class="btn blue mini" onclick="activateBroadcast('${b.id}')">선택</button>`}
-        <button class="btn red mini" onclick="deleteBroadcast('${b.id}')">삭제</button>
-      </div>
-    </div>
-  `).join('');
+    `;
+  }).join('');
 }
 async function createBroadcast(){
   try{
@@ -99,12 +107,20 @@ async function deleteBroadcast(id){
   if(!confirm('삭제할까요? 현재 방송은 삭제할 수 없습니다.'))return;
   try{await api('/api/broadcasts/'+id,{method:'DELETE'});await load();}catch(e){alert(e.message)}
 }
-async function startBroadcastTimer(){
-  try{await api('/api/broadcast-timer/start',{method:'POST',body:JSON.stringify({})});alert('방송시간 타이머 시작')}catch(e){alert(e.message)}
+async function startBroadcastTimer(id){
+  try{
+    await api('/api/broadcast-timer/start',{method:'POST',body:JSON.stringify({broadcastId:id})});
+    await load();
+    alert('해당 방송 타이머를 시작했습니다. 종료 후 다시 시작하면 누적 시간부터 이어집니다.');
+  }catch(e){alert(e.message)}
 }
-async function endBroadcastTimer(){
-  if(!confirm('방송시간 타이머를 종료할까요?')) return;
-  try{await api('/api/broadcast-timer/end',{method:'POST',body:JSON.stringify({})});alert('방송시간 타이머 종료')}catch(e){alert(e.message)}
+async function endBroadcastTimer(id){
+  if(!confirm('이 방송 타이머를 종료할까요? 다시 방송시작을 누르면 누적 시간부터 이어집니다.')) return;
+  try{
+    await api('/api/broadcast-timer/end',{method:'POST',body:JSON.stringify({broadcastId:id})});
+    await load();
+    alert('해당 방송 타이머를 종료했습니다.');
+  }catch(e){alert(e.message)}
 }
 
 async function loginBroadcast(){

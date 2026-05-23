@@ -158,7 +158,8 @@ function normalizeBroadcastTimerData(raw) {
   return {
     running: value.running === true,
     startedAt: value.startedAt ? String(value.startedAt) : '',
-    endedAt: value.endedAt ? String(value.endedAt) : ''
+    endedAt: value.endedAt ? String(value.endedAt) : '',
+    elapsedMs: Math.max(0, Number(value.elapsedMs || 0))
   };
 }
 
@@ -1114,7 +1115,16 @@ app.get('/api/broadcasts', async (req, res) => {
     if (!station) return res.status(404).json({ error: '방송국을 찾을 수 없습니다.' });
     const active = await ensureActiveBroadcast(station.id);
     const broadcasts = await listBroadcasts(station.id);
-    res.json({ station: stationToClient(station), active: broadcastToClient(active), broadcasts });
+
+    const withTimers = await Promise.all((broadcasts || []).map(async b => {
+      const settings = await readEffectiveSettings(station.slug, b.id);
+      return {
+        ...b,
+        broadcastTimerData: normalizeBroadcastTimerData(settings.broadcastTimerData)
+      };
+    }));
+
+    res.json({ station: stationToClient(station), active: broadcastToClient(active), broadcasts: withTimers });
   } catch (e) {
     res.status(500).json({ error: e.message || '방송 목록 조회 실패' });
   }
@@ -1566,10 +1576,23 @@ app.post('/api/broadcast-timer/start', async (req, res) => {
     if (!await operatorAllowed(req, ctx.station, ctx.active)) {
       return res.status(401).json({ error: '방송 비밀번호 또는 방송국 관리자 권한이 필요합니다.' });
     }
-    const current = await readEffectiveSettings(ctx.station.slug, ctx.active.id);
-    const broadcastTimerData = { running: true, startedAt: new Date().toISOString(), endedAt: '' };
-    await saveEffectiveSettings(ctx.station.slug, ctx.active.id, { ...current, broadcastTimerData });
-    res.json({ ok: true, broadcastTimerData });
+
+    const broadcastId = req.body.broadcastId || req.query.broadcastId || ctx.active.id;
+    const current = await readEffectiveSettings(ctx.station.slug, broadcastId);
+    const prev = normalizeBroadcastTimerData(current.broadcastTimerData);
+
+    // 이미 실행 중이면 기존 시작시간/누적시간 유지
+    const broadcastTimerData = prev.running
+      ? prev
+      : {
+          running: true,
+          startedAt: new Date().toISOString(),
+          endedAt: '',
+          elapsedMs: Math.max(0, Number(prev.elapsedMs || 0))
+        };
+
+    await saveEffectiveSettings(ctx.station.slug, broadcastId, { ...current, broadcastTimerData });
+    res.json({ ok: true, broadcastId, broadcastTimerData });
   } catch (e) {
     res.status(500).json({ error: e.message || '방송 시작 실패' });
   }
@@ -1583,11 +1606,26 @@ app.post('/api/broadcast-timer/end', async (req, res) => {
     if (!await operatorAllowed(req, ctx.station, ctx.active)) {
       return res.status(401).json({ error: '방송 비밀번호 또는 방송국 관리자 권한이 필요합니다.' });
     }
-    const current = await readEffectiveSettings(ctx.station.slug, ctx.active.id);
+
+    const broadcastId = req.body.broadcastId || req.query.broadcastId || ctx.active.id;
+    const current = await readEffectiveSettings(ctx.station.slug, broadcastId);
     const prev = normalizeBroadcastTimerData(current.broadcastTimerData);
-    const broadcastTimerData = { running: false, startedAt: prev.startedAt || '', endedAt: new Date().toISOString() };
-    await saveEffectiveSettings(ctx.station.slug, ctx.active.id, { ...current, broadcastTimerData });
-    res.json({ ok: true, broadcastTimerData });
+
+    let elapsedMs = Math.max(0, Number(prev.elapsedMs || 0));
+    if (prev.running && prev.startedAt) {
+      const started = new Date(prev.startedAt).getTime();
+      if (Number.isFinite(started)) elapsedMs += Math.max(0, Date.now() - started);
+    }
+
+    const broadcastTimerData = {
+      running: false,
+      startedAt: '',
+      endedAt: new Date().toISOString(),
+      elapsedMs
+    };
+
+    await saveEffectiveSettings(ctx.station.slug, broadcastId, { ...current, broadcastTimerData });
+    res.json({ ok: true, broadcastId, broadcastTimerData });
   } catch (e) {
     res.status(500).json({ error: e.message || '방송 종료 실패' });
   }

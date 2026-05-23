@@ -1119,11 +1119,14 @@ body > .option-alert.show,
 
   function timerBaseMs(settings){
     const t = settings?.broadcastTimerData || {};
-    if(!t.startedAt) return 0;
-    const start = new Date(t.startedAt).getTime();
-    if(!start) return 0;
-    const end = t.running ? Date.now() : (t.endedAt ? new Date(t.endedAt).getTime() : Date.now());
-    return Math.max(0, end - start);
+    let elapsed = Math.max(0, Number(t.elapsedMs || 0));
+
+    if(t.running && t.startedAt){
+      const start = new Date(t.startedAt).getTime();
+      if(start) elapsed += Math.max(0, Date.now() - start);
+    }
+
+    return elapsed;
   }
 
   function coinLabel(type){
