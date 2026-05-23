@@ -169,7 +169,7 @@ html,body{
   border:0 !important;
   overflow:hidden !important;
 }
-/* ===== ALERT 계좌후원 바로 아래 최종 고정 ===== */
+/* ===== ALERT 위치 v1 최종본 복구: 계좌후원 바로 아래 ===== */
 #overlayAlertRoot{
   position:fixed !important;
   left:var(--alert-left, 8px) !important;
@@ -201,48 +201,15 @@ html,body{
   transform-origin:top center !important;
 }
 
-
 #overlayAlertRoot > #optionAlert.option-alert.show,
 #overlayAlertRoot #optionAlert.option-alert.show{
   transform:translateX(-50%) scale(1) !important;
 }
 
-/* ===== ALERT 좌측 반쪽/창끝 밀림 최종 복구 ===== */
-#overlayAlertRoot{
-  position:fixed !important;
-  right:auto !important;
-  bottom:auto !important;
-  inset:auto !important;
-  z-index:999999 !important;
-  pointer-events:none !important;
-  overflow:visible !important;
-  transform:none !important;
+/* 만약 ALERT가 root 밖으로 빠져도 브라우저 왼쪽/상단으로 튀지 않게 방어 */
+body > #optionAlert.option-alert{
+  display:none !important;
 }
-
-#overlayAlertRoot > #optionAlert.option-alert,
-#overlayAlertRoot #optionAlert.option-alert{
-  position:absolute !important;
-  left:0 !important;
-  top:0 !important;
-  right:auto !important;
-  bottom:auto !important;
-  inset:auto !important;
-  width:100% !important;
-  max-width:100% !important;
-  min-width:0 !important;
-  margin:0 !important;
-  transform:scale(.92) !important;
-  transform-origin:top center !important;
-}
-
-#overlayAlertRoot > #optionAlert.option-alert.show,
-#overlayAlertRoot #optionAlert.option-alert.show{
-  transform:scale(1) !important;
-}
-  body > #optionAlert.option-alert{
-  position:fixed !important;
-}
-
 </style>
 </head>
 <body>
