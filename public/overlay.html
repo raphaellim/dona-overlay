@@ -1198,6 +1198,117 @@ body > .option-alert.show,
   transform:translateX(-50%) scale(1) !important;
 }
 
+
+/* ===== 502/UI 가독성 보정 ===== */
+.notice-title,
+.account-title,
+.funding-title,
+.karaoke-title,
+.timer-label{
+  font-size:20px !important;
+  line-height:1.08 !important;
+  letter-spacing:-.035em !important;
+  font-weight:1000 !important;
+  text-shadow:none !important;
+}
+
+.notice-title{
+  text-align:left !important;
+  color:#f8fafc !important;
+  margin-bottom:6px !important;
+}
+
+.account-box{
+  padding:8px 10px !important;
+}
+
+.account-row{
+  gap:6px !important;
+}
+
+.account-title{
+  flex:0 0 auto !important;
+  min-width:auto !important;
+  padding-left:2px !important;
+  padding-right:4px !important;
+  white-space:nowrap !important;
+}
+
+.roller{
+  min-width:0 !important;
+  flex:1 1 auto !important;
+}
+
+.roller-item{
+  gap:4px !important;
+  padding-left:0 !important;
+  padding-right:0 !important;
+}
+
+.account-donor{
+  min-width:0 !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+  white-space:nowrap !important;
+}
+
+.account-amount{
+  font-size:.72em !important;
+  letter-spacing:-.035em !important;
+  text-shadow:none !important;
+  flex:0 0 auto !important;
+}
+
+.account-heart{
+  text-shadow:none !important;
+  filter:none !important;
+}
+
+/* 네온 과다 효과 제거 */
+.karaoke-title,
+.karaoke-notice,
+.karaoke-current,
+.funding-value,
+.funding-line b,
+.timer-value,
+.creator-name,
+.creator-total,
+.creator-amount,
+.creator-box,
+.notice-text,
+.notice-line{
+  text-shadow:none !important;
+  filter:none !important;
+}
+
+.karaoke-title{
+  color:#f8fafc !important;
+  text-align:left !important;
+}
+
+.karaoke-notice{
+  color:#fde68a !important;
+  text-align:left !important;
+}
+
+.karaoke-current{
+  color:#e0f2fe !important;
+}
+
+.funding-line b{
+  color:#e0f2fe !important;
+}
+
+.timer-value{
+  color:#f8fafc !important;
+}
+
+/* 크리에이터 후원금액은 만원 단위 표기를 유지 */
+.creator-total,
+.creator-amount{
+  letter-spacing:-.04em !important;
+}
+
 </style>
 </head>
 <body>
@@ -1364,6 +1475,11 @@ body > .option-alert.show,
   };
 
   function num(v){ const n=Number(v||0); return Number.isFinite(n)?n:0; }
+  function displayManAmount(won){
+    const v = Math.trunc(Number(won || 0) / 1000) / 10;
+    return v.toFixed(1).replace(/\.0$/, "");
+  }
+
   function displayAmount(won){
     return Math.floor(num(won)).toLocaleString("ko-KR");
   }
@@ -2182,6 +2298,11 @@ body > .option-alert.show,
   const overlayLiveFastRefresh = setInterval(() => {
     if(typeof refresh === "function") refresh();
   }, 1000);
+
+  window.addEventListener('unhandledrejection', (ev) => {
+    console.warn('[overlay unhandledrejection]', ev.reason);
+    ev.preventDefault();
+  });
 </script>
 <!-- notice box visible when ON even without text -->
 </body>

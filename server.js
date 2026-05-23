@@ -223,7 +223,7 @@ function normalizeOverlaySections(raw, base) {
 
 function normalizeSettings(settings) {
   const base = defaultSettings();
-  const raw = settings || {};
+  const raw = settings && typeof settings === 'object' ? settings : {};
 
   let presets = Array.isArray(raw.presets) && raw.presets.length
     ? raw.presets
@@ -232,7 +232,7 @@ function normalizeSettings(settings) {
         { ...base.presets[1], plusPrice: raw.prices?.eat ?? base.presets[1].plusPrice, minusPrice: raw.prices?.noeat ?? base.presets[1].minusPrice }
       ];
 
-  presets = presets.map((p, idx) => normalizePreset(p, idx));
+  presets = presets.map((p, idx) => normalizePreset(p || {}, idx));
   if (!presets.find(p => p.id === 'smoke')) presets.unshift(base.presets[0]);
   if (!presets.find(p => p.id === 'food')) presets.push(base.presets[1]);
 
@@ -324,14 +324,15 @@ function requireDb(res) {
 }
 
 async function readGlobalSettings() {
-  const { data, error } = await supabase.from('settings').select('data').eq('id', 1).single();
+  const { data, error } = await supabase.from('settings').select('data').eq('id', 1).maybeSingle();
   if (error && error.code !== 'PGRST116') throw error;
 
-  if (!data) {
+  if (!data || !data.data || typeof data.data !== 'object') {
     const settings = defaultSettings();
     await writeGlobalSettings(settings);
     return settings;
   }
+
   return normalizeSettings(data.data);
 }
 
@@ -525,15 +526,16 @@ async function saveSharedGlobalSettings(updates) {
 
 async function readEffectiveSettings(stationSlug, broadcastId) {
   const global = await readGlobalSettings();
-  const stationMap = global.stationSettings || {};
-  const stationSettings = stationMap[stationSlug] || {};
-  const scoped = broadcastId && stationSettings[broadcastId] ? stationSettings[broadcastId] : {};
+  const stationMap = global.stationSettings && typeof global.stationSettings === 'object' ? global.stationSettings : {};
+  const stationSettings = stationMap[stationSlug] && typeof stationMap[stationSlug] === 'object' ? stationMap[stationSlug] : {};
+  const scoped = broadcastId && stationSettings[broadcastId] && typeof stationSettings[broadcastId] === 'object'
+    ? stationSettings[broadcastId]
+    : {};
 
-  const merged = normalizeSettings({
+  return normalizeSettings({
     ...global,
     ...scoped,
-    // 아래 항목은 방송국 공통으로 고정합니다.
-    // 과거 버전에서 방송별 scoped 안에 남아 있어도 global 값을 우선 사용합니다.
+    // 방송국 공통 유지 항목
     title: global.title,
     titleImage: global.titleImage,
     noticeTitle: global.noticeTitle,
@@ -543,8 +545,6 @@ async function readEffectiveSettings(stationSlug, broadcastId) {
     fundingData: global.fundingData,
     stationSettings: global.stationSettings || {}
   });
-
-  return merged;
 }
 
 async function saveEffectiveSettings(stationSlug, broadcastId, updates) {
@@ -1676,6 +1676,30 @@ app.get('/api/donations', async (req, res) => {
   }
 });
 
+
+function safeBuildSummary(settings, donations, broadcast, station) {
+  const safeSettings = normalizeSettings(settings || {});
+  const safeDonations = Array.isArray(donations) ? donations : [];
+  try {
+    return buildSummary(safeSettings, safeDonations, broadcast, station);
+  } catch (e) {
+    console.error('[safeBuildSummary]', e);
+    return {
+      ...safeSettings,
+      station: station ? stationToClient(station) : null,
+      broadcast: broadcast ? broadcastToClient(broadcast) : null,
+      creators: [],
+      creatorRows: [],
+      donors: [],
+      donorRows: [],
+      accountDonors: [],
+      accountRoller: [],
+      recent: [],
+      donations: []
+    };
+  }
+}
+
 app.get('/api/summary', async (req, res) => {
   try {
     if (!requireDb(res)) return;
@@ -1683,10 +1707,35 @@ app.get('/api/summary', async (req, res) => {
     if (!ctx) return;
     const broadcastId = req.query.broadcastId || ctx.active.id;
     const settings = await readEffectiveSettings(ctx.station.slug, broadcastId);
-    const donations = await readDonations(ctx.station.id, broadcastId);
-    res.json(buildSummary(settings, donations, ctx.active, ctx.station));
+    let donations = [];
+    try {
+      donations = await readDonations(ctx.station.id, broadcastId);
+    } catch (donErr) {
+      console.error('[api/summary readDonations]', donErr);
+      donations = [];
+    }
+    res.json(safeBuildSummary(settings, donations, ctx.active, ctx.station));
   } catch (e) {
-    res.status(500).json({ error: e.message || '합산 조회 실패' });
+    console.error('[api/summary fatal]', e);
+    try {
+      const fallback = normalizeSettings({});
+      res.json({
+        ...fallback,
+        station: null,
+        broadcast: null,
+        creators: [],
+        creatorRows: [],
+        donors: [],
+        donorRows: [],
+        accountDonors: [],
+        accountRoller: [],
+        recent: [],
+        donations: [],
+        errorMessage: e.message || '합산 조회 실패'
+      });
+    } catch {
+      res.status(500).json({ error: e.message || '합산 조회 실패' });
+    }
   }
 });
 
