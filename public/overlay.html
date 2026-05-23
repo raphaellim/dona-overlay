@@ -356,14 +356,12 @@
 
   .alert-donor{
     display:block;
-    font-size:32px;
+    font-size:34px !important;
     line-height:1.05;
-    font-weight:1000;
-    color:#ffffff;
-    letter-spacing:-.07em;
-    text-shadow:
-      0 2px 3px rgba(0,0,0,.9),
-      0 0 12px rgba(255,255,255,.22);
+    font-weight:1000 !important;
+    color:inherit;
+    letter-spacing:-.03em;
+   text-shadow:none !important;
     margin-bottom:3px;
   }
 
@@ -1600,18 +1598,50 @@ body > .option-alert.show,
   text-shadow:none !important;
 }
 
+/* ===== ALERT 후원자명 컬러풀 반짝임 ===== */
 .blink-donor{
-  animation: donorBlink .65s infinite alternate;
+  display:inline-block;
+  font-weight:1000 !important;
+
+  background:linear-gradient(
+    90deg,
+    #ffffff,
+    #ff4fa3,
+    #ffd84d,
+    #44f7ff,
+    #8b5cff,
+    #ffffff
+  );
+  background-size:300% 100%;
+  -webkit-background-clip:text;
+  background-clip:text;
+  color:transparent !important;
+
+  animation:
+    donorColorFlow 1.15s linear infinite,
+    donorPop .72s ease-in-out infinite alternate;
+
+  text-shadow:none !important;
+  filter:none !important;
 }
 
-@keyframes donorBlink{
-  from{
-    opacity:1;
-    transform:scale(1);
+@keyframes donorColorFlow{
+  0%{
+    background-position:0% 50%;
   }
-  to{
-    opacity:.55;
-    transform:scale(1.04);
+  100%{
+    background-position:300% 50%;
+  }
+}
+
+@keyframes donorPop{
+  0%{
+    transform:scale(1);
+    opacity:.92;
+  }
+  100%{
+    transform:scale(1.055);
+    opacity:1;
   }
 }
 
@@ -2210,7 +2240,7 @@ body > .option-alert.show,
     return `
   <div class="alert-up-line">
     <span class="alert-donor blink-donor">${donor}</span>
-    <span class="alert-up">+UP</span>
+    <span class="alert-up"> UP</span>
   </div>
   <div class="alert-creator-line">
     ${creator}
@@ -2402,7 +2432,7 @@ body > .option-alert.show,
     return `
   <div class="alert-up-line">
     <span class="alert-donor blink-donor">${displayTitle}</span>
-    <span class="alert-up">+UP</span>
+    <span class="alert-up"> UP</span>
   </div>
   <div class="alert-creator-line">
     ${soundName}
