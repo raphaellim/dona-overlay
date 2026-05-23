@@ -116,6 +116,20 @@ html,body{
 .blink-donor{display:inline-block;font-weight:1000!important;background:linear-gradient(90deg,#fff,#ff4fa3,#ffd84d,#44f7ff,#8b5cff,#fff);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent!important;animation:donorColorFlow 1.15s linear infinite,donorPop .72s ease-in-out infinite alternate;text-shadow:none!important;filter:none!important}@keyframes donorColorFlow{0%{background-position:0% 50%}100%{background-position:300% 50%}}@keyframes donorPop{0%{transform:scale(1);opacity:.92}100%{transform:scale(1.055);opacity:1}}
 
 @media(max-width:720px){:root{--overlay-w:268px;--top:50px;--right:12px}.overlay-stack{gap:8px!important}.broadcast-timer-box{padding:7px 14px!important;border-radius:16px!important}.timer-label{font-size:15px!important}.timer-value{font-size:20px!important}.account-title{font-size:20px!important}.roller{font-size:24px;height:31px!important;line-height:31px}.roller-item{height:31px!important;min-height:31px!important}.creator-name{flex-basis:76px;width:76px;font-size:24px}.donation-amount{font-size:24px}.creator-sub{font-size:22px;gap:9px}.notice-text{font-size:19px}.option-alert{width:calc(100% - 12px)!important}.alert-donor{font-size:clamp(28px,8vw,39px)!important}.alert-up{font-size:clamp(18px,5vw,24px)!important}.alert-creator-line{font-size:clamp(20px,6vw,28px)!important}}
+/* ===== 타이머 OFF 강제 숨김 최종 보정 ===== */
+#broadcastTimerBox.hidden,
+.broadcast-timer-box.hidden{
+  display:none !important;
+  visibility:hidden !important;
+  opacity:0 !important;
+  height:0 !important;
+  min-height:0 !important;
+  max-height:0 !important;
+  padding:0 !important;
+  margin:0 !important;
+  border:0 !important;
+  overflow:hidden !important;
+}
 </style>
 </head>
 <body>
