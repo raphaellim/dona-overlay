@@ -200,6 +200,66 @@ textarea{resize:vertical;line-height:1.45}
   }
 }
 
+
+/* ===== 노래방 UI/UX 최종 보정 ===== */
+#karaokeAdminCard .manage-grid{
+  grid-template-columns:1fr !important;
+  gap:12px !important;
+}
+
+#karaokeAdminCard .history-grid{
+  grid-template-columns:1fr 1fr !important;
+}
+
+#karaokeAdminCard .karaoke-inline{
+  grid-template-columns:minmax(180px,1.5fr) 120px 90px 78px !important;
+  align-items:end !important;
+}
+
+#karaokeAdminCard .karaoke-song-inline{
+  grid-template-columns:minmax(180px,1.2fr) 110px minmax(230px,1.8fr) 88px !important;
+  align-items:end !important;
+}
+
+#karaokeAdminCard .btn{
+  white-space:nowrap !important;
+  word-break:keep-all !important;
+  min-height:42px !important;
+}
+
+#karaokeAdminCard .karaoke-song-inline .btn,
+#karaokeAdminCard .karaoke-inline .btn{
+  writing-mode:horizontal-tb !important;
+  min-width:74px !important;
+}
+
+#karaokeAdminCard input,
+#karaokeAdminCard select{
+  font-size:15px !important;
+  min-height:42px !important;
+}
+
+#karaokeSongNick,
+#karaokeCoinNick{
+  min-width:180px !important;
+}
+
+#karaokeSongTitle{
+  min-width:230px !important;
+}
+
+.manage-actions .btn{
+  min-height:30px !important;
+}
+
+@media(max-width:1100px){
+  #karaokeAdminCard .karaoke-inline,
+  #karaokeAdminCard .karaoke-song-inline,
+  #karaokeAdminCard .history-grid{
+    grid-template-columns:1fr !important;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -365,6 +425,16 @@ textarea{resize:vertical;line-height:1.45}
           </div>
         </div>
         <div style="margin-top:10px"><button class="btn green" onclick="saveKaraokeData()">노래방 저장</button></div>
+        <div class="manage-grid history-grid" style="margin-top:12px">
+          <div class="manage-panel">
+            <h3>코인내역</h3>
+            <div id="karaokeCoinHistoryList" class="manage-list"></div>
+          </div>
+          <div class="manage-panel">
+            <h3>완료된 노래</h3>
+            <div id="karaokeDoneList" class="manage-list"></div>
+          </div>
+        </div>
       </section>
 
 
@@ -468,9 +538,15 @@ function renderKaraokeManager(){
   if($('#karaokeTitle')) $('#karaokeTitle').value = data.title || '노래방 공지 알림판';
   if($('#karaokeNotice')) $('#karaokeNotice').value = data.notice || data.ticker || '';
 
+  const hasCoin = u => {
+    const c = u.coins || {};
+    return Number(c.verse||0) + Number(c.full||0) + Number(c.special||0) > 0;
+  };
+
   const userBox = $('#karaokeUserList');
   if(userBox){
-    userBox.innerHTML = data.users.length ? data.users.map(u => `
+    const activeUsers = data.users.filter(hasCoin);
+    userBox.innerHTML = activeUsers.length ? activeUsers.map(u => `
       <div class="manage-row">
         <div class="manage-row-top"><span>${esc(u.nick)}</span><button class="btn red mini" onclick="deleteKaraokeUser('${escAttr(u.nick)}')">삭제</button></div>
         <div class="manage-row-sub">
@@ -478,12 +554,17 @@ function renderKaraokeManager(){
           <span class="coin-pill">완곡 ${Number(u.coins?.full||0)}</span>
           <span class="coin-pill">스페셜 ${Number(u.coins?.special||0)}</span>
         </div>
-      </div>`).join('') : `<div class="resultBox">코인을 추가한 닉네임이 없습니다.</div>`;
+        <div class="manage-actions">
+          <button class="btn mini" onclick="editKaraokeCoin('${escAttr(u.nick)}','verse')">1절수정</button>
+          <button class="btn mini" onclick="editKaraokeCoin('${escAttr(u.nick)}','full')">완곡수정</button>
+          <button class="btn mini" onclick="editKaraokeCoin('${escAttr(u.nick)}','special')">스페셜수정</button>
+        </div>
+      </div>`).join('') : `<div class="resultBox">보유 코인이 있는 닉네임이 없습니다.</div>`;
   }
 
   const songBox = $('#karaokeSongList');
   if(songBox){
-    const activeSongs = data.songs.filter(s => s.status !== '삭제');
+    const activeSongs = data.songs.filter(s => s.status !== '삭제' && s.status !== '완료');
     songBox.innerHTML = activeSongs.length ? activeSongs.map((s, idx) => `
       <div class="manage-row">
         <div class="manage-row-top"><span>${idx+1}. ${esc(s.nick)} - ${esc(s.title)}</span><span class="status-pill ${songStatusClass(s.status)}">${esc(s.status||'대기')}</span></div>
@@ -496,7 +577,30 @@ function renderKaraokeManager(){
           <button class="btn blue mini" onclick="editKaraokeSong('${escAttr(s.id)}')">변경</button>
           <button class="btn red mini" onclick="deleteKaraokeSong('${escAttr(s.id)}')">삭제</button>
         </div>
-      </div>`).join('') : `<div class="resultBox">선곡 리스트가 없습니다.</div>`;
+      </div>`).join('') : `<div class="resultBox">진행/대기 중인 선곡이 없습니다.</div>`;
+  }
+
+  const coinHistory = $('#karaokeCoinHistoryList');
+  if(coinHistory){
+    coinHistory.innerHTML = data.users.length ? data.users.map(u => `
+      <div class="manage-row">
+        <div class="manage-row-top"><span>${esc(u.nick)}</span></div>
+        <div class="manage-row-sub">
+          <span class="coin-pill">1절 ${Number(u.coins?.verse||0)}</span>
+          <span class="coin-pill">완곡 ${Number(u.coins?.full||0)}</span>
+          <span class="coin-pill">스페셜 ${Number(u.coins?.special||0)}</span>
+        </div>
+      </div>`).join('') : `<div class="resultBox">코인 내역 없음</div>`;
+  }
+
+  const doneList = $('#karaokeDoneList');
+  if(doneList){
+    const doneSongs = data.songs.filter(s => s.status === '완료');
+    doneList.innerHTML = doneSongs.length ? doneSongs.map((s, idx) => `
+      <div class="manage-row">
+        <div class="manage-row-top"><span>${idx+1}. ${esc(s.nick)} - ${esc(s.title)}</span><span class="status-pill done">완료</span></div>
+        <div class="manage-row-sub">${coinLabel(s.type)}</div>
+      </div>`).join('') : `<div class="resultBox">완료된 노래 없음</div>`;
   }
 }
 function syncKaraokeInputs(){
@@ -504,6 +608,22 @@ function syncKaraokeInputs(){
   if($('#karaokeTitle')) data.title=$('#karaokeTitle').value.trim()||'노래방 공지 알림판';
   if($('#karaokeNotice')) data.notice=$('#karaokeNotice').value.trim();
 }
+
+async function editKaraokeCoin(nick,type){
+  const data=getKaraokeData();
+  const user=data.users.find(u=>u.nick===nick);
+  if(!user) return;
+  if(!user.coins) user.coins={verse:0,full:0,special:0};
+  const now=Number(user.coins[type]||0);
+  const next=prompt(`${nick} ${coinKeyLabel(type)} 수량`, String(now));
+  if(next===null) return;
+  const n=Math.max(0, Number(next||0));
+  if(!Number.isFinite(n)) return alert('숫자로 입력하세요.');
+  user.coins[type]=n;
+  renderKaraokeManager();
+  await saveKaraokeData(false);
+}
+
 async function addKaraokeCoin(){
   const data=getKaraokeData();
   const nick=$('#karaokeCoinNick').value.trim();

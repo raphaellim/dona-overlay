@@ -1102,6 +1102,102 @@ body > .option-alert.show,
   transform:translateX(-50%) scale(1) !important;
 }
 
+
+/* ===== FINAL UI/UX: amount/title/readability/alert ===== */
+.account-title,
+.funding-title,
+.karaoke-title,
+.timer-label{
+  font-size:20px !important;
+  line-height:1.08 !important;
+  letter-spacing:-.04em !important;
+  font-weight:1000 !important;
+}
+
+.timer-value{
+  font-size:22px !important;
+}
+
+.account-amount{
+  font-size:.72em !important;
+  letter-spacing:-.04em !important;
+}
+
+.karaoke-box,
+.funding-box,
+.notice-box{
+  text-align:left !important;
+}
+
+.karaoke-box{
+  padding:12px 14px !important;
+}
+
+.karaoke-title{
+  text-align:center !important;
+  margin-bottom:5px !important;
+}
+
+.karaoke-notice{
+  font-size:17px !important;
+  line-height:1.15 !important;
+  text-align:center !important;
+}
+
+.karaoke-current,
+.karaoke-reserve-title,
+.karaoke-song-row,
+.funding-value,
+.notice-text,
+.notice-line{
+  text-align:left !important;
+}
+
+.karaoke-song-row{
+  font-size:15px !important;
+  grid-template-columns:38px minmax(0,1fr) auto !important;
+}
+
+.karaoke-song-row em{
+  max-width:86px !important;
+}
+
+.karaoke-coin-ticker span{
+  animation:karaokeTickerMove 8s linear infinite !important;
+  font-size:15px !important;
+}
+
+.queue-empty{
+  text-align:left !important;
+  opacity:.72 !important;
+}
+
+/* ALERT는 계좌후원 바로 아래 */
+#overlayAlertRoot{
+  left:var(--alert-left, 8px) !important;
+  top:var(--alert-top, 80px) !important;
+  width:var(--alert-width, 420px) !important;
+  height:var(--alert-height, 170px) !important;
+  overflow:visible !important;
+  z-index:999999 !important;
+}
+
+#overlayAlertRoot #optionAlert.option-alert{
+  position:absolute !important;
+  left:50% !important;
+  top:0 !important;
+  right:auto !important;
+  bottom:auto !important;
+  width:calc(100% - 12px) !important;
+  max-width:calc(100% - 12px) !important;
+  transform:translateX(-50%) scale(.92) !important;
+  margin:0 !important;
+}
+
+#overlayAlertRoot #optionAlert.option-alert.show{
+  transform:translateX(-50%) scale(1) !important;
+}
+
 </style>
 </head>
 <body>
@@ -1268,7 +1364,9 @@ body > .option-alert.show,
   };
 
   function num(v){ const n=Number(v||0); return Number.isFinite(n)?n:0; }
-  function displayAmount(won){ const cut=Math.floor(num(won)/1000)/10; return cut.toFixed(1).replace(/\.0$/,""); }
+  function displayAmount(won){
+    return Math.floor(num(won)).toLocaleString("ko-KR");
+  }
   function normalizeName(v){ return String(v??"").replace(/\s+/g," ").trim(); }
   function escapeHtml(str){ return String(str).replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[ch])); }
   function formatCreatorName(name){
@@ -1979,7 +2077,6 @@ body > .option-alert.show,
       const vw = window.innerWidth || document.documentElement.clientWidth || rect.width;
       const left = Math.max(8, Math.round(rect.left));
       const width = Math.max(240, Math.min(Math.round(rect.width), vw - left - 8));
-
       root.style.setProperty("--alert-left", left + "px");
       root.style.setProperty("--alert-top", Math.round(rect.bottom + 8) + "px");
       root.style.setProperty("--alert-width", width + "px");

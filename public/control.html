@@ -514,11 +514,11 @@ function renderFundingManager(){
   }
   box.innerHTML = data.items.map((f, idx) => `
     <div class="funding-rule">
-      <label>펀딩명<input class="fund-title" value="${escAttr(f.title)}"></label>
-      <label>현재<input class="fund-current" type="number" min="0" value="${Number(f.current||0)}"></label>
-      <label>목표<input class="fund-target" type="number" min="0" value="${Number(f.target||0)}"></label>
+      <label>펀딩명<input class="fund-title" value="${escAttr(f.title)}" onchange="saveFundingData(false)"></label>
+      <label>현재<input class="fund-current" type="number" min="0" value="${Number(f.current||0)}" onchange="saveFundingData(false)"></label>
+      <label>목표<input class="fund-target" type="number" min="0" value="${Number(f.target||0)}" onchange="saveFundingData(false)"></label>
       <label>표시
-        <select class="fund-enabled">
+        <select class="fund-enabled" onchange="saveFundingData(false)">
           <option value="true" ${f.enabled!==false?'selected':''}>ON</option>
           <option value="false" ${f.enabled===false?'selected':''}>OFF</option>
         </select>
@@ -551,7 +551,21 @@ function collectFundingData(){
   return {items};
 }
 
-function addFundingItem(){
+
+async function saveFundingData(showMessage=true){
+  try{
+    settings.fundingData = collectFundingData();
+    const saved = await api('/api/funding-data', {
+      method:'POST',
+      body:JSON.stringify({fundingData:settings.fundingData})
+    });
+    if(saved && saved.fundingData) settings.fundingData = saved.fundingData;
+    renderFundingManager();
+    if(showMessage) alert('펀딩 저장 완료');
+  }catch(e){ alert(e.message); }
+}
+
+async function addFundingItem(){
   const data = getFundingData();
   const title = $('#fundingTitleInput').value.trim();
   if(!title) return alert('펀딩명을 입력하세요.');
@@ -566,13 +580,15 @@ function addFundingItem(){
   $('#fundingCurrentInput').value = 0;
   $('#fundingTargetInput').value = 10;
   renderFundingManager();
+  await saveFundingData(false);
 }
 
-function deleteFundingItem(idx){
+async function deleteFundingItem(idx){
   const data = getFundingData();
   if(!confirm('이 펀딩을 삭제할까요?')) return;
   data.items.splice(idx, 1);
   renderFundingManager();
+  await saveFundingData(false);
 }
 
 async function loadSettings(){
