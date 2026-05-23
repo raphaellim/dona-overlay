@@ -44,6 +44,9 @@ function defaultSettings() {
     creators: [],
     presets: defaultPresets(),
     prices: { smoke: 11900, nosmoke: 12000, eat: 14000, noeat: 15000 },
+    karaokeData: normalizeKaraokeData({}),
+    fundingData: normalizeFundingData({}),
+    broadcastTimerData: normalizeBroadcastTimerData({}),
     soundRules: {
       enabled: true,
       defaultSound: 'alert.mp3',
@@ -134,6 +137,67 @@ function normalizeSoundRules(raw, base) {
   };
 }
 
+
+
+function normalizeFundingData(raw) {
+  const value = raw && typeof raw === 'object' ? raw : {};
+  const items = Array.isArray(value.items) ? value.items : [];
+  return {
+    items: items.map((f, idx) => ({
+      id: String(f.id || ('fund_' + Date.now() + '_' + idx)).replace(/[^a-zA-Z0-9_-]/g, '') || ('fund_' + idx),
+      title: String(f.title || `펀딩${idx + 1}`).trim(),
+      current: Math.max(0, Number(f.current || 0)),
+      target: Math.max(0, Number(f.target || 0)),
+      enabled: f.enabled !== false
+    })).filter(f => f.title).slice(0, 30)
+  };
+}
+
+function normalizeBroadcastTimerData(raw) {
+  const value = raw && typeof raw === 'object' ? raw : {};
+  return {
+    running: value.running === true,
+    startedAt: value.startedAt ? String(value.startedAt) : '',
+    endedAt: value.endedAt ? String(value.endedAt) : ''
+  };
+}
+
+function normalizeKaraokeData(raw) {
+  const value = raw && typeof raw === 'object' ? raw : {};
+  const coinTypes = ['verse', 'full', 'special'];
+
+  const users = Array.isArray(value.users) ? value.users.map(u => {
+    const coins = u && typeof u.coins === 'object' ? u.coins : {};
+    return {
+      nick: normName(u.nick || u.name || ''),
+      coins: {
+        verse: Math.max(0, Number(coins.verse || 0)),
+        full: Math.max(0, Number(coins.full || 0)),
+        special: Math.max(0, Number(coins.special || 0))
+      }
+    };
+  }).filter(u => u.nick) : [];
+
+  const songs = Array.isArray(value.songs) ? value.songs.map(s => {
+    const type = coinTypes.includes(String(s.type || '')) ? String(s.type) : 'verse';
+    const status = ['진행','대기','보류','완료'].includes(String(s.status || '')) ? String(s.status) : '대기';
+    return {
+      id: String(s.id || ('song_' + Date.now() + '_' + Math.random().toString(36).slice(2))),
+      nick: normName(s.nick || ''),
+      title: String(s.title || '').trim(),
+      type,
+      status
+    };
+  }).filter(s => s.nick && s.title) : [];
+
+  return {
+    title: String(value.title || '노래방 공지 알림판'),
+    ticker: String(value.ticker || '신청곡은 채팅으로 남겨주세요'),
+    users,
+    songs
+  };
+}
+
 function normalizeOverlaySections(raw, base) {
   const fallback = base || {
     account: true,
@@ -186,6 +250,9 @@ function normalizeSettings(settings) {
     viewerToken: String(raw.viewerToken ?? base.viewerToken ?? ''),
     overlaySections: normalizeOverlaySections(raw.overlaySections, base.overlaySections),
     soundRules: normalizeSoundRules(raw.soundRules, base.soundRules),
+    karaokeData: normalizeKaraokeData(raw.karaokeData || base.karaokeData),
+    fundingData: normalizeFundingData(raw.fundingData || base.fundingData),
+    broadcastTimerData: normalizeBroadcastTimerData(raw.broadcastTimerData || base.broadcastTimerData),
     columns: Math.max(1, Math.min(6, Number(raw.columns || base.columns))),
     maxCreators: Math.max(1, Math.min(50, Number(raw.maxCreators || base.maxCreators))),
     creators: Array.isArray(raw.creators) ? raw.creators.map(normName).filter(Boolean) : base.creators,
@@ -203,7 +270,7 @@ function normalizeSettings(settings) {
 const SETTING_FIELDS = [
   'title', 'titleImage', 'noticeTitle', 'notice', 'noticeColors',
   'viewerPassword', 'viewerToken', 'overlaySections',
-  'columns', 'maxCreators', 'creators', 'presets', 'prices', 'soundRules'
+  'columns', 'maxCreators', 'creators', 'presets', 'prices', 'soundRules', 'karaokeData', 'fundingData', 'broadcastTimerData'
 ];
 
 function pickScopedSettings(settings) {
@@ -1439,6 +1506,9 @@ app.post('/api/settings', async (req, res) => {
       maxCreators: body.maxCreators ?? 12,
       creators: Array.isArray(body.creators) ? body.creators.map(normName).filter(Boolean) : [],
       presets: Array.isArray(body.presets) ? body.presets : [],
+      karaokeData: normalizeKaraokeData(body.karaokeData),
+      fundingData: normalizeFundingData(body.fundingData),
+      broadcastTimerData: normalizeBroadcastTimerData(body.broadcastTimerData),
       soundRules: normalizeSoundRules(body.soundRules, undefined)
     };
 
@@ -1450,6 +1520,79 @@ app.post('/api/settings', async (req, res) => {
     res.status(500).json({ error: e.message || '설정 저장 실패' });
   }
 });
+
+
+app.post('/api/karaoke-data', async (req, res) => {
+  try {
+    if (!requireDb(res)) return;
+    const ctx = await getStationContext(req, res);
+    if (!ctx) return;
+    if (!await operatorAllowed(req, ctx.station, ctx.active)) {
+      return res.status(401).json({ error: '방송 비밀번호 또는 방송국 관리자 권한이 필요합니다.' });
+    }
+    const current = await readEffectiveSettings(ctx.station.slug, ctx.active.id);
+    const karaokeData = normalizeKaraokeData(req.body.karaokeData || req.body || {});
+    await saveEffectiveSettings(ctx.station.slug, ctx.active.id, { ...current, karaokeData });
+    const effective = await readEffectiveSettings(ctx.station.slug, ctx.active.id);
+    res.json({ ok: true, karaokeData: effective.karaokeData });
+  } catch (e) {
+    res.status(500).json({ error: e.message || '노래방 저장 실패' });
+  }
+});
+
+app.post('/api/funding-data', async (req, res) => {
+  try {
+    if (!requireDb(res)) return;
+    const ctx = await getStationContext(req, res);
+    if (!ctx) return;
+    if (!await operatorAllowed(req, ctx.station, ctx.active)) {
+      return res.status(401).json({ error: '방송 비밀번호 또는 방송국 관리자 권한이 필요합니다.' });
+    }
+    const current = await readEffectiveSettings(ctx.station.slug, ctx.active.id);
+    const fundingData = normalizeFundingData(req.body.fundingData || req.body || {});
+    await saveEffectiveSettings(ctx.station.slug, ctx.active.id, { ...current, fundingData });
+    const effective = await readEffectiveSettings(ctx.station.slug, ctx.active.id);
+    res.json({ ok: true, fundingData: effective.fundingData });
+  } catch (e) {
+    res.status(500).json({ error: e.message || '펀딩 저장 실패' });
+  }
+});
+
+app.post('/api/broadcast-timer/start', async (req, res) => {
+  try {
+    if (!requireDb(res)) return;
+    const ctx = await getStationContext(req, res);
+    if (!ctx) return;
+    if (!await operatorAllowed(req, ctx.station, ctx.active)) {
+      return res.status(401).json({ error: '방송 비밀번호 또는 방송국 관리자 권한이 필요합니다.' });
+    }
+    const current = await readEffectiveSettings(ctx.station.slug, ctx.active.id);
+    const broadcastTimerData = { running: true, startedAt: new Date().toISOString(), endedAt: '' };
+    await saveEffectiveSettings(ctx.station.slug, ctx.active.id, { ...current, broadcastTimerData });
+    res.json({ ok: true, broadcastTimerData });
+  } catch (e) {
+    res.status(500).json({ error: e.message || '방송 시작 실패' });
+  }
+});
+
+app.post('/api/broadcast-timer/end', async (req, res) => {
+  try {
+    if (!requireDb(res)) return;
+    const ctx = await getStationContext(req, res);
+    if (!ctx) return;
+    if (!await operatorAllowed(req, ctx.station, ctx.active)) {
+      return res.status(401).json({ error: '방송 비밀번호 또는 방송국 관리자 권한이 필요합니다.' });
+    }
+    const current = await readEffectiveSettings(ctx.station.slug, ctx.active.id);
+    const prev = normalizeBroadcastTimerData(current.broadcastTimerData);
+    const broadcastTimerData = { running: false, startedAt: prev.startedAt || '', endedAt: new Date().toISOString() };
+    await saveEffectiveSettings(ctx.station.slug, ctx.active.id, { ...current, broadcastTimerData });
+    res.json({ ok: true, broadcastTimerData });
+  } catch (e) {
+    res.status(500).json({ error: e.message || '방송 종료 실패' });
+  }
+});
+
 
 /* 후원/합산 */
 app.get('/api/donations', async (req, res) => {
@@ -1546,6 +1689,21 @@ app.post('/api/donations/batch', async (req, res) => {
 
     const { data, error } = await supabase.from('donations').insert(created).select();
     if (error) throw error;
+
+    const fundingId = String(req.body.fundingId || '').trim();
+    if (fundingId) {
+      const current = await readEffectiveSettings(ctx.station.slug, ctx.active.id);
+      const fundingData = normalizeFundingData(current.fundingData);
+      const item = fundingData.items.find(f => f.id === fundingId);
+      if (item) {
+        let units = Math.trunc(Number(req.body.fundingUnits || 0));
+        if (!units || units < 0) units = Math.floor(grandTotal / 10000);
+        if (units > 0) {
+          item.current = Number(item.current || 0) + units;
+          await saveEffectiveSettings(ctx.station.slug, ctx.active.id, { ...current, fundingData });
+        }
+      }
+    }
 
     res.json({ ok: true, station: stationToClient(ctx.station), broadcast: broadcastToClient(ctx.active), count: data.length, donations: data.map(dbRowToDonation) });
   } catch (e) {

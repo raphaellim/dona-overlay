@@ -55,6 +55,7 @@ function render(){
       <div>
         <button class="btn blue mini" onclick="openStation('${s.slug}')">관리</button>
         <button class="btn mini" onclick="copyOverlay('${s.slug}','${s.overlayToken}')">복사</button>
+        <button class="btn red mini" onclick="deleteStation('${s.id}','${esc(s.name)}')">삭제</button>
         <button class="btn red mini" onclick="regen('${s.id}')">토큰재생성</button>
       </div>
     </div>
@@ -71,9 +72,18 @@ async function createStation(){
     alert('방송국 생성 완료'); await load();
   }catch(e){alert(e.message)}
 }
+async function deleteStation(id,name){
+  const pw=document.getElementById('masterPw').value;
+  if(!confirm(`방송국 "${name}" 을 삭제할까요? 후원/방송 데이터도 같이 삭제됩니다.`)) return;
+  if(prompt('삭제하려면 DELETE 를 입력하세요') !== 'DELETE') return;
+  try{await api('/api/stations/'+id,{method:'DELETE',headers:{'x-admin-password':pw}}); alert('삭제 완료'); await load();}catch(e){alert(e.message)}
+}
+
 async function regen(id){
   const pw=document.getElementById('masterPw').value;
-  try{await api('/api/stations/'+id+'/token',{method:'POST',headers:{'x-admin-password':pw}}); await load();}catch(e){alert(e.message)}
+  if(!confirm('토큰을 재생성하면 기존 오버레이 URL은 더 이상 작동하지 않습니다. 계속할까요?')) return;
+  if(prompt('재생성하려면 TOKEN 을 입력하세요') !== 'TOKEN') return;
+  try{await api('/api/stations/'+id+'/token',{method:'POST',headers:{'x-admin-password':pw}}); alert('토큰 재생성 완료'); await load();}catch(e){alert(e.message)}
 }
 function openStation(slug){location.href='/station_control.html?station='+encodeURIComponent(slug)}
 async function copyOverlay(slug,token){

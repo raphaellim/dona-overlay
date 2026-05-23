@@ -49,6 +49,98 @@ textarea{resize:vertical;line-height:1.45}
 .preset-fields .full{grid-column:1/-1}.preset-fields label{font-size:11px}.preset-fields .input{padding:8px 9px;font-size:14px;border-radius:10px}
 .savebar{position:sticky;bottom:10px;z-index:10;background:rgba(15,23,42,.94);border:1px solid var(--line2);border-radius:16px;padding:10px;display:flex;gap:8px;align-items:center;justify-content:space-between;backdrop-filter:blur(4px)}
 @media(max-width:980px){.layout,.grid-2,.grid-3,.toggle-grid,.preset-grid,.sound-rule{grid-template-columns:1fr}.top{flex-direction:column}.notice-color-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+  .karaoke-manage-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+  }
+  .karaoke-panel{
+    border:1px solid #243047;
+    background:#101827;
+    border-radius:14px;
+    padding:12px;
+  }
+  .karaoke-panel h3{
+    margin:0 0 10px;
+    font-size:16px;
+  }
+  .karaoke-inline{
+    display:grid;
+    grid-template-columns:1fr 120px 90px auto;
+    gap:8px;
+    align-items:end;
+  }
+  .karaoke-song-inline{
+    display:grid;
+    grid-template-columns:1fr 110px 1.4fr auto;
+    gap:8px;
+    align-items:end;
+  }
+  .karaoke-list{
+    margin-top:10px;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    max-height:280px;
+    overflow:auto;
+  }
+  .karaoke-row{
+    border:1px solid #2c3a55;
+    background:#0b1220;
+    border-radius:12px;
+    padding:10px;
+  }
+  .karaoke-row-top{
+    display:flex;
+    justify-content:space-between;
+    gap:8px;
+    align-items:center;
+    font-weight:800;
+  }
+  .karaoke-row-sub{
+    margin-top:4px;
+    color:#94a3b8;
+    font-size:12px;
+  }
+  .karaoke-actions{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+    margin-top:8px;
+  }
+  .coin-pill{
+    display:inline-flex;
+    align-items:center;
+    gap:4px;
+    border-radius:999px;
+    padding:3px 8px;
+    background:#172033;
+    border:1px solid #334155;
+    font-size:12px;
+    margin-right:4px;
+  }
+  .status-pill{
+    display:inline-flex;
+    border-radius:999px;
+    padding:3px 8px;
+    font-size:12px;
+    font-weight:900;
+    border:1px solid #334155;
+    background:#172033;
+  }
+  .status-pill.run{color:#fef08a;border-color:#eab30855;background:#713f121f}
+  .status-pill.wait{color:#93c5fd;border-color:#3b82f655;background:#1e3a8a22}
+  .status-pill.hold{color:#fca5a5;border-color:#ef444455;background:#7f1d1d22}
+  .status-pill.done{color:#86efac;border-color:#22c55e55;background:#14532d22}
+  @media(max-width:900px){
+    .karaoke-manage-grid,
+    .karaoke-inline,
+    .karaoke-song-inline{
+      grid-template-columns:1fr;
+    }
+  }
+
 </style>
 </head>
 <body>
@@ -116,6 +208,20 @@ textarea{resize:vertical;line-height:1.45}
     </div>
 
     <div>
+
+      <section class="card">
+        <h2>펀딩 관리</h2>
+        <p class="muted">여러 펀딩을 등록할 수 있습니다. 후원 입력 페이지에서 펀딩을 선택하면 만원단위로 현재값에 올라갑니다.</p>
+        <div class="grid-3">
+          <div class="row"><label>펀딩명</label><input id="fundingTitleInput" class="input" placeholder="예: 펀딩1"></div>
+          <div class="row"><label>현재</label><input id="fundingCurrentInput" class="input" type="number" min="0" value="0"></div>
+          <div class="row"><label>목표</label><input id="fundingTargetInput" class="input" type="number" min="0" value="10"></div>
+        </div>
+        <button class="btn blue" onclick="addFundingItem()">펀딩 추가</button>
+        <div id="fundingList" style="margin-top:10px"></div>
+      </section>
+
+
       <section class="card">
         <h2>사운드 설정</h2>
         <p class="muted">파일은 <b>public/sounds/</b>에 업로드하고, 여기에는 파일명만 입력합니다. 입력페이지 수동 선택은 업로드된 파일 목록을 검색해서 사용합니다.</p>
@@ -171,6 +277,264 @@ async function loadSoundFiles(){
     soundFiles = (data.sounds || []).map(s => s.file);
     $('#soundFiles').innerHTML = soundFiles.map(f => `<option value="${escAttr(f)}"></option>`).join('');
   }catch(e){ soundFiles = []; }
+}
+
+
+function defaultKaraokeData(){
+  return {
+    title:'노래방 공지 알림판',
+    ticker:'신청곡은 채팅으로 남겨주세요',
+    users:[],
+    songs:[]
+  };
+}
+
+function getKaraokeData(){
+  if(!settings) settings = {};
+  if(!settings.karaokeData) settings.karaokeData = defaultKaraokeData();
+  if(!Array.isArray(settings.karaokeData.users)) settings.karaokeData.users = [];
+  if(!Array.isArray(settings.karaokeData.songs)) settings.karaokeData.songs = [];
+  return settings.karaokeData;
+}
+
+function coinLabel(type){
+  return type === 'full' ? '완곡' : type === 'special' ? '스페셜' : '1절';
+}
+
+function coinKeyLabel(type){
+  return type === 'full' ? '완곡코인' : type === 'special' ? '스페셜코인' : '1절코인';
+}
+
+function songStatusClass(status){
+  if(status === '진행') return 'run';
+  if(status === '보류') return 'hold';
+  if(status === '완료') return 'done';
+  return 'wait';
+}
+
+function findKaraokeUser(nick){
+  const data = getKaraokeData();
+  const name = String(nick || '').trim();
+  return data.users.find(u => u.nick === name);
+}
+
+function renderKaraokeManager(){
+  const data = getKaraokeData();
+  if($('#karaokeTitle')) $('#karaokeTitle').value = data.title || '노래방 공지 알림판';
+  if($('#karaokeTicker')) $('#karaokeTicker').value = data.ticker || '';
+
+  const userBox = $('#karaokeUserList');
+  if(userBox){
+    userBox.innerHTML = data.users.length ? data.users.map(u => `
+      <div class="karaoke-row">
+        <div class="karaoke-row-top">
+          <span>${escAttr(u.nick)}</span>
+          <button class="btn red mini" onclick="deleteKaraokeUser('${escAttr(u.nick)}')">삭제</button>
+        </div>
+        <div class="karaoke-row-sub">
+          <span class="coin-pill">1절 ${Number(u.coins?.verse||0)}</span>
+          <span class="coin-pill">완곡 ${Number(u.coins?.full||0)}</span>
+          <span class="coin-pill">스페셜 ${Number(u.coins?.special||0)}</span>
+        </div>
+      </div>
+    `).join('') : `<div class="resultBox">코인을 추가한 닉네임이 없습니다.</div>`;
+  }
+
+  const songBox = $('#karaokeSongList');
+  if(songBox){
+    const activeSongs = data.songs.filter(s => s.status !== '삭제');
+    songBox.innerHTML = activeSongs.length ? activeSongs.map((s, idx) => `
+      <div class="karaoke-row">
+        <div class="karaoke-row-top">
+          <span>${idx+1}. ${escAttr(s.nick)} - ${escAttr(s.title)}</span>
+          <span class="status-pill ${songStatusClass(s.status)}">${escAttr(s.status || '대기')}</span>
+        </div>
+        <div class="karaoke-row-sub">${coinLabel(s.type)} · ID ${escAttr(s.id)}</div>
+        <div class="karaoke-actions">
+          <button class="btn blue mini" onclick="setKaraokeSongStatus('${escAttr(s.id)}','진행')">진행</button>
+          <button class="btn mini" onclick="setKaraokeSongStatus('${escAttr(s.id)}','대기')">대기</button>
+          <button class="btn mini" onclick="setKaraokeSongStatus('${escAttr(s.id)}','보류')">보류</button>
+          <button class="btn green mini" onclick="setKaraokeSongStatus('${escAttr(s.id)}','완료')">완료</button>
+          <button class="btn blue mini" onclick="editKaraokeSong('${escAttr(s.id)}')">변경</button>
+          <button class="btn red mini" onclick="deleteKaraokeSong('${escAttr(s.id)}')">삭제</button>
+        </div>
+      </div>
+    `).join('') : `<div class="resultBox">선곡 리스트가 없습니다.</div>`;
+  }
+}
+
+function syncKaraokeInputs(){
+  const data = getKaraokeData();
+  if($('#karaokeTitle')) data.title = $('#karaokeTitle').value.trim() || '노래방 공지 알림판';
+  if($('#karaokeTicker')) data.ticker = $('#karaokeTicker').value.trim();
+}
+
+function addKaraokeCoin(){
+  const data = getKaraokeData();
+  const nick = $('#karaokeCoinNick').value.trim();
+  const type = $('#karaokeCoinType').value;
+  const count = Math.max(1, Number($('#karaokeCoinCount').value || 1));
+
+  if(!nick) return alert('닉네임을 입력하세요.');
+
+  let user = data.users.find(u => u.nick === nick);
+  if(!user){
+    user = {nick, coins:{verse:0, full:0, special:0}};
+    data.users.push(user);
+  }
+  if(!user.coins) user.coins = {verse:0, full:0, special:0};
+  user.coins[type] = Number(user.coins[type] || 0) + count;
+
+  $('#karaokeCoinNick').value = '';
+  $('#karaokeCoinCount').value = 1;
+  renderKaraokeManager();
+}
+
+function addKaraokeSong(){
+  const data = getKaraokeData();
+  const nick = $('#karaokeSongNick').value.trim();
+  const type = $('#karaokeSongType').value;
+  const title = $('#karaokeSongTitle').value.trim();
+
+  if(!nick) return alert('닉네임을 입력하세요.');
+  if(!title) return alert('선곡을 입력하세요.');
+
+  const user = data.users.find(u => u.nick === nick);
+  if(!user) return alert('코인이 있는 닉네임만 선곡할 수 있습니다.');
+
+  if(!user.coins) user.coins = {verse:0, full:0, special:0};
+  if(Number(user.coins[type] || 0) <= 0){
+    return alert(`${nick}님은 ${coinKeyLabel(type)}이 없습니다.`);
+  }
+
+  user.coins[type] = Number(user.coins[type] || 0) - 1;
+
+  data.songs.push({
+    id:'song_' + Date.now() + '_' + Math.random().toString(36).slice(2,7),
+    nick,
+    type,
+    title,
+    status:'대기'
+  });
+
+  $('#karaokeSongNick').value = '';
+  $('#karaokeSongTitle').value = '';
+  renderKaraokeManager();
+}
+
+function setKaraokeSongStatus(id, status){
+  const data = getKaraokeData();
+  const song = data.songs.find(s => s.id === id);
+  if(!song) return;
+
+  if(status === '진행'){
+    data.songs.forEach(s => {
+      if(s.status === '진행') s.status = '대기';
+    });
+  }
+  song.status = status;
+  renderKaraokeManager();
+}
+
+function editKaraokeSong(id){
+  const data = getKaraokeData();
+  const song = data.songs.find(s => s.id === id);
+  if(!song) return;
+
+  const nextNick = prompt('닉네임 변경', song.nick);
+  if(nextNick === null) return;
+  const nextTitle = prompt('선곡 변경', song.title);
+  if(nextTitle === null) return;
+
+  song.nick = nextNick.trim() || song.nick;
+  song.title = nextTitle.trim() || song.title;
+  renderKaraokeManager();
+}
+
+function deleteKaraokeSong(id){
+  const data = getKaraokeData();
+  if(!confirm('이 선곡을 삭제할까요?')) return;
+  data.songs = data.songs.filter(s => s.id !== id);
+  renderKaraokeManager();
+}
+
+function deleteKaraokeUser(nick){
+  const data = getKaraokeData();
+  if(!confirm(`${nick} 닉네임과 보유 코인을 삭제할까요?`)) return;
+  data.users = data.users.filter(u => u.nick !== nick);
+  renderKaraokeManager();
+}
+
+
+
+function defaultFundingData(){
+  return {items:[]};
+}
+
+function getFundingData(){
+  if(!settings) settings = {};
+  if(!settings.fundingData) settings.fundingData = defaultFundingData();
+  if(!Array.isArray(settings.fundingData.items)) settings.fundingData.items = [];
+  return settings.fundingData;
+}
+
+function renderFundingManager(){
+  const data = getFundingData();
+  const box = $('#fundingList');
+  if(!box) return;
+  if(!data.items.length){
+    box.innerHTML = `<div class="resultBox">등록된 펀딩이 없습니다.</div>`;
+    return;
+  }
+  box.innerHTML = data.items.map((f, idx) => `
+    <div class="sound-rule">
+      <label>펀딩명<input class="fund-title" value="${escAttr(f.title)}"></label>
+      <label>현재<input class="fund-current" type="number" min="0" value="${Number(f.current||0)}"></label>
+      <label>목표<input class="fund-target" type="number" min="0" value="${Number(f.target||0)}"></label>
+      <label>표시
+        <select class="fund-enabled">
+          <option value="true" ${f.enabled!==false?'selected':''}>ON</option>
+          <option value="false" ${f.enabled===false?'selected':''}>OFF</option>
+        </select>
+      </label>
+      <button class="btn red mini" onclick="deleteFundingItem(${idx})">삭제</button>
+    </div>
+  `).join('');
+}
+
+function collectFundingData(){
+  const items = Array.from(document.querySelectorAll('#fundingList .sound-rule')).map((row, idx) => ({
+    id: getFundingData().items[idx]?.id || ('fund_' + Date.now() + '_' + idx),
+    title: row.querySelector('.fund-title').value.trim(),
+    current: Math.max(0, Number(row.querySelector('.fund-current').value || 0)),
+    target: Math.max(0, Number(row.querySelector('.fund-target').value || 0)),
+    enabled: row.querySelector('.fund-enabled').value !== 'false'
+  })).filter(f => f.title);
+  return {items};
+}
+
+function addFundingItem(){
+  const data = getFundingData();
+  const title = $('#fundingTitleInput').value.trim();
+  if(!title) return alert('펀딩명을 입력하세요.');
+  data.items.push({
+    id:'fund_' + Date.now(),
+    title,
+    current: Math.max(0, Number($('#fundingCurrentInput').value || 0)),
+    target: Math.max(0, Number($('#fundingTargetInput').value || 0)),
+    enabled:true
+  });
+  $('#fundingTitleInput').value = '';
+  $('#fundingCurrentInput').value = 0;
+  $('#fundingTargetInput').value = 10;
+  renderFundingManager();
+}
+
+function deleteFundingItem(idx){
+  const data = getFundingData();
+  if(!confirm('이 펀딩을 삭제할까요?')) return;
+  data.items.splice(idx, 1);
+  renderFundingManager();
 }
 
 async function loadSettings(){
@@ -292,6 +656,8 @@ function deletePreset(idx){
 
 async function saveSettings(){
   try{
+    syncKaraokeInputs();
+    settings.fundingData = collectFundingData();
     const body = {
       title: $('#title').value,
       titleImage: $('#titleImage').value,
@@ -311,6 +677,8 @@ async function saveSettings(){
         funding: $('#overlayFundingBox') ? $('#overlayFundingBox').checked : false,
         broadcastTimer: $('#overlayBroadcastTimer') ? $('#overlayBroadcastTimer').checked : false
       },
+      
+      fundingData: collectFundingData(),
       soundRules: {
         enabled: $('#soundEnabled').checked,
         defaultSound: $('#soundDefault').value.trim() || 'alert.mp3',

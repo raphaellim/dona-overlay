@@ -819,6 +819,90 @@ body > .option-alert.show,
   }
 }
 
+
+/* ===== 노래방 리스트업 표시 보정 ===== */
+.karaoke-queue{
+  justify-content:flex-start !important;
+  overflow:hidden !important;
+}
+
+.queue-num{
+  max-width:160px !important;
+  padding:0 10px !important;
+  white-space:nowrap !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+}
+
+.queue-num.hold{
+  opacity:.65 !important;
+  border-color:rgba(239,68,68,.55) !important;
+  background:rgba(127,29,29,.22) !important;
+}
+
+.queue-empty{
+  font-size:17px;
+  font-weight:900;
+  color:rgba(255,255,255,.68);
+}
+
+
+/* ===== 좌측정렬/펀딩 표시 보정 ===== */
+.notice-text,
+.notice-line,
+.karaoke-title,
+.karaoke-current,
+.karaoke-coin,
+.funding-title,
+.funding-value{
+  text-align:left !important;
+}
+
+.funding-value{
+  display:flex !important;
+  flex-direction:column !important;
+  gap:7px !important;
+  margin-top:10px !important;
+  font-size:18px !important;
+}
+
+.funding-line{
+  position:relative;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  overflow:hidden;
+  border-radius:10px;
+  padding:8px 10px;
+  background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.14);
+}
+
+.funding-line span,
+.funding-line b{
+  position:relative;
+  z-index:2;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.funding-line b{
+  flex:0 0 auto;
+  color:#bdf8ff;
+}
+
+.funding-line em{
+  position:absolute;
+  left:0;
+  top:0;
+  bottom:0;
+  z-index:1;
+  background:linear-gradient(90deg, rgba(0,234,255,.24), rgba(255,79,216,.18));
+  pointer-events:none;
+}
+
 </style>
 </head>
 <body>
@@ -854,17 +938,13 @@ body > .option-alert.show,
       </section>
 
       <section class="overlay-box karaoke-box hidden" id="karaokeBox">
-        <div class="karaoke-title">노래방 공지 알림판</div>
-        <div class="karaoke-current">진행중</div>
-        <div class="karaoke-queue">
+        <div class="karaoke-title" id="karaokeTitleText">노래방 공지 알림판</div>
+        <div class="karaoke-current" id="karaokeCurrentText">진행중</div>
+        <div class="karaoke-queue" id="karaokeQueueList">
           <span class="queue-label">예약순번</span>
-          <span class="queue-num">1</span>
-          <span class="queue-num">2</span>
-          <span class="queue-num">3</span>
-          <span class="queue-num">4</span>
         </div>
-        <div class="karaoke-coin">현재 코인보유</div>
-        <div class="karaoke-ticker"><span>우에서 좌로 흐르는 한줄</span></div>
+        <div class="karaoke-coin" id="karaokeCoinText">현재 코인보유</div>
+        <div class="karaoke-ticker"><span id="karaokeTickerText">우에서 좌로 흐르는 한줄</span></div>
       </section>
 
 
@@ -876,6 +956,7 @@ body > .option-alert.show,
   </div>
 <div id="overlayAlertRoot"><div class="option-alert" id="optionAlert"></div></div>
 <script>
+  let latestSettingsForTimer = null;
   let showCreatorDonations = true;
 (() => {
   const API_SUMMARY = "/api/summary";
@@ -890,6 +971,12 @@ body > .option-alert.show,
   const $creatorBox = document.getElementById("creatorBox");
 
   const $karaokeBox = document.getElementById("karaokeBox");
+  const $karaokeTitleText = document.getElementById("karaokeTitleText");
+  const $karaokeCurrentText = document.getElementById("karaokeCurrentText");
+  const $karaokeQueueList = document.getElementById("karaokeQueueList");
+  const $karaokeCoinText = document.getElementById("karaokeCoinText");
+  const $karaokeTickerText = document.getElementById("karaokeTickerText");
+
   const $fundingBox = document.getElementById("fundingBox");
   const $broadcastTimerBox = document.getElementById("broadcastTimerBox");
   const $broadcastTimerValue = document.getElementById("broadcastTimerValue");
@@ -1008,6 +1095,77 @@ body > .option-alert.show,
       funding: s.funding === true,
       broadcastTimer: s.broadcastTimer === true
     };
+  }
+
+
+  
+  
+  function renderFunding(settings){
+    if(!$fundingBox) return;
+    const items = (settings?.fundingData?.items || []).filter(f => f.enabled !== false);
+    const valueEl = $fundingBox.querySelector(".funding-value");
+    if(!valueEl) return;
+    if(!items.length){
+      valueEl.innerHTML = `<div class="funding-line">등록된 펀딩 없음</div>`;
+      return;
+    }
+    valueEl.innerHTML = items.map((f, idx) => {
+      const cur = Number(f.current || 0);
+      const target = Number(f.target || 0);
+      const pct = target > 0 ? Math.min(100, Math.round(cur / target * 100)) : 0;
+      return `<div class="funding-line"><span>${idx+1}. ${escapeHtml(f.title)}</span><b>${cur}/${target}</b><em style="width:${pct}%"></em></div>`;
+    }).join("");
+  }
+
+  function timerBaseMs(settings){
+    const t = settings?.broadcastTimerData || {};
+    if(!t.startedAt) return 0;
+    const start = new Date(t.startedAt).getTime();
+    if(!start) return 0;
+    const end = t.running ? Date.now() : (t.endedAt ? new Date(t.endedAt).getTime() : Date.now());
+    return Math.max(0, end - start);
+  }
+
+  function coinLabel(type){
+    return type === "full" ? "완곡" : type === "special" ? "스페셜" : "1절";
+  }
+
+  function renderKaraoke(settings){
+    const data = settings?.karaokeData || {};
+    const users = Array.isArray(data.users) ? data.users : [];
+    const songs = Array.isArray(data.songs) ? data.songs.filter(s => s.status !== "삭제") : [];
+
+    if($karaokeTitleText) $karaokeTitleText.textContent = data.title || "노래방 공지 알림판";
+
+    const running = songs.find(s => s.status === "진행");
+    if($karaokeCurrentText){
+      $karaokeCurrentText.textContent = running
+        ? `진행중: ${running.nick} - ${running.title}`
+        : "진행중";
+    }
+
+    if($karaokeQueueList){
+      const queue = songs.filter(s => s.status === "대기" || s.status === "보류").slice(0, 4);
+      $karaokeQueueList.innerHTML = `<span class="queue-label">예약순번</span>` + (
+        queue.length
+          ? queue.map((s, idx) => `<span class="queue-num ${s.status === "보류" ? "hold" : ""}">${idx+1}. ${escapeHtml(s.nick)} ${escapeHtml(s.title)}</span>`).join("")
+          : `<span class="queue-empty">대기 없음</span>`
+      );
+    }
+
+    if($karaokeCoinText){
+      const totals = users.reduce((acc, u) => {
+        const c = u.coins || {};
+        acc.verse += Number(c.verse || 0);
+        acc.full += Number(c.full || 0);
+        acc.special += Number(c.special || 0);
+        return acc;
+      }, {verse:0, full:0, special:0});
+
+      $karaokeCoinText.textContent = `현재 코인보유 1절 ${totals.verse} · 완곡 ${totals.full} · 스페셜 ${totals.special}`;
+    }
+
+    if($karaokeTickerText) $karaokeTickerText.textContent = data.ticker || "신청곡은 채팅으로 남겨주세요";
   }
 
 
@@ -1662,7 +1820,7 @@ body > .option-alert.show,
   function updateBroadcastTimer(){
     if(!$broadcastTimerValue) return;
 
-    const diff = Math.max(0, Date.now() - broadcastStartedAt);
+    const diff = latestSettingsForTimer ? timerBaseMs(latestSettingsForTimer) : 0;
     const sec = Math.floor(diff / 1000);
 
     const h = String(Math.floor(sec / 3600)).padStart(2, "0");
@@ -1706,8 +1864,11 @@ body > .option-alert.show,
 
     if(signature!==lastSignature){
       lastSignature=signature;
-      applySections(settings);
+      latestSettingsForTimer = settings;
+    applySections(settings);
     renderNotice(settings);
+    renderKaraoke(settings);
+    renderFunding(settings);
       renderAccountRoller(data.accountDonors);
       renderCreators(creators);
     }

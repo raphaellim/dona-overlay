@@ -154,6 +154,24 @@ textarea{resize:vertical;line-height:1.45}
 
   .repeat-row{display:grid;grid-template-columns:1fr 110px;gap:8px;align-items:end;margin-top:8px}
   .count-pill{display:inline-flex;align-items:center;border-radius:999px;padding:2px 8px;font-size:12px;font-weight:950;margin-left:6px;background:rgba(236,72,153,.18);color:#f9a8d4;border:1px solid rgba(236,72,153,.38)}
+
+  .manage-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .manage-panel{border:1px solid #243047;background:#101827;border-radius:14px;padding:12px}
+  .manage-panel h3{margin:0 0 10px;font-size:16px}
+  .karaoke-inline{display:grid;grid-template-columns:1fr 110px 80px auto;gap:8px;align-items:end}
+  .karaoke-song-inline{display:grid;grid-template-columns:1fr 100px 1.3fr auto;gap:8px;align-items:end}
+  .manage-list{margin-top:10px;display:flex;flex-direction:column;gap:8px;max-height:280px;overflow:auto}
+  .manage-row{border:1px solid #2c3a55;background:#0b1220;border-radius:12px;padding:10px}
+  .manage-row-top{display:flex;justify-content:space-between;gap:8px;align-items:center;font-weight:800}
+  .manage-row-sub{margin-top:4px;color:#94a3b8;font-size:12px}
+  .manage-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .coin-pill,.status-pill{display:inline-flex;border-radius:999px;padding:3px 8px;font-size:12px;font-weight:900;background:#172033;border:1px solid #334155;margin-right:4px}
+  .status-pill.run{color:#fef08a;border-color:#eab30855;background:#713f121f}
+  .status-pill.wait{color:#93c5fd;border-color:#3b82f655;background:#1e3a8a22}
+  .status-pill.hold{color:#fca5a5;border-color:#ef444455;background:#7f1d1d22}
+  .status-pill.done{color:#86efac;border-color:#22c55e55;background:#14532d22}
+  @media(max-width:900px){.manage-grid,.karaoke-inline,.karaoke-song-inline{grid-template-columns:1fr}}
+
 </style>
 </head>
 <body>
@@ -210,6 +228,18 @@ textarea{resize:vertical;line-height:1.45}
           <div class="row">
             <label>투네 총액</label>
             <input id="toonieTotal" class="input" inputmode="decimal" placeholder="예: 2.5 또는 25000">
+          </div>
+        </div>
+
+        
+        <div class="grid-2">
+          <div class="row">
+            <label>펀딩 선택</label>
+            <select id="fundingSelect" class="input"></select>
+          </div>
+          <div class="row">
+            <label>펀딩 반영 단위</label>
+            <input id="fundingUnits" class="input" type="number" min="0" placeholder="비우면 후원금 / 1만원 자동">
           </div>
         </div>
 
@@ -289,6 +319,40 @@ textarea{resize:vertical;line-height:1.45}
         <div class="sound-queue-list" id="manualSoundQueue"></div>
       </section>
 
+      
+      <section class="card">
+        <h2>노래방 관리</h2>
+        <p class="muted">코인추가 후 코인이 있는 닉네임만 선곡 리스트에 추가할 수 있습니다.</p>
+        <div class="grid-2">
+          <div class="row"><label>노래방 제목</label><input id="karaokeTitle" class="input" placeholder="노래방 공지 알림판"></div>
+          <div class="row"><label>흐르는 공지</label><input id="karaokeTicker" class="input" placeholder="신청곡은 채팅으로 남겨주세요"></div>
+        </div>
+        <div class="manage-grid">
+          <div class="manage-panel">
+            <h3>코인추가</h3>
+            <div class="karaoke-inline">
+              <label>닉네임<input id="karaokeCoinNick" class="input" placeholder="닉네임"></label>
+              <label>코인종류<select id="karaokeCoinType" class="input"><option value="verse">1절</option><option value="full">완곡</option><option value="special">스페셜</option></select></label>
+              <label>개수<input id="karaokeCoinCount" class="input" type="number" min="1" value="1"></label>
+              <button class="btn blue" onclick="addKaraokeCoin()">추가</button>
+            </div>
+            <div id="karaokeUserList" class="manage-list"></div>
+          </div>
+          <div class="manage-panel">
+            <h3>선곡</h3>
+            <div class="karaoke-song-inline">
+              <label>닉네임<input id="karaokeSongNick" class="input" placeholder="코인 보유 닉네임"></label>
+              <label>구분<select id="karaokeSongType" class="input"><option value="verse">1절</option><option value="full">완곡</option><option value="special">스페셜</option></select></label>
+              <label>선곡<input id="karaokeSongTitle" class="input" placeholder="노래 제목"></label>
+              <button class="btn green" onclick="addKaraokeSong()">리스트업</button>
+            </div>
+            <div id="karaokeSongList" class="manage-list"></div>
+          </div>
+        </div>
+        <div style="margin-top:10px"><button class="btn green" onclick="saveKaraokeData()">노래방 저장</button></div>
+      </section>
+
+
       <section class="card">
         <h2>최근 입력</h2>
         <div id="recentList" class="recent-list"></div>
@@ -362,10 +426,120 @@ function findPresetByTitle(title){
   return (settings?.presets || []).find(p => p.title === title || p.id === title || p.plusName === title || p.minusName === title) || null;
 }
 
+
+function defaultKaraokeData(){return {title:'노래방 공지 알림판',ticker:'신청곡은 채팅으로 남겨주세요',users:[],songs:[]};}
+function getKaraokeData(){
+  if(!settings.karaokeData) settings.karaokeData = defaultKaraokeData();
+  if(!Array.isArray(settings.karaokeData.users)) settings.karaokeData.users=[];
+  if(!Array.isArray(settings.karaokeData.songs)) settings.karaokeData.songs=[];
+  return settings.karaokeData;
+}
+function coinLabel(type){return type==='full'?'완곡':type==='special'?'스페셜':'1절'}
+function coinKeyLabel(type){return type==='full'?'완곡코인':type==='special'?'스페셜코인':'1절코인'}
+function songStatusClass(status){return status==='진행'?'run':status==='보류'?'hold':status==='완료'?'done':'wait'}
+function renderFundingSelect(){
+  const box = $('#fundingSelect');
+  if(!box) return;
+  const items = settings?.fundingData?.items || [];
+  box.innerHTML = `<option value="">펀딩 반영 안함</option>` + items.filter(f=>f.enabled!==false).map(f => `<option value="${escAttr(f.id)}">${esc(f.title)} ${Number(f.current||0)}/${Number(f.target||0)}</option>`).join('');
+}
+function renderKaraokeManager(){
+  const data = getKaraokeData();
+  if($('#karaokeTitle')) $('#karaokeTitle').value = data.title || '노래방 공지 알림판';
+  if($('#karaokeTicker')) $('#karaokeTicker').value = data.ticker || '';
+  const userBox = $('#karaokeUserList');
+  if(userBox){
+    userBox.innerHTML = data.users.length ? data.users.map(u => `
+      <div class="manage-row">
+        <div class="manage-row-top"><span>${esc(u.nick)}</span><button class="btn red mini" onclick="deleteKaraokeUser('${escAttr(u.nick)}')">삭제</button></div>
+        <div class="manage-row-sub">
+          <span class="coin-pill">1절 ${Number(u.coins?.verse||0)}</span>
+          <span class="coin-pill">완곡 ${Number(u.coins?.full||0)}</span>
+          <span class="coin-pill">스페셜 ${Number(u.coins?.special||0)}</span>
+        </div>
+      </div>`).join('') : `<div class="resultBox">코인을 추가한 닉네임이 없습니다.</div>`;
+  }
+  const songBox = $('#karaokeSongList');
+  if(songBox){
+    const activeSongs = data.songs.filter(s => s.status !== '삭제');
+    songBox.innerHTML = activeSongs.length ? activeSongs.map((s, idx) => `
+      <div class="manage-row">
+        <div class="manage-row-top"><span>${idx+1}. ${esc(s.nick)} - ${esc(s.title)}</span><span class="status-pill ${songStatusClass(s.status)}">${esc(s.status||'대기')}</span></div>
+        <div class="manage-row-sub">${coinLabel(s.type)}</div>
+        <div class="manage-actions">
+          <button class="btn blue mini" onclick="setKaraokeSongStatus('${escAttr(s.id)}','진행')">진행</button>
+          <button class="btn mini" onclick="setKaraokeSongStatus('${escAttr(s.id)}','대기')">대기</button>
+          <button class="btn mini" onclick="setKaraokeSongStatus('${escAttr(s.id)}','보류')">보류</button>
+          <button class="btn green mini" onclick="setKaraokeSongStatus('${escAttr(s.id)}','완료')">완료</button>
+          <button class="btn blue mini" onclick="editKaraokeSong('${escAttr(s.id)}')">변경</button>
+          <button class="btn red mini" onclick="deleteKaraokeSong('${escAttr(s.id)}')">삭제</button>
+        </div>
+      </div>`).join('') : `<div class="resultBox">선곡 리스트가 없습니다.</div>`;
+  }
+}
+function syncKaraokeInputs(){
+  const data=getKaraokeData();
+  if($('#karaokeTitle')) data.title=$('#karaokeTitle').value.trim()||'노래방 공지 알림판';
+  if($('#karaokeTicker')) data.ticker=$('#karaokeTicker').value.trim();
+}
+function addKaraokeCoin(){
+  const data=getKaraokeData();
+  const nick=$('#karaokeCoinNick').value.trim();
+  const type=$('#karaokeCoinType').value;
+  const count=Math.max(1,Number($('#karaokeCoinCount').value||1));
+  if(!nick) return alert('닉네임을 입력하세요.');
+  let user=data.users.find(u=>u.nick===nick);
+  if(!user){user={nick,coins:{verse:0,full:0,special:0}};data.users.push(user)}
+  if(!user.coins) user.coins={verse:0,full:0,special:0};
+  user.coins[type]=Number(user.coins[type]||0)+count;
+  $('#karaokeCoinNick').value=''; $('#karaokeCoinCount').value=1;
+  renderKaraokeManager();
+}
+function addKaraokeSong(){
+  const data=getKaraokeData();
+  const nick=$('#karaokeSongNick').value.trim();
+  const type=$('#karaokeSongType').value;
+  const title=$('#karaokeSongTitle').value.trim();
+  if(!nick) return alert('닉네임을 입력하세요.');
+  if(!title) return alert('선곡을 입력하세요.');
+  const user=data.users.find(u=>u.nick===nick);
+  if(!user) return alert('코인이 있는 닉네임만 선곡할 수 있습니다.');
+  if(!user.coins) user.coins={verse:0,full:0,special:0};
+  if(Number(user.coins[type]||0)<=0) return alert(`${nick}님은 ${coinKeyLabel(type)}이 없습니다.`);
+  user.coins[type]=Number(user.coins[type]||0)-1;
+  data.songs.push({id:'song_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),nick,type,title,status:'대기'});
+  $('#karaokeSongNick').value=''; $('#karaokeSongTitle').value='';
+  renderKaraokeManager();
+}
+function setKaraokeSongStatus(id,status){
+  const data=getKaraokeData();
+  const song=data.songs.find(s=>s.id===id); if(!song) return;
+  if(status==='진행') data.songs.forEach(s=>{if(s.status==='진행') s.status='대기'});
+  song.status=status; renderKaraokeManager();
+}
+function editKaraokeSong(id){
+  const data=getKaraokeData(); const song=data.songs.find(s=>s.id===id); if(!song)return;
+  const nextNick=prompt('닉네임 변경',song.nick); if(nextNick===null)return;
+  const nextTitle=prompt('선곡 변경',song.title); if(nextTitle===null)return;
+  song.nick=nextNick.trim()||song.nick; song.title=nextTitle.trim()||song.title; renderKaraokeManager();
+}
+function deleteKaraokeSong(id){const data=getKaraokeData(); if(!confirm('이 선곡을 삭제할까요?'))return; data.songs=data.songs.filter(s=>s.id!==id); renderKaraokeManager();}
+function deleteKaraokeUser(nick){const data=getKaraokeData(); if(!confirm(`${nick} 닉네임과 보유 코인을 삭제할까요?`))return; data.users=data.users.filter(u=>u.nick!==nick); renderKaraokeManager();}
+async function saveKaraokeData(){
+  try{
+    syncKaraokeInputs();
+    await api('/api/karaoke-data',{method:'POST',body:JSON.stringify({karaokeData:getKaraokeData()})});
+    alert('노래방 저장 완료');
+    await loadSettings();
+  }catch(e){alert(e.message)}
+}
+
 async function init(){
   await loadSettings();
   await loadSoundFiles();
   renderProcessOptions();
+  renderFundingSelect();
+  renderKaraokeManager();
   renderSplitRows();
   bindInputs();
   await loadRecent();
@@ -671,7 +845,9 @@ async function saveBatch(){
       processType: $('#processType').value || '후원',
       accountTotal: $('#accountTotal').value,
       toonieTotal: $('#toonieTotal').value,
-      rows: collectRows()
+      rows: collectRows(),
+      fundingId: $('#fundingSelect') ? $('#fundingSelect').value : '',
+      fundingUnits: $('#fundingUnits') ? $('#fundingUnits').value : ''
     };
 
     await api('/api/donations/batch', {

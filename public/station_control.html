@@ -27,7 +27,11 @@ body{background:#070b12;color:#e5e7eb}.wrap{max-width:1180px;margin:0 auto;paddi
       <h2>새 방송 생성</h2>
       <div class="row"><label>방송 제목</label><input id="broadcastTitle" class="input" placeholder="0518 여행방송"></div>
       <div class="row"><label>방송 비밀번호</label><input id="broadcastPw" class="input" placeholder="이 방송 입력/설정용 비밀번호"></div>
-      <button class="btn green" onclick="createBroadcast()">새 방송 시작</button>
+      <button class="btn green" onclick="createBroadcast()">새 방송 생성/선택</button>
+      <div class="grid" style="margin-top:10px">
+        <button class="btn blue" onclick="startBroadcastTimer()">방송시작</button>
+        <button class="btn red" onclick="endBroadcastTimer()">방송종료</button>
+      </div>
       <hr style="border-color:#334155;margin:16px 0">
       <h2>현재 방송 비밀번호 입력</h2>
       <div class="row"><label>선택한 방송 비밀번호</label><input id="loginBroadcastPw" class="input" type="password"></div>
@@ -95,6 +99,14 @@ async function deleteBroadcast(id){
   if(!confirm('삭제할까요? 현재 방송은 삭제할 수 없습니다.'))return;
   try{await api('/api/broadcasts/'+id,{method:'DELETE'});await load();}catch(e){alert(e.message)}
 }
+async function startBroadcastTimer(){
+  try{await api('/api/broadcast-timer/start',{method:'POST',body:JSON.stringify({})});alert('방송시간 타이머 시작')}catch(e){alert(e.message)}
+}
+async function endBroadcastTimer(){
+  if(!confirm('방송시간 타이머를 종료할까요?')) return;
+  try{await api('/api/broadcast-timer/end',{method:'POST',body:JSON.stringify({})});alert('방송시간 타이머 종료')}catch(e){alert(e.message)}
+}
+
 async function loginBroadcast(){
   try{
     await api('/api/broadcast-login',{method:'POST',body:JSON.stringify({password:document.getElementById('loginBroadcastPw').value})});
