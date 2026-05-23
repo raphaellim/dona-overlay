@@ -1115,49 +1115,67 @@ body > #optionAlert.option-alert{
   }
 
 function ensureAlertIndependent(){
-    const root = document.getElementById("overlayAlertRoot");
-    let alertEl = document.getElementById("optionAlert");
-    if(!alertEl) return;
+  const root = document.getElementById("overlayAlertRoot");
+  const alertEl = document.getElementById("optionAlert");
+  const stack = document.querySelector(".overlay-stack");
+  const accountBox = document.getElementById("accountBox");
 
-    if(root && alertEl.parentElement !== root){
-      root.appendChild(alertEl);
+  if(!root || !alertEl || !stack) return;
+
+  if(alertEl.parentElement !== root){
+    root.appendChild(alertEl);
+  }
+
+  // ALERT root를 계좌후원 박스 바로 아래 flex 위치로 이동
+  if(accountBox && accountBox.parentElement === stack){
+    if(root.parentElement !== stack || root.previousElementSibling !== accountBox){
+      stack.insertBefore(root, accountBox.nextSibling);
     }
-
-    const accountBox = document.getElementById("accountBox");
-    const stack = document.querySelector(".overlay-stack");
-    const baseBox = accountBox && !accountBox.classList.contains("hidden") ? accountBox : stack;
-
-    if(root && baseBox){
-      const rect = baseBox.getBoundingClientRect();
-      const vw = window.innerWidth || document.documentElement.clientWidth || rect.width;
-      const left = Math.max(8, Math.round(rect.left));
-      const width = Math.max(240, Math.min(Math.round(rect.width), vw - left - 8));
-      root.style.setProperty("--alert-left", left + "px");
-      root.style.setProperty("--alert-top", Math.round(rect.bottom + 8) + "px");
-      root.style.setProperty("--alert-width", width + "px");
-      root.style.setProperty("--alert-height", "170px");
-    }
-
-    alertEl.classList.remove("hidden");
-    alertEl.style.position = "absolute";
-    alertEl.style.left = "50%";
-    alertEl.style.top = "0";
-    alertEl.style.right = "auto";
-    alertEl.style.bottom = "auto";
-    alertEl.style.margin = "0";
-
-    if(alertEl.classList.contains("show")){
-      alertEl.style.display = "flex";
-      alertEl.style.visibility = "visible";
-      alertEl.style.opacity = "1";
-      alertEl.style.transform = "translateX(-50%) scale(1)";
-    }else{
-      alertEl.style.display = "";
-      alertEl.style.visibility = "";
-      alertEl.style.opacity = "";
-      alertEl.style.transform = "translateX(-50%) scale(.92)";
+  }else{
+    if(root.parentElement !== stack){
+      stack.insertBefore(root, stack.firstChild);
     }
   }
+
+  root.style.position = "relative";
+  root.style.left = "auto";
+  root.style.top = "auto";
+  root.style.right = "auto";
+  root.style.bottom = "auto";
+  root.style.inset = "auto";
+  root.style.width = "100%";
+  root.style.height = "0";
+  root.style.zIndex = "999999";
+  root.style.pointerEvents = "none";
+  root.style.overflow = "visible";
+  root.style.transform = "none";
+  root.style.flex = "0 0 0";
+
+  alertEl.classList.remove("hidden");
+  alertEl.style.position = "absolute";
+  alertEl.style.left = "0";
+  alertEl.style.top = "0";
+  alertEl.style.right = "auto";
+  alertEl.style.bottom = "auto";
+  alertEl.style.inset = "auto";
+  alertEl.style.width = "100%";
+  alertEl.style.maxWidth = "100%";
+  alertEl.style.minWidth = "0";
+  alertEl.style.margin = "0";
+  alertEl.style.transformOrigin = "top center";
+
+  if(alertEl.classList.contains("show")){
+    alertEl.style.display = "flex";
+    alertEl.style.visibility = "visible";
+    alertEl.style.opacity = "1";
+    alertEl.style.transform = "scale(1)";
+  }else{
+    alertEl.style.display = "";
+    alertEl.style.visibility = "";
+    alertEl.style.opacity = "";
+    alertEl.style.transform = "scale(.92)";
+  }
+}
   
   function updateBroadcastTimer(){
     if(!$broadcastTimerValue) return;
