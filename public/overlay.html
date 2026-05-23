@@ -168,7 +168,7 @@ html,body{
 #overlayAlertRoot #optionAlert.option-alert.show{
   transform:translateX(-50%) scale(1) !important;
 }
-  /* ===== ALERT 좌측 반절 잘림 최종 보정 ===== */
+/* ===== ALERT 계좌후원 바로 아래 최종 복구 ===== */
 #overlayAlertRoot{
   position:fixed !important;
   left:var(--alert-left, 8px) !important;
@@ -184,28 +184,27 @@ html,body{
   transform:none !important;
 }
 
-/* 핵심: left:50% / translateX(-50%) 제거 */
 #overlayAlertRoot > #optionAlert.option-alert,
 #overlayAlertRoot #optionAlert.option-alert{
   position:absolute !important;
-  left:0 !important;
+  left:50% !important;
   top:0 !important;
   right:auto !important;
   bottom:auto !important;
   inset:auto !important;
 
-  width:100% !important;
-  max-width:100% !important;
+  width:calc(100% - 12px) !important;
+  max-width:calc(100% - 12px) !important;
   min-width:0 !important;
 
   margin:0 !important;
-  transform:scale(.92) !important;
+  transform:translateX(-50%) scale(.92) !important;
   transform-origin:top center !important;
 }
 
 #overlayAlertRoot > #optionAlert.option-alert.show,
 #overlayAlertRoot #optionAlert.option-alert.show{
-  transform:scale(1) !important;
+  transform:translateX(-50%) scale(1) !important;
 }
 </style>
 </head>
@@ -1111,7 +1110,7 @@ html,body{
     }
   }
 
-  function ensureAlertIndependent(){
+ function ensureAlertIndependent(){
   const root = document.getElementById("overlayAlertRoot");
   let alertEl = document.getElementById("optionAlert");
   if(!alertEl) return;
@@ -1122,11 +1121,18 @@ html,body{
 
   const accountBox = document.getElementById("accountBox");
   const stack = document.querySelector(".overlay-stack");
-  const baseBox = accountBox && !accountBox.classList.contains("hidden") ? accountBox : stack;
+
+  // 계좌후원 박스가 보이면 계좌후원 바로 아래 기준
+  // 계좌후원 박스가 꺼져 있으면 전체 스택 기준
+  const baseBox =
+    accountBox && !accountBox.classList.contains("hidden")
+      ? accountBox
+      : stack;
 
   if(root && baseBox){
     const rect = baseBox.getBoundingClientRect();
     const vw = window.innerWidth || document.documentElement.clientWidth || rect.width;
+
     const left = Math.max(8, Math.round(rect.left));
     const width = Math.max(240, Math.min(Math.round(rect.width), vw - left - 8));
 
@@ -1137,18 +1143,21 @@ html,body{
   }
 
   alertEl.classList.remove("hidden");
+
   alertEl.style.position = "absolute";
-  alertEl.style.left = "0";
+  alertEl.style.left = "50%";
   alertEl.style.top = "0";
   alertEl.style.right = "auto";
   alertEl.style.bottom = "auto";
   alertEl.style.margin = "0";
+  alertEl.style.width = "calc(100% - 12px)";
+  alertEl.style.maxWidth = "calc(100% - 12px)";
 
   if(alertEl.classList.contains("show")){
     alertEl.style.display = "flex";
     alertEl.style.visibility = "visible";
     alertEl.style.opacity = "1";
-    alertEl.style.width = "100%";
+    alertEl.style.transform = "translateX(-50%) scale(1)";
   }else{
     alertEl.style.display = "";
     alertEl.style.visibility = "";
