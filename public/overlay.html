@@ -1562,6 +1562,58 @@ body > .option-alert.show,
 .queue-empty{
   text-align:left !important;
 }
+    /* ===== ALERT 후원자 +UP / 크리에이터 두줄 ===== */
+.alert-up-line{
+  width:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  text-align:center;
+  white-space:nowrap;
+}
+
+.alert-donor{
+  font-size:32px !important;
+  font-weight:1000 !important;
+  color:#fff !important;
+  text-shadow:none !important;
+}
+
+.alert-up{
+  font-size:24px !important;
+  font-weight:1000 !important;
+  color:#ff4fa3 !important;
+  letter-spacing:.02em;
+}
+
+.alert-creator-line{
+  margin-top:4px;
+  width:100%;
+  text-align:center;
+  font-size:23px !important;
+  font-weight:900 !important;
+  color:#ffe9a8 !important;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  text-shadow:none !important;
+}
+
+.blink-donor{
+  animation: donorBlink .65s infinite alternate;
+}
+
+@keyframes donorBlink{
+  from{
+    opacity:1;
+    transform:scale(1);
+  }
+  to{
+    opacity:.55;
+    transform:scale(1.04);
+  }
+}
 
 </style>
 </head>
@@ -2156,10 +2208,14 @@ body > .option-alert.show,
     }
 
     return `
-      <div class="alert-donor">${donor}</div>
-      <div class="alert-target">→ ${creator}</div>
-      <div class="alert-line2"><span class="alert-amount">${amountText}</span>${optionText}</div>
-    `;
+  <div class="alert-up-line">
+    <span class="alert-donor blink-donor">${donor}</span>
+    <span class="alert-up">+UP</span>
+  </div>
+  <div class="alert-creator-line">
+    ${creator}
+  </div>
+`;
   }
   function pickSoundFileForDonation(row){
     if(soundRulesCache && soundRulesCache.enabled === false) return "";
@@ -2344,10 +2400,15 @@ body > .option-alert.show,
     const progress = total > 1 ? `<span class="alert-sound-title">${current}/${total}</span>` : "";
 
     return `
-      <div class="alert-donor">${displayTitle}</div>
-      <div class="alert-target">${soundName}</div>
-      <div class="alert-line2">${progress}</div>
-    `;
+  <div class="alert-up-line">
+    <span class="alert-donor blink-donor">${displayTitle}</span>
+    <span class="alert-up">+UP</span>
+  </div>
+  <div class="alert-creator-line">
+    ${soundName}
+  </div>
+  <div class="alert-line2">${progress}</div>
+`;
   }
 
   async function checkManualSoundEvents(){
