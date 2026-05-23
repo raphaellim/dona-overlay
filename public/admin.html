@@ -657,9 +657,47 @@ async function addKaraokeSong(){
 }
 async function setKaraokeSongStatus(id,status){
   const data=getKaraokeData();
-  const song=data.songs.find(s=>s.id===id); if(!song) return;
-  if(status==='진행') data.songs.forEach(s=>{if(s.status==='진행') s.status='대기'});
-  song.status=status;
+  const idx=data.songs.findIndex(s=>s.id===id);
+  if(idx < 0) return;
+
+  const song=data.songs[idx];
+  const oldStatus=song.status || '대기';
+
+  if(status==='진행'){
+    data.songs.forEach(s=>{if(s.status==='진행') s.status='대기'});
+    song.holdPromoted = false;
+    song.status=status;
+  }else if(status==='대기' && oldStatus==='보류'){
+    // 보류곡을 대기로 올릴 때:
+    // 기존 예약 리스트의 최상단 그룹으로 올리되, 보류에서 올린 순서끼리는 유지
+    data.songs.splice(idx,1);
+    song.status='대기';
+    song.holdPromoted=true;
+
+    let insertAt = -1;
+    for(let i=0;i<data.songs.length;i++){
+      if(data.songs[i].status==='대기' && data.songs[i].holdPromoted===true){
+        insertAt = i;
+      }
+    }
+
+    if(insertAt >= 0){
+      data.songs.splice(insertAt + 1, 0, song);
+    }else{
+      const firstWait = data.songs.findIndex(s => s.status === '대기');
+      if(firstWait >= 0) data.songs.splice(firstWait, 0, song);
+      else data.songs.unshift(song);
+    }
+  }else if(status==='보류'){
+    data.songs.splice(idx,1);
+    song.status='보류';
+    song.holdPromoted=false;
+    data.songs.push(song);
+  }else{
+    song.status=status;
+    if(status!=='대기') song.holdPromoted=false;
+  }
+
   renderKaraokeManager();
   await saveKaraokeData(false);
 }

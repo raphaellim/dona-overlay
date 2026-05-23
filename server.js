@@ -187,7 +187,8 @@ function normalizeKaraokeData(raw) {
       nick: normName(s.nick || ''),
       title: String(s.title || '').trim(),
       type,
-      status
+      status,
+      holdPromoted: s.holdPromoted === true
     };
   }).filter(s => s.nick && s.title) : [];
 

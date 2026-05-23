@@ -1401,6 +1401,168 @@ body > .option-alert.show,
   letter-spacing:-.04em !important;
 }
 
+
+/* ===== 노래방 진행/예약 가독성 + 곡명 흐름 ===== */
+.karaoke-current{
+  display:grid !important;
+  grid-template-columns:auto auto minmax(0,1fr) !important;
+  align-items:center !important;
+  gap:6px !important;
+  overflow:hidden !important;
+}
+
+.karaoke-current b{
+  color:#ff7ac8 !important;
+  white-space:nowrap !important;
+  font-weight:1000 !important;
+}
+
+.karaoke-heart{
+  color:#ff4fa3 !important;
+  margin-left:2px !important;
+}
+
+.karaoke-current em,
+.karaoke-donor{
+  color:#39ff88 !important;
+  font-style:normal !important;
+  font-weight:1000 !important;
+  white-space:nowrap !important;
+  text-shadow:none !important;
+}
+
+.karaoke-song-row{
+  display:grid !important;
+  grid-template-columns:34px auto minmax(0,1fr) !important;
+  align-items:center !important;
+  gap:6px !important;
+  min-width:0 !important;
+  overflow:hidden !important;
+}
+
+.karaoke-order{
+  color:#fff1a8 !important;
+  white-space:nowrap !important;
+  font-weight:1000 !important;
+}
+
+.karaoke-song-title-wrap{
+  display:block !important;
+  min-width:0 !important;
+  overflow:hidden !important;
+  white-space:nowrap !important;
+}
+
+.karaoke-song-title-text{
+  display:inline-block !important;
+  color:#ffffff !important;
+  font-weight:950 !important;
+  white-space:nowrap !important;
+  padding-left:0;
+  animation:none;
+}
+
+/* 긴 곡명은 우 -> 좌로 흐르게 */
+.karaoke-song-title-wrap .karaoke-song-title-text{
+  animation:karaokeSongMarquee 7.5s linear infinite;
+  animation-delay:1s;
+}
+
+@keyframes karaokeSongMarquee{
+  0%,18%{ transform:translateX(0); }
+  100%{ transform:translateX(-55%); }
+}
+
+.queue-empty{
+  text-align:left !important;
+}
+
+
+/* ===== 노래방 진행/예약/보류 표시 최종 보정 ===== */
+.karaoke-current{
+  display:grid !important;
+  grid-template-columns:auto auto minmax(0,1fr) !important;
+  align-items:center !important;
+  gap:6px !important;
+  overflow:hidden !important;
+}
+
+.karaoke-current b{
+  color:#ff7ac8 !important;
+  white-space:nowrap !important;
+  font-weight:1000 !important;
+}
+
+.karaoke-heart{
+  color:#ff4fa3 !important;
+  margin-left:2px !important;
+}
+
+.karaoke-current em,
+.karaoke-donor{
+  color:#39ff88 !important;
+  font-style:normal !important;
+  font-weight:1000 !important;
+  white-space:nowrap !important;
+  text-shadow:none !important;
+}
+
+.karaoke-song-row{
+  display:grid !important;
+  grid-template-columns:42px auto minmax(0,1fr) !important;
+  align-items:center !important;
+  gap:6px !important;
+  min-width:0 !important;
+  overflow:hidden !important;
+}
+
+.karaoke-song-row.hold{
+  opacity:.78 !important;
+}
+
+.karaoke-order{
+  color:#fff1a8 !important;
+  white-space:nowrap !important;
+  font-weight:1000 !important;
+}
+
+.karaoke-hold-title{
+  margin-top:7px !important;
+  padding-top:6px !important;
+  border-top:1px solid rgba(255,255,255,.16) !important;
+  color:#ff9bd6 !important;
+  font-size:14px !important;
+  line-height:1 !important;
+  font-weight:1000 !important;
+  text-align:left !important;
+}
+
+.karaoke-song-title-wrap{
+  display:block !important;
+  min-width:0 !important;
+  overflow:hidden !important;
+  white-space:nowrap !important;
+}
+
+.karaoke-song-title-text{
+  display:inline-block !important;
+  color:#ffffff !important;
+  font-weight:950 !important;
+  white-space:nowrap !important;
+  padding-left:0;
+  animation:karaokeSongMarquee 7.5s linear infinite;
+  animation-delay:1s;
+}
+
+@keyframes karaokeSongMarquee{
+  0%,18%{ transform:translateX(0); }
+  100%{ transform:translateX(-55%); }
+}
+
+.queue-empty{
+  text-align:left !important;
+}
+
 </style>
 </head>
 <body>
@@ -1647,18 +1809,43 @@ body > .option-alert.show,
     if($karaokeTitleText) $karaokeTitleText.textContent = data.title || "노래방 공지 알림판";
     if($karaokeNoticeText) $karaokeNoticeText.textContent = data.notice || data.ticker || "노래문의필수";
 
+    const songMarquee = (title) => {
+      const safeTitle = escapeHtml(title || "");
+      return `<span class="karaoke-song-title-wrap"><span class="karaoke-song-title-text">${safeTitle}</span></span>`;
+    };
+
     const running = songs.find(s => s.status === "진행");
     if($karaokeCurrentText){
       $karaokeCurrentText.innerHTML = running
-        ? `<b>진행중</b> <span>${escapeHtml(running.title)}</span> <em>${escapeHtml(running.nick)}</em>`
-        : `<b>진행중-</b>`;
+        ? `<b>진행중<span class="karaoke-heart">♥</span></b><em>${escapeHtml(running.nick)}</em>${songMarquee(running.title)}`
+        : `<b>진행중<span class="karaoke-heart">♥</span></b>`;
     }
 
     if($karaokeQueueList){
-      const queue = songs.filter(s => s.status === "대기" || s.status === "보류").slice(0, 6);
-      $karaokeQueueList.innerHTML = queue.length
-        ? queue.map((s, idx) => `<div class="karaoke-song-row ${s.status === "보류" ? "hold" : ""}"><span>${idx+1}번</span><b>${escapeHtml(s.title)}</b><em>${escapeHtml(s.nick)}${s.status === "보류" ? "(보류)" : ""}</em></div>`).join("")
+      const waitQueue = songs.filter(s => s.status === "대기").slice(0, 6);
+      const holdQueue = songs.filter(s => s.status === "보류").slice(0, 6);
+
+      const waitHtml = waitQueue.length
+        ? waitQueue.map((s, idx) => `
+          <div class="karaoke-song-row">
+            <span class="karaoke-order">${idx+1}번</span>
+            <em class="karaoke-donor">${escapeHtml(s.nick)}</em>
+            ${songMarquee(s.title)}
+          </div>
+        `).join("")
         : `<div class="queue-empty">예약 없음</div>`;
+
+      const holdHtml = holdQueue.length
+        ? `<div class="karaoke-hold-title">보류곡</div>` + holdQueue.map((s, idx) => `
+          <div class="karaoke-song-row hold">
+            <span class="karaoke-order">보류${idx+1}</span>
+            <em class="karaoke-donor">${escapeHtml(s.nick)}</em>
+            ${songMarquee(s.title)}
+          </div>
+        `).join("")
+        : "";
+
+      $karaokeQueueList.innerHTML = waitHtml + holdHtml;
     }
 
     if($karaokeTickerText){
