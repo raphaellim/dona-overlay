@@ -169,16 +169,23 @@ html,body{
   border:0 !important;
   overflow:hidden !important;
 }
-/* ===== ALERT 위치 v1 최종본 복구: 계좌후원 바로 아래 ===== */
+
+  /* ===== ALERT 계좌후원 아래: overlay-stack 기준 고정 ===== */
+.overlay-stack{
+  position:absolute !important;
+}
+
 #overlayAlertRoot{
-  position:fixed !important;
-  left:var(--alert-left, 8px) !important;
-  top:var(--alert-top, 80px) !important;
-  width:var(--alert-width, 420px) !important;
-  height:var(--alert-height, 170px) !important;
+  position:absolute !important;
+  left:0 !important;
+  top:0;
   right:auto !important;
   bottom:auto !important;
   inset:auto !important;
+
+  width:100% !important;
+  height:170px !important;
+
   z-index:999999 !important;
   pointer-events:none !important;
   overflow:visible !important;
@@ -188,25 +195,33 @@ html,body{
 #overlayAlertRoot > #optionAlert.option-alert,
 #overlayAlertRoot #optionAlert.option-alert{
   position:absolute !important;
-  left:50% !important;
+  left:0 !important;
   top:0 !important;
   right:auto !important;
   bottom:auto !important;
   inset:auto !important;
-  width:calc(100% - 12px) !important;
-  max-width:calc(100% - 12px) !important;
+
+  width:100% !important;
+  max-width:100% !important;
   min-width:0 !important;
+
   margin:0 !important;
-  transform:translateX(-50%) scale(.92) !important;
+  transform:scale(.92) !important;
   transform-origin:top center !important;
 }
 
 #overlayAlertRoot > #optionAlert.option-alert.show,
 #overlayAlertRoot #optionAlert.option-alert.show{
-  transform:translateX(-50%) scale(1) !important;
+  transform:scale(1) !important;
+  animation:alertStackPop .34s ease-out, alertCleanGlow 1.2s ease-in-out infinite alternate !important;
 }
 
-/* 만약 ALERT가 root 밖으로 빠져도 브라우저 왼쪽/상단으로 튀지 않게 방어 */
+@keyframes alertStackPop{
+  0%{transform:scale(.92)}
+  70%{transform:scale(1.035)}
+  100%{transform:scale(1)}
+}
+
 body > #optionAlert.option-alert{
   display:none !important;
 }
@@ -1122,34 +1137,41 @@ function ensureAlertIndependent(){
 
   if(!root || !alertEl || !stack) return;
 
+  // ALERT root를 무조건 overlay-stack 안으로 이동
+  if(root.parentElement !== stack){
+    stack.appendChild(root);
+  }
+
   if(alertEl.parentElement !== root){
     root.appendChild(alertEl);
   }
 
-  // ALERT root를 계좌후원 박스 바로 아래 flex 위치로 이동
-  if(accountBox && accountBox.parentElement === stack){
-    if(root.parentElement !== stack || root.previousElementSibling !== accountBox){
-      stack.insertBefore(root, accountBox.nextSibling);
-    }
-  }else{
-    if(root.parentElement !== stack){
-      stack.insertBefore(root, stack.firstChild);
-    }
+  const isVisible = (el) => {
+    if(!el || el.classList.contains("hidden")) return false;
+    const st = window.getComputedStyle(el);
+    if(st.display === "none" || st.visibility === "hidden") return false;
+    const r = el.getBoundingClientRect();
+    return r.width > 0 && r.height > 0;
+  };
+
+  // 계좌후원 박스 바로 아래 위치 계산
+  let top = 0;
+  if(isVisible(accountBox)){
+    top = accountBox.offsetTop + accountBox.offsetHeight + 8;
   }
 
-  root.style.position = "relative";
-  root.style.left = "auto";
-  root.style.top = "auto";
+  root.style.position = "absolute";
+  root.style.left = "0";
+  root.style.top = top + "px";
   root.style.right = "auto";
   root.style.bottom = "auto";
   root.style.inset = "auto";
   root.style.width = "100%";
-  root.style.height = "0";
+  root.style.height = "170px";
   root.style.zIndex = "999999";
   root.style.pointerEvents = "none";
   root.style.overflow = "visible";
   root.style.transform = "none";
-  root.style.flex = "0 0 0";
 
   alertEl.classList.remove("hidden");
   alertEl.style.position = "absolute";
