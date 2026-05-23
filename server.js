@@ -269,9 +269,9 @@ function normalizeSettings(settings) {
 }
 
 const SETTING_FIELDS = [
-  'title', 'titleImage', 'noticeTitle', 'notice', 'noticeColors',
   'viewerPassword', 'viewerToken', 'overlaySections',
-  'columns', 'maxCreators', 'creators', 'presets', 'prices', 'soundRules', 'karaokeData', 'fundingData', 'broadcastTimerData'
+  'columns', 'maxCreators', 'creators', 'presets', 'prices', 'soundRules',
+  'broadcastTimerData'
 ];
 
 function pickScopedSettings(settings) {
@@ -508,16 +508,43 @@ async function operatorAllowed(req, station, broadcast) {
   return await broadcastPasswordAllowed(req, broadcast);
 }
 
+
+const GLOBAL_SHARED_SETTING_FIELDS = [
+  'title', 'titleImage', 'noticeTitle', 'notice', 'noticeColors',
+  'karaokeData', 'fundingData'
+];
+
+async function saveSharedGlobalSettings(updates) {
+  const global = await readGlobalSettings();
+  const next = { ...global };
+  for (const key of GLOBAL_SHARED_SETTING_FIELDS) {
+    if (updates[key] !== undefined) next[key] = updates[key];
+  }
+  return await writeGlobalSettings(next);
+}
+
 async function readEffectiveSettings(stationSlug, broadcastId) {
   const global = await readGlobalSettings();
   const stationMap = global.stationSettings || {};
   const stationSettings = stationMap[stationSlug] || {};
   const scoped = broadcastId && stationSettings[broadcastId] ? stationSettings[broadcastId] : {};
-  return normalizeSettings({
+
+  const merged = normalizeSettings({
     ...global,
     ...scoped,
+    // 아래 항목은 방송국 공통으로 고정합니다.
+    // 과거 버전에서 방송별 scoped 안에 남아 있어도 global 값을 우선 사용합니다.
+    title: global.title,
+    titleImage: global.titleImage,
+    noticeTitle: global.noticeTitle,
+    notice: global.notice,
+    noticeColors: global.noticeColors,
+    karaokeData: global.karaokeData,
+    fundingData: global.fundingData,
     stationSettings: global.stationSettings || {}
   });
+
+  return merged;
 }
 
 async function saveEffectiveSettings(stationSlug, broadcastId, updates) {
@@ -1522,6 +1549,7 @@ app.post('/api/settings', async (req, res) => {
       soundRules: normalizeSoundRules(body.soundRules, undefined)
     };
 
+    await saveSharedGlobalSettings(updates);
     const savedGlobal = await saveEffectiveSettings(ctx.station.slug, ctx.active.id, updates);
     const effective = await readEffectiveSettings(ctx.station.slug, ctx.active.id);
 
@@ -1542,7 +1570,7 @@ app.post('/api/karaoke-data', async (req, res) => {
     }
     const current = await readEffectiveSettings(ctx.station.slug, ctx.active.id);
     const karaokeData = normalizeKaraokeData(req.body.karaokeData || req.body || {});
-    await saveEffectiveSettings(ctx.station.slug, ctx.active.id, { ...current, karaokeData });
+    await saveSharedGlobalSettings({ karaokeData });
     const effective = await readEffectiveSettings(ctx.station.slug, ctx.active.id);
     res.json({ ok: true, karaokeData: effective.karaokeData });
   } catch (e) {
@@ -1560,7 +1588,7 @@ app.post('/api/funding-data', async (req, res) => {
     }
     const current = await readEffectiveSettings(ctx.station.slug, ctx.active.id);
     const fundingData = normalizeFundingData(req.body.fundingData || req.body || {});
-    await saveEffectiveSettings(ctx.station.slug, ctx.active.id, { ...current, fundingData });
+    await saveSharedGlobalSettings({ fundingData });
     const effective = await readEffectiveSettings(ctx.station.slug, ctx.active.id);
     res.json({ ok: true, fundingData: effective.fundingData });
   } catch (e) {
@@ -1738,7 +1766,7 @@ app.post('/api/donations/batch', async (req, res) => {
         if (!units || units < 0) units = Math.floor(grandTotal / 10000);
         if (units > 0) {
           item.current = Number(item.current || 0) + units;
-          await saveEffectiveSettings(ctx.station.slug, ctx.active.id, { ...current, fundingData });
+          await saveSharedGlobalSettings({ fundingData });
         }
       }
     }
