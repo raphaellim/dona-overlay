@@ -168,6 +168,45 @@ html,body{
 #overlayAlertRoot #optionAlert.option-alert.show{
   transform:translateX(-50%) scale(1) !important;
 }
+  /* ===== ALERT 좌측 반절 잘림 최종 보정 ===== */
+#overlayAlertRoot{
+  position:fixed !important;
+  left:var(--alert-left, 8px) !important;
+  top:var(--alert-top, 80px) !important;
+  width:var(--alert-width, 420px) !important;
+  height:var(--alert-height, 170px) !important;
+  right:auto !important;
+  bottom:auto !important;
+  inset:auto !important;
+  z-index:999999 !important;
+  pointer-events:none !important;
+  overflow:visible !important;
+  transform:none !important;
+}
+
+/* 핵심: left:50% / translateX(-50%) 제거 */
+#overlayAlertRoot > #optionAlert.option-alert,
+#overlayAlertRoot #optionAlert.option-alert{
+  position:absolute !important;
+  left:0 !important;
+  top:0 !important;
+  right:auto !important;
+  bottom:auto !important;
+  inset:auto !important;
+
+  width:100% !important;
+  max-width:100% !important;
+  min-width:0 !important;
+
+  margin:0 !important;
+  transform:scale(.92) !important;
+  transform-origin:top center !important;
+}
+
+#overlayAlertRoot > #optionAlert.option-alert.show,
+#overlayAlertRoot #optionAlert.option-alert.show{
+  transform:scale(1) !important;
+}
 </style>
 </head>
 <body>
@@ -1099,7 +1138,7 @@ html,body{
 
   alertEl.classList.remove("hidden");
   alertEl.style.position = "absolute";
-  alertEl.style.left = "50%";
+  alertEl.style.left = "0";
   alertEl.style.top = "0";
   alertEl.style.right = "auto";
   alertEl.style.bottom = "auto";
@@ -1109,7 +1148,7 @@ html,body{
     alertEl.style.display = "flex";
     alertEl.style.visibility = "visible";
     alertEl.style.opacity = "1";
-    alertEl.style.transform = "translateX(-50%) scale(1)";
+    alertEl.style.width = "100%";
   }else{
     alertEl.style.display = "";
     alertEl.style.visibility = "";
