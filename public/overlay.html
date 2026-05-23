@@ -674,7 +674,7 @@ body > .option-alert.show,
 .queue-num{display:inline-flex;align-items:center;justify-content:center;min-width:30px;height:30px;border-radius:999px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);font-size:18px;font-weight:1000;}
 .karaoke-coin{margin-top:8px;font-size:18px;text-align:center;font-weight:900;}
 .karaoke-ticker{width:100%;overflow:hidden;white-space:nowrap;margin-top:9px;border-radius:999px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.14);}
-.karaoke-ticker span{display:inline-block;padding-left:100%;font-size:17px;line-height:32px;font-weight:900;animation:karaokeTickerMove 16s linear infinite;}
+.karaoke-ticker span{display:inline-block;padding-left:100%;font-size:17px;line-height:32px;font-weight:900;animation:karaokeTickerMove 9s linear infinite;}
 @keyframes karaokeTickerMove{from{transform:translateX(0);}to{transform:translateX(-100%);}}
 .funding-value{margin-top:8px;font-size:28px;line-height:1;font-weight:1000;text-align:center;color:#bdf8ff;text-shadow:0 0 10px rgba(0,234,255,.45);}
 
@@ -1036,7 +1036,7 @@ body > .option-alert.show,
   line-height:30px;
   font-weight:1000;
   color:#fff;
-  animation:karaokeTickerMove 18s linear infinite;
+  animation:karaokeTickerMove 9s linear infinite;
 }
 
 .notice-text,
@@ -1074,6 +1074,32 @@ body > .option-alert.show,
 
 .karaoke-title{
   margin-top:0 !important;
+}
+
+
+/* ===== ALERT 계좌후원 바로 아래 고정 ===== */
+#overlayAlertRoot{
+  left:var(--alert-left, 8px) !important;
+  top:var(--alert-top, 80px) !important;
+  width:var(--alert-width, 420px) !important;
+  height:var(--alert-height, 170px) !important;
+  overflow:visible !important;
+}
+
+#overlayAlertRoot #optionAlert.option-alert{
+  position:absolute !important;
+  left:50% !important;
+  top:0 !important;
+  right:auto !important;
+  bottom:auto !important;
+  width:calc(100% - 12px) !important;
+  max-width:calc(100% - 12px) !important;
+  transform:translateX(-50%) scale(.92) !important;
+  margin:0 !important;
+}
+
+#overlayAlertRoot #optionAlert.option-alert.show{
+  transform:translateX(-50%) scale(1) !important;
 }
 
 </style>
@@ -1944,8 +1970,9 @@ body > .option-alert.show,
       root.appendChild(alertEl);
     }
 
+    const accountBox = document.getElementById("accountBox");
     const stack = document.querySelector(".overlay-stack");
-    const baseBox = stack || document.body;
+    const baseBox = accountBox && !accountBox.classList.contains("hidden") ? accountBox : stack;
 
     if(root && baseBox){
       const rect = baseBox.getBoundingClientRect();
@@ -1954,15 +1981,15 @@ body > .option-alert.show,
       const width = Math.max(240, Math.min(Math.round(rect.width), vw - left - 8));
 
       root.style.setProperty("--alert-left", left + "px");
-      root.style.setProperty("--alert-top", Math.round(rect.top) + "px");
+      root.style.setProperty("--alert-top", Math.round(rect.bottom + 8) + "px");
       root.style.setProperty("--alert-width", width + "px");
-      root.style.setProperty("--alert-height", Math.round(rect.height || 220) + "px");
+      root.style.setProperty("--alert-height", "170px");
     }
 
     alertEl.classList.remove("hidden");
     alertEl.style.position = "absolute";
     alertEl.style.left = "50%";
-    alertEl.style.top = "50%";
+    alertEl.style.top = "0";
     alertEl.style.right = "auto";
     alertEl.style.bottom = "auto";
     alertEl.style.margin = "0";
@@ -1971,12 +1998,12 @@ body > .option-alert.show,
       alertEl.style.display = "flex";
       alertEl.style.visibility = "visible";
       alertEl.style.opacity = "1";
-      alertEl.style.transform = "translate(-50%, -50%) scale(1)";
+      alertEl.style.transform = "translateX(-50%) scale(1)";
     }else{
       alertEl.style.display = "";
       alertEl.style.visibility = "";
       alertEl.style.opacity = "";
-      alertEl.style.transform = "translate(-50%, -50%) scale(.92)";
+      alertEl.style.transform = "translateX(-50%) scale(.92)";
     }
   }
 
@@ -2054,6 +2081,10 @@ body > .option-alert.show,
     }
   }, 500);
 
+
+  const overlayLiveFastRefresh = setInterval(() => {
+    if(typeof refresh === "function") refresh();
+  }, 1000);
 </script>
 <!-- notice box visible when ON even without text -->
 </body>

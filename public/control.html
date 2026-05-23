@@ -141,6 +141,32 @@ textarea{resize:vertical;line-height:1.45}
     }
   }
 
+
+/* ===== 펀딩 관리 row 분리: 사운드 설정과 충돌 방지 ===== */
+.funding-rule{
+  display:grid;
+  grid-template-columns:1.3fr .7fr .7fr .6fr auto;
+  gap:8px;
+  align-items:end;
+  padding:10px;
+  border:1px solid #243047;
+  background:#0b1220;
+  border-radius:12px;
+  margin-top:8px;
+}
+.funding-rule input,
+.funding-rule select{
+  width:100%;
+  background:#070b12;
+  color:#fff;
+  border:1px solid #334155;
+  border-radius:10px;
+  padding:9px 10px;
+}
+@media(max-width:900px){
+  .funding-rule{grid-template-columns:1fr}
+}
+
 </style>
 </head>
 <body>
@@ -487,7 +513,7 @@ function renderFundingManager(){
     return;
   }
   box.innerHTML = data.items.map((f, idx) => `
-    <div class="sound-rule">
+    <div class="funding-rule">
       <label>펀딩명<input class="fund-title" value="${escAttr(f.title)}"></label>
       <label>현재<input class="fund-current" type="number" min="0" value="${Number(f.current||0)}"></label>
       <label>목표<input class="fund-target" type="number" min="0" value="${Number(f.target||0)}"></label>
@@ -504,7 +530,7 @@ function renderFundingManager(){
 
 function collectFundingData(){
   const current = getFundingData();
-  const items = Array.from(document.querySelectorAll('#fundingList .sound-rule')).map((row, idx) => {
+  const items = Array.from(document.querySelectorAll('#fundingList .funding-rule')).map((row, idx) => {
     const titleEl = row.querySelector('.fund-title');
     const currentEl = row.querySelector('.fund-current');
     const targetEl = row.querySelector('.fund-target');

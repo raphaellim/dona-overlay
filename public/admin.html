@@ -504,7 +504,7 @@ function syncKaraokeInputs(){
   if($('#karaokeTitle')) data.title=$('#karaokeTitle').value.trim()||'노래방 공지 알림판';
   if($('#karaokeNotice')) data.notice=$('#karaokeNotice').value.trim();
 }
-function addKaraokeCoin(){
+async function addKaraokeCoin(){
   const data=getKaraokeData();
   const nick=$('#karaokeCoinNick').value.trim();
   const type=$('#karaokeCoinType').value;
@@ -516,8 +516,9 @@ function addKaraokeCoin(){
   user.coins[type]=Number(user.coins[type]||0)+count;
   $('#karaokeCoinNick').value=''; $('#karaokeCoinCount').value=1;
   renderKaraokeManager();
+  await saveKaraokeData(false);
 }
-function addKaraokeSong(){
+async function addKaraokeSong(){
   const data=getKaraokeData();
   const nick=$('#karaokeSongNick').value.trim();
   const type=$('#karaokeSongType').value;
@@ -532,30 +533,48 @@ function addKaraokeSong(){
   data.songs.push({id:'song_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),nick,type,title,status:'대기'});
   $('#karaokeSongNick').value=''; $('#karaokeSongTitle').value='';
   renderKaraokeManager();
+  await saveKaraokeData(false);
 }
-function setKaraokeSongStatus(id,status){
+async function setKaraokeSongStatus(id,status){
   const data=getKaraokeData();
   const song=data.songs.find(s=>s.id===id); if(!song) return;
   if(status==='진행') data.songs.forEach(s=>{if(s.status==='진행') s.status='대기'});
-  song.status=status; renderKaraokeManager();
+  song.status=status;
+  renderKaraokeManager();
+  await saveKaraokeData(false);
 }
-function editKaraokeSong(id){
-  const data=getKaraokeData(); const song=data.songs.find(s=>s.id===id); if(!song)return;
-  const nextNick=prompt('닉네임 변경',song.nick); if(nextNick===null)return;
-  const nextTitle=prompt('선곡 변경',song.title); if(nextTitle===null)return;
-  song.nick=nextNick.trim()||song.nick; song.title=nextTitle.trim()||song.title; renderKaraokeManager();
+async function editKaraokeSong(id){
+  const data=getKaraokeData();
+  const song=data.songs.find(s=>s.id===id);
+  if(!song)return;
+  const nextTitle=prompt('곡 수정', song.title);
+  if(nextTitle===null)return;
+  song.title=nextTitle.trim()||song.title;
+  renderKaraokeManager();
+  await saveKaraokeData(false);
 }
-function deleteKaraokeSong(id){const data=getKaraokeData(); if(!confirm('이 선곡을 삭제할까요?'))return; data.songs=data.songs.filter(s=>s.id!==id); renderKaraokeManager();}
-function deleteKaraokeUser(nick){const data=getKaraokeData(); if(!confirm(`${nick} 닉네임과 보유 코인을 삭제할까요?`))return; data.users=data.users.filter(u=>u.nick!==nick); renderKaraokeManager();}
-async function saveKaraokeData(){
+async function deleteKaraokeSong(id){
+  const data=getKaraokeData();
+  if(!confirm('이 선곡을 삭제할까요?'))return;
+  data.songs=data.songs.filter(s=>s.id!==id);
+  renderKaraokeManager();
+  await saveKaraokeData(false);
+}
+async function deleteKaraokeUser(nick){
+  const data=getKaraokeData();
+  if(!confirm(`${nick} 닉네임과 보유 코인을 삭제할까요?`))return;
+  data.users=data.users.filter(u=>u.nick!==nick);
+  renderKaraokeManager();
+  await saveKaraokeData(false);
+}
+async function saveKaraokeData(showMessage=true){
   try{
     syncKaraokeInputs();
     const saved = await api('/api/karaoke-data',{method:'POST',body:JSON.stringify({karaokeData:getKaraokeData()})});
     if(saved && saved.karaokeData){
       settings.karaokeData = saved.karaokeData;
     }
-    alert('노래방 저장 완료');
-    await loadSettings();
+    if(showMessage) alert('노래방 저장 완료');
     renderKaraokeManager();
   }catch(e){alert(e.message)}
 }
