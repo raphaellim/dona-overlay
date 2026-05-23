@@ -535,7 +535,6 @@ async function readEffectiveSettings(stationSlug, broadcastId) {
   return normalizeSettings({
     ...global,
     ...scoped,
-    // 방송국 공통 유지 항목
     title: global.title,
     titleImage: global.titleImage,
     noticeTitle: global.noticeTitle,
@@ -1706,6 +1705,7 @@ app.get('/api/summary', async (req, res) => {
     const ctx = await getStationContext(req, res);
     if (!ctx) return;
     const broadcastId = req.query.broadcastId || ctx.active.id;
+
     const settings = await readEffectiveSettings(ctx.station.slug, broadcastId);
     let donations = [];
     try {
@@ -1714,15 +1714,24 @@ app.get('/api/summary', async (req, res) => {
       console.error('[api/summary readDonations]', donErr);
       donations = [];
     }
-    res.json(safeBuildSummary(settings, donations, ctx.active, ctx.station));
-  } catch (e) {
-    console.error('[api/summary fatal]', e);
+
     try {
-      const fallback = normalizeSettings({});
+      res.json(buildSummary(settings, donations, ctx.active, ctx.station));
+    } catch (sumErr) {
+      console.error('[api/summary buildSummary]', sumErr);
+      const safeSettings = normalizeSettings(settings || {});
       res.json({
-        ...fallback,
-        station: null,
-        broadcast: null,
+        settings: safeSettings,
+        title: safeSettings.title,
+        titleImage: safeSettings.titleImage,
+        noticeTitle: safeSettings.noticeTitle,
+        notice: safeSettings.notice,
+        noticeColors: safeSettings.noticeColors,
+        overlaySections: safeSettings.overlaySections,
+        soundRules: safeSettings.soundRules,
+        karaokeData: safeSettings.karaokeData,
+        fundingData: safeSettings.fundingData,
+        broadcastTimerData: safeSettings.broadcastTimerData,
         creators: [],
         creatorRows: [],
         donors: [],
@@ -1731,7 +1740,34 @@ app.get('/api/summary', async (req, res) => {
         accountRoller: [],
         recent: [],
         donations: [],
-        errorMessage: e.message || '합산 조회 실패'
+        station: stationToClient(ctx.station),
+        broadcast: broadcastToClient(ctx.active)
+      });
+    }
+  } catch (e) {
+    console.error('[api/summary fatal]', e);
+    try {
+      const fallback = normalizeSettings({});
+      res.json({
+        settings: fallback,
+        title: fallback.title,
+        titleImage: fallback.titleImage,
+        noticeTitle: fallback.noticeTitle,
+        notice: fallback.notice,
+        noticeColors: fallback.noticeColors,
+        overlaySections: fallback.overlaySections,
+        soundRules: fallback.soundRules,
+        karaokeData: fallback.karaokeData,
+        fundingData: fallback.fundingData,
+        broadcastTimerData: fallback.broadcastTimerData,
+        creators: [],
+        creatorRows: [],
+        donors: [],
+        donorRows: [],
+        accountDonors: [],
+        accountRoller: [],
+        recent: [],
+        donations: []
       });
     } catch {
       res.status(500).json({ error: e.message || '합산 조회 실패' });

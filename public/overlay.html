@@ -1309,6 +1309,98 @@ body > .option-alert.show,
   letter-spacing:-.04em !important;
 }
 
+
+/* ===== 실시간반영/타이틀/금액표기 최종 보정 ===== */
+.notice-title,
+.funding-title,
+.karaoke-title{
+  text-align:center !important;
+}
+
+.notice-title,
+.account-title,
+.funding-title,
+.karaoke-title{
+  font-size:20px !important;
+  line-height:1.08 !important;
+  font-weight:1000 !important;
+  text-shadow:none !important;
+  filter:none !important;
+}
+
+/* 계좌후원은 긴 이름/금액이 덜 잘리게 패딩 축소 */
+.account-box{
+  padding-left:8px !important;
+  padding-right:8px !important;
+}
+
+.account-row{
+  gap:5px !important;
+}
+
+.account-title{
+  padding:0 2px !important;
+  flex:0 0 auto !important;
+}
+
+.roller{
+  flex:1 1 auto !important;
+  min-width:0 !important;
+  width:auto !important;
+}
+
+.roller-item{
+  gap:3px !important;
+  padding:0 !important;
+}
+
+.account-donor{
+  min-width:0 !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+  white-space:nowrap !important;
+}
+
+.account-amount{
+  flex:0 0 auto !important;
+  font-size:.72em !important;
+  text-shadow:none !important;
+  filter:none !important;
+}
+
+/* 네온/글로우 제거로 가독성 우선 */
+.account-title,
+.account-heart,
+.account-donor,
+.account-amount,
+.karaoke-title,
+.karaoke-notice,
+.karaoke-current,
+.funding-title,
+.funding-value,
+.funding-line,
+.timer-value,
+.creator-name,
+.creator-total,
+.creator-amount,
+.donation-amount,
+.notice-title,
+.notice-text,
+.notice-line{
+  text-shadow:none !important;
+  filter:none !important;
+}
+
+.timer-value,
+.funding-line b{
+  color:#f8fafc !important;
+}
+
+/* 크리에이터 박스 후원금액은 105000 -> 10.5 형식 */
+.donation-amount{
+  letter-spacing:-.04em !important;
+}
+
 </style>
 </head>
 <body>
@@ -1432,6 +1524,7 @@ body > .option-alert.show,
   let enabledPresets = [];
   let lastSignature = "";
   let lastDonationKey = localStorage.getItem("overlay_last_alert_key") || "";
+  let donationAlertBootReady = false;
   let lastSoundEventAt = localStorage.getItem("overlay_last_sound_event_at") || new Date().toISOString();
   const overlaySoundBootAt = new Date().toISOString();
   const claimedSoundEventIds = new Set();
@@ -1831,7 +1924,7 @@ body > .option-alert.show,
     $list.innerHTML=rows.map(row=>{
       const rawName=normalizeName(row.creator||row.name||"익명");
       const name=formatCreatorName(rawName);
-      const total=displayAmount(row.total??row.totalAmount??row.total_amount??row.amount??0);
+      const total=displayManAmount(row.total??row.totalAmount??row.total_amount??row.amount??0);
       const labels=visiblePresets.length?statusLabelsFromPresetNets(visiblePresets,row):[];
       const donationHtml = showDonation
         ? `<div class="donation-amount">후원(${total})</div>`
@@ -2008,11 +2101,14 @@ body > .option-alert.show,
     const rows=(donations||[]).slice().sort((a,b)=>new Date(a.createdAt||a.created_at||0)-new Date(b.createdAt||b.created_at||0));
     if(!rows.length) return;
 
-    if(!lastDonationKey){
+    // 새 창/새 탭으로 오버레이를 열었을 때 기존 후원 ALERT가 한꺼번에 재생되지 않게
+    // 첫 조회에서는 항상 최신 건까지만 기준점으로 잡고 재생하지 않음
+    if(!donationAlertBootReady){
       const latest=rows[rows.length-1];
       const key=(latest.id||"")+"_"+(latest.createdAt||latest.created_at||"");
       lastDonationKey=key;
       localStorage.setItem("overlay_last_alert_key",key);
+      donationAlertBootReady=true;
       return;
     }
 
@@ -2257,6 +2353,9 @@ body > .option-alert.show,
       noticeColors:settings.noticeColors||[],
       soundRules:settings.soundRules||{},
       noticeTitle:settings.noticeTitle||"공지",
+      fundingData:settings.fundingData||{},
+      karaokeData:settings.karaokeData||{},
+      broadcastTimerData:settings.broadcastTimerData||{},
       accountDonors:data.accountDonors||[],
       creators,
       presets:enabledPresets.map(p=>({id:p.id,enabled:p.enabled,title:p.title,plusName:p.plusName,minusName:p.minusName}))
@@ -2280,7 +2379,7 @@ body > .option-alert.show,
 
   refresh();
   testSoundFromQuery();
-  setInterval(refresh,5000);
+  setInterval(refresh,1000);
 })();
 
   window.addEventListener("resize", () => {
@@ -2293,13 +2392,7 @@ body > .option-alert.show,
       ensureAlertIndependent();
     }
   }, 500);
-
-
-  const overlayLiveFastRefresh = setInterval(() => {
-    if(typeof refresh === "function") refresh();
-  }, 1000);
-
-  window.addEventListener('unhandledrejection', (ev) => {
+window.addEventListener('unhandledrejection', (ev) => {
     console.warn('[overlay unhandledrejection]', ev.reason);
     ev.preventDefault();
   });
