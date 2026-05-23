@@ -342,15 +342,15 @@ function escAttr(v){
   return String(v ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
 }
 function fmt(n){
-  const v = Number(String(n || 0).replace(/[^\d.-]/g, '')) || 0;
-  return Math.trunc(v).toLocaleString('ko-KR');
+  const v = Number(n || 0);
+  return (Math.trunc(v / 1000) / 10).toFixed(1).replace(/\.0$/, '');
 }
 
 // 입력칸은 천원단위 입력 방식입니다. 예: 66 = 66,000원 / 6.6 = 6,600원
 function inputValueFromWon(won){
-  const v = Number(String(won || 0).replace(/[^\d.-]/g, '')) || 0;
+  const v = Number(won || 0) / 1000;
   if(!Number.isFinite(v) || v === 0) return '';
-  return String(Math.trunc(v));
+  return String(Math.round(v * 10) / 10).replace(/\.0$/, '');
 }
 function moneyInputValue(id){
   return toWon($(id) ? $(id).value : 0);

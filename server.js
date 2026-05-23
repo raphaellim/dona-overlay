@@ -38,7 +38,7 @@ function defaultSettings() {
     noticeColors: ['#ffffff', '#ffe066', '#5ecbff', '#ffb4ca', '#ff4d5e'],
     viewerPassword: '',
     viewerToken: '',
-    overlaySections: { account: true, notice: false, creators: true, creatorDonations: true },
+    overlaySections: { account: true, notice: false, creators: true, creatorDonations: true, karaoke: false, funding: false, broadcastTimer: false },
     columns: 4,
     maxCreators: 12,
     creators: [],
@@ -135,13 +135,24 @@ function normalizeSoundRules(raw, base) {
 }
 
 function normalizeOverlaySections(raw, base) {
-  const fallback = base || { account: true, notice: false, creators: true, creatorDonations: true };
+  const fallback = base || {
+    account: true,
+    notice: false,
+    creators: true,
+    creatorDonations: true,
+    karaoke: false,
+    funding: false,
+    broadcastTimer: false
+  };
   const value = raw && typeof raw === 'object' ? raw : fallback;
   return {
     account: value.account !== false,
     notice: value.notice === true,
     creators: value.creators !== false,
-    creatorDonations: value.creatorDonations !== false
+    creatorDonations: value.creatorDonations !== false,
+    karaoke: value.karaoke === true,
+    funding: value.funding === true,
+    broadcastTimer: value.broadcastTimer === true
   };
 }
 
@@ -1423,7 +1434,7 @@ app.post('/api/settings', async (req, res) => {
       noticeColors: Array.isArray(body.noticeColors) ? body.noticeColors.slice(0, 5) : undefined,
       viewerPassword: String(body.viewerPassword ?? ''),
       viewerToken: String(body.viewerToken ?? ''),
-      overlaySections: normalizeOverlaySections(body.overlaySections, { account: true, notice: false, creators: true, creatorDonations: true }),
+      overlaySections: normalizeOverlaySections(body.overlaySections, { account: true, notice: false, creators: true, creatorDonations: true, karaoke: false, funding: false, broadcastTimer: false }),
       columns: body.columns ?? 4,
       maxCreators: body.maxCreators ?? 12,
       creators: Array.isArray(body.creators) ? body.creators.map(normName).filter(Boolean) : [],

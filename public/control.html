@@ -94,6 +94,10 @@ textarea{resize:vertical;line-height:1.45}
             <label class="toggle-box"><input type="checkbox" id="overlayNoticeBox">공지박스</label>
             <label class="toggle-box"><input type="checkbox" id="overlayCreatorBox">크리에이터박스</label>
             <label class="toggle-box"><input type="checkbox" id="overlayCreatorDonations">크리에이터 후원 표시</label>
+
+            <label class="toggle-box"><input type="checkbox" id="overlayKaraokeBox">노래방창</label>
+            <label class="toggle-box"><input type="checkbox" id="overlayFundingBox">펀딩창</label>
+            <label class="toggle-box"><input type="checkbox" id="overlayBroadcastTimer">방송시간 타이머</label>
           </div>
           <p class="muted" style="margin-top:8px">크리에이터 후원 표시를 OFF 하면 크리에이터 박스에 후원금액은 숨기고 옵션만 표시합니다.</p>
         </div>
@@ -189,6 +193,9 @@ async function loadSettings(){
   $('#overlayNoticeBox').checked = overlaySections.notice === true;
   $('#overlayCreatorBox').checked = overlaySections.creators !== false;
   $('#overlayCreatorDonations').checked = overlaySections.creatorDonations !== false;
+  if($('#overlayKaraokeBox')) $('#overlayKaraokeBox').checked = overlaySections.karaoke === true;
+  if($('#overlayFundingBox')) $('#overlayFundingBox').checked = overlaySections.funding === true;
+  if($('#overlayBroadcastTimer')) $('#overlayBroadcastTimer').checked = overlaySections.broadcastTimer === true;
 
   const soundRules = settings.soundRules || {};
   $('#soundEnabled').checked = soundRules.enabled !== false;
@@ -299,7 +306,10 @@ async function saveSettings(){
         account: $('#overlayAccountBox').checked,
         notice: $('#overlayNoticeBox').checked,
         creators: $('#overlayCreatorBox').checked,
-        creatorDonations: $('#overlayCreatorDonations') ? $('#overlayCreatorDonations').checked : true
+        creatorDonations: $('#overlayCreatorDonations') ? $('#overlayCreatorDonations').checked : true,
+        karaoke: $('#overlayKaraokeBox') ? $('#overlayKaraokeBox').checked : false,
+        funding: $('#overlayFundingBox') ? $('#overlayFundingBox').checked : false,
+        broadcastTimer: $('#overlayBroadcastTimer') ? $('#overlayBroadcastTimer').checked : false
       },
       soundRules: {
         enabled: $('#soundEnabled').checked,
