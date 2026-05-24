@@ -538,7 +538,15 @@ function renderFundingManager(){
 
 function collectFundingData(){
   const current = getFundingData();
-  const items = Array.from(document.querySelectorAll('#fundingList .funding-rule')).map((row, idx) => {
+  const rows = Array.from(document.querySelectorAll('#fundingList .funding-rule'));
+
+  // 펀딩 리스트 DOM이 아직 렌더링되지 않은 상태에서 저장이 호출되면
+  // 빈 배열로 덮어쓰지 않고 현재 settings 값을 유지
+  if(rows.length === 0 && current.items && current.items.length){
+    return {items: current.items};
+  }
+
+  const items = rows.map((row, idx) => {
     const titleEl = row.querySelector('.fund-title');
     const currentEl = row.querySelector('.fund-current');
     const targetEl = row.querySelector('.fund-target');
@@ -634,6 +642,11 @@ async function loadSettings(){
       {id:'food',enabled:true,title:'먹먹마',plusName:'먹어',plusPrice:14000,minusName:'먹지마',minusPrice:15000,soundFile:'food_plus.mp3'}
     ];
   }
+  if(!settings.fundingData || !Array.isArray(settings.fundingData.items)){
+    settings.fundingData = defaultFundingData();
+  }
+  renderFundingManager();
+
   renderPresets();
   $('#saveHint').textContent = settings.broadcast ? `현재 방송 "${settings.broadcast.title}" 설정 저장` : '현재 방송 설정 저장';
 }
