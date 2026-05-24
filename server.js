@@ -488,6 +488,31 @@ async function ensureActiveBroadcast(stationId) {
   if (error) throw error;
   if (data) return data;
 
+  // active 방송이 없으면 기존 방송 중 최신 1개를 active로 승격
+  const latest = await supabase
+    .from('broadcasts')
+    .select('*')
+    .eq('station_id', stationId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (latest.error) throw latest.error;
+
+  if (latest.data) {
+    const activated = await supabase
+      .from('broadcasts')
+      .update({ is_active: true })
+      .eq('station_id', stationId)
+      .eq('id', latest.data.id)
+      .select()
+      .single();
+
+    if (activated.error) throw activated.error;
+    return activated.data;
+  }
+
+  // 방송이 하나도 없을 때만 최초 기본 방송 생성
   const today = new Date();
   const mm = String(today.getMonth() + 1).padStart(2, '0');
   const dd = String(today.getDate()).padStart(2, '0');
