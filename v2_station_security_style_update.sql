@@ -52,7 +52,7 @@ set data = jsonb_set(
     "fundingTitleSize":20,
     "karaokeTitleSize":20,
     "contentFontSize":20,
-    "fundingBarColor":"linear-gradient(90deg, rgba(0,234,255,.58), rgba(255,79,216,.48))"
+    "fundingBarColor":"linear-gradient(90deg, rgba(0,234,255,.58), rgba(255,79,216,.48))","vipAccountThreshold":500000,"vipAccountBg1":"rgba(255,216,77,.30)","vipAccountBg2":"rgba(255,79,216,.28)"
   }'::jsonb),
   true
 )
@@ -97,7 +97,7 @@ begin
                 "fundingTitleSize":20,
                 "karaokeTitleSize":20,
                 "contentFontSize":20,
-                "fundingBarColor":"linear-gradient(90deg, rgba(0,234,255,.58), rgba(255,79,216,.48))"
+                "fundingBarColor":"linear-gradient(90deg, rgba(0,234,255,.58), rgba(255,79,216,.48))","vipAccountThreshold":500000,"vipAccountBg1":"rgba(255,216,77,.30)","vipAccountBg2":"rgba(255,79,216,.28)"
               }'::jsonb)
             )),
             true

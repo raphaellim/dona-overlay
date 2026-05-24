@@ -55,6 +55,9 @@ body{background:#070b12;color:#e5e7eb;margin:0}.wrap{max-width:1180px;margin:0 a
       <div class="row"><label>노래방 컨텐츠 컬러</label><input id="karaokeContentColor" class="input"></div>
       <div class="row"><label>컨텐츠 기본 크기(px)</label><input id="contentFontSize" class="input" type="number"></div>
       <div class="row"><label>펀딩 그래프바 컬러</label><input id="fundingBarColor" class="input" placeholder="linear-gradient(...) 또는 #44f7ff"></div>
+      <div class="row"><label>계좌후원 VIP 기준금액</label><input id="vipAccountThreshold" class="input" type="number" placeholder="500000"></div>
+      <div class="row"><label>VIP 배경 컬러1</label><input id="vipAccountBg1" class="input" placeholder="rgba(255,216,77,.30)"></div>
+      <div class="row"><label>VIP 배경 컬러2</label><input id="vipAccountBg2" class="input" placeholder="rgba(255,79,216,.28)"></div>
     </div>
     <button class="btn green" onclick="save()">방송국 스타일 저장</button>
     <button class="btn blue" onclick="load()">다시 불러오기</button>
@@ -70,7 +73,7 @@ body{background:#070b12;color:#e5e7eb;margin:0}.wrap{max-width:1180px;margin:0 a
 </div>
 <script src="/common.js"></script>
 <script>
-const fields = ['boxBorderColor','boxBgTop','boxBgBottom','accountTitleColor','noticeTitleColor','fundingTitleColor','karaokeTitleColor','contentColor','noticeContentColor','fundingContentColor','karaokeContentColor','accountTitleSize','noticeTitleSize','fundingTitleSize','karaokeTitleSize','contentFontSize','fundingBarColor'];
+const fields = ['boxBorderColor','boxBgTop','boxBgBottom','accountTitleColor','noticeTitleColor','fundingTitleColor','karaokeTitleColor','contentColor','noticeContentColor','fundingContentColor','karaokeContentColor','accountTitleSize','noticeTitleSize','fundingTitleSize','karaokeTitleSize','contentFontSize','fundingBarColor','vipAccountThreshold','vipAccountBg1','vipAccountBg2'];
 function st(){return getStation()}
 function setLinks(token=''){
   const s=encodeURIComponent(st());

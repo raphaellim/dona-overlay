@@ -227,10 +227,15 @@ function normalizeOverlaySections(raw, base) {
 function normalizeStationStyle(raw) {
   const value = raw && typeof raw === 'object' ? raw : {};
   const pick = (key, fallback) => String(value[key] ?? fallback);
-  const num = (key, fallback, min = 10, max = 64) => {
+  const num = (key, fallback, min = 0, max = 100000000) => {
     const n = Number(value[key]);
     if (!Number.isFinite(n)) return fallback;
     return Math.max(min, Math.min(max, n));
+  };
+  const size = (key, fallback) => {
+    const n = Number(value[key]);
+    if (!Number.isFinite(n)) return fallback;
+    return Math.max(10, Math.min(64, n));
   };
 
   return {
@@ -249,12 +254,16 @@ function normalizeStationStyle(raw) {
     fundingContentColor: pick('fundingContentColor', '#f8fafc'),
     karaokeContentColor: pick('karaokeContentColor', '#ffffff'),
 
-    accountTitleSize: num('accountTitleSize', 20),
-    noticeTitleSize: num('noticeTitleSize', 20),
-    fundingTitleSize: num('fundingTitleSize', 20),
-    karaokeTitleSize: num('karaokeTitleSize', 20),
-    contentFontSize: num('contentFontSize', 20),
-    fundingBarColor: pick('fundingBarColor', 'linear-gradient(90deg, rgba(0,234,255,.58), rgba(255,79,216,.48))')
+    accountTitleSize: size('accountTitleSize', 20),
+    noticeTitleSize: size('noticeTitleSize', 20),
+    fundingTitleSize: size('fundingTitleSize', 20),
+    karaokeTitleSize: size('karaokeTitleSize', 20),
+    contentFontSize: size('contentFontSize', 20),
+    fundingBarColor: pick('fundingBarColor', 'linear-gradient(90deg, rgba(0,234,255,.58), rgba(255,79,216,.48))'),
+
+    vipAccountThreshold: num('vipAccountThreshold', 500000),
+    vipAccountBg1: pick('vipAccountBg1', 'rgba(255,216,77,.30)'),
+    vipAccountBg2: pick('vipAccountBg2', 'rgba(255,79,216,.28)')
   };
 }
 
@@ -412,8 +421,8 @@ async function getStation(reqOrSlug) {
   return null;
 }
 
-function stationToClient(row) {
-  return {
+function stationToClient(row, includeSecret = false) {
+  const out = {
     id: row.id,
     name: row.name,
     slug: row.slug,
@@ -421,16 +430,20 @@ function stationToClient(row) {
     createdAt: row.created_at,
     hasAdminPassword: !!row.station_admin_password
   };
+  if (includeSecret) {
+    out.stationAdminPassword = String(row.station_admin_password || '');
+  }
+  return out;
 }
 
-async function listStations() {
+async function listStations(includeSecret = false) {
   await ensureDefaultStation();
   const { data, error } = await supabase
     .from('stations')
     .select('*')
     .order('created_at', { ascending: false });
   if (error) throw error;
-  return (data || []).map(stationToClient);
+  return (data || []).map(row => stationToClient(row, includeSecret));
 }
 
 async function stationAllowed(req, station) {
@@ -1116,7 +1129,7 @@ app.get('/api/health', (req, res) => res.json({ ok: true, storage: 'supabase', m
 app.get('/api/stations', checkMaster, async (req, res) => {
   try {
     if (!requireDb(res)) return;
-    const stations = await listStations();
+    const stations = await listStations(true);
     res.json({ stations });
   } catch (e) {
     res.status(500).json({ error: e.message || '방송국 목록 조회 실패' });

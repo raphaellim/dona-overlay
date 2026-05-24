@@ -51,10 +51,10 @@ function render(){
     <div class="station">
       <div>
         <b>${esc(s.name)}</b> <span class="muted mono">/${esc(s.slug)}</span><br>
-        <span class="muted">방송국 PW: </span><b>${s.hasAdminPassword?'설정됨':'없음'}</b><br>
+        <span class="muted">방송국 PW: </span><b>${s.hasAdminPassword?esc(s.stationAdminPassword || ''):'없음'}</b><br>
         <span class="muted">token: </span><span class="mono">${esc(s.overlayToken)}</span>
         <div class="pwbox">
-          <input class="input" id="pw_${s.id}" placeholder="새 방송국 관리자 PW">
+          <input class="input" id="pw_${s.id}" placeholder="${s.hasAdminPassword?'새 방송국 관리자 PW':'비밀번호 없음 - 새 PW 설정'}">
           <input class="input" id="pw2_${s.id}" placeholder="비밀번호 확인">
           <button class="btn blue mini" onclick="updateStationPw('${s.id}')">비밀번호 변경</button>
         </div>

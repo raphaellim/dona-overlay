@@ -273,6 +273,61 @@ html,body{
 body > #optionAlert.option-alert{
   display:none !important;
 }
+
+/* ===== 계좌후원 고액/VIP 롤링 효과 ===== */
+:root{
+  --style-vip-threshold:500000;
+  --style-vip-bg1:rgba(255,216,77,.30);
+  --style-vip-bg2:rgba(255,79,216,.28);
+}
+
+.roller-item.vip-account{
+  position:relative !important;
+  isolation:isolate !important;
+  border-radius:999px !important;
+  overflow:hidden !important;
+  padding-left:8px !important;
+  padding-right:8px !important;
+}
+
+.roller-item.vip-account::before{
+  content:"";
+  position:absolute;
+  inset:1px 0;
+  z-index:-1;
+  border-radius:999px;
+  background:
+    linear-gradient(90deg,
+      transparent 0%,
+      var(--style-vip-bg1) 18%,
+      var(--style-vip-bg2) 45%,
+      rgba(68,247,255,.26) 68%,
+      transparent 100%);
+  background-size:220% 100%;
+  animation:vipAccountFlash .82s linear infinite;
+}
+
+.roller-item.vip-account::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:-1;
+  border-radius:999px;
+  background:radial-gradient(circle at 50% 50%, rgba(255,255,255,.20), transparent 55%);
+  opacity:.65;
+  animation:vipAccountPulse .62s ease-in-out infinite alternate;
+}
+
+@keyframes vipAccountFlash{
+  from{background-position:0% 50%}
+  to{background-position:220% 50%}
+}
+
+@keyframes vipAccountPulse{
+  from{opacity:.35;filter:brightness(1)}
+  to{opacity:.95;filter:brightness(1.35)}
+}
+
 </style>
 </head>
 <body>
@@ -484,6 +539,9 @@ body > #optionAlert.option-alert{
     set("--style-funding-content-color", st.fundingContentColor);
     set("--style-karaoke-content-color", st.karaokeContentColor);
     set("--style-funding-bar", st.fundingBarColor);
+    set("--style-vip-bg1", st.vipAccountBg1);
+    set("--style-vip-bg2", st.vipAccountBg2);
+    if(st.vipAccountThreshold !== undefined) set("--style-vip-threshold", Number(st.vipAccountThreshold));
 
     if(st.accountTitleSize) set("--style-account-title-size", Number(st.accountTitleSize) + "px");
     if(st.noticeTitleSize) set("--style-notice-title-size", Number(st.noticeTitleSize) + "px");
@@ -788,7 +846,9 @@ function getOverlaySections(settings){
       const rawAmount=item.amount??item.accountAmount??item.account_amount??item.total??0;
       const amount=displayAmount(rawAmount);
       const heartClass=accountHeartClass(rawAmount);
-      return `<div class="roller-item"><span class="account-donor">${escapeHtml(donor)}</span><span class="account-heart ${heartClass}">♥</span><span class="account-amount">${amount}</span></div>`;
+      const vipThreshold = Number(getComputedStyle(document.documentElement).getPropertyValue("--style-vip-threshold")) || 500000;
+      const vipClass = Number(rawAmount || 0) >= vipThreshold ? " vip-account" : "";
+      return `<div class="roller-item${vipClass}"><span class="account-donor">${escapeHtml(donor)}</span><span class="account-heart ${heartClass}">♥</span><span class="account-amount">${amount}</span></div>`;
     };
 
     const moveToIndex = (index, useTransition=true) => {
