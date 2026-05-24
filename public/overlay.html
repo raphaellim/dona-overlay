@@ -291,18 +291,22 @@ body > #optionAlert.option-alert{
 .roller-item.vip-account::before{
   content:"";
   position:absolute;
-  inset:1px 0;
+  left:0;
+  right:0;
+  top:50%;
+  height:78%;
+  transform:translateY(-50%);
   z-index:-1;
   border-radius:999px;
   background:
     linear-gradient(90deg,
       transparent 0%,
       var(--style-vip-bg1) 18%,
-      var(--style-vip-bg2) 45%,
-      rgba(68,247,255,.26) 68%,
+      var(--style-vip-bg2) 46%,
+      rgba(68,247,255,.28) 70%,
       transparent 100%);
-  background-size:220% 100%;
-  animation:vipAccountFlash .82s linear infinite;
+  background-size:230% 100%;
+  animation:vipAccountFlash .86s linear infinite;
 }
 
 .roller-item.vip-account::after{
