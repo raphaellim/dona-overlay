@@ -907,6 +907,31 @@ function getOverlaySections(settings){
     },holdMs);
   }
 
+  function sortCreatorsBySettingOrder(creators, settings){
+  const order = Array.isArray(settings?.creators)
+    ? settings.creators.map(name => normalizeName(name))
+    : [];
+
+  if(!order.length) return creators || [];
+
+  const orderMap = new Map();
+  order.forEach((name, idx) => {
+    if(name && !orderMap.has(name)){
+      orderMap.set(name, idx);
+    }
+  });
+
+  return (creators || []).slice().sort((a, b) => {
+    const an = normalizeName(a.creator || a.name || "");
+    const bn = normalizeName(b.creator || b.name || "");
+
+    const ai = orderMap.has(an) ? orderMap.get(an) : 999999;
+    const bi = orderMap.has(bn) ? orderMap.get(bn) : 999999;
+
+    return ai - bi;
+  });
+}
+
   function renderCreators(creators){
     const rows=(Array.isArray(creators)?creators:[]).slice(0,5);
     const visiblePresets=(enabledPresets||[]).filter(p=>p.enabled!==false);
@@ -936,7 +961,7 @@ function getOverlaySections(settings){
         </article>
       `;
     }).join("");
-  }
+  }  
 
   function makeDonationAlertHtml(row){
     const donor=escapeHtml(row.donor||"익명");
@@ -1360,8 +1385,12 @@ function getOverlaySections(settings){
     applyStationStyle(settings);
     cacheSoundRules(settings);
     enabledPresets=getEnabledPresets(settings);
-    const creators = data.creators && data.creators.length ? data.creators : zeroCreatorsFromSettings(settings);
+    
+    const rawCreators = data.creators && data.creators.length
+  ? data.creators
+  : zeroCreatorsFromSettings(settings);
 
+const creators = sortCreatorsBySettingOrder(rawCreators, settings);
     const signature=JSON.stringify({
       sections:getOverlaySections(settings),
       notice:settings.notice||"",
