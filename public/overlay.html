@@ -462,6 +462,15 @@ body > #optionAlert.option-alert{
   let enabledPresets = [];
   let lastSignature = "";
   let lastDonationKey = localStorage.getItem("overlay_last_alert_key") || "";
+  function donationAlertKey(row){
+  return String(
+    row.id ||
+    row.donation_id ||
+    `${row.donor || row.name || ""}_${row.creator || row.creatorName || ""}_${row.amount || row.accountAmount || row.account_amount || ""}_${row.createdAt || row.created_at || ""}`
+  );
+}
+
+const queuedAlertKeys = new Set();
   let donationAlertBootReady = false;
   let lastSoundEventAt = localStorage.getItem("overlay_last_sound_event_at") || new Date().toISOString();
   const overlaySoundBootAt = new Date().toISOString();
@@ -1126,7 +1135,7 @@ function getOverlaySections(settings){
     // 첫 조회에서는 항상 최신 건까지만 기준점으로 잡고 재생하지 않음
     if(!donationAlertBootReady){
       const latest=rows[rows.length-1];
-      const key=(latest.id||"")+"_"+(latest.createdAt||latest.created_at||"");
+      const key = donationAlertKey(latest);
       lastDonationKey=key;
       localStorage.setItem("overlay_last_alert_key",key);
       donationAlertBootReady=true;
@@ -1137,7 +1146,7 @@ function getOverlaySections(settings){
     const newRows=[];
 
     for(const row of rows){
-      const key=(row.id||"")+"_"+(row.createdAt||row.created_at||"");
+      const key = donationAlertKey(row);
       if(key===lastDonationKey){
         passedLast=true;
         continue;
@@ -1147,7 +1156,7 @@ function getOverlaySections(settings){
 
     if(!passedLast){
       const latest=rows[rows.length-1];
-      const key=(latest.id||"")+"_"+(latest.createdAt||latest.created_at||"");
+      const lastKey = donationAlertKey(last);
       lastDonationKey=key;
       localStorage.setItem("overlay_last_alert_key",key);
       return;
@@ -1160,8 +1169,17 @@ function getOverlaySections(settings){
     lastDonationKey=lastKey;
     localStorage.setItem("overlay_last_alert_key",lastKey);
 
-    newRows.forEach(row=>alertQueue.push({ html: makeDonationAlertHtml(row), row }));
-    playAlertQueue();
+    newRows.forEach(row => {
+  const key = donationAlertKey(row);
+  if(queuedAlertKeys.has(key)) return;
+
+  queuedAlertKeys.add(key);
+  alertQueue.push({ html: makeDonationAlertHtml(row), row });
+
+  setTimeout(() => queuedAlertKeys.delete(key), 30000);
+});
+
+playAlertQueue();
   }
 
 
