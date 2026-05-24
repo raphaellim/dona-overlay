@@ -5,7 +5,7 @@
 <title>최고관리자 - 방송국 관리</title>
 <link rel="stylesheet" href="/app.css">
 <style>
-body{background:#070b12;color:#e5e7eb}.wrap{max-width:1180px;margin:0 auto;padding:22px}.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}.title{font-size:30px;font-weight:950}.card{background:#0b1220;border:1px solid #253247;border-radius:18px;padding:16px;margin-bottom:14px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.row{margin-bottom:10px}label{display:block;font-size:13px;color:#cbd5e1;font-weight:900;margin-bottom:6px}.input{width:100%;background:#070b12;color:#fff;border:1px solid #334155;border-radius:12px;padding:11px 12px}.btn{border:0;border-radius:12px;padding:10px 13px;font-weight:900;cursor:pointer;background:#334155;color:#fff}.green{background:#16a34a}.blue{background:#2563eb}.red{background:#dc2626}.mini{font-size:12px;padding:7px 9px}.station{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;border:1px solid #334155;border-radius:14px;padding:12px;margin-bottom:8px;background:#0f172a}.mono{font-family:ui-monospace,Consolas,monospace}.muted{color:#94a3b8;font-size:13px}@media(max-width:900px){.grid,.station{grid-template-columns:1fr}.top{align-items:flex-start;flex-direction:column}}
+body{background:#070b12;color:#e5e7eb}.wrap{max-width:1220px;margin:0 auto;padding:22px}.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}.title{font-size:30px;font-weight:950}.card{background:#0b1220;border:1px solid #253247;border-radius:18px;padding:16px;margin-bottom:14px}.grid{display:grid;grid-template-columns:1fr 1.2fr;gap:14px}.row{margin-bottom:10px}label{display:block;font-size:13px;color:#cbd5e1;font-weight:900;margin-bottom:6px}.input{width:100%;background:#070b12;color:#fff;border:1px solid #334155;border-radius:12px;padding:11px 12px}.btn{border:0;border-radius:12px;padding:10px 13px;font-weight:900;cursor:pointer;background:#334155;color:#fff;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}.green{background:#16a34a}.blue{background:#2563eb}.red{background:#dc2626}.mini{font-size:12px;padding:7px 9px}.station{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;border:1px solid #334155;border-radius:14px;padding:12px;margin-bottom:8px;background:#0f172a}.mono{font-family:ui-monospace,Consolas,monospace}.muted{color:#94a3b8;font-size:13px}.actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}.pwbox{display:grid;grid-template-columns:1fr 1fr auto;gap:6px;margin-top:8px}@media(max-width:900px){.grid,.station,.pwbox{grid-template-columns:1fr}.top{align-items:flex-start;flex-direction:column}.actions{justify-content:flex-start}}
 </style>
 </head>
 <body>
@@ -13,18 +13,19 @@ body{background:#070b12;color:#e5e7eb}.wrap{max-width:1180px;margin:0 auto;paddi
   <div class="top">
     <div>
       <div class="title">최고관리자 / 방송국 관리</div>
-      <div class="muted">방송국 생성, 관리자 비밀번호, 오버레이 토큰을 관리합니다.</div>
+      <div class="muted">방송국별 비밀번호 확인/변경, 컨트롤 페이지 진입, 오버레이 링크를 관리합니다.</div>
     </div>
     <a class="btn" href="/station_login.html">방송국 로그인</a>
   </div>
   <div class="grid">
     <section class="card">
       <h2>방송국 생성</h2>
-      <div class="row"><label>최고관리자 PW</label><input id="masterPw" class="input" type="password"></div>
+      <div class="row"><label>최고관리자 PW</label><input id="masterPw" class="input" type="password" oninput="localStorage.setItem('MASTER_PW',this.value)"></div>
       <div class="row"><label>방송국명</label><input id="name" class="input" placeholder="빵떠기방송국"></div>
       <div class="row"><label>방송국 코드</label><input id="slug" class="input mono" placeholder="bbtv"></div>
       <div class="row"><label>방송국 관리자 비밀번호</label><input id="stationPw" class="input" placeholder="관리자에게 줄 비밀번호"></div>
       <button class="btn green" onclick="createStation()">방송국 생성</button>
+      <button class="btn blue" onclick="load()">목록 새로고침</button>
     </section>
     <section class="card">
       <h2>방송국 목록</h2>
@@ -35,13 +36,14 @@ body{background:#070b12;color:#e5e7eb}.wrap{max-width:1180px;margin:0 auto;paddi
 <script src="/common.js"></script>
 <script>
 let stations=[];
+document.getElementById('masterPw').value=localStorage.getItem('MASTER_PW')||'';
 async function load(){
   try{
     const data=await api('/api/stations',{headers:{'x-admin-password':document.getElementById('masterPw').value}});
     stations=data.stations||[];
     render();
   }catch(e){
-    document.getElementById('stations').innerHTML='<div class="muted">최고관리자 PW 입력 후 새로고침/생성하세요.</div>';
+    document.getElementById('stations').innerHTML='<div class="muted">최고관리자 PW 입력 후 목록 새로고침을 누르세요.</div>';
   }
 }
 function render(){
@@ -49,27 +51,45 @@ function render(){
     <div class="station">
       <div>
         <b>${esc(s.name)}</b> <span class="muted mono">/${esc(s.slug)}</span><br>
-        <span class="muted">token: </span><span class="mono">${esc(s.overlayToken)}</span><br>
-        <span class="muted">오버레이: </span><span class="mono">${location.origin}/overlay.html?station=${encodeURIComponent(s.slug)}&token=${encodeURIComponent(s.overlayToken)}</span>
+        <span class="muted">방송국 PW: </span><b>${s.hasAdminPassword?'설정됨':'없음'}</b><br>
+        <span class="muted">token: </span><span class="mono">${esc(s.overlayToken)}</span>
+        <div class="pwbox">
+          <input class="input" id="pw_${s.id}" placeholder="새 방송국 관리자 PW">
+          <input class="input" id="pw2_${s.id}" placeholder="비밀번호 확인">
+          <button class="btn blue mini" onclick="updateStationPw('${s.id}')">비밀번호 변경</button>
+        </div>
       </div>
-      <div>
-        <button class="btn blue mini" onclick="openStation('${s.slug}')">관리</button>
-        <button class="btn mini" onclick="copyOverlay('${s.slug}','${s.overlayToken}')">복사</button>
-        <button class="btn red mini" onclick="deleteStation('${s.id}','${esc(s.name)}')">삭제</button>
+      <div class="actions">
+        <a class="btn blue mini" target="_blank" href="/station_control.html?station=${encodeURIComponent(s.slug)}">방송국 컨트롤</a>
+        <button class="btn mini" onclick="copyOverlay('${s.slug}','${s.overlayToken}')">오버레이 URL 복사</button>
         <button class="btn red mini" onclick="regen('${s.id}')">토큰재생성</button>
+        <button class="btn red mini" onclick="deleteStation('${s.id}','${esc(s.name)}')">삭제</button>
       </div>
     </div>
   `).join('');
 }
 async function createStation(){
   const pw=document.getElementById('masterPw').value;
+  const spw=document.getElementById('stationPw').value;
+  if(!confirm('이 방송국을 생성할까요?')) return;
   try{
     await api('/api/stations',{method:'POST',headers:{'x-admin-password':pw},body:JSON.stringify({
       name:document.getElementById('name').value,
       slug:document.getElementById('slug').value,
-      stationAdminPassword:document.getElementById('stationPw').value
+      stationAdminPassword:spw
     })});
     alert('방송국 생성 완료'); await load();
+  }catch(e){alert(e.message)}
+}
+async function updateStationPw(id){
+  const pw=document.getElementById('masterPw').value;
+  const a=document.getElementById('pw_'+id).value;
+  const b=document.getElementById('pw2_'+id).value;
+  if(a!==b) return alert('비밀번호 확인이 다릅니다.');
+  if(!confirm('이 방송국의 관리자 비밀번호를 변경할까요?')) return;
+  try{
+    await api('/api/stations/'+id,{method:'PUT',headers:{'x-admin-password':pw},body:JSON.stringify({stationAdminPassword:a})});
+    alert('변경 완료'); await load();
   }catch(e){alert(e.message)}
 }
 async function deleteStation(id,name){
@@ -78,17 +98,16 @@ async function deleteStation(id,name){
   if(prompt('삭제하려면 DELETE 를 입력하세요') !== 'DELETE') return;
   try{await api('/api/stations/'+id,{method:'DELETE',headers:{'x-admin-password':pw}}); alert('삭제 완료'); await load();}catch(e){alert(e.message)}
 }
-
 async function regen(id){
   const pw=document.getElementById('masterPw').value;
   if(!confirm('토큰을 재생성하면 기존 오버레이 URL은 더 이상 작동하지 않습니다. 계속할까요?')) return;
   if(prompt('재생성하려면 TOKEN 을 입력하세요') !== 'TOKEN') return;
   try{await api('/api/stations/'+id+'/token',{method:'POST',headers:{'x-admin-password':pw}}); alert('토큰 재생성 완료'); await load();}catch(e){alert(e.message)}
 }
-function openStation(slug){location.href='/station_control.html?station='+encodeURIComponent(slug)}
 async function copyOverlay(slug,token){
   const url=`${location.origin}/overlay.html?station=${encodeURIComponent(slug)}&token=${encodeURIComponent(token)}`;
-  try{await navigator.clipboard.writeText(url);alert('복사 완료')}catch{prompt('복사하세요',url)}
+  await navigator.clipboard.writeText(url);
+  alert('복사 완료');
 }
 load();
 </script>

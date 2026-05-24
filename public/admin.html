@@ -271,12 +271,10 @@ textarea{resize:vertical;line-height:1.45}
       <div class="subtitle" id="pageInfo">방송 정보 확인 중...</div>
     </div>
     <div class="nav">
-      <a href="/station_control.html">방송국</a>
-      <a href="/control.html">설정</a>
-      <a href="/summary.html">합산</a>
-      <a href="/overlay.html" target="_blank">오버레이</a>
+      <a id="adminLink" href="/admin.html">입력</a>
+      <a id="controlLink" href="/control.html">설정</a>
     </div>
-  </div>
+    </div>
 
   <div class="layout">
     <main>
@@ -448,6 +446,16 @@ textarea{resize:vertical;line-height:1.45}
 
 <script src="/common.js"></script>
 <script>
+
+function setSimpleLinks(){
+  const s=encodeURIComponent(getStation());
+  const a=document.getElementById('adminLink');
+  const c=document.getElementById('controlLink');
+  if(a) a.href='/admin.html?station='+s;
+  if(c) c.href='/control.html?station='+s;
+}
+setSimpleLinks();
+
 
 const nativeAlert = window.alert.bind(window);
 

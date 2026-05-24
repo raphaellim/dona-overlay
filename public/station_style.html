@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>방송국 스타일 설정</title>
+<link rel="stylesheet" href="/app.css">
+<style>
+body{background:#070b12;color:#e5e7eb;margin:0}.wrap{max-width:1180px;margin:0 auto;padding:22px}.top{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:16px}.title{font-size:30px;font-weight:950}.nav{display:flex;gap:8px;flex-wrap:wrap}.nav a{text-decoration:none;color:#dbeafe;background:#111827;border:1px solid #334155;padding:10px 14px;border-radius:12px;font-weight:900}.card{background:#0b1220;border:1px solid #253247;border-radius:18px;padding:16px;margin-bottom:14px}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.row{margin-bottom:10px}label{display:block;font-size:13px;color:#cbd5e1;font-weight:900;margin-bottom:6px}.input{width:100%;background:#070b12;color:#fff;border:1px solid #334155;border-radius:12px;padding:10px 11px}.btn{border:0;border-radius:12px;padding:10px 13px;font-weight:900;cursor:pointer;background:#334155;color:#fff}.green{background:#16a34a}.blue{background:#2563eb}.muted{color:#94a3b8;font-size:13px}.preview{width:285px;margin:0 auto;background:linear-gradient(180deg,var(--p-bg1),var(--p-bg2));border:2px solid var(--p-border);border-radius:16px;padding:12px;text-align:center}.preview-title{display:inline-flex;padding:4px 12px;border-radius:999px;background:rgba(255,255,255,.1);font-weight:1000;color:var(--p-title);font-size:var(--p-title-size)}.preview-content{margin-top:10px;text-align:left;font-weight:900;color:var(--p-content);font-size:var(--p-content-size)}@media(max-width:900px){.grid{grid-template-columns:1fr}.top{flex-direction:column;align-items:flex-start}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div>
+      <div class="title">방송국별 스타일 설정</div>
+      <div class="muted" id="info">방송국 스타일을 불러오는 중...</div>
+    </div>
+    <div class="nav">
+      <a id="stationLink" href="/station_control.html">방송국</a>
+      <a id="adminLink" href="/admin.html">입력</a>
+      <a id="controlLink" href="/control.html">설정</a>
+      <a id="overlayLink" target="_blank" href="/overlay.html">오버레이 TEST</a>
+    </div>
+  </div>
+
+  <section class="card">
+    <h2>박스 / 배경</h2>
+    <div class="grid">
+      <div class="row"><label>박스 테두리 컬러</label><input id="boxBorderColor" class="input" placeholder="rgba(255,138,185,.95)"></div>
+      <div class="row"><label>박스 배경 상단</label><input id="boxBgTop" class="input" placeholder="rgba(18,22,32,.88)"></div>
+      <div class="row"><label>박스 배경 하단</label><input id="boxBgBottom" class="input" placeholder="rgba(10,12,20,.82)"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>타이틀 컬러 / 크기</h2>
+    <div class="grid">
+      <div class="row"><label>계좌 타이틀 컬러</label><input id="accountTitleColor" class="input"></div>
+      <div class="row"><label>공지 타이틀 컬러</label><input id="noticeTitleColor" class="input"></div>
+      <div class="row"><label>펀딩 타이틀 컬러</label><input id="fundingTitleColor" class="input"></div>
+      <div class="row"><label>노래방 타이틀 컬러</label><input id="karaokeTitleColor" class="input"></div>
+      <div class="row"><label>계좌 타이틀 크기(px)</label><input id="accountTitleSize" class="input" type="number"></div>
+      <div class="row"><label>공지 타이틀 크기(px)</label><input id="noticeTitleSize" class="input" type="number"></div>
+      <div class="row"><label>펀딩 타이틀 크기(px)</label><input id="fundingTitleSize" class="input" type="number"></div>
+      <div class="row"><label>노래방 타이틀 크기(px)</label><input id="karaokeTitleSize" class="input" type="number"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>컨텐츠 / 펀딩바</h2>
+    <div class="grid">
+      <div class="row"><label>기본 컨텐츠 컬러</label><input id="contentColor" class="input"></div>
+      <div class="row"><label>공지 컨텐츠 컬러</label><input id="noticeContentColor" class="input"></div>
+      <div class="row"><label>펀딩 컨텐츠 컬러</label><input id="fundingContentColor" class="input"></div>
+      <div class="row"><label>노래방 컨텐츠 컬러</label><input id="karaokeContentColor" class="input"></div>
+      <div class="row"><label>컨텐츠 기본 크기(px)</label><input id="contentFontSize" class="input" type="number"></div>
+      <div class="row"><label>펀딩 그래프바 컬러</label><input id="fundingBarColor" class="input" placeholder="linear-gradient(...) 또는 #44f7ff"></div>
+    </div>
+    <button class="btn green" onclick="save()">방송국 스타일 저장</button>
+    <button class="btn blue" onclick="load()">다시 불러오기</button>
+  </section>
+
+  <section class="card">
+    <h2>미리보기</h2>
+    <div class="preview" id="preview">
+      <div class="preview-title">타이틀</div>
+      <div class="preview-content">컨텐츠 텍스트 / 펀딩 15/100</div>
+    </div>
+  </section>
+</div>
+<script src="/common.js"></script>
+<script>
+const fields = ['boxBorderColor','boxBgTop','boxBgBottom','accountTitleColor','noticeTitleColor','fundingTitleColor','karaokeTitleColor','contentColor','noticeContentColor','fundingContentColor','karaokeContentColor','accountTitleSize','noticeTitleSize','fundingTitleSize','karaokeTitleSize','contentFontSize','fundingBarColor'];
+function st(){return getStation()}
+function setLinks(token=''){
+  const s=encodeURIComponent(st());
+  stationLink.href='/station_control.html?station='+s;
+  adminLink.href='/admin.html?station='+s;
+  controlLink.href='/control.html?station='+s;
+  overlayLink.href='/overlay.html?station='+s+(token?'&token='+encodeURIComponent(token):'')+'&monitor=1&v='+Date.now();
+}
+function collect(){
+  const o={};
+  for(const f of fields){
+    const el=document.getElementById(f);
+    if(el.type==='number') o[f]=Number(el.value||0);
+    else o[f]=el.value.trim();
+  }
+  return o;
+}
+function fill(o){
+  for(const f of fields){
+    if(document.getElementById(f)) document.getElementById(f).value = o?.[f] ?? '';
+  }
+  updatePreview();
+}
+function updatePreview(){
+  const o=collect();
+  const p=document.getElementById('preview');
+  p.style.setProperty('--p-border', o.boxBorderColor || 'rgba(255,138,185,.95)');
+  p.style.setProperty('--p-bg1', o.boxBgTop || 'rgba(18,22,32,.88)');
+  p.style.setProperty('--p-bg2', o.boxBgBottom || 'rgba(10,12,20,.82)');
+  p.style.setProperty('--p-title', o.noticeTitleColor || '#8ee7ff');
+  p.style.setProperty('--p-content', o.noticeContentColor || '#ffffff');
+  p.style.setProperty('--p-title-size', (o.noticeTitleSize || 20)+'px');
+  p.style.setProperty('--p-content-size', (o.contentFontSize || 20)+'px');
+}
+fields.forEach(f=>document.addEventListener('input',e=>{if(e.target.id===f)updatePreview()}));
+async function load(){
+  const data=await api('/api/settings');
+  document.getElementById('info').textContent=(data.station?.name||st())+' / 방송국별 스타일';
+  setLinks(data.station?.overlayToken||'');
+  fill(data.stationStyle||{});
+}
+async function save(){
+  try{
+    const stationStyle=collect();
+    await api('/api/station-style',{method:'POST',body:JSON.stringify({stationStyle})});
+    alert('스타일 저장 완료');
+    await load();
+  }catch(e){alert(e.message)}
+}
+load();
+</script>
+</body>
+</html>

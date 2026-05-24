@@ -177,12 +177,10 @@ textarea{resize:vertical;line-height:1.45}
       <div class="muted">기본·금액구간·프리셋 사운드는 자동 적용, 수동 사운드는 입력페이지에서만 선택합니다.</div>
     </div>
     <div class="nav">
-      <a href="/station_control.html">방송국</a>
-      <a href="/admin.html">입력</a>
-      <a href="/summary.html">합산</a>
-      <a href="/overlay.html" target="_blank">오버레이</a>
+      <a id="adminLink" href="/admin.html">입력</a>
+      <a id="controlLink" href="/control.html">설정</a>
     </div>
-  </div>
+    </div>
 
   <div class="layout">
     <div>
@@ -278,6 +276,16 @@ textarea{resize:vertical;line-height:1.45}
 <datalist id="soundFiles"></datalist>
 <script src="/common.js"></script>
 <script>
+
+function setSimpleLinks(){
+  const s=encodeURIComponent(getStation());
+  const a=document.getElementById('adminLink');
+  const c=document.getElementById('controlLink');
+  if(a) a.href='/admin.html?station='+s;
+  if(c) c.href='/control.html?station='+s;
+}
+setSimpleLinks();
+
 let settings = null;
 let soundFiles = [];
 

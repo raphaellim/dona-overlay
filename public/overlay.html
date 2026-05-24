@@ -169,7 +169,63 @@ html,body{
   border:0 !important;
   overflow:hidden !important;
 }
-/* ===== ALERT 계좌후원 바로 아래: flex 위치 고정 ===== */
+
+/* ===== 방송국별 스타일 변수 적용 ===== */
+:root{
+  --style-box-border: var(--pink);
+  --style-box-bg-top: var(--box-bg-top);
+  --style-box-bg-bottom: var(--box-bg-bottom);
+  --style-content-color: #ffffff;
+  --style-notice-title-size:20px;
+  --style-funding-title-size:20px;
+  --style-karaoke-title-size:20px;
+  --style-account-title-size:20px;
+  --style-content-size:20px;
+  --style-funding-bar:linear-gradient(90deg, rgba(0,234,255,.58), rgba(255,79,216,.48));
+}
+
+.overlay-box,
+.account-box,
+.notice-box,
+.funding-box,
+.karaoke-box,
+.creator-box,
+.broadcast-timer-box{
+  background:linear-gradient(180deg,var(--style-box-bg-top),var(--style-box-bg-bottom)) !important;
+  border-color:var(--style-box-border) !important;
+}
+
+.account-title{font-size:var(--style-account-title-size) !important;color:var(--style-account-title-color, var(--account-title-color)) !important}
+.notice-title{font-size:var(--style-notice-title-size) !important;color:var(--style-notice-title-color, #8ee7ff) !important}
+.funding-title{font-size:var(--style-funding-title-size) !important;color:var(--style-funding-title-color, #b8ff9d) !important}
+.karaoke-title{font-size:var(--style-karaoke-title-size) !important;color:var(--style-karaoke-title-color, #ff9bd6) !important}
+.notice-text,.notice-line{font-size:var(--style-content-size) !important;color:var(--style-notice-content-color, var(--style-content-color)) !important}
+.funding-value,.funding-line b{color:var(--style-funding-content-color, #f8fafc) !important}
+.karaoke-notice,.karaoke-song-title-text{color:var(--style-karaoke-content-color, #ffffff) !important}
+
+/* 펀딩 그래프바 컬러 강조 */
+.funding-line em{
+  background:var(--style-funding-bar) !important;
+  opacity:.95 !important;
+  box-shadow:0 0 14px rgba(0,234,255,.28), 0 0 20px rgba(255,79,216,.18) !important;
+}
+
+/* 타이머 OFF 강제 숨김 */
+#broadcastTimerBox.hidden,
+.broadcast-timer-box.hidden{
+  display:none !important;
+  visibility:hidden !important;
+  opacity:0 !important;
+  height:0 !important;
+  min-height:0 !important;
+  max-height:0 !important;
+  padding:0 !important;
+  margin:0 !important;
+  border:0 !important;
+  overflow:hidden !important;
+}
+
+/* ALERT 계좌후원 바로 아래: flex 위치 고정 */
 #overlayAlertRoot{
   position:relative !important;
   left:auto !important;
@@ -177,11 +233,9 @@ html,body{
   right:auto !important;
   bottom:auto !important;
   inset:auto !important;
-
   width:100% !important;
   height:0 !important;
   flex:0 0 0 !important;
-
   z-index:999999 !important;
   pointer-events:none !important;
   overflow:visible !important;
@@ -196,11 +250,9 @@ html,body{
   right:auto !important;
   bottom:auto !important;
   inset:auto !important;
-
   width:100% !important;
   max-width:100% !important;
   min-width:0 !important;
-
   margin:0 !important;
   transform:scale(.92) !important;
   transform-origin:top center !important;
@@ -221,7 +273,6 @@ html,body{
 body > #optionAlert.option-alert{
   display:none !important;
 }
-
 </style>
 </head>
 <body>
@@ -251,7 +302,7 @@ body > #optionAlert.option-alert{
 
 
 
-      <section class="overlay-box notice-box" id="noticeBox">
+      <section class="overlay-box notice-box hidden" id="noticeBox">
         <div class="notice-title" id="noticeTitleText">공지</div>
         <div class="notice-text" id="noticeText"></div>
       </section>
@@ -411,7 +462,37 @@ body > #optionAlert.option-alert{
     return presets.filter(p=>p&&p.enabled!==false);
   }
 
-  function getOverlaySections(settings){
+  
+  function applyStationStyle(settings){
+    const st = settings?.stationStyle || {};
+    const root = document.documentElement;
+    const set = (name, value) => {
+      if(value !== undefined && value !== null && String(value).trim() !== ""){
+        root.style.setProperty(name, String(value));
+      }
+    };
+
+    set("--style-box-border", st.boxBorderColor);
+    set("--style-box-bg-top", st.boxBgTop);
+    set("--style-box-bg-bottom", st.boxBgBottom);
+    set("--style-account-title-color", st.accountTitleColor);
+    set("--style-notice-title-color", st.noticeTitleColor);
+    set("--style-funding-title-color", st.fundingTitleColor);
+    set("--style-karaoke-title-color", st.karaokeTitleColor);
+    set("--style-content-color", st.contentColor);
+    set("--style-notice-content-color", st.noticeContentColor);
+    set("--style-funding-content-color", st.fundingContentColor);
+    set("--style-karaoke-content-color", st.karaokeContentColor);
+    set("--style-funding-bar", st.fundingBarColor);
+
+    if(st.accountTitleSize) set("--style-account-title-size", Number(st.accountTitleSize) + "px");
+    if(st.noticeTitleSize) set("--style-notice-title-size", Number(st.noticeTitleSize) + "px");
+    if(st.fundingTitleSize) set("--style-funding-title-size", Number(st.fundingTitleSize) + "px");
+    if(st.karaokeTitleSize) set("--style-karaoke-title-size", Number(st.karaokeTitleSize) + "px");
+    if(st.contentFontSize) set("--style-content-size", Number(st.contentFontSize) + "px");
+  }
+
+function getOverlaySections(settings){
     const s = settings?.overlaySections || {};
     return {
       account: s.account !== false,
@@ -815,14 +896,10 @@ body > #optionAlert.option-alert{
     }
 
     return `
-  <div class="alert-up-line">
-    <span class="alert-donor blink-donor">${donor}</span>
-    <span class="alert-up"> UP</span>
-  </div>
-  <div class="alert-creator-line">
-    ${creator}
-  </div>
-`;
+      <div class="alert-donor">${donor}</div>
+      <div class="alert-target">→ ${creator}</div>
+      <div class="alert-line2"><span class="alert-amount">${amountText}</span>${optionText}</div>
+    `;
   }
   function pickSoundFileForDonation(row){
     if(soundRulesCache && soundRulesCache.enabled === false) return "";
@@ -1007,15 +1084,10 @@ body > #optionAlert.option-alert{
     const progress = total > 1 ? `<span class="alert-sound-title">${current}/${total}</span>` : "";
 
     return `
-  <div class="alert-up-line">
-    <span class="alert-donor blink-donor">${displayTitle}</span>
-    <span class="alert-up"> UP</span>
-  </div>
-  <div class="alert-creator-line">
-    ${soundName}
-  </div>
-  <div class="alert-line2">${progress}</div>
-`;
+      <div class="alert-donor">${displayTitle}</div>
+      <div class="alert-target">${soundName}</div>
+      <div class="alert-line2">${progress}</div>
+    `;
   }
 
   async function checkManualSoundEvents(){
@@ -1126,69 +1198,69 @@ body > #optionAlert.option-alert{
     }
   }
 
-function ensureAlertIndependent(){
-  const root = document.getElementById("overlayAlertRoot");
-  const alertEl = document.getElementById("optionAlert");
-  const stack = document.querySelector(".overlay-stack");
-  const accountBox = document.getElementById("accountBox");
+  function ensureAlertIndependent(){
+    const root = document.getElementById("overlayAlertRoot");
+    const alertEl = document.getElementById("optionAlert");
+    const stack = document.querySelector(".overlay-stack");
+    const accountBox = document.getElementById("accountBox");
 
-  if(!root || !alertEl || !stack) return;
+    if(!root || !alertEl || !stack) return;
 
-  if(alertEl.parentElement !== root){
-    root.appendChild(alertEl);
-  }
-
-  // 핵심: ALERT root를 계좌후원 박스 바로 다음 DOM 위치로 이동
-  if(accountBox && accountBox.parentElement === stack){
-    if(root.parentElement !== stack || root.previousElementSibling !== accountBox){
-      stack.insertBefore(root, accountBox.nextSibling);
+    if(alertEl.parentElement !== root){
+      root.appendChild(alertEl);
     }
-  }else{
-    if(root.parentElement !== stack){
-      stack.insertBefore(root, stack.firstChild);
+
+    // ALERT root를 계좌후원 박스 바로 다음 DOM 위치로 이동
+    if(accountBox && accountBox.parentElement === stack){
+      if(root.parentElement !== stack || root.previousElementSibling !== accountBox){
+        stack.insertBefore(root, accountBox.nextSibling);
+      }
+    }else{
+      if(root.parentElement !== stack){
+        stack.insertBefore(root, stack.firstChild);
+      }
+    }
+
+    root.style.position = "relative";
+    root.style.left = "auto";
+    root.style.top = "auto";
+    root.style.right = "auto";
+    root.style.bottom = "auto";
+    root.style.inset = "auto";
+    root.style.width = "100%";
+    root.style.height = "0";
+    root.style.flex = "0 0 0";
+    root.style.zIndex = "999999";
+    root.style.pointerEvents = "none";
+    root.style.overflow = "visible";
+    root.style.transform = "none";
+
+    alertEl.classList.remove("hidden");
+    alertEl.style.position = "absolute";
+    alertEl.style.left = "0";
+    alertEl.style.top = "0";
+    alertEl.style.right = "auto";
+    alertEl.style.bottom = "auto";
+    alertEl.style.inset = "auto";
+    alertEl.style.width = "100%";
+    alertEl.style.maxWidth = "100%";
+    alertEl.style.minWidth = "0";
+    alertEl.style.margin = "0";
+    alertEl.style.transformOrigin = "top center";
+
+    if(alertEl.classList.contains("show")){
+      alertEl.style.display = "flex";
+      alertEl.style.visibility = "visible";
+      alertEl.style.opacity = "1";
+      alertEl.style.transform = "scale(1)";
+    }else{
+      alertEl.style.display = "";
+      alertEl.style.visibility = "";
+      alertEl.style.opacity = "";
+      alertEl.style.transform = "scale(.92)";
     }
   }
 
-  // root 자체는 flex 흐름 안에서 계좌후원 다음에 위치
-  root.style.position = "relative";
-  root.style.left = "auto";
-  root.style.top = "auto";
-  root.style.right = "auto";
-  root.style.bottom = "auto";
-  root.style.inset = "auto";
-  root.style.width = "100%";
-  root.style.height = "0";
-  root.style.flex = "0 0 0";
-  root.style.zIndex = "999999";
-  root.style.pointerEvents = "none";
-  root.style.overflow = "visible";
-  root.style.transform = "none";
-
-  alertEl.classList.remove("hidden");
-  alertEl.style.position = "absolute";
-  alertEl.style.left = "0";
-  alertEl.style.top = "0";
-  alertEl.style.right = "auto";
-  alertEl.style.bottom = "auto";
-  alertEl.style.inset = "auto";
-  alertEl.style.width = "100%";
-  alertEl.style.maxWidth = "100%";
-  alertEl.style.minWidth = "0";
-  alertEl.style.margin = "0";
-  alertEl.style.transformOrigin = "top center";
-
-  if(alertEl.classList.contains("show")){
-    alertEl.style.display = "flex";
-    alertEl.style.visibility = "visible";
-    alertEl.style.opacity = "1";
-    alertEl.style.transform = "scale(1)";
-  }else{
-    alertEl.style.display = "";
-    alertEl.style.visibility = "";
-    alertEl.style.opacity = "";
-    alertEl.style.transform = "scale(.92)";
-  }
-}
   
   function updateBroadcastTimer(){
     if(!$broadcastTimerValue) return;
