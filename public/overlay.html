@@ -846,7 +846,7 @@ function getOverlaySections(settings){
       const rawAmount=item.amount??item.accountAmount??item.account_amount??item.total??0;
       const amount=displayAmount(rawAmount);
       const heartClass=accountHeartClass(rawAmount);
-      const vipThreshold = Number(getComputedStyle(document.documentElement).getPropertyValue("--style-vip-threshold")) || 500000;
+      const vipThreshold = Number(String(getComputedStyle(document.documentElement).getPropertyValue("--style-vip-threshold")).trim()) || 500000;
       const vipClass = Number(rawAmount || 0) >= vipThreshold ? " vip-account" : "";
       return `<div class="roller-item${vipClass}"><span class="account-donor">${escapeHtml(donor)}</span><span class="account-heart ${heartClass}">♥</span><span class="account-amount">${amount}</span></div>`;
     };
@@ -1348,6 +1348,7 @@ function getOverlaySections(settings){
     catch(e){ data={settings:defaultSettings,accountDonors:[],creators:[],donations:[]}; }
 
     const settings = data.settings || defaultSettings;
+    applyStationStyle(settings);
     cacheSoundRules(settings);
     enabledPresets=getEnabledPresets(settings);
     const creators = data.creators && data.creators.length ? data.creators : zeroCreatorsFromSettings(settings);
@@ -1361,6 +1362,7 @@ function getOverlaySections(settings){
       fundingData:settings.fundingData||{},
       karaokeData:settings.karaokeData||{},
       broadcastTimerData:settings.broadcastTimerData||{},
+      stationStyle:settings.stationStyle||{},
       accountDonors:data.accountDonors||[],
       creators,
       presets:enabledPresets.map(p=>({id:p.id,enabled:p.enabled,title:p.title,plusName:p.plusName,minusName:p.minusName}))
