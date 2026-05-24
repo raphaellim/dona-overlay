@@ -333,6 +333,11 @@ body > #optionAlert.option-alert{
   from{opacity:.35;filter:brightness(1)}
   to{opacity:.95;filter:brightness(1.35)}
 }
+  /* ===== 공지 컨텐츠 컬러 방송국 스타일 적용 ===== */
+.notice-text,
+.notice-line{
+  color:var(--style-notice-content-color, var(--style-content-color)) !important;
+}
 
 </style>
 </head>
@@ -702,11 +707,9 @@ function getOverlaySections(settings){
       return;
     }
 
-    textEl.innerHTML = text.split(/\r?\n/).map((line, idx) => {
-      const color = colors[idx] || "";
-      const style = color ? ` style="color:${escapeHtml(color)}"` : "";
-      return `<span class="notice-line"${style}>${escapeHtml(line)}</span>`;
-    }).join("");
+    textEl.innerHTML = text.split(/\r?\n/).map((line) => {
+  return `<span class="notice-line">${escapeHtml(line)}</span>`;
+}).join("");
   }
 
   function applySections(settings){
