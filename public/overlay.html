@@ -649,21 +649,16 @@ function getOverlaySections(settings){
   if(!textEl) return;
 
   const st = settings?.stationStyle || {};
-  const noticeTitleColor = String(st.noticeTitleColor || "").trim();
-  const noticeContentColor = String(st.noticeContentColor || st.contentColor || "").trim();
+  const colors = Array.isArray(settings?.noticeColors) ? settings.noticeColors : [];
+
+  const titleColor = String(st.noticeTitleColor || "").trim();
 
   if(titleEl){
     titleEl.textContent = settings?.noticeTitle || "공지";
 
-    // 공지 타이틀 컬러 강제 적용
-    if(noticeTitleColor){
-      titleEl.style.setProperty("color", noticeTitleColor, "important");
+    if(titleColor){
+      titleEl.style.setProperty("color", titleColor, "important");
     }
-  }
-
-  // 공지 컨텐츠 컬러 강제 적용
-  if(noticeContentColor){
-    textEl.style.setProperty("color", noticeContentColor, "important");
   }
 
   const text = String(settings?.notice || "").trim();
@@ -672,14 +667,18 @@ function getOverlaySections(settings){
     return;
   }
 
-  textEl.innerHTML = text.split(/\r?\n/).map((line) => {
-    const colorStyle = noticeContentColor
-      ? ` style="color:${escapeHtml(noticeContentColor)} !important"`
+  textEl.innerHTML = text.split(/\r?\n/).map((line, idx) => {
+    const lineColor =
+      String(colors[idx] || colors[0] || st.noticeContentColor || st.contentColor || "#ffffff").trim();
+
+    const colorStyle = lineColor
+      ? ` style="color:${escapeHtml(lineColor)} !important"`
       : "";
 
     return `<span class="notice-line"${colorStyle}>${escapeHtml(line)}</span>`;
   }).join("");
 }
+  
 function forceNoticeColor(settings){
   const st = settings?.stationStyle || {};
   const titleColor = String(st.noticeTitleColor || "").trim();
