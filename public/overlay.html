@@ -301,11 +301,10 @@ to{opacity:.88;filter:brightness(1.28)}
 #overlayAlertRoot > #optionAlert.option-alert.show,#overlayAlertRoot #optionAlert.option-alert.show{transform:scale(1) !important;animation:alertStackPop .34s ease-out, alertCleanGlow 1.2s ease-in-out infinite alternate !important;}
 @keyframes alertStackPop{0%{transform:scale(.92)}70%{transform:scale(1.035)}100%{transform:scale(1)}}
 body > #optionAlert.option-alert{display:none !important;}
-/* ===== 공지 컨텐츠 컬러 방송국 스타일 적용 ===== */
+/* ===== 공지 컬러 최종 강제 적용 ===== */
 .notice-box #noticeText,
-.notice-box .notice-text,
-.notice-box .notice-line{
-  color:var(--style-notice-content-color, var(--style-content-color, #ffffff)) !important;
+.notice-box #noticeText .notice-line{
+  color:inherit !important;
 }
 
 </style>
@@ -655,7 +654,6 @@ function getOverlaySections(settings){
 
   if(titleEl){
     titleEl.textContent = settings?.noticeTitle || "공지";
-
     if(titleColor){
       titleEl.style.setProperty("color", titleColor, "important");
     }
@@ -668,15 +666,47 @@ function getOverlaySections(settings){
   }
 
   textEl.innerHTML = text.split(/\r?\n/).map((line, idx) => {
-    const lineColor =
-      String(colors[idx] || colors[0] || st.noticeContentColor || st.contentColor || "#ffffff").trim();
+    const lineColor = String(
+      colors[idx] ||
+      colors[0] ||
+      st.noticeContentColor ||
+      st.contentColor ||
+      "#ffffff"
+    ).trim();
 
-    const colorStyle = lineColor
-      ? ` style="color:${escapeHtml(lineColor)} !important"`
-      : "";
-
-    return `<span class="notice-line"${colorStyle}>${escapeHtml(line)}</span>`;
+    return `<span class="notice-line" data-notice-color="${escapeHtml(lineColor)}">${escapeHtml(line)}</span>`;
   }).join("");
+
+  applyNoticeLineColors(settings);
+}
+
+  function applyNoticeLineColors(settings){
+  const st = settings?.stationStyle || {};
+  const colors = Array.isArray(settings?.noticeColors) ? settings.noticeColors : [];
+
+  const contentColor = String(
+    colors[0] ||
+    st.noticeContentColor ||
+    st.contentColor ||
+    "#ffffff"
+  ).trim();
+
+  const textEl = document.getElementById("noticeText");
+  if(textEl){
+    textEl.style.setProperty("color", contentColor, "important");
+  }
+
+  document.querySelectorAll("#noticeText .notice-line").forEach((el, idx) => {
+    const lineColor = String(
+      colors[idx] ||
+      colors[0] ||
+      st.noticeContentColor ||
+      st.contentColor ||
+      "#ffffff"
+    ).trim();
+
+    el.style.setProperty("color", lineColor, "important");
+  });
 }
   
 function forceNoticeColor(settings){
@@ -1327,7 +1357,8 @@ function makeDonationAlertHtml(row){
       latestSettingsForTimer = settings;
     applySections(settings);
     renderNotice(settings);
-forceNoticeColor(settings);
+applyNoticeLineColors(settings);
+
 renderKaraoke(settings);
 renderFunding(settings);
       renderAccountRoller(data.accountDonors);
