@@ -667,14 +667,14 @@ function getOverlaySections(settings){
 
   textEl.innerHTML = text.split(/\r?\n/).map((line, idx) => {
     const lineColor = String(
-      colors[idx] ||
-      colors[0] ||
-      st.noticeContentColor ||
-      st.contentColor ||
-      "#ffffff"
-    ).trim();
+  colors[idx] ||
+  colors[0] ||
+  st.noticeContentColor ||
+  st.contentColor ||
+  ""
+).trim();
 
-    return `<span class="notice-line" data-notice-color="${escapeHtml(lineColor)}">${escapeHtml(line)}</span>`;
+    return `<span class="notice-line">${escapeHtml(line)}</span>`;
   }).join("");
 
   applyNoticeLineColors(settings);
@@ -714,25 +714,36 @@ function getOverlaySections(settings){
   });
 }
   
-function forceNoticeColor(settings){
+function applyNoticeLineColors(settings){
   const st = settings?.stationStyle || {};
-  const titleColor = String(st.noticeTitleColor || "").trim();
-  const contentColor = String(st.noticeContentColor || st.contentColor || "").trim();
+  const colors = Array.isArray(settings?.noticeColors) ? settings.noticeColors : [];
 
-  const titleEl = document.getElementById("noticeTitleText");
+  const baseColor = String(
+    colors[0] ||
+    st.noticeContentColor ||
+    st.contentColor ||
+    ""
+  ).trim();
+
   const textEl = document.getElementById("noticeText");
 
-  if(titleEl && titleColor){
-    titleEl.style.setProperty("color", titleColor, "important");
+  // 색상 값이 있을 때만 적용. 없으면 기존 색 유지
+  if(textEl && baseColor){
+    textEl.style.setProperty("color", baseColor, "important");
   }
 
-  if(textEl && contentColor){
-    textEl.style.setProperty("color", contentColor, "important");
-  }
+  document.querySelectorAll("#noticeText .notice-line").forEach((el, idx) => {
+    const lineColor = String(
+      colors[idx] ||
+      colors[0] ||
+      st.noticeContentColor ||
+      st.contentColor ||
+      ""
+    ).trim();
 
-  document.querySelectorAll("#noticeText .notice-line").forEach(el => {
-    if(contentColor){
-      el.style.setProperty("color", contentColor, "important");
+    // 색상 값이 있을 때만 적용. 없으면 흰색으로 덮지 않음
+    if(lineColor){
+      el.style.setProperty("color", lineColor, "important");
     }
   });
 }
@@ -1331,10 +1342,10 @@ function makeDonationAlertHtml(row){
     catch(e){ data={settings:defaultSettings,accountDonors:[],creators:[],donations:[]}; }
 
     const settings = data.settings || defaultSettings;
-    applyStationStyle(settings);
-    forceNoticeColor(settings);
-    cacheSoundRules(settings);
-    enabledPresets=getEnabledPresets(settings);
+applyStationStyle(settings);
+applyNoticeLineColors(settings);
+cacheSoundRules(settings);
+enabledPresets=getEnabledPresets(settings);
     const rawCreators = data.creators && data.creators.length ? data.creators : zeroCreatorsFromSettings(settings);
     const creators = sortCreatorsBySettingOrder(rawCreators, settings);
 
