@@ -539,31 +539,16 @@ function renderFundingManager(){
 function collectFundingData(){
   const current = getFundingData();
   const rows = Array.from(document.querySelectorAll('#fundingList .funding-rule'));
-
-  // 펀딩 리스트 DOM이 아직 렌더링되지 않은 상태에서 저장이 호출되면
-  // 빈 배열로 덮어쓰지 않고 현재 settings 값을 유지
-  if(rows.length === 0 && current.items && current.items.length){
-    return {items: current.items};
-  }
-
+  if(rows.length === 0 && current.items && current.items.length) return {items: current.items};
   const items = rows.map((row, idx) => {
     const titleEl = row.querySelector('.fund-title');
     const currentEl = row.querySelector('.fund-current');
     const targetEl = row.querySelector('.fund-target');
     const enabledEl = row.querySelector('.fund-enabled');
-
     const title = titleEl ? titleEl.value.trim() : '';
     if(!title) return null;
-
-    return {
-      id: current.items[idx]?.id || ('fund_' + Date.now() + '_' + idx),
-      title,
-      current: Math.max(0, Number(currentEl ? currentEl.value : 0) || 0),
-      target: Math.max(0, Number(targetEl ? targetEl.value : 0) || 0),
-      enabled: enabledEl ? enabledEl.value !== 'false' : true
-    };
+    return { id: current.items[idx]?.id || ('fund_' + Date.now() + '_' + idx), title, current: Math.max(0, Number(currentEl ? currentEl.value : 0) || 0), target: Math.max(0, Number(targetEl ? targetEl.value : 0) || 0), enabled: enabledEl ? enabledEl.value !== 'false' : true };
   }).filter(Boolean);
-
   return {items};
 }
 
