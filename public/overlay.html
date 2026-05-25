@@ -515,6 +515,8 @@ body > #optionAlert.option-alert{
   let enabledPresets = [];
   let lastSignature = "";
   let lastDonationKey = localStorage.getItem("overlay_last_alert_key") || "";
+  let donationAlertBootReady = false;
+  const queuedAlertKeys = new Set();
   function donationAlertKey(row){
   return String(
     row.id ||
@@ -1088,46 +1090,89 @@ function alertSplitDisplayAmount(row){
 
   return displayAmount.toLocaleString("ko-KR");
 }
-  function makeDonationAlertHtml(row){
-    const donor=escapeHtml(row.donor||"익명");
-    const creator=escapeHtml(row.creator||"익명");
-    const accountAmount=num(row.accountAmount??row.account_amount);
-    const toonieAmount=num(row.toonieAmount??row.toonie_amount);
-    const totalAmount=num(row.totalAmount??row.total_amount??accountAmount+toonieAmount);
-    const amountText=displayAmount(totalAmount);
-    const checks=Array.isArray(row.checks)?row.checks:[];
-    const manualSoundTitle = String(row.manualSoundTitle || row.manual_sound_title || '').trim();
-    let optionText="";
+  function alertSourceLabel(row){
+  const raw = String(
+    row.source ||
+    row.type ||
+    row.platform ||
+    row.payType ||
+    row.pay_type ||
+    row.donationType ||
+    row.donation_type ||
+    ""
+  ).toLowerCase();
 
-    if(checks.length){
-      const ch=checks[checks.length-1];
-      const sign=ch.side==="minus"?"-":"+";
-      const cls=ch.side==="minus"?"alert-minus":"alert-plus";
-      const name=escapeHtml(ch.name||"옵션");
-      const count=Math.abs(num(ch.count));
-      optionText=`<span class="${cls}">${name}${sign}${count}</span>`;
-    }
-
-    if(manualSoundTitle){
-      optionText = optionText
-        ? `${optionText}<span class="alert-sound-title">${escapeHtml(manualSoundTitle)}</span>`
-        : `<span class="alert-sound-title">${escapeHtml(manualSoundTitle)}</span>`;
-    }
-
-    return `
-  <div class="alert-source-line">${sourceLabel}</div>
-  <div class="alert-up-line">
-    <span class="alert-donor blink-donor">${donor}</span>
-    <span class="alert-up">+UP</span>
-  </div>
-  <div class="alert-creator-line">
-    ${creator}
-  </div>
-  <div class="alert-line2">
-    <span class="alert-amount">${amountText}</span>
-  </div>
-`;
+  if(raw.includes("toon") || raw.includes("toonation") || raw.includes("투네")){
+    return "투네";
   }
+
+  if(raw.includes("account") || raw.includes("bank") || raw.includes("계좌")){
+    return "계좌";
+  }
+
+  return "계좌";
+}
+
+function alertSplitDisplayAmount(row){
+  const rawAmount = Number(
+    row.amount ??
+    row.accountAmount ??
+    row.account_amount ??
+    row.total ??
+    row.totalAmount ??
+    row.total_amount ??
+    0
+  );
+
+  const creators =
+    Array.isArray(row.creators) ? row.creators :
+    Array.isArray(row.targets) ? row.targets :
+    row.creator ? String(row.creator).split(",") :
+    row.creatorName ? String(row.creatorName).split(",") :
+    [];
+
+  const count = Math.max(
+    1,
+    creators.map(v => String(v).trim()).filter(Boolean).length
+  );
+
+  // ALERT 표시용만 분배 후 1,000원 미만 버림
+  // 77777 / 1명 = 77000
+  // 77777 / 2명 = 38000
+  // 77777 / 3명 = 25000
+  const splitAmount = rawAmount / count;
+  const displayAmount = Math.floor(splitAmount / 1000) * 1000;
+
+  return displayAmount.toLocaleString("ko-KR");
+}
+
+function donationAlertKey(row){
+  return String(
+    row.id ||
+    row.donation_id ||
+    `${row.donor || row.name || ""}_${row.creator || row.creatorName || ""}_${row.amount || row.accountAmount || row.account_amount || row.total || ""}_${row.createdAt || row.created_at || ""}`
+  );
+}
+  function makeDonationAlertHtml(row){
+  const donor = escapeHtml(row.donor || row.name || "익명");
+  const creator = escapeHtml(row.creator || row.creatorName || row.target || "크리에이터");
+  const sourceLabel = alertSourceLabel(row);
+  const amountText = alertSplitDisplayAmount(row);
+
+  return `
+    <div class="alert-source-line">${sourceLabel}</div>
+    <div class="alert-up-line">
+      <span class="alert-donor blink-donor">${donor}</span>
+      <span class="alert-up">+UP</span>
+    </div>
+    <div class="alert-creator-line">
+      ${creator}
+    </div>
+    <div class="alert-line2">
+      <span class="alert-amount">${amountText}</span>
+    </div>
+  `;
+}
   function pickSoundFileForDonation(row){
     if(soundRulesCache && soundRulesCache.enabled === false) return "";
 
