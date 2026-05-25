@@ -259,6 +259,38 @@ textarea{resize:vertical;line-height:1.45}
     grid-template-columns:1fr !important;
   }
 }
+  .split-check-wrap{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  min-width:0;
+}
+
+.split-check{
+  width:18px;
+  height:18px;
+  accent-color:#38bdf8;
+  flex:0 0 auto;
+}
+
+.split-tool-box{
+  margin-top:10px;
+  margin-bottom:10px;
+}
+
+.split-tool-title{
+  font-size:15px;
+  font-weight:1000;
+  margin-bottom:8px;
+  color:#e0f2fe;
+}
+
+.split-tool-actions{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-bottom:7px;
+}
 
 </style>
 </head>
@@ -317,6 +349,15 @@ textarea{resize:vertical;line-height:1.45}
           </div>
         </div>
         <div id="preview" class="resultBox">자동결과: -</div>
+        <div class="resultBox split-tool-box">
+  <div class="split-tool-title">크리에이터 자동분배</div>
+  <div class="split-tool-actions">
+    <button class="btn blue" onclick="distributeToCheckedCreators()">체크 크리에이터 균등분배</button>
+    <button class="btn gray" onclick="checkAllCreators(true)">전체체크</button>
+    <button class="btn gray" onclick="checkAllCreators(false)">전체해제</button>
+  </div>
+  <div class="muted">상단 총액을 체크한 크리에이터에게 차액 없이 자동 입력합니다.</div>
+</div>
 
         <div class="sub-card">
           <h2 style="font-size:17px;margin-bottom:10px">크리에이터별 분배</h2>
@@ -507,7 +548,9 @@ function fmt(n){
 function inputValueFromWon(won){
   const v = Number(won || 0) / 1000;
   if(!Number.isFinite(v) || v === 0) return '';
-  return String(Math.round(v * 10) / 10).replace(/\.0$/, '');
+
+  // 원 단위까지 보존하기 위해 필요한 만큼 소수 사용
+  return String(Number(v.toFixed(3))).replace(/\.0+$/, '');
 }
 function moneyInputValue(id){
   return toWon($(id) ? $(id).value : 0);
@@ -785,15 +828,19 @@ function renderProcessOptions(){
 function renderSplitRows(){
   const creators = settings?.creators || [];
   $('#splitRows').innerHTML = creators.map((name, idx) => `
-    <div class="split-row" data-idx="${idx}">
-      <div class="name">${esc(name)}</div>
-      <input class="input split-amount" inputmode="decimal" placeholder="금액">
-      <input class="input split-memo" placeholder="메모">
-      <button class="btn gray mini" onclick="setOnlyCreator(${idx})">전액</button>
-    </div>
-  `).join('');
+  <div class="split-row" data-idx="${idx}">
+    <label class="split-check-wrap">
+      <input type="checkbox" class="split-check">
+      <span class="name">${esc(name)}</span>
+    </label>
+    <input class="input split-amount" inputmode="decimal" placeholder="금액">
+    <input class="input split-memo" placeholder="메모">
+    <button class="btn gray mini" onclick="setOnlyCreator(${idx})">전액</button>
+  </div>
+`).join('');
 
   document.querySelectorAll('.split-amount').forEach(el => el.addEventListener('input', updatePreview));
+document.querySelectorAll('.split-check').forEach(el => el.addEventListener('change', updatePreview));
 }
 
 function bindInputs(){
@@ -1012,6 +1059,52 @@ function clearAmounts(){
   $('#toonieTotal').value = '';
   document.querySelectorAll('.split-amount').forEach(el => el.value = '');
   document.querySelectorAll('.split-memo').forEach(el => el.value = '');
+  updatePreview();
+}
+  function checkedCreatorRows(){
+  return Array.from(document.querySelectorAll('.split-row')).filter(row => {
+    const chk = row.querySelector('.split-check');
+    return chk && chk.checked;
+  });
+}
+
+function checkAllCreators(flag){
+  document.querySelectorAll('.split-check').forEach(chk => chk.checked = !!flag);
+  updatePreview();
+}
+
+function distributeToCheckedCreators(){
+  const total = getTopTotal();
+  const rows = checkedCreatorRows();
+
+  if(total <= 0){
+    return alert('계좌 총액 또는 투네 총액을 먼저 입력하세요.');
+  }
+
+  if(!rows.length){
+    return alert('분배할 크리에이터를 체크하세요.');
+  }
+
+  // 기존 금액 초기화
+  document.querySelectorAll('.split-amount').forEach(el => el.value = '');
+
+  // 차액 없이 원 단위로 정확히 분배
+  const count = rows.length;
+  const base = Math.floor(total / count);
+  let remain = total - (base * count);
+
+  rows.forEach((row) => {
+    let amount = base;
+
+    // 남는 원 단위는 앞쪽 크리에이터부터 1원씩 배분
+    if(remain > 0){
+      amount += 1;
+      remain -= 1;
+    }
+
+    row.querySelector('.split-amount').value = inputValueFromWon(amount);
+  });
+
   updatePreview();
 }
 
