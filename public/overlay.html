@@ -680,7 +680,28 @@ function getOverlaySections(settings){
     return `<span class="notice-line"${colorStyle}>${escapeHtml(line)}</span>`;
   }).join("");
 }
+function forceNoticeColor(settings){
+  const st = settings?.stationStyle || {};
+  const titleColor = String(st.noticeTitleColor || "").trim();
+  const contentColor = String(st.noticeContentColor || st.contentColor || "").trim();
 
+  const titleEl = document.getElementById("noticeTitleText");
+  const textEl = document.getElementById("noticeText");
+
+  if(titleEl && titleColor){
+    titleEl.style.setProperty("color", titleColor, "important");
+  }
+
+  if(textEl && contentColor){
+    textEl.style.setProperty("color", contentColor, "important");
+  }
+
+  document.querySelectorAll("#noticeText .notice-line").forEach(el => {
+    if(contentColor){
+      el.style.setProperty("color", contentColor, "important");
+    }
+  });
+}
   function applySections(settings){
     const sections = getOverlaySections(settings);
 
@@ -1277,6 +1298,7 @@ function makeDonationAlertHtml(row){
 
     const settings = data.settings || defaultSettings;
     applyStationStyle(settings);
+    forceNoticeColor(settings);
     cacheSoundRules(settings);
     enabledPresets=getEnabledPresets(settings);
     const rawCreators = data.creators && data.creators.length ? data.creators : zeroCreatorsFromSettings(settings);
@@ -1306,8 +1328,9 @@ function makeDonationAlertHtml(row){
       latestSettingsForTimer = settings;
     applySections(settings);
     renderNotice(settings);
-    renderKaraoke(settings);
-    renderFunding(settings);
+forceNoticeColor(settings);
+renderKaraoke(settings);
+renderFunding(settings);
       renderAccountRoller(data.accountDonors);
       renderCreators(creators);
     }
