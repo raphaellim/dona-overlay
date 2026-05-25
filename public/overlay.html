@@ -301,7 +301,7 @@ to{opacity:.88;filter:brightness(1.28)}
 #overlayAlertRoot > #optionAlert.option-alert.show,#overlayAlertRoot #optionAlert.option-alert.show{transform:scale(1) !important;animation:alertStackPop .34s ease-out, alertCleanGlow 1.2s ease-in-out infinite alternate !important;}
 @keyframes alertStackPop{0%{transform:scale(.92)}70%{transform:scale(1.035)}100%{transform:scale(1)}}
 body > #optionAlert.option-alert{display:none !important;}
-  /* ===== 공지 컨텐츠 컬러 방송국 스타일 적용 ===== */
+/* ===== 공지 컨텐츠 컬러 방송국 스타일 적용 ===== */
 .notice-box #noticeText,
 .notice-box .notice-text,
 .notice-box .notice-line{
@@ -644,14 +644,42 @@ function getOverlaySections(settings){
 
 
   function renderNotice(settings){
-    const titleEl = document.getElementById("noticeTitleText");
-    const textEl = document.getElementById("noticeText");
-    if(!textEl) return;
-    if(titleEl) titleEl.textContent = settings?.noticeTitle || "공지";
-    const text = String(settings?.notice || "").trim();
-    if(!text){ textEl.innerHTML = ""; return; }
-    textEl.innerHTML = text.split(/\r?\n/).map((line) => `<span class="notice-line">${escapeHtml(line)}</span>`).join("");
+  const titleEl = document.getElementById("noticeTitleText");
+  const textEl = document.getElementById("noticeText");
+  if(!textEl) return;
+
+  const st = settings?.stationStyle || {};
+  const noticeTitleColor = String(st.noticeTitleColor || "").trim();
+  const noticeContentColor = String(st.noticeContentColor || st.contentColor || "").trim();
+
+  if(titleEl){
+    titleEl.textContent = settings?.noticeTitle || "공지";
+
+    // 공지 타이틀 컬러 강제 적용
+    if(noticeTitleColor){
+      titleEl.style.setProperty("color", noticeTitleColor, "important");
+    }
   }
+
+  // 공지 컨텐츠 컬러 강제 적용
+  if(noticeContentColor){
+    textEl.style.setProperty("color", noticeContentColor, "important");
+  }
+
+  const text = String(settings?.notice || "").trim();
+  if(!text){
+    textEl.innerHTML = "";
+    return;
+  }
+
+  textEl.innerHTML = text.split(/\r?\n/).map((line) => {
+    const colorStyle = noticeContentColor
+      ? ` style="color:${escapeHtml(noticeContentColor)} !important"`
+      : "";
+
+    return `<span class="notice-line"${colorStyle}>${escapeHtml(line)}</span>`;
+  }).join("");
+}
 
   function applySections(settings){
     const sections = getOverlaySections(settings);
