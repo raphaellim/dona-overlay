@@ -684,16 +684,18 @@ function getOverlaySections(settings){
   const st = settings?.stationStyle || {};
   const colors = Array.isArray(settings?.noticeColors) ? settings.noticeColors : [];
 
-  const contentColor = String(
+  const baseColor = String(
     colors[0] ||
     st.noticeContentColor ||
     st.contentColor ||
-    "#ffffff"
+    ""
   ).trim();
 
   const textEl = document.getElementById("noticeText");
-  if(textEl){
-    textEl.style.setProperty("color", contentColor, "important");
+
+  // 색상 값이 있을 때만 적용. 없으면 기존 색 유지
+  if(textEl && baseColor){
+    textEl.style.setProperty("color", baseColor, "important");
   }
 
   document.querySelectorAll("#noticeText .notice-line").forEach((el, idx) => {
@@ -702,10 +704,13 @@ function getOverlaySections(settings){
       colors[0] ||
       st.noticeContentColor ||
       st.contentColor ||
-      "#ffffff"
+      ""
     ).trim();
 
-    el.style.setProperty("color", lineColor, "important");
+    // 색상 값이 있을 때만 적용. 없으면 흰색으로 덮지 않음
+    if(lineColor){
+      el.style.setProperty("color", lineColor, "important");
+    }
   });
 }
   
