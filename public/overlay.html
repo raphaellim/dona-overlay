@@ -380,6 +380,17 @@ body > #optionAlert.option-alert{
 .notice-line{
   color:var(--style-notice-content-color, var(--style-content-color)) !important;
 }
+  .alert-source-line{
+  margin-bottom:4px;
+  padding:3px 10px;
+  border-radius:999px;
+  background:rgba(255,255,255,.14);
+  border:1px solid rgba(255,255,255,.22);
+  color:#8ee7ff;
+  font-size:20px!important;
+  line-height:1;
+  font-weight:1000;
+}
 
 </style>
 </head>
@@ -1012,8 +1023,71 @@ function getOverlaySections(settings){
         </article>
       `;
     }).join("");
-  }  
+  }
+  function alertSourceLabel(row){
+  const raw = String(
+    row.source ||
+    row.type ||
+    row.platform ||
+    row.payType ||
+    row.pay_type ||
+    row.donationType ||
+    row.donation_type ||
+    ""
+  ).toLowerCase();
 
+  if(raw.includes("toon") || raw.includes("투네") || raw.includes("toonation")){
+    return "투네";
+  }
+
+  if(raw.includes("account") || raw.includes("bank") || raw.includes("계좌")){
+    return "계좌";
+  }
+
+  // source 값이 없으면 기본은 계좌로 표시
+  return "계좌";
+}
+
+function alertDisplayAmount(row){
+  const amount = Number(
+    row.amount ??
+    row.accountAmount ??
+    row.account_amount ??
+    row.total ??
+    0
+  );
+
+  return Math.floor(amount).toLocaleString("ko-KR");
+}
+function alertSplitDisplayAmount(row){
+  const rawAmount = Number(
+    row.amount ??
+    row.accountAmount ??
+    row.account_amount ??
+    row.total ??
+    0
+  );
+
+  const creators =
+    Array.isArray(row.creators) ? row.creators :
+    Array.isArray(row.targets) ? row.targets :
+    row.creator ? String(row.creator).split(",") :
+    [];
+
+  const count = Math.max(
+    1,
+    creators.map(v => String(v).trim()).filter(Boolean).length
+  );
+
+  // ALERT 표시용만 분배 후 1,000원 미만 버림
+  // 예: 77777 / 1 = 77000
+  // 예: 77777 / 2 = 38000
+  // 예: 77777 / 3 = 25000
+  const splitAmount = rawAmount / count;
+  const displayAmount = Math.floor(splitAmount / 1000) * 1000;
+
+  return displayAmount.toLocaleString("ko-KR");
+}
   function makeDonationAlertHtml(row){
     const donor=escapeHtml(row.donor||"익명");
     const creator=escapeHtml(row.creator||"익명");
@@ -1041,10 +1115,18 @@ function getOverlaySections(settings){
     }
 
     return `
-      <div class="alert-donor">${donor}</div>
-      <div class="alert-target">→ ${creator}</div>
-      <div class="alert-line2"><span class="alert-amount">${amountText}</span>${optionText}</div>
-    `;
+  <div class="alert-source-line">${sourceLabel}</div>
+  <div class="alert-up-line">
+    <span class="alert-donor blink-donor">${donor}</span>
+    <span class="alert-up">+UP</span>
+  </div>
+  <div class="alert-creator-line">
+    ${creator}
+  </div>
+  <div class="alert-line2">
+    <span class="alert-amount">${amountText}</span>
+  </div>
+`;
   }
   function pickSoundFileForDonation(row){
     if(soundRulesCache && soundRulesCache.enabled === false) return "";
