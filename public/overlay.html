@@ -391,6 +391,21 @@ body > #optionAlert.option-alert{
   line-height:1;
   font-weight:1000;
 }
+  .alert-source-line{
+  margin-bottom:4px;
+  padding:3px 10px;
+  border-radius:999px;
+  background:rgba(255,255,255,.14);
+  border:1px solid rgba(255,255,255,.22);
+  color:#8ee7ff;
+  font-size:22px!important;
+  line-height:1;
+  font-weight:1000;
+}
+  .alert-donor{font-size:40px!important;}
+  .alert-up{font-size:28px!important;}
+  .alert-creator-line{font-size:30px!important;}
+  .alert-line2{font-size:28px!important;}
 
 </style>
 </head>
@@ -1296,60 +1311,76 @@ function donationAlertKey(row){
     }
   }
 
-  function checkLatestOptionAlert(donations){
-    const rows=(donations||[]).slice().sort((a,b)=>new Date(a.createdAt||a.created_at||0)-new Date(b.createdAt||b.created_at||0));
-    if(!rows.length) return;
+ function checkLatestOptionAlert(donations){
+  const rows = (donations || [])
+    .slice()
+    .sort((a, b) => new Date(a.createdAt || a.created_at || 0) - new Date(b.createdAt || b.created_at || 0));
 
-    // 새 창/새 탭으로 오버레이를 열었을 때 기존 후원 ALERT가 한꺼번에 재생되지 않게
-    // 첫 조회에서는 항상 최신 건까지만 기준점으로 잡고 재생하지 않음
-    if(!donationAlertBootReady){
-      const latest=rows[rows.length-1];
-      const key = donationAlertKey(latest);
-      lastDonationKey=key;
-      localStorage.setItem("overlay_last_alert_key",key);
-      donationAlertBootReady=true;
-      return;
-    }
+  if(!rows.length) return;
 
-    let passedLast=false;
-    const newRows=[];
+  // 새 창/새 탭으로 오버레이를 열었을 때
+  // 기존 후원 ALERT가 한꺼번에 재생되지 않도록 첫 조회는 기준점만 잡음
+  if(!donationAlertBootReady){
+    const latest = rows[rows.length - 1];
+    const key = donationAlertKey(latest);
 
-    for(const row of rows){
-      const key = donationAlertKey(row);
-      if(key===lastDonationKey){
-        passedLast=true;
-        continue;
-      }
-      if(passedLast) newRows.push(row);
-    }
-
-    if(!passedLast){
-      const latest=rows[rows.length-1];
-      const lastKey = donationAlertKey(last);
-      lastDonationKey=key;
-      localStorage.setItem("overlay_last_alert_key",key);
-      return;
-    }
-
-    if(!newRows.length) return;
-
-    const last=newRows[newRows.length-1];
-    const lastKey=(last.id||"")+"_"+(last.createdAt||last.created_at||"");
-    lastDonationKey=lastKey;
-    localStorage.setItem("overlay_last_alert_key",lastKey);
-
-    newRows.forEach(row => {
-  const key = donationAlertKey(row);
-  if(queuedAlertKeys.has(key)) return;
-
-  queuedAlertKeys.add(key);
-  alertQueue.push({ html: makeDonationAlertHtml(row), row });
-
-  setTimeout(() => queuedAlertKeys.delete(key), 30000);
-});
-
-playAlertQueue();
+    lastDonationKey = key;
+    localStorage.setItem("overlay_last_alert_key", key);
+    donationAlertBootReady = true;
+    return;
   }
+
+  let passedLast = false;
+  const newRows = [];
+
+  for(const row of rows){
+    const key = donationAlertKey(row);
+
+    if(key === lastDonationKey){
+      passedLast = true;
+      continue;
+    }
+
+    if(passedLast){
+      newRows.push(row);
+    }
+  }
+
+  // 마지막 key를 못 찾으면 데이터 기준점이 꼬인 상태라
+  // 최신 건으로 기준만 다시 잡고 재생하지 않음
+  if(!passedLast){
+    const latest = rows[rows.length - 1];
+    const key = donationAlertKey(latest);
+
+    lastDonationKey = key;
+    localStorage.setItem("overlay_last_alert_key", key);
+    return;
+  }
+
+  if(!newRows.length) return;
+
+  const last = newRows[newRows.length - 1];
+  const lastKey = donationAlertKey(last);
+
+  lastDonationKey = lastKey;
+  localStorage.setItem("overlay_last_alert_key", lastKey);
+
+  newRows.forEach(row => {
+    const key = donationAlertKey(row);
+
+    if(queuedAlertKeys.has(key)) return;
+
+    queuedAlertKeys.add(key);
+    alertQueue.push({
+      html: makeDonationAlertHtml(row),
+      row
+    });
+
+    setTimeout(() => queuedAlertKeys.delete(key), 30000);
+  });
+
+  playAlertQueue();
+}
 
 
 
