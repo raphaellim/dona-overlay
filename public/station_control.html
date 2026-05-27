@@ -60,15 +60,25 @@ function setLinks(){
   document.getElementById('styleLink').href='/station_style.html?station='+s;
 }
 async function load(){
-  setLinks();
-  const info=await api('/api/station-info');
-  station=info.station; active=info.active;
-  document.getElementById('title').textContent=station.name+' 컨트롤';
-  document.getElementById('info').textContent='방송국 코드: '+station.slug+' / 현재 방송: '+active.title;
-  document.getElementById('overlayLink').href=`/overlay.html?station=${encodeURIComponent(station.slug)}&token=${encodeURIComponent(station.overlayToken)}&monitor=1&v=${Date.now()}`;
-  const data=await api('/api/broadcasts');
-  broadcasts=data.broadcasts||[];
-  render();
+ function setLinks() {
+  if (!station || !station.slug) return;
+
+  const slug = encodeURIComponent(station.slug);
+
+  const adminLink = document.getElementById('adminLink');
+  if (adminLink) adminLink.href = `/admin.html?station=${slug}`;
+
+  const controlLink = document.getElementById('controlLink');
+  if (controlLink) controlLink.href = `/control.html?station=${slug}`;
+
+  const styleLink = document.getElementById('styleLink');
+  if (styleLink) styleLink.href = `/station_style.html?station=${slug}`;
+
+  const mAdminLink = document.getElementById('mAdminLink');
+  if (mAdminLink) mAdminLink.href = `/m_admin.html?station=${slug}`;
+
+  const mControlLink = document.getElementById('mControlLink');
+  if (mControlLink) mControlLink.href = `/m_control.html?station=${slug}`;
 }
 function timerText(ms){
   const sec=Math.floor(Number(ms||0)/1000);
