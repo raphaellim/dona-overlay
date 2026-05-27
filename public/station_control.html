@@ -17,8 +17,10 @@ body{background:#070b12;color:#e5e7eb}.wrap{max-width:1220px;margin:0 auto;paddi
     </div>
     <div class="nav">
       <a id="summaryLink" target="_blank" href="/summary.html">합산</a>
-      <a id="adminLink" target="_blank" href="/admin.html">입력</a>
-      <a id="controlLink" target="_blank" href="/control.html">설정</a>
+      <a id="adminLink" target="_blank" href="/admin.html">PC 입력</a>
+      <a id="mAdminLink" target="_blank" href="/m_admin.html">모바일 입력</a>
+      <a id="controlLink" target="_blank" href="/control.html">PC 설정</a>
+      <a id="mControlLink" target="_blank" href="/m_control.html">모바일 설정</a>
       <a id="styleLink" target="_blank" href="/station_style.html">스타일</a>
       <a id="overlayLink" target="_blank" href="/overlay.html">오버레이 TEST</a>
     </div>
@@ -52,6 +54,8 @@ function setLinks(){
   const s=encodeURIComponent(st());
   document.getElementById('adminLink').href='/admin.html?station='+s;
   document.getElementById('controlLink').href='/control.html?station='+s;
+  if(document.getElementById('mAdminLink')) document.getElementById('mAdminLink').href='/m_admin.html?station='+s;
+  if(document.getElementById('mControlLink')) document.getElementById('mControlLink').href='/m_control.html?station='+s;
   document.getElementById('summaryLink').href='/summary.html?station='+s;
   document.getElementById('styleLink').href='/station_style.html?station='+s;
 }

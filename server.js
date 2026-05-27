@@ -422,14 +422,26 @@ async function getStation(reqOrSlug) {
 }
 
 function stationToClient(row, includeSecret = false) {
-  const out = { id: row.id, name: row.name, slug: row.slug, overlayToken: row.overlay_token || '', createdAt: row.created_at, hasAdminPassword: !!row.station_admin_password };
-  if (includeSecret) out.stationAdminPassword = String(row.station_admin_password || '');
+  const out = {
+    id: row.id,
+    name: row.name,
+    slug: row.slug,
+    overlayToken: row.overlay_token || '',
+    createdAt: row.created_at,
+    hasAdminPassword: !!row.station_admin_password
+  };
+  if (includeSecret) {
+    out.stationAdminPassword = String(row.station_admin_password || '');
+  }
   return out;
 }
 
 async function listStations(includeSecret = false) {
   await ensureDefaultStation();
-  const { data, error } = await supabase.from('stations').select('*').order('created_at', { ascending: false });
+  const { data, error } = await supabase
+    .from('stations')
+    .select('*')
+    .order('created_at', { ascending: false });
   if (error) throw error;
   return (data || []).map(row => stationToClient(row, includeSecret));
 }
@@ -476,37 +488,17 @@ async function ensureActiveBroadcast(stationId) {
   if (error) throw error;
   if (data) return data;
 
-  const latest = await supabase
-    .from('broadcasts')
-    .select('*')
-    .eq('station_id', stationId)
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  if (latest.error) throw latest.error;
-
-  if (latest.data) {
-    const activated = await supabase
-      .from('broadcasts')
-      .update({ is_active: true })
-      .eq('station_id', stationId)
-      .eq('id', latest.data.id)
-      .select()
-      .single();
-    if (activated.error) throw activated.error;
-    return activated.data;
-  }
-
   const today = new Date();
   const mm = String(today.getMonth() + 1).padStart(2, '0');
   const dd = String(today.getDate()).padStart(2, '0');
   const title = `${mm}${dd}방송`;
+
   const inserted = await supabase
     .from('broadcasts')
     .insert({ station_id: stationId, title, is_active: true, broadcast_password: '' })
     .select()
     .single();
+
   if (inserted.error) throw inserted.error;
   return inserted.data;
 }
@@ -1358,26 +1350,30 @@ app.delete('/api/broadcasts/:id', async (req, res) => {
     const station = await getStation(req);
     if (!station) return res.status(404).json({ error: '방송국을 찾을 수 없습니다.' });
     if (!await stationAllowed(req, station)) return res.status(401).json({ error: '방송국 관리자 권한이 필요합니다.' });
-    const { data: target, error: readError } = await supabase.from('broadcasts').select('*').eq('station_id', station.id).eq('id', req.params.id).maybeSingle();
+
+    const { data: target, error: readError } = await supabase
+      .from('broadcasts')
+      .select('*')
+      .eq('station_id', station.id)
+      .eq('id', req.params.id)
+      .single();
+
     if (readError) throw readError;
-    if (!target) return res.status(404).json({ error: '방송을 찾을 수 없습니다.' });
+    if (target?.is_active) {
+      return res.status(400).json({ error: '현재 방송은 삭제할 수 없습니다. 다른 방송을 현재 방송으로 선택한 뒤 삭제하세요.' });
+    }
+
     const delDonations = await supabase.from('donations').delete().eq('station_id', station.id).eq('broadcast_id', req.params.id);
     if (delDonations.error) throw delDonations.error;
+
     const delBroadcast = await supabase.from('broadcasts').delete().eq('station_id', station.id).eq('id', req.params.id);
     if (delBroadcast.error) throw delBroadcast.error;
+
     await removeBroadcastSettings(station.slug, req.params.id);
-    let nextActive = null;
-    if (target.is_active) {
-      const latest = await supabase.from('broadcasts').select('*').eq('station_id', station.id).order('created_at', { ascending: false }).limit(1).maybeSingle();
-      if (latest.error) throw latest.error;
-      if (latest.data) {
-        const activated = await supabase.from('broadcasts').update({ is_active: true }).eq('station_id', station.id).eq('id', latest.data.id).select().single();
-        if (activated.error) throw activated.error;
-        nextActive = activated.data;
-      }
-    }
-    res.json({ ok: true, deleted: 1, active: nextActive ? broadcastToClient(nextActive) : null });
-  } catch (e) { res.status(500).json({ error: e.message || '방송 삭제 실패' }); }
+    res.json({ ok: true, deleted: 1 });
+  } catch (e) {
+    res.status(500).json({ error: e.message || '방송 삭제 실패' });
+  }
 });
 
 

@@ -260,9 +260,6 @@ textarea{resize:vertical;line-height:1.45}
   }
 }
 
-
-/* ===== 크리에이터 자동분배 체크 UI ===== */
-.split-check-wrap{display:flex;align-items:center;gap:8px;min-width:0}.split-check{width:18px;height:18px;accent-color:#38bdf8;flex:0 0 auto}.split-tool-box{margin-top:10px;margin-bottom:10px}.split-tool-title{font-size:15px;font-weight:1000;margin-bottom:8px;color:#e0f2fe}.split-tool-actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:7px}
 </style>
 </head>
 <body>
@@ -320,7 +317,6 @@ textarea{resize:vertical;line-height:1.45}
           </div>
         </div>
         <div id="preview" class="resultBox">자동결과: -</div>
-        <div class="resultBox split-tool-box"><div class="split-tool-title">크리에이터 자동분배</div><div class="split-tool-actions"><button class="btn blue" onclick="distributeToCheckedCreators()">체크 크리에이터 균등분배</button><button class="btn gray" onclick="checkAllCreators(true)">전체체크</button><button class="btn gray" onclick="checkAllCreators(false)">전체해제</button></div><div class="muted">상단 총액을 체크한 크리에이터에게 차액 없이 원단위로 자동 입력합니다.</div></div>
 
         <div class="sub-card">
           <h2 style="font-size:17px;margin-bottom:10px">크리에이터별 분배</h2>
@@ -511,7 +507,7 @@ function fmt(n){
 function inputValueFromWon(won){
   const v = Number(won || 0) / 1000;
   if(!Number.isFinite(v) || v === 0) return '';
-  return String(Number(v.toFixed(3))).replace(/\.0+$/, '');
+  return String(Math.round(v * 10) / 10).replace(/\.0$/, '');
 }
 function moneyInputValue(id){
   return toWon($(id) ? $(id).value : 0);
@@ -790,14 +786,14 @@ function renderSplitRows(){
   const creators = settings?.creators || [];
   $('#splitRows').innerHTML = creators.map((name, idx) => `
     <div class="split-row" data-idx="${idx}">
-      <label class="split-check-wrap"><input type="checkbox" class="split-check"><span class="name">${esc(name)}</span></label>
+      <div class="name">${esc(name)}</div>
       <input class="input split-amount" inputmode="decimal" placeholder="금액">
       <input class="input split-memo" placeholder="메모">
       <button class="btn gray mini" onclick="setOnlyCreator(${idx})">전액</button>
     </div>
   `).join('');
+
   document.querySelectorAll('.split-amount').forEach(el => el.addEventListener('input', updatePreview));
-  document.querySelectorAll('.split-check').forEach(el => el.addEventListener('change', updatePreview));
 }
 
 function bindInputs(){
@@ -1009,21 +1005,6 @@ async function sendManualSound(){
       ? `대기열에 ${repeatCount}회 추가했습니다. 대기열 전송을 누르면 순차 재생됩니다.`
       : `오버레이로 ${repeatCount}회 바로 전송했습니다.`);
   }catch(e){ alert(e.message); }
-}
-
-function checkedCreatorRows(){return Array.from(document.querySelectorAll('.split-row')).filter(row => {const chk = row.querySelector('.split-check'); return chk && chk.checked;});}
-function checkAllCreators(flag){document.querySelectorAll('.split-check').forEach(chk => chk.checked = !!flag); updatePreview();}
-function distributeToCheckedCreators(){
-  const total = getTopTotal();
-  const rows = checkedCreatorRows();
-  if(total <= 0) return alert('계좌 총액 또는 투네 총액을 먼저 입력하세요.');
-  if(!rows.length) return alert('분배할 크리에이터를 체크하세요.');
-  document.querySelectorAll('.split-amount').forEach(el => el.value = '');
-  const count = rows.length;
-  const base = Math.floor(total / count);
-  let remain = total - (base * count);
-  rows.forEach(row => { let amount = base; if(remain > 0){ amount += 1; remain -= 1; } row.querySelector('.split-amount').value = inputValueFromWon(amount); });
-  updatePreview();
 }
 
 function clearAmounts(){

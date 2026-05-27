@@ -245,7 +245,12 @@ control.html에 노래방 관리 섹션을 추가했습니다.
 - 원인: loadSettings()에서 fundingData는 받아오지만 renderFundingManager()를 다시 호출하지 않았습니다.
 - 추가 보강: 펀딩 DOM이 아직 렌더링되지 않은 상태에서 저장이 호출되어 빈 배열로 덮어쓰는 상황을 방지했습니다.
 
+## 모바일 전용 페이지 추가
 
-## v2 Full Checked Final
-- 요청 기능 전체 점검/보정 패키지입니다.
-- 공지 컬러, 크리에이터 순서, ALERT 오류/중복, VIP 효과, 펀딩 리스트, 자동분배, 방송 삭제 중복 생성 방지 포함.
+PC용 admin.html / control.html은 그대로 유지합니다.
+
+추가 파일:
+- public/m_admin.html : 모바일 후원 입력 전용
+- public/m_control.html : 모바일 방송 설정 전용
+
+station_control.html에는 모바일 입력/모바일 설정 링크를 추가했습니다.
