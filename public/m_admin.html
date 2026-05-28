@@ -1,10 +1,1097 @@
-<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no"><title>모바일 후원 입력</title><style>
-:root{--bg:#07101c;--card:#111b2a;--card2:#0d1624;--line:rgba(148,163,184,.22);--text:#eef6ff;--muted:#9fb0c6;--blue:#3b82f6;--green:#58c96b;--red:#ef6b86;--gold:#ffd166}
-*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:radial-gradient(circle at 30% -10%,rgba(59,130,246,.22),transparent 38%),linear-gradient(180deg,#0b1522,#060b12);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',Arial,sans-serif}body{padding-bottom:92px}button,input,select,textarea{font-family:inherit}.topbar{position:sticky;top:0;z-index:30;padding:12px 12px 10px;padding-top:calc(12px + env(safe-area-inset-top));background:linear-gradient(180deg,rgba(7,16,28,.97),rgba(7,16,28,.84));backdrop-filter:blur(16px);border-bottom:1px solid rgba(148,163,184,.12)}.top-main{height:36px;display:grid;grid-template-columns:42px 1fr 42px;align-items:center}.icon-btn{width:36px;height:36px;border:0;background:transparent;color:#fff;font-size:24px;font-weight:900}.page-title{text-align:center;font-size:20px;font-weight:1000;letter-spacing:-.5px}.station-line{display:flex;justify-content:center;align-items:center;gap:7px;margin-top:5px;color:#c9d8ee;font-size:12.5px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.live-dot{width:9px;height:9px;border-radius:50%;background:#33a7ff;box-shadow:0 0 0 4px rgba(51,167,255,.14),0 0 14px #33a7ff}.quick-links{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:12px}.quick-links a{min-height:38px;border-radius:14px;text-decoration:none;color:#eaf2ff;background:linear-gradient(180deg,rgba(30,41,59,.9),rgba(15,23,42,.92));border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:13px}.quick-links a.primary{background:linear-gradient(135deg,#2463d8,#3b82f6)}.wrap{padding:12px;max-width:520px;margin:0 auto}.card{background:linear-gradient(180deg,rgba(17,27,42,.94),rgba(10,18,30,.96));border:1px solid rgba(148,163,184,.16);border-radius:18px;padding:13px;margin-bottom:12px;box-shadow:0 18px 60px rgba(0,0,0,.38)}.card-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}h2{font-size:16px;margin:0;font-weight:1000}.badge{font-size:12px;font-weight:1000;color:#93c5fd;background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.35);border-radius:999px;padding:5px 9px}.row{margin-bottom:10px}label{display:block;margin:0 0 6px;color:#d3e0f2;font-size:13px;font-weight:900}.input,select,textarea{width:100%;min-height:42px;border-radius:12px;border:1px solid rgba(148,163,184,.24);background:linear-gradient(180deg,rgba(13,22,36,.9),rgba(8,15,25,.95));color:#fff;padding:10px 12px;font-size:15px;font-weight:800;outline:none}.input:focus,select:focus,textarea:focus{border-color:rgba(96,165,250,.75);box-shadow:0 0 0 3px rgba(59,130,246,.14)}textarea{min-height:92px}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}.btn{width:100%;min-height:42px;border:0;border-radius:12px;background:linear-gradient(180deg,#334155,#1f2937);color:#fff;font-size:14px;font-weight:1000;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}.btn.blue{background:linear-gradient(135deg,#2563eb,#3b82f6)}.btn.green{background:linear-gradient(135deg,#35a853,#65d778)}.btn.red{background:linear-gradient(135deg,#be123c,#fb7185)}.btn.gray{background:linear-gradient(180deg,#253244,#162030)}.btn.mini{min-height:34px;font-size:12px;border-radius:10px;padding:0 8px}.summary-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:10px}.summary-pill{min-height:58px;border-radius:14px;padding:8px 6px;text-align:center;border:1px solid rgba(148,163,184,.2);background:rgba(15,23,42,.72)}.summary-pill span{display:block;color:#b7c7dc;font-size:11px;font-weight:1000;margin-bottom:4px}.summary-pill b{font-size:20px}.summary-pill.blue{border-color:rgba(59,130,246,.55);background:linear-gradient(180deg,rgba(30,64,175,.26),rgba(15,23,42,.72))}.summary-pill.green{border-color:rgba(74,222,128,.46);background:linear-gradient(180deg,rgba(22,101,52,.26),rgba(15,23,42,.72))}.summary-pill.red{border-color:rgba(248,113,113,.48);background:linear-gradient(180deg,rgba(127,29,29,.25),rgba(15,23,42,.72))}.summary-pill.ok{border-color:rgba(74,222,128,.55)}.muted{color:var(--muted);font-size:12px;font-weight:800}.item,.creator-row,.recent{background:linear-gradient(180deg,rgba(15,24,38,.88),rgba(10,18,30,.9));border:1px solid rgba(148,163,184,.16);border-radius:15px;padding:10px;margin-bottom:8px}.creator-top{display:grid;grid-template-columns:1fr 68px;gap:8px;align-items:center;margin-bottom:8px}.check-name{margin:0;display:flex;align-items:center;gap:9px;color:#fff;font-size:15px}.check-name input{width:21px;height:21px;accent-color:#3b82f6}.amount-line{display:grid;grid-template-columns:1fr 58px;gap:8px}.memo-line{display:none;margin-top:8px}.creator-row.open .memo-line{display:block}.recent{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}.status{display:inline-flex;min-width:64px;justify-content:center;border-radius:999px;background:rgba(34,197,94,.18);color:#b8ffc4;font-size:12px;font-weight:1000;padding:4px 8px}.bottom{position:fixed;left:0;right:0;bottom:0;z-index:40;padding:10px 12px calc(10px + env(safe-area-inset-bottom));background:linear-gradient(180deg,rgba(7,16,28,.74),rgba(7,16,28,.98));border-top:1px solid rgba(148,163,184,.16);backdrop-filter:blur(16px)}.bottom .btn{max-width:520px;margin:0 auto;min-height:56px;border-radius:14px;font-size:17px}.toast{position:fixed;left:50%;bottom:84px;z-index:100;transform:translateX(-50%) translateY(20px);min-width:220px;max-width:calc(100% - 32px);padding:12px 14px;border-radius:999px;background:rgba(15,23,42,.96);border:1px solid rgba(148,163,184,.25);color:#fff;font-size:14px;font-weight:1000;text-align:center;opacity:0;pointer-events:none;transition:.22s}.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}.empty,.warning{padding:12px;border-radius:16px;color:#cbd5e1;background:rgba(15,23,42,.8);border:1px dashed rgba(148,163,184,.24);font-size:13px;font-weight:900}.warning{color:#fecaca;background:rgba(127,29,29,.2);border-color:rgba(248,113,113,.35)}.tabs{position:sticky;top:calc(104px + env(safe-area-inset-top));z-index:25;display:grid;grid-template-columns:repeat(5,1fr);gap:6px;padding:8px 12px;background:rgba(7,16,28,.84);backdrop-filter:blur(12px);border-bottom:1px solid rgba(148,163,184,.10)}.tab{min-height:32px;border:1px solid rgba(148,163,184,.18);border-radius:8px;background:rgba(15,23,42,.74);color:#cbd5e1;font-size:12px;font-weight:1000}.tab.active{background:linear-gradient(135deg,#2563eb,#3b82f6);color:#fff}.panel{display:none}.panel.active{display:block}.toggle-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.toggle{display:flex;align-items:center;justify-content:space-between;gap:8px;background:linear-gradient(180deg,rgba(15,24,38,.88),rgba(10,18,30,.9));border:1px solid rgba(148,163,184,.16);border-radius:14px;padding:10px;font-weight:1000;font-size:13px}.switch{position:relative;width:48px;height:26px;flex:0 0 auto}.switch input{display:none}.knob{position:absolute;inset:0;border-radius:999px;background:#334155;transition:.18s}.knob:before{content:"";position:absolute;width:20px;height:20px;left:3px;top:3px;border-radius:50%;background:#fff;transition:.18s;box-shadow:0 2px 8px rgba(0,0,0,.35)}.switch input:checked+.knob{background:#58c96b}.switch input:checked+.knob:before{transform:translateX(22px)}.colors{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}.colors input{padding:4px;min-height:42px}.progress{height:8px;border-radius:999px;background:rgba(148,163,184,.18);overflow:hidden}.bar{height:100%;border-radius:999px;background:linear-gradient(90deg,#58c96b,#9cffaa);width:0}.small{font-size:11px;color:#9fb0c6;font-weight:800}@media(max-width:380px){.grid2,.grid3,.summary-grid,.toggle-grid,.colors,.amount-line{grid-template-columns:1fr}.tabs{top:calc(126px + env(safe-area-inset-top));grid-template-columns:repeat(3,1fr)}}
-</style></head><body>
-<header class="topbar"><div class="top-main"><button class="icon-btn" onclick="location.href=stationUrl('/station_control.html')">☰</button><div class="page-title">모바일 후원 입력</div><button class="icon-btn" onclick="location.href=stationUrl('/m_control.html')">⚙</button></div><div class="station-line"><span class="live-dot"></span><span id="stationInfo">방송국 확인 중.</span></div><div class="quick-links"><a id="pcAdminLink" target="_blank">PC 입력</a><a id="mobileControlLink" class="primary">모바일 설정</a><a id="stationLink" target="_blank">방송국</a></div></header>
-<main class="wrap"><section class="card"><div class="card-head"><h2>후원 정보</h2><span class="badge" id="broadcastBadge">현재 방송</span></div><div class="row"><label>도네이터명</label><input id="donor" class="input" placeholder="도네이터명을 입력하세요"></div><div class="grid2"><div class="row"><label>계좌 총액</label><input id="accountTotal" class="input" inputmode="decimal" placeholder="6.6 / 6600"></div><div class="row"><label>투네 총액</label><input id="toonieTotal" class="input" inputmode="decimal" placeholder="2.5 / 2500"></div></div><div class="row"><label>처리 프리셋 / 펀딩</label><select id="processType" class="input"></select></div><div class="summary-grid"><div class="summary-pill blue"><span>상단 총액</span><b id="topTotalText">₩0</b></div><div class="summary-pill green"><span>분배 합계</span><b id="splitTotalText">₩0</b></div><div class="summary-pill red" id="diffBox"><span>차이</span><b id="diffText">₩0</b></div></div><div class="muted" id="preview" style="margin-top:8px">자동결과: -</div></section><section class="card"><div class="card-head"><h2>크리에이터 분배</h2><span class="badge" id="creatorCountBadge">0명</span></div><div class="grid3" style="margin-bottom:10px"><button class="btn gray" onclick="checkAll(true)">전체체크</button><button class="btn gray" onclick="checkAll(false)">전체해제</button><button class="btn blue" onclick="distribute()">균등분배</button></div><div id="splitRows"><div class="empty">불러오는 중.</div></div></section><section class="card"><div class="card-head"><h2>최근 입력</h2><button class="btn gray mini" style="width:78px" onclick="loadRecent()">새로고침</button></div><div id="recentList"><div class="empty">불러오는 중.</div></div></section></main><div class="bottom"><button class="btn green" onclick="saveBatch()">▣ 후원 입력 저장</button></div><div class="toast" id="toast"></div>
-<script>
-const PARAMS=new URLSearchParams(location.search);const STATION=PARAMS.get('station')||localStorage.getItem('STATION_SLUG')||'default';localStorage.setItem('STATION_SLUG',STATION);let settings=null;const $=s=>document.querySelector(s);function stationUrl(path){const u=new URL(path,location.origin);u.searchParams.set('station',STATION);return u.pathname+u.search}function esc(v){return String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch]))}function toast(msg){const el=$('#toast');el.textContent=msg;el.classList.add('show');clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('show'),1800)}async function api(url,opt={}){const u=new URL(url,location.origin);u.searchParams.set('station',STATION);const options=Object.assign({headers:{}},opt||{});if(options.body&&!options.headers['Content-Type'])options.headers['Content-Type']='application/json';const res=await fetch(u.pathname+u.search,options);const data=await res.json().catch(()=>({}));if(!res.ok)throw new Error(data.error||res.statusText||'API 오류');return data}function toWon(v){const raw=String(v??'').trim().replace(/,/g,'');if(!raw)return 0;const n=Number(raw.replace(/[^0-9.-]/g,''));if(!Number.isFinite(n))return 0;if(Math.abs(n)>0&&Math.abs(n)<1000)return Math.round(n*1000);return Math.trunc(n)}function inputValueFromWon(won){const v=Number(won||0)/1000;if(!Number.isFinite(v)||v===0)return '';return String(Number(v.toFixed(3))).replace(/\.0+$/,'')}function fmtWon(n){return '₩'+Math.trunc(Number(n||0)).toLocaleString('ko-KR')}
+<!doctype html>
+<html lang="ko">
 
-function getTopTotal(){return toWon($('#accountTotal').value)+toWon($('#toonieTotal').value)}function getSplitTotal(){return Array.from(document.querySelectorAll('.split-amount')).reduce((s,el)=>s+toWon(el.value),0)}function getFundingItems(){return Array.isArray(settings?.fundingData?.items)?settings.fundingData.items:[]}function renderHeader(){const stationName=settings?.station?.name||STATION;const broadcastTitle=settings?.broadcast?.title||'현재 방송';$('#stationInfo').textContent=`방송국: ${stationName} · 현재 방송: ${broadcastTitle}`;$('#broadcastBadge').textContent=broadcastTitle;$('#pcAdminLink').href=stationUrl('/admin.html');$('#mobileControlLink').href=stationUrl('/m_control.html');$('#stationLink').href=stationUrl('/station_control.html')}function renderProcessOptions(){const presets=Array.isArray(settings?.presets)?settings.presets:[];const funds=getFundingItems().filter(f=>f.enabled!==false);const presetHtml=presets.filter(p=>p&&p.enabled!==false).map(p=>`<option value="${esc(p.title||p.id)}">${esc(p.title||p.id)}</option>`).join('');const fundHtml=funds.length?`<optgroup label="펀딩">`+funds.map(f=>`<option value="funding:${esc(f.id)}">펀딩 - ${esc(f.title)} ${Number(f.current||0)}/${Number(f.target||0)}</option>`).join('')+`</optgroup>`:'';$('#processType').innerHTML=`<option value="후원">후원</option>${presetHtml}${fundHtml}`}function renderSplitRows(){const creators=Array.isArray(settings?.creators)?settings.creators.filter(Boolean):[];$('#creatorCountBadge').textContent=`${creators.length}명`;if(!creators.length){$('#splitRows').innerHTML='<div class="warning">control.html에서 크리에이터를 먼저 등록하세요.</div>';return}$('#splitRows').innerHTML=creators.map((name,idx)=>`<div class="creator-row" data-idx="${idx}"><div class="creator-top"><label class="check-name"><input type="checkbox" class="split-check"><span class="name-text">${esc(name)}</span></label><button class="btn gray mini" onclick="setOnlyCreator(${idx})">전액</button></div><div class="amount-line"><input class="input split-amount" inputmode="decimal" placeholder="금액"><button class="btn gray mini" onclick="toggleMemo(this)">메모</button></div><div class="memo-line"><input class="input split-memo" placeholder="메모"></div></div>`).join('');document.querySelectorAll('.split-amount').forEach(el=>el.addEventListener('input',updatePreview));document.querySelectorAll('.split-check').forEach(el=>el.addEventListener('change',updatePreview))}function toggleMemo(btn){btn.closest('.creator-row')?.classList.toggle('open')}function updatePreview(){const top=getTopTotal(),split=getSplitTotal(),diff=top-split;$('#topTotalText').textContent=fmtWon(top);$('#splitTotalText').textContent=fmtWon(split);$('#diffText').textContent=fmtWon(diff);$('#diffBox').classList.toggle('ok',diff===0);$('#preview').textContent='자동결과: '+($('#processType').value||'후원')}function checkAll(flag){document.querySelectorAll('.split-check').forEach(c=>c.checked=!!flag);updatePreview()}function distribute(){const rows=Array.from(document.querySelectorAll('.creator-row')).filter(r=>r.querySelector('.split-check')?.checked);const total=getTopTotal();if(total<=0)return toast('총액을 먼저 입력하세요');if(!rows.length)return toast('분배할 크리에이터를 체크하세요');document.querySelectorAll('.split-amount').forEach(e=>e.value='');let base=Math.floor(total/rows.length),rem=total-base*rows.length;rows.forEach(r=>{let a=base;if(rem>0){a++;rem--}r.querySelector('.split-amount').value=inputValueFromWon(a)});updatePreview()}function setOnlyCreator(idx){const total=getTopTotal();document.querySelectorAll('.split-check').forEach(c=>c.checked=false);document.querySelectorAll('.split-amount').forEach(e=>e.value='');const row=document.querySelector(`.creator-row[data-idx="${idx}"]`);if(row){row.querySelector('.split-check').checked=true;row.querySelector('.split-amount').value=inputValueFromWon(total)}updatePreview()}function collectRows(){return Array.from(document.querySelectorAll('.creator-row')).map(row=>({creator:row.querySelector('.name-text')?.textContent.trim()||'',amount:row.querySelector('.split-amount')?.value||'',memo:row.querySelector('.split-memo')?.value||''})).filter(r=>toWon(r.amount)>0)}async function saveBatch(){try{const donor=$('#donor').value.trim();if(!donor)return toast('도네이터명을 입력하세요');const rows=collectRows();if(!rows.length)return toast('크리에이터별 금액을 입력하세요');const selected=$('#processType').value||'후원',isFunding=selected.startsWith('funding:');const body={donor,processType:isFunding?'후원':selected,accountTotal:$('#accountTotal').value,toonieTotal:$('#toonieTotal').value,rows,fundingId:isFunding?selected.replace('funding:',''):'',fundingUnits:''};if(getTopTotal()!==getSplitTotal()&&!confirm('총액과 분배 합계가 다릅니다. 그대로 저장할까요?'))return;await api('/api/donations/batch',{method:'POST',body:JSON.stringify(body)});toast('저장 완료');$('#donor').value=$('#accountTotal').value=$('#toonieTotal').value='';document.querySelectorAll('.split-amount,.split-memo').forEach(e=>e.value='');document.querySelectorAll('.split-check').forEach(e=>e.checked=false);updatePreview();await Promise.all([loadSettings(),loadRecent()])}catch(e){alert(e.message)}}async function loadSettings(){settings=await api('/api/settings');renderHeader();renderProcessOptions();renderSplitRows();updatePreview()}async function loadRecent(){try{const d=await api('/api/donations');const arr=(d.donations||[]).slice(-8).reverse();$('#recentList').innerHTML=arr.length?arr.map(r=>`<div class="recent"><div><b>${esc(r.donor||'-')} → ${esc(r.creator||'-')}</b><div class="muted">${new Date(r.createdAt||Date.now()).toLocaleString('ko-KR')} · ${fmtWon(r.totalAmount||r.amount||0)}</div></div><span class="status">저장완료</span></div>`).join(''):'<div class="empty">최근 입력 없음</div>'}catch(e){$('#recentList').innerHTML=`<div class="warning">${esc(e.message)}</div>`}}['#donor','#accountTotal','#toonieTotal','#processType'].forEach(sel=>document.addEventListener('input',e=>{if(e.target.matches(sel))updatePreview()}));(async()=>{try{await loadSettings();await loadRecent()}catch(e){alert(e.message)}})();</script></body></html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+    <title>모바일 후원 입력</title>
+    <style>
+        :root {
+            --bg: #07101c;
+            --card: #111b2a;
+            --card2: #0d1624;
+            --line: rgba(148, 163, 184, .22);
+            --text: #eef6ff;
+            --muted: #9fb0c6;
+            --blue: #3b82f6;
+            --green: #58c96b;
+            --red: #ef6b86;
+            --gold: #ffd166
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        html,
+        body {
+            margin: 0;
+            min-height: 100%;
+            background: radial-gradient(circle at 30% -10%, rgba(59, 130, 246, .22), transparent 38%), linear-gradient(180deg, #0b1522, #060b12);
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans KR', Arial, sans-serif
+        }
+
+        body {
+            padding-bottom: 92px
+        }
+
+        button,
+        input,
+        select,
+        textarea {
+            font-family: inherit
+        }
+
+        .topbar {
+            position: sticky;
+            top: 0;
+            z-index: 30;
+            padding: 12px 12px 10px;
+            padding-top: calc(12px + env(safe-area-inset-top));
+            background: linear-gradient(180deg, rgba(7, 16, 28, .97), rgba(7, 16, 28, .84));
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(148, 163, 184, .12)
+        }
+
+        .top-main {
+            height: 36px;
+            display: grid;
+            grid-template-columns: 42px 1fr 42px;
+            align-items: center
+        }
+
+        .icon-btn {
+            width: 36px;
+            height: 36px;
+            border: 0;
+            background: transparent;
+            color: #fff;
+            font-size: 24px;
+            font-weight: 900
+        }
+
+        .page-title {
+            text-align: center;
+            font-size: 20px;
+            font-weight: 1000;
+            letter-spacing: -.5px
+        }
+
+        .station-line {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 7px;
+            margin-top: 5px;
+            color: #c9d8ee;
+            font-size: 12.5px;
+            font-weight: 800;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis
+        }
+
+        .live-dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: #33a7ff;
+            box-shadow: 0 0 0 4px rgba(51, 167, 255, .14), 0 0 14px #33a7ff
+        }
+
+        .quick-links {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 6px;
+            margin-top: 12px
+        }
+
+        .quick-links a {
+            min-height: 38px;
+            border-radius: 14px;
+            text-decoration: none;
+            color: #eaf2ff;
+            background: linear-gradient(180deg, rgba(30, 41, 59, .9), rgba(15, 23, 42, .92));
+            border: 1px solid var(--line);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            font-size: 13px
+        }
+
+        .quick-links a.primary {
+            background: linear-gradient(135deg, #2463d8, #3b82f6)
+        }
+
+        .wrap {
+            padding: 12px;
+            max-width: 520px;
+            margin: 0 auto
+        }
+
+        .card {
+            background: linear-gradient(180deg, rgba(17, 27, 42, .94), rgba(10, 18, 30, .96));
+            border: 1px solid rgba(148, 163, 184, .16);
+            border-radius: 18px;
+            padding: 13px;
+            margin-bottom: 12px;
+            box-shadow: 0 18px 60px rgba(0, 0, 0, .38)
+        }
+
+        .card-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 10px
+        }
+
+        h2 {
+            font-size: 16px;
+            margin: 0;
+            font-weight: 1000
+        }
+
+        .badge {
+            font-size: 12px;
+            font-weight: 1000;
+            color: #93c5fd;
+            background: rgba(59, 130, 246, .12);
+            border: 1px solid rgba(59, 130, 246, .35);
+            border-radius: 999px;
+            padding: 5px 9px
+        }
+
+        .row {
+            margin-bottom: 10px
+        }
+
+        label {
+            display: block;
+            margin: 0 0 6px;
+            color: #d3e0f2;
+            font-size: 13px;
+            font-weight: 900
+        }
+
+        .input,
+        select,
+        textarea {
+            width: 100%;
+            min-height: 42px;
+            border-radius: 12px;
+            border: 1px solid rgba(148, 163, 184, .24);
+            background: linear-gradient(180deg, rgba(13, 22, 36, .9), rgba(8, 15, 25, .95));
+            color: #fff;
+            padding: 10px 12px;
+            font-size: 15px;
+            font-weight: 800;
+            outline: none
+        }
+
+        .input:focus,
+        select:focus,
+        textarea:focus {
+            border-color: rgba(96, 165, 250, .75);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, .14)
+        }
+
+        textarea {
+            min-height: 92px
+        }
+
+        .grid2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px
+        }
+
+        .grid3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px
+        }
+
+        .btn {
+            width: 100%;
+            min-height: 42px;
+            border: 0;
+            border-radius: 12px;
+            background: linear-gradient(180deg, #334155, #1f2937);
+            color: #fff;
+            font-size: 14px;
+            font-weight: 1000;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px
+        }
+
+        .btn.blue {
+            background: linear-gradient(135deg, #2563eb, #3b82f6)
+        }
+
+        .btn.green {
+            background: linear-gradient(135deg, #35a853, #65d778)
+        }
+
+        .btn.red {
+            background: linear-gradient(135deg, #be123c, #fb7185)
+        }
+
+        .btn.gray {
+            background: linear-gradient(180deg, #253244, #162030)
+        }
+
+        .btn.mini {
+            min-height: 34px;
+            font-size: 12px;
+            border-radius: 10px;
+            padding: 0 8px
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
+            margin-top: 10px
+        }
+
+        .summary-pill {
+            min-height: 58px;
+            border-radius: 14px;
+            padding: 8px 6px;
+            text-align: center;
+            border: 1px solid rgba(148, 163, 184, .2);
+            background: rgba(15, 23, 42, .72)
+        }
+
+        .summary-pill span {
+            display: block;
+            color: #b7c7dc;
+            font-size: 11px;
+            font-weight: 1000;
+            margin-bottom: 4px
+        }
+
+        .summary-pill b {
+            font-size: 20px
+        }
+
+        .summary-pill.blue {
+            border-color: rgba(59, 130, 246, .55);
+            background: linear-gradient(180deg, rgba(30, 64, 175, .26), rgba(15, 23, 42, .72))
+        }
+
+        .summary-pill.green {
+            border-color: rgba(74, 222, 128, .46);
+            background: linear-gradient(180deg, rgba(22, 101, 52, .26), rgba(15, 23, 42, .72))
+        }
+
+        .summary-pill.red {
+            border-color: rgba(248, 113, 113, .48);
+            background: linear-gradient(180deg, rgba(127, 29, 29, .25), rgba(15, 23, 42, .72))
+        }
+
+        .summary-pill.ok {
+            border-color: rgba(74, 222, 128, .55)
+        }
+
+        .muted {
+            color: var(--muted);
+            font-size: 12px;
+            font-weight: 800
+        }
+
+        .item,
+        .creator-row,
+        .recent {
+            background: linear-gradient(180deg, rgba(15, 24, 38, .88), rgba(10, 18, 30, .9));
+            border: 1px solid rgba(148, 163, 184, .16);
+            border-radius: 15px;
+            padding: 10px;
+            margin-bottom: 8px
+        }
+
+        .creator-top {
+            display: grid;
+            grid-template-columns: 1fr 68px;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 8px
+        }
+
+        .check-name {
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            color: #fff;
+            font-size: 15px
+        }
+
+        .check-name input {
+            width: 21px;
+            height: 21px;
+            accent-color: #3b82f6
+        }
+
+        .amount-line {
+            display: grid;
+            grid-template-columns: 1fr 58px;
+            gap: 8px
+        }
+
+        .memo-line {
+            display: none;
+            margin-top: 8px
+        }
+
+        .creator-row.open .memo-line {
+            display: block
+        }
+
+        .recent {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 8px;
+            align-items: center
+        }
+
+        .status {
+            display: inline-flex;
+            min-width: 64px;
+            justify-content: center;
+            border-radius: 999px;
+            background: rgba(34, 197, 94, .18);
+            color: #b8ffc4;
+            font-size: 12px;
+            font-weight: 1000;
+            padding: 4px 8px
+        }
+
+        .bottom {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 40;
+            padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+            background: linear-gradient(180deg, rgba(7, 16, 28, .74), rgba(7, 16, 28, .98));
+            border-top: 1px solid rgba(148, 163, 184, .16);
+            backdrop-filter: blur(16px)
+        }
+
+        .bottom .btn {
+            max-width: 520px;
+            margin: 0 auto;
+            min-height: 56px;
+            border-radius: 14px;
+            font-size: 17px
+        }
+
+        .toast {
+            position: fixed;
+            left: 50%;
+            bottom: 84px;
+            z-index: 100;
+            transform: translateX(-50%) translateY(20px);
+            min-width: 220px;
+            max-width: calc(100% - 32px);
+            padding: 12px 14px;
+            border-radius: 999px;
+            background: rgba(15, 23, 42, .96);
+            border: 1px solid rgba(148, 163, 184, .25);
+            color: #fff;
+            font-size: 14px;
+            font-weight: 1000;
+            text-align: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: .22s
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0)
+        }
+
+        .empty,
+        .warning {
+            padding: 12px;
+            border-radius: 16px;
+            color: #cbd5e1;
+            background: rgba(15, 23, 42, .8);
+            border: 1px dashed rgba(148, 163, 184, .24);
+            font-size: 13px;
+            font-weight: 900
+        }
+
+        .warning {
+            color: #fecaca;
+            background: rgba(127, 29, 29, .2);
+            border-color: rgba(248, 113, 113, .35)
+        }
+
+        .tabs {
+            position: sticky;
+            top: calc(104px + env(safe-area-inset-top));
+            z-index: 25;
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 6px;
+            padding: 8px 12px;
+            background: rgba(7, 16, 28, .84);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(148, 163, 184, .10)
+        }
+
+        .tab {
+            min-height: 32px;
+            border: 1px solid rgba(148, 163, 184, .18);
+            border-radius: 8px;
+            background: rgba(15, 23, 42, .74);
+            color: #cbd5e1;
+            font-size: 12px;
+            font-weight: 1000
+        }
+
+        .tab.active {
+            background: linear-gradient(135deg, #2563eb, #3b82f6);
+            color: #fff
+        }
+
+        .panel {
+            display: none
+        }
+
+        .panel.active {
+            display: block
+        }
+
+        .toggle-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px
+        }
+
+        .toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            background: linear-gradient(180deg, rgba(15, 24, 38, .88), rgba(10, 18, 30, .9));
+            border: 1px solid rgba(148, 163, 184, .16);
+            border-radius: 14px;
+            padding: 10px;
+            font-weight: 1000;
+            font-size: 13px
+        }
+
+        .switch {
+            position: relative;
+            width: 48px;
+            height: 26px;
+            flex: 0 0 auto
+        }
+
+        .switch input {
+            display: none
+        }
+
+        .knob {
+            position: absolute;
+            inset: 0;
+            border-radius: 999px;
+            background: #334155;
+            transition: .18s
+        }
+
+        .knob:before {
+            content: "";
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            left: 3px;
+            top: 3px;
+            border-radius: 50%;
+            background: #fff;
+            transition: .18s;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, .35)
+        }
+
+        .switch input:checked+.knob {
+            background: #58c96b
+        }
+
+        .switch input:checked+.knob:before {
+            transform: translateX(22px)
+        }
+
+        .colors {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px
+        }
+
+        .colors input {
+            padding: 4px;
+            min-height: 42px
+        }
+
+        .progress {
+            height: 8px;
+            border-radius: 999px;
+            background: rgba(148, 163, 184, .18);
+            overflow: hidden
+        }
+
+        .bar {
+            height: 100%;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #58c96b, #9cffaa);
+            width: 0
+        }
+
+        .small {
+            font-size: 11px;
+            color: #9fb0c6;
+            font-weight: 800
+        }
+
+        @media(max-width:380px) {
+
+            .grid2,
+            .grid3,
+            .summary-grid,
+            .toggle-grid,
+            .colors,
+            .amount-line {
+                grid-template-columns: 1fr
+            }
+
+            .tabs {
+                top: calc(126px + env(safe-area-inset-top));
+                grid-template-columns: repeat(3, 1fr)
+            }
+        }
+      .login-gate{
+  position:fixed;
+  inset:0;
+  z-index:9999;
+  background:#070b12;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+}
+
+.login-box{
+  width:100%;
+  max-width:420px;
+  background:#0b1220;
+  border:1px solid #334155;
+  border-radius:22px;
+  padding:22px;
+  box-shadow:0 20px 80px rgba(0,0,0,.45);
+}
+
+.login-box h1{
+  margin:0 0 10px;
+  font-size:26px;
+  font-weight:950;
+}
+
+.login-box p{
+  color:#94a3b8;
+  font-size:14px;
+  line-height:1.5;
+}
+
+.login-box .input{
+  margin:12px 0;
+}
+    </style>
+</head>
+
+<body>
+  <div id="loginGate" class="login-gate">
+  <div class="login-box">
+    <h1>방송 로그인</h1>
+    <p id="loginInfo">방송 정보를 불러오는 중...</p>
+
+    <input id="mobileBroadcastPw" class="input" type="password" placeholder="방송 비밀번호 입력">
+
+    <button class="btn blue" onclick="mobileBroadcastLogin()">로그인</button>
+
+    <p class="muted">
+      방송 비밀번호는 방송국 컨트롤에서 생성한 방송 비밀번호입니다.
+    </p>
+  </div>
+</div>
+    <header class="topbar">
+        <div class="top-main"><button class="icon-btn"
+                onclick="location.href=stationUrl('/station_control.html')">☰</button>
+            <div class="page-title">모바일 후원 입력</div><button class="icon-btn"
+                onclick="location.href=stationUrl('/m_control.html')">⚙</button>
+        </div>
+        <div class="station-line"><span class="live-dot"></span><span id="stationInfo">방송국 확인 중.</span></div>
+        <div class="quick-links"><a id="pcAdminLink" target="_blank">PC 입력</a><a id="mobileControlLink"
+                class="primary">모바일 설정</a><a id="stationLink" target="_blank">방송국</a></div>
+    </header>
+    <main class="wrap">
+        <section class="card">
+            <div class="card-head">
+                <h2>후원 정보</h2><span class="badge" id="broadcastBadge">현재 방송</span>
+            </div>
+            <div class="row"><label>도네이터명</label><input id="donor" class="input" placeholder="도네이터명을 입력하세요"></div>
+            <div class="grid2">
+                <div class="row"><label>계좌 총액</label><input id="accountTotal" class="input" inputmode="decimal"
+                        placeholder="6.6 / 6600"></div>
+                <div class="row"><label>투네 총액</label><input id="toonieTotal" class="input" inputmode="decimal"
+                        placeholder="2.5 / 2500"></div>
+            </div>
+            <div class="row"><label>처리 프리셋 / 펀딩</label><select id="processType" class="input"></select></div>
+            <div class="summary-grid">
+                <div class="summary-pill blue"><span>상단 총액</span><b id="topTotalText">₩0</b></div>
+                <div class="summary-pill green"><span>분배 합계</span><b id="splitTotalText">₩0</b></div>
+                <div class="summary-pill red" id="diffBox"><span>차이</span><b id="diffText">₩0</b></div>
+            </div>
+            <div class="muted" id="preview" style="margin-top:8px">자동결과: -</div>
+        </section>
+        <section class="card">
+            <div class="card-head">
+                <h2>크리에이터 분배</h2><span class="badge" id="creatorCountBadge">0명</span>
+            </div>
+            <div class="grid3" style="margin-bottom:10px"><button class="btn gray"
+                    onclick="checkAll(true)">전체체크</button><button class="btn gray"
+                    onclick="checkAll(false)">전체해제</button><button class="btn blue" onclick="distribute()">균등분배</button>
+            </div>
+            <div id="splitRows">
+                <div class="empty">불러오는 중.</div>
+            </div>
+        </section>
+        <section class="card">
+            <div class="card-head">
+                <h2>최근 입력</h2><button class="btn gray mini" style="width:78px" onclick="loadRecent()">새로고침</button>
+            </div>
+            <div id="recentList">
+                <div class="empty">불러오는 중.</div>
+            </div>
+        </section>
+    </main>
+    <div class="bottom"><button class="btn green" onclick="saveBatch()">▣ 후원 입력 저장</button></div>
+    <div class="toast" id="toast"></div>
+    <script>
+const PARAMS = new URLSearchParams(location.search);
+const STATION = PARAMS.get('station') || localStorage.getItem('STATION_SLUG') || 'default';
+localStorage.setItem('STATION_SLUG', STATION);
+
+let settings = null;
+let station = null;
+let active = null;
+let mobileAuth = { broadcastId: '', password: '' };
+
+const $ = s => document.querySelector(s);
+
+function stationUrl(path) {
+  const u = new URL(path, location.origin);
+  u.searchParams.set('station', STATION);
+  return u.pathname + u.search;
+}
+
+function esc(v) {
+  return String(v ?? '').replace(/[&<>"']/g, ch => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;'
+  }[ch]));
+}
+
+function toast(msg) {
+  const el = $('#toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), 1800);
+}
+
+async function api(url, opt = {}) {
+  const u = new URL(url, location.origin);
+  u.searchParams.set('station', STATION);
+
+  const options = Object.assign({ headers: {} }, opt || {});
+  if (options.body && !options.headers['Content-Type']) {
+    options.headers['Content-Type'] = 'application/json';
+  }
+
+  const res = await fetch(u.pathname + u.search, options);
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || res.statusText || 'API 오류');
+  return data;
+}
+
+function showLoginGate(){
+  const gate = document.getElementById('loginGate');
+  if (gate) gate.style.display = 'flex';
+}
+
+function hideLoginGate(){
+  const gate = document.getElementById('loginGate');
+  if (gate) gate.style.display = 'none';
+}
+
+function getSavedBroadcastPassword(){
+  if (!active?.id) return '';
+  return localStorage.getItem('broadcastPassword_' + active.id) || '';
+}
+
+function setSavedBroadcastPassword(pw){
+  if (!active?.id) return;
+  localStorage.setItem('broadcastPassword_' + active.id, pw || '');
+}
+
+function clearSavedBroadcastPassword(){
+  if (!active?.id) return;
+  localStorage.removeItem('broadcastPassword_' + active.id);
+}
+
+async function mobileBroadcastLogin(){
+  if (!active?.id) {
+    return alert('현재 선택된 방송이 없습니다. 방송국 컨트롤에서 방송을 먼저 생성/선택하세요.');
+  }
+
+  const pw = document.getElementById('mobileBroadcastPw').value.trim();
+  if (!pw) return alert('방송 비밀번호를 입력하세요.');
+
+  try{
+    await api('/api/broadcast-login', {
+      method: 'POST',
+      body: JSON.stringify({
+        broadcastId: active.id,
+        password: pw
+      })
+    });
+
+    mobileAuth.broadcastId = active.id;
+    mobileAuth.password = pw;
+    setSavedBroadcastPassword(pw);
+
+    hideLoginGate();
+    toast('로그인 완료');
+    await loadRecent();
+  }catch(e){
+    alert(e.message || '로그인 실패');
+  }
+}
+
+function toWon(v) {
+  const raw = String(v ?? '').trim().replace(/,/g, '');
+  if (!raw) return 0;
+  const n = Number(raw.replace(/[^0-9.-]/g, ''));
+  if (!Number.isFinite(n)) return 0;
+  if (Math.abs(n) > 0 && Math.abs(n) < 1000) return Math.round(n * 1000);
+  return Math.trunc(n);
+}
+
+function inputValueFromWon(won) {
+  const v = Number(won || 0) / 1000;
+  if (!Number.isFinite(v) || v === 0) return '';
+  return String(Number(v.toFixed(3))).replace(/\.0+$/, '');
+}
+
+function fmtWon(n) {
+  return '₩' + Math.trunc(Number(n || 0)).toLocaleString('ko-KR');
+}
+
+function getTopTotal() {
+  return toWon($('#accountTotal').value) + toWon($('#toonieTotal').value);
+}
+
+function getSplitTotal() {
+  return Array.from(document.querySelectorAll('.split-amount')).reduce((s, el) => s + toWon(el.value), 0);
+}
+
+function getFundingItems() {
+  return Array.isArray(settings?.fundingData?.items) ? settings.fundingData.items : [];
+}
+
+function renderHeader() {
+  const stationName = station?.name || settings?.station?.name || STATION;
+  const broadcastTitle = active?.title || settings?.broadcast?.title || '현재 방송 없음';
+
+  $('#stationInfo').textContent = `방송국: ${stationName} · 현재 방송: ${broadcastTitle}`;
+  $('#broadcastBadge').textContent = broadcastTitle;
+
+  const loginInfo = document.getElementById('loginInfo');
+  if (loginInfo) loginInfo.textContent = `${stationName} / 현재 방송: ${broadcastTitle}`;
+
+  $('#pcAdminLink').href = stationUrl('/admin.html');
+  $('#mobileControlLink').href = stationUrl('/m_control.html');
+  $('#stationLink').href = stationUrl('/station_control.html');
+}
+
+function renderProcessOptions() {
+  const presets = Array.isArray(settings?.presets) ? settings.presets : [];
+  const funds = getFundingItems().filter(f => f.enabled !== false);
+
+  const presetHtml = presets
+    .filter(p => p && p.enabled !== false)
+    .map(p => `<option value="${esc(p.title || p.id)}">${esc(p.title || p.id)}</option>`)
+    .join('');
+
+  const fundHtml = funds.length
+    ? `<optgroup label="펀딩">` + funds.map(f => `<option value="funding:${esc(f.id)}">펀딩 - ${esc(f.title)} ${Number(f.current || 0)}/${Number(f.target || 0)}</option>`).join('') + `</optgroup>`
+    : '';
+
+  $('#processType').innerHTML = `<option value="후원">후원</option>${presetHtml}${fundHtml}`;
+}
+
+function renderSplitRows() {
+  const creators = Array.isArray(settings?.creators) ? settings.creators.filter(Boolean) : [];
+  $('#creatorCountBadge').textContent = `${creators.length}명`;
+
+  if (!creators.length) {
+    $('#splitRows').innerHTML = '<div class="warning">control.html에서 크리에이터를 먼저 등록하세요.</div>';
+    return;
+  }
+
+  $('#splitRows').innerHTML = creators.map((name, idx) => `
+    <div class="creator-row" data-idx="${idx}">
+      <div class="creator-top">
+        <label class="check-name"><input type="checkbox" class="split-check"><span class="name-text">${esc(name)}</span></label>
+        <button class="btn gray mini" onclick="setOnlyCreator(${idx})">전액</button>
+      </div>
+      <div class="amount-line">
+        <input class="input split-amount" inputmode="decimal" placeholder="금액">
+        <button class="btn gray mini" onclick="toggleMemo(this)">메모</button>
+      </div>
+      <div class="memo-line"><input class="input split-memo" placeholder="메모"></div>
+    </div>`).join('');
+
+  document.querySelectorAll('.split-amount').forEach(el => el.addEventListener('input', updatePreview));
+  document.querySelectorAll('.split-check').forEach(el => el.addEventListener('change', updatePreview));
+}
+
+function toggleMemo(btn) {
+  btn.closest('.creator-row')?.classList.toggle('open');
+}
+
+function updatePreview() {
+  const top = getTopTotal();
+  const split = getSplitTotal();
+  const diff = top - split;
+
+  $('#topTotalText').textContent = fmtWon(top);
+  $('#splitTotalText').textContent = fmtWon(split);
+  $('#diffText').textContent = fmtWon(diff);
+  $('#diffBox').classList.toggle('ok', diff === 0);
+  $('#preview').textContent = '자동결과: ' + ($('#processType').value || '후원');
+}
+
+function checkAll(flag) {
+  document.querySelectorAll('.split-check').forEach(c => c.checked = !!flag);
+  updatePreview();
+}
+
+function distribute() {
+  const rows = Array.from(document.querySelectorAll('.creator-row')).filter(r => r.querySelector('.split-check')?.checked);
+  const total = getTopTotal();
+
+  if (total <= 0) return toast('총액을 먼저 입력하세요');
+  if (!rows.length) return toast('분배할 크리에이터를 체크하세요');
+
+  document.querySelectorAll('.split-amount').forEach(e => e.value = '');
+
+  let base = Math.floor(total / rows.length);
+  let rem = total - base * rows.length;
+
+  rows.forEach(r => {
+    let a = base;
+    if (rem > 0) { a++; rem--; }
+    r.querySelector('.split-amount').value = inputValueFromWon(a);
+  });
+
+  updatePreview();
+}
+
+function setOnlyCreator(idx) {
+  const total = getTopTotal();
+
+  document.querySelectorAll('.split-check').forEach(c => c.checked = false);
+  document.querySelectorAll('.split-amount').forEach(e => e.value = '');
+
+  const row = document.querySelector(`.creator-row[data-idx="${idx}"]`);
+  if (row) {
+    row.querySelector('.split-check').checked = true;
+    row.querySelector('.split-amount').value = inputValueFromWon(total);
+  }
+
+  updatePreview();
+}
+
+function collectRows() {
+  return Array.from(document.querySelectorAll('.creator-row'))
+    .map(row => ({
+      creator: row.querySelector('.name-text')?.textContent.trim() || '',
+      amount: row.querySelector('.split-amount')?.value || '',
+      memo: row.querySelector('.split-memo')?.value || ''
+    }))
+    .filter(r => toWon(r.amount) > 0);
+}
+
+async function saveBatch() {
+  try {
+    const donor = $('#donor').value.trim();
+    if (!donor) return toast('도네이터명을 입력하세요');
+
+    const rows = collectRows();
+    if (!rows.length) return toast('크리에이터별 금액을 입력하세요');
+
+    if (!active?.id) {
+      showLoginGate();
+      return alert('현재 선택된 방송이 없습니다. 방송국 컨트롤에서 방송을 먼저 선택하세요.');
+    }
+
+    const savedPw = mobileAuth.password || getSavedBroadcastPassword();
+    if (!savedPw) {
+      showLoginGate();
+      return alert('방송 로그인이 필요합니다.');
+    }
+
+    const selected = $('#processType').value || '후원';
+    const isFunding = selected.startsWith('funding:');
+
+    const body = {
+      donor,
+      processType: isFunding ? '후원' : selected,
+      accountTotal: $('#accountTotal').value,
+      toonieTotal: $('#toonieTotal').value,
+      rows,
+      fundingId: isFunding ? selected.replace('funding:', '') : '',
+      fundingUnits: '',
+      broadcastId: active.id,
+      broadcastPassword: savedPw
+    };
+
+    if (getTopTotal() !== getSplitTotal() && !confirm('총액과 분배 합계가 다릅니다. 그대로 저장할까요?')) return;
+
+    await api('/api/donations/batch', {
+      method: 'POST',
+      body: JSON.stringify(body)
+    });
+
+    toast('저장 완료');
+
+    $('#donor').value = '';
+    $('#accountTotal').value = '';
+    $('#toonieTotal').value = '';
+    document.querySelectorAll('.split-amount,.split-memo').forEach(e => e.value = '');
+    document.querySelectorAll('.split-check').forEach(e => e.checked = false);
+
+    updatePreview();
+    await Promise.all([loadSettings(false), loadRecent()]);
+  } catch (e) {
+    if ((e.message || '').includes('권한') || (e.message || '').includes('비밀번호')) {
+      clearSavedBroadcastPassword();
+      mobileAuth = { broadcastId: '', password: '' };
+      showLoginGate();
+    }
+    alert(e.message);
+  }
+}
+
+async function loadStationInfo(){
+  const info = await api('/api/station-info');
+  station = info.station || null;
+  active = info.active || null;
+  return info;
+}
+
+async function loadSettings(updateAuthInfo = true) {
+  await loadStationInfo();
+
+  settings = await api('/api/settings');
+  settings.station = station;
+  settings.broadcast = active;
+
+  renderHeader();
+  renderProcessOptions();
+  renderSplitRows();
+  updatePreview();
+
+  if (updateAuthInfo && active?.id) {
+    mobileAuth.broadcastId = active.id;
+    mobileAuth.password = getSavedBroadcastPassword();
+  }
+}
+
+async function loadRecent() {
+  try {
+    const d = await api('/api/donations');
+    const arr = (d.donations || []).slice(-8).reverse();
+
+    $('#recentList').innerHTML = arr.length
+      ? arr.map(r => `<div class="recent"><div><b>${esc(r.donor || '-')} → ${esc(r.creator || '-')}</b><div class="muted">${new Date(r.createdAt || Date.now()).toLocaleString('ko-KR')} · ${fmtWon(r.totalAmount || r.amount || 0)}</div></div><span class="status">저장완료</span></div>`).join('')
+      : '<div class="empty">최근 입력 없음</div>';
+  } catch (e) {
+    $('#recentList').innerHTML = `<div class="warning">${esc(e.message)}</div>`;
+  }
+}
+
+['#donor', '#accountTotal', '#toonieTotal', '#processType'].forEach(sel => {
+  document.addEventListener('input', e => {
+    if (e.target.matches(sel)) updatePreview();
+  });
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && e.target?.id === 'mobileBroadcastPw') {
+    mobileBroadcastLogin();
+  }
+});
+
+async function init(){
+  try{
+    await loadSettings();
+
+    const savedPw = getSavedBroadcastPassword();
+    if (active?.id && savedPw) {
+      try{
+        await api('/api/broadcast-login', {
+          method: 'POST',
+          body: JSON.stringify({
+            broadcastId: active.id,
+            password: savedPw
+          })
+        });
+
+        mobileAuth.broadcastId = active.id;
+        mobileAuth.password = savedPw;
+
+        hideLoginGate();
+        await loadRecent();
+        return;
+      }catch(e){
+        clearSavedBroadcastPassword();
+        mobileAuth = { broadcastId: '', password: '' };
+      }
+    }
+
+    showLoginGate();
+  }catch(e){
+    alert(e.message);
+    showLoginGate();
+  }
+}
+
+init();
+</script>
+</body>
+
+</html>

@@ -47,7 +47,6 @@ body{background:#070b12;color:#e5e7eb}.wrap{max-width:1220px;margin:0 auto;paddi
   </div>
 </div>
 <script src="/common.js"></script>
-<script src="/common.js"></script>
 <script>
 let station = null;
 let active = null;
@@ -85,8 +84,7 @@ function setLinks(){
 
   const overlayLink = document.getElementById('overlayLink');
   if (overlayLink && station?.overlayToken) {
-    overlayLink.href =
-      `/overlay.html?station=${encodeURIComponent(station.slug)}&token=${encodeURIComponent(station.overlayToken)}&monitor=1&v=${Date.now()}`;
+    overlayLink.href = `/overlay.html?station=${encodeURIComponent(station.slug)}&token=${encodeURIComponent(station.overlayToken)}&monitor=1&v=${Date.now()}`;
   }
 }
 
@@ -98,9 +96,8 @@ async function load(){
     station = info.station;
     active = info.active;
 
-    document.getElementById('title').textContent = station.name + ' 컨트롤';
-    document.getElementById('info').textContent =
-      '방송국 코드: ' + station.slug + ' / 현재 방송: ' + (active?.title || '없음');
+    document.getElementById('title').textContent = (station?.name || st()) + ' 컨트롤';
+    document.getElementById('info').textContent = '방송국 코드: ' + (station?.slug || st()) + ' / 현재 방송: ' + (active?.title || '없음');
 
     setLinks();
 
@@ -111,8 +108,7 @@ async function load(){
   }catch(e){
     console.error(e);
     document.getElementById('info').textContent = '방송국 정보 또는 방송 목록을 불러오지 못했습니다.';
-    document.getElementById('broadcasts').innerHTML =
-      `<div class="muted">오류: ${esc(e.message || e)}</div>`;
+    document.getElementById('broadcasts').innerHTML = `<div class="muted">오류: ${esc(e.message || e)}</div>`;
   }
 }
 
@@ -149,8 +145,7 @@ function render(){
           <button class="btn mini" onclick="changeBroadcastPw('${b.id}')">PW변경</button>
           <button class="btn red mini" onclick="deleteBroadcast('${b.id}')">삭제</button>
         </div>
-      </div>
-    `;
+      </div>`;
   }).join('');
 }
 
@@ -158,9 +153,7 @@ async function createBroadcast(){
   const pw1 = document.getElementById('broadcastPw').value;
   const pw2 = document.getElementById('broadcastPw2').value;
 
-  if (pw1 !== pw2) {
-    return alert('방송 비밀번호 확인이 다릅니다.');
-  }
+  if (pw1 !== pw2) return alert('방송 비밀번호 확인이 다릅니다.');
 
   try{
     await api('/api/broadcasts', {
@@ -201,12 +194,10 @@ async function broadcastLogin(id){
   try{
     await api('/api/broadcast-login', {
       method: 'POST',
-      body: JSON.stringify({
-        broadcastId: id,
-        password: pw
-      })
+      body: JSON.stringify({ broadcastId: id, password: pw })
     });
 
+    localStorage.setItem('broadcastPassword_' + id, pw);
     alert('방송 비밀번호 확인 완료');
   }catch(e){
     alert(e.message);
@@ -214,19 +205,17 @@ async function broadcastLogin(id){
 }
 
 async function loginBroadcast(){
-  if (!active?.id) {
-    return alert('현재 선택된 방송이 없습니다.');
-  }
+  if (!active?.id) return alert('현재 선택된 방송이 없습니다.');
+
+  const pw = document.getElementById('loginBroadcastPw').value;
 
   try{
     await api('/api/broadcast-login', {
       method: 'POST',
-      body: JSON.stringify({
-        broadcastId: active.id,
-        password: document.getElementById('loginBroadcastPw').value
-      })
+      body: JSON.stringify({ broadcastId: active.id, password: pw })
     });
 
+    localStorage.setItem('broadcastPassword_' + active.id, pw);
     alert('현재 방송 비밀번호 저장 완료');
   }catch(e){
     alert(e.message);
@@ -238,9 +227,7 @@ async function changeBroadcastPw(id){
   if (pw1 === null) return;
 
   const pw2 = prompt('새 방송 비밀번호 확인', '');
-  if (pw1 !== pw2) {
-    return alert('비밀번호 확인이 다릅니다.');
-  }
+  if (pw1 !== pw2) return alert('비밀번호 확인이 다릅니다.');
 
   try{
     await api('/api/broadcasts/' + id, {
@@ -248,6 +235,7 @@ async function changeBroadcastPw(id){
       body: JSON.stringify({ broadcastPassword: pw1 })
     });
 
+    localStorage.removeItem('broadcastPassword_' + id);
     alert('변경 완료');
     await load();
   }catch(e){
@@ -260,10 +248,8 @@ async function deleteBroadcast(id){
   if (prompt('삭제하려면 DELETE 입력') !== 'DELETE') return;
 
   try{
-    await api('/api/broadcasts/' + id, {
-      method: 'DELETE'
-    });
-
+    await api('/api/broadcasts/' + id, { method: 'DELETE' });
+    localStorage.removeItem('broadcastPassword_' + id);
     alert('삭제 완료');
     await load();
   }catch(e){
@@ -277,7 +263,6 @@ async function startBroadcastTimer(id){
       method: 'POST',
       body: JSON.stringify({ broadcastId: id })
     });
-
     await load();
   }catch(e){
     alert(e.message);
@@ -292,7 +277,6 @@ async function endBroadcastTimer(id){
       method: 'POST',
       body: JSON.stringify({ broadcastId: id })
     });
-
     await load();
   }catch(e){
     alert(e.message);
