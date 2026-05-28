@@ -47,23 +47,23 @@ body{background:#070b12;color:#e5e7eb}.wrap{max-width:1220px;margin:0 auto;paddi
   </div>
 </div>
 <script src="/common.js"></script>
+<script src="/common.js"></script>
 <script>
-let station=null, active=null, broadcasts=[];
-function st(){return getStation()}
-function setLinks(){
-  const s=encodeURIComponent(st());
-  document.getElementById('adminLink').href='/admin.html?station='+s;
-  document.getElementById('controlLink').href='/control.html?station='+s;
-  if(document.getElementById('mAdminLink')) document.getElementById('mAdminLink').href='/m_admin.html?station='+s;
-  if(document.getElementById('mControlLink')) document.getElementById('mControlLink').href='/m_control.html?station='+s;
-  document.getElementById('summaryLink').href='/summary.html?station='+s;
-  document.getElementById('styleLink').href='/station_style.html?station='+s;
-}
-async function load(){
- function setLinks() {
-  if (!station || !station.slug) return;
+let station = null;
+let active = null;
+let broadcasts = [];
 
-  const slug = encodeURIComponent(station.slug);
+function st(){
+  return getStation();
+}
+
+function timerText(ms){
+  const sec = Math.floor(Number(ms || 0) / 1000);
+  return `${String(Math.floor(sec / 3600)).padStart(2,'0')}:${String(Math.floor((sec % 3600) / 60)).padStart(2,'0')}:${String(sec % 60).padStart(2,'0')}`;
+}
+
+function setLinks(){
+  const slug = encodeURIComponent(station?.slug || st());
 
   const adminLink = document.getElementById('adminLink');
   if (adminLink) adminLink.href = `/admin.html?station=${slug}`;
@@ -71,90 +71,234 @@ async function load(){
   const controlLink = document.getElementById('controlLink');
   if (controlLink) controlLink.href = `/control.html?station=${slug}`;
 
-  const styleLink = document.getElementById('styleLink');
-  if (styleLink) styleLink.href = `/station_style.html?station=${slug}`;
-
   const mAdminLink = document.getElementById('mAdminLink');
   if (mAdminLink) mAdminLink.href = `/m_admin.html?station=${slug}`;
 
   const mControlLink = document.getElementById('mControlLink');
   if (mControlLink) mControlLink.href = `/m_control.html?station=${slug}`;
+
+  const summaryLink = document.getElementById('summaryLink');
+  if (summaryLink) summaryLink.href = `/summary.html?station=${slug}`;
+
+  const styleLink = document.getElementById('styleLink');
+  if (styleLink) styleLink.href = `/station_style.html?station=${slug}`;
+
+  const overlayLink = document.getElementById('overlayLink');
+  if (overlayLink && station?.overlayToken) {
+    overlayLink.href =
+      `/overlay.html?station=${encodeURIComponent(station.slug)}&token=${encodeURIComponent(station.overlayToken)}&monitor=1&v=${Date.now()}`;
+  }
 }
-function timerText(ms){
-  const sec=Math.floor(Number(ms||0)/1000);
-  return `${String(Math.floor(sec/3600)).padStart(2,'0')}:${String(Math.floor((sec%3600)/60)).padStart(2,'0')}:${String(sec%60).padStart(2,'0')}`;
+
+async function load(){
+  try{
+    setLinks();
+
+    const info = await api('/api/station-info');
+    station = info.station;
+    active = info.active;
+
+    document.getElementById('title').textContent = station.name + ' 컨트롤';
+    document.getElementById('info').textContent =
+      '방송국 코드: ' + station.slug + ' / 현재 방송: ' + (active?.title || '없음');
+
+    setLinks();
+
+    const data = await api('/api/broadcasts');
+    broadcasts = data.broadcasts || [];
+
+    render();
+  }catch(e){
+    console.error(e);
+    document.getElementById('info').textContent = '방송국 정보 또는 방송 목록을 불러오지 못했습니다.';
+    document.getElementById('broadcasts').innerHTML =
+      `<div class="muted">오류: ${esc(e.message || e)}</div>`;
+  }
 }
+
 function render(){
-  document.getElementById('broadcasts').innerHTML=broadcasts.map(b=>{
-    const timer=b.broadcastTimerData||{};
-    const running=timer.running===true;
+  const box = document.getElementById('broadcasts');
+
+  if (!broadcasts.length) {
+    box.innerHTML = `<div class="muted">생성된 방송이 없습니다.</div>`;
+    return;
+  }
+
+  box.innerHTML = broadcasts.map(b => {
+    const timer = b.broadcastTimerData || {};
+    const running = timer.running === true;
+
     return `
-      <div class="broadcast ${b.isActive?'active':''}">
+      <div class="broadcast ${b.isActive ? 'active' : ''}">
         <div>
-          <b>${esc(b.title)}</b> ${b.isActive?'<span class="muted">현재</span>':''} ${running?'<span class="muted">타이머 실행중</span>':''}<br>
-          <span class="muted">${new Date(b.createdAt).toLocaleString('ko-KR')} / 비번 ${b.hasPassword?'있음':'없음'} / 누적 ${timerText(timer.elapsedMs)}</span>
+          <b>${esc(b.title || '제목 없음')}</b>
+          ${b.isActive ? '<span class="muted">현재</span>' : ''}
+          ${running ? '<span class="muted">타이머 실행중</span>' : ''}
+          <br>
+          <span class="muted">
+            ${b.createdAt ? new Date(b.createdAt).toLocaleString('ko-KR') : ''}
+            / 비번 ${b.hasPassword ? '있음' : '없음'}
+            / 누적 ${timerText(timer.elapsedMs)}
+          </span>
         </div>
         <div class="actions">
-          ${b.isActive?'':`<button class="btn blue mini" onclick="activateBroadcast('${b.id}')">선택</button>`}
+          ${b.isActive ? '' : `<button class="btn blue mini" onclick="activateBroadcast('${b.id}')">선택</button>`}
           <button class="btn mini" onclick="broadcastLogin('${b.id}')">비번확인</button>
           <button class="btn blue mini" onclick="startBroadcastTimer('${b.id}')">방송시작</button>
           <button class="btn mini" onclick="endBroadcastTimer('${b.id}')">방송종료</button>
           <button class="btn mini" onclick="changeBroadcastPw('${b.id}')">PW변경</button>
           <button class="btn red mini" onclick="deleteBroadcast('${b.id}')">삭제</button>
         </div>
-      </div>`;
+      </div>
+    `;
   }).join('');
 }
+
 async function createBroadcast(){
-  const a=document.getElementById('broadcastPw').value;
-  const b=document.getElementById('broadcastPw2').value;
-  if(a!==b) return alert('방송 비밀번호 확인이 다릅니다.');
+  const pw1 = document.getElementById('broadcastPw').value;
+  const pw2 = document.getElementById('broadcastPw2').value;
+
+  if (pw1 !== pw2) {
+    return alert('방송 비밀번호 확인이 다릅니다.');
+  }
+
   try{
-    await api('/api/broadcasts',{method:'POST',body:JSON.stringify({
-      title:document.getElementById('broadcastTitle').value,
-      broadcastPassword:a,
-      activate:true
-    })});
-    alert('방송 생성 완료'); await load();
-  }catch(e){alert(e.message)}
+    await api('/api/broadcasts', {
+      method: 'POST',
+      body: JSON.stringify({
+        title: document.getElementById('broadcastTitle').value,
+        broadcastPassword: pw1,
+        activate: true
+      })
+    });
+
+    alert('방송 생성 완료');
+    await load();
+  }catch(e){
+    alert(e.message);
+  }
 }
+
 async function activateBroadcast(id){
-  const pw=prompt('해당 방송 비밀번호를 입력하세요. 방송국 관리자는 빈칸으로도 가능합니다.','') || '';
+  const pw = prompt('해당 방송 비밀번호를 입력하세요. 방송국 관리자는 빈칸으로도 가능합니다.', '') || '';
+
   try{
-    await api('/api/broadcasts/'+id+'/activate',{method:'POST',body:JSON.stringify({broadcastPassword:pw})});
-    alert('현재 방송으로 선택했습니다.'); await load();
-  }catch(e){alert(e.message)}
+    await api('/api/broadcasts/' + id + '/activate', {
+      method: 'POST',
+      body: JSON.stringify({ broadcastPassword: pw })
+    });
+
+    alert('현재 방송으로 선택했습니다.');
+    await load();
+  }catch(e){
+    alert(e.message);
+  }
 }
+
 async function broadcastLogin(id){
-  const pw=prompt('방송 비밀번호를 입력하세요.','') || '';
+  const pw = prompt('방송 비밀번호를 입력하세요.', '') || '';
+
   try{
-    await api('/api/broadcast-login',{method:'POST',body:JSON.stringify({broadcastId:id,password:pw})});
+    await api('/api/broadcast-login', {
+      method: 'POST',
+      body: JSON.stringify({
+        broadcastId: id,
+        password: pw
+      })
+    });
+
     alert('방송 비밀번호 확인 완료');
-  }catch(e){alert(e.message)}
+  }catch(e){
+    alert(e.message);
+  }
 }
+
 async function loginBroadcast(){
+  if (!active?.id) {
+    return alert('현재 선택된 방송이 없습니다.');
+  }
+
   try{
-    await api('/api/broadcast-login',{method:'POST',body:JSON.stringify({broadcastId:active.id,password:document.getElementById('loginBroadcastPw').value})});
+    await api('/api/broadcast-login', {
+      method: 'POST',
+      body: JSON.stringify({
+        broadcastId: active.id,
+        password: document.getElementById('loginBroadcastPw').value
+      })
+    });
+
     alert('현재 방송 비밀번호 저장 완료');
-  }catch(e){alert(e.message)}
+  }catch(e){
+    alert(e.message);
+  }
 }
+
 async function changeBroadcastPw(id){
-  const a=prompt('새 방송 비밀번호 입력','');
-  if(a===null) return;
-  const b=prompt('새 방송 비밀번호 확인','');
-  if(a!==b) return alert('비밀번호 확인이 다릅니다.');
+  const pw1 = prompt('새 방송 비밀번호 입력', '');
+  if (pw1 === null) return;
+
+  const pw2 = prompt('새 방송 비밀번호 확인', '');
+  if (pw1 !== pw2) {
+    return alert('비밀번호 확인이 다릅니다.');
+  }
+
   try{
-    await api('/api/broadcasts/'+id,{method:'PUT',body:JSON.stringify({broadcastPassword:a})});
-    alert('변경 완료'); await load();
-  }catch(e){alert(e.message)}
+    await api('/api/broadcasts/' + id, {
+      method: 'PUT',
+      body: JSON.stringify({ broadcastPassword: pw1 })
+    });
+
+    alert('변경 완료');
+    await load();
+  }catch(e){
+    alert(e.message);
+  }
 }
+
 async function deleteBroadcast(id){
-  if(!confirm('이 방송을 삭제할까요?')) return;
-  if(prompt('삭제하려면 DELETE 입력')!=='DELETE') return;
-  try{await api('/api/broadcasts/'+id,{method:'DELETE'}); alert('삭제 완료'); await load();}catch(e){alert(e.message)}
+  if (!confirm('이 방송을 삭제할까요?')) return;
+  if (prompt('삭제하려면 DELETE 입력') !== 'DELETE') return;
+
+  try{
+    await api('/api/broadcasts/' + id, {
+      method: 'DELETE'
+    });
+
+    alert('삭제 완료');
+    await load();
+  }catch(e){
+    alert(e.message);
+  }
 }
-async function startBroadcastTimer(id){try{await api('/api/broadcast-timer/start',{method:'POST',body:JSON.stringify({broadcastId:id})}); await load();}catch(e){alert(e.message)}}
-async function endBroadcastTimer(id){if(!confirm('이 방송 타이머를 종료할까요?')) return; try{await api('/api/broadcast-timer/end',{method:'POST',body:JSON.stringify({broadcastId:id})}); await load();}catch(e){alert(e.message)}}
+
+async function startBroadcastTimer(id){
+  try{
+    await api('/api/broadcast-timer/start', {
+      method: 'POST',
+      body: JSON.stringify({ broadcastId: id })
+    });
+
+    await load();
+  }catch(e){
+    alert(e.message);
+  }
+}
+
+async function endBroadcastTimer(id){
+  if (!confirm('이 방송 타이머를 종료할까요?')) return;
+
+  try{
+    await api('/api/broadcast-timer/end', {
+      method: 'POST',
+      body: JSON.stringify({ broadcastId: id })
+    });
+
+    await load();
+  }catch(e){
+    alert(e.message);
+  }
+}
+
 load();
 </script>
 </body>
