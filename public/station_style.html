@@ -1,11 +1,13 @@
 <!doctype html>
 <html lang="ko">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>방송국 스타일 설정</title>
 <link rel="stylesheet" href="/app.css">
 <style>
-body{background:#070b12;color:#e5e7eb;margin:0}.wrap{max-width:1180px;margin:0 auto;padding:22px}.top{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:16px}.title{font-size:30px;font-weight:950}.nav{display:flex;gap:8px;flex-wrap:wrap}.nav a{text-decoration:none;color:#dbeafe;background:#111827;border:1px solid #334155;padding:10px 14px;border-radius:12px;font-weight:900}.card{background:#0b1220;border:1px solid #253247;border-radius:18px;padding:16px;margin-bottom:14px}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.row{margin-bottom:10px}label{display:block;font-size:13px;color:#cbd5e1;font-weight:900;margin-bottom:6px}.input{width:100%;background:#070b12;color:#fff;border:1px solid #334155;border-radius:12px;padding:10px 11px}.btn{border:0;border-radius:12px;padding:10px 13px;font-weight:900;cursor:pointer;background:#334155;color:#fff}.green{background:#16a34a}.blue{background:#2563eb}.muted{color:#94a3b8;font-size:13px}.preview{width:285px;margin:0 auto;background:linear-gradient(180deg,var(--p-bg1),var(--p-bg2));border:2px solid var(--p-border);border-radius:16px;padding:12px;text-align:center}.preview-title{display:inline-flex;padding:4px 12px;border-radius:999px;background:rgba(255,255,255,.1);font-weight:1000;color:var(--p-title);font-size:var(--p-title-size)}.preview-content{margin-top:10px;text-align:left;font-weight:900;color:var(--p-content);font-size:var(--p-content-size)}@media(max-width:900px){.grid{grid-template-columns:1fr}.top{flex-direction:column;align-items:flex-start}}
+:root{--bg:#070b12;--card:#0b1220;--line:#253247;--line2:#334155;--text:#e5e7eb;--muted:#94a3b8;--blue:#2563eb;--green:#16a34a;--red:#dc2626}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',Arial,sans-serif}.wrap{max-width:1180px;margin:0 auto;padding:22px}.top{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:16px}.title{font-size:30px;font-weight:950}.nav{display:flex;gap:8px;flex-wrap:wrap}.nav a{text-decoration:none;color:#dbeafe;background:#111827;border:1px solid var(--line2);padding:10px 14px;border-radius:12px;font-weight:900}.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:14px}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.row{margin-bottom:10px}label{display:block;font-size:13px;color:#cbd5e1;font-weight:900;margin-bottom:6px}.input{width:100%;background:#070b12;color:#fff;border:1px solid var(--line2);border-radius:12px;padding:10px 11px;font-weight:800}.input:focus{outline:none;border-color:#60a5fa;box-shadow:0 0 0 3px rgba(59,130,246,.14)}.btn{border:0;border-radius:12px;padding:10px 13px;font-weight:900;cursor:pointer;background:#334155;color:#fff}.green{background:var(--green)}.blue{background:var(--blue)}.red{background:var(--red)}.muted{color:var(--muted);font-size:13px}.actions{display:flex;gap:8px;flex-wrap:wrap}.preview{width:285px;margin:0 auto;background:linear-gradient(180deg,var(--p-bg1),var(--p-bg2));border:2px solid var(--p-border);border-radius:16px;padding:12px;text-align:center}.preview-title{display:inline-flex;padding:4px 12px;border-radius:999px;background:rgba(255,255,255,.1);font-weight:1000;color:var(--p-title);font-size:var(--p-title-size)}.preview-content{margin-top:10px;text-align:left;font-weight:900;color:var(--p-content);font-size:var(--p-content-size)}.hint{padding:10px 12px;border-radius:12px;border:1px solid rgba(96,165,250,.25);background:rgba(37,99,235,.12);color:#dbeafe;font-size:13px;font-weight:800;line-height:1.45}.warn{border-color:rgba(248,113,113,.35);background:rgba(127,29,29,.18);color:#fecaca}@media(max-width:900px){.grid{grid-template-columns:1fr}.top{flex-direction:column;align-items:flex-start}.actions .btn{width:100%}}
 </style>
 </head>
 <body>
@@ -19,9 +21,14 @@ body{background:#070b12;color:#e5e7eb;margin:0}.wrap{max-width:1180px;margin:0 a
       <a id="stationLink" href="/station_control.html">방송국</a>
       <a id="adminLink" href="/admin.html">입력</a>
       <a id="controlLink" href="/control.html">설정</a>
+      <a id="mControlLink" href="/m_control.html">모바일설정</a>
       <a id="overlayLink" target="_blank" href="/overlay.html">오버레이 TEST</a>
     </div>
   </div>
+
+  <section class="card">
+    <div class="hint" id="saveHint">스타일은 방송별이 아니라 방송국 공통(_shared)에 저장됩니다. PC/모바일 설정 저장으로 초기화되지 않게 저장 직후 서버값을 다시 확인합니다.</div>
+  </section>
 
   <section class="card">
     <h2>박스 / 배경</h2>
@@ -35,32 +42,37 @@ body{background:#070b12;color:#e5e7eb;margin:0}.wrap{max-width:1180px;margin:0 a
   <section class="card">
     <h2>타이틀 컬러 / 크기</h2>
     <div class="grid">
-      <div class="row"><label>계좌 타이틀 컬러</label><input id="accountTitleColor" class="input"></div>
-      <div class="row"><label>공지 타이틀 컬러</label><input id="noticeTitleColor" class="input"></div>
-      <div class="row"><label>펀딩 타이틀 컬러</label><input id="fundingTitleColor" class="input"></div>
-      <div class="row"><label>노래방 타이틀 컬러</label><input id="karaokeTitleColor" class="input"></div>
-      <div class="row"><label>계좌 타이틀 크기(px)</label><input id="accountTitleSize" class="input" type="number"></div>
-      <div class="row"><label>공지 타이틀 크기(px)</label><input id="noticeTitleSize" class="input" type="number"></div>
-      <div class="row"><label>펀딩 타이틀 크기(px)</label><input id="fundingTitleSize" class="input" type="number"></div>
-      <div class="row"><label>노래방 타이틀 크기(px)</label><input id="karaokeTitleSize" class="input" type="number"></div>
+      <div class="row"><label>계좌 타이틀 컬러</label><input id="accountTitleColor" class="input" placeholder="#ffe680"></div>
+      <div class="row"><label>공지 타이틀 컬러</label><input id="noticeTitleColor" class="input" placeholder="#8ee7ff"></div>
+      <div class="row"><label>펀딩 타이틀 컬러</label><input id="fundingTitleColor" class="input" placeholder="#b8ff9d"></div>
+      <div class="row"><label>노래방 타이틀 컬러</label><input id="karaokeTitleColor" class="input" placeholder="#ff9bd6"></div>
+      <div class="row"><label>타이머 타이틀 컬러</label><input id="timerTitleColor" class="input" placeholder="#ffe680"></div>
+      <div class="row"><label>계좌 타이틀 크기(px)</label><input id="accountTitleSize" class="input" type="number" placeholder="20"></div>
+      <div class="row"><label>공지 타이틀 크기(px)</label><input id="noticeTitleSize" class="input" type="number" placeholder="20"></div>
+      <div class="row"><label>펀딩 타이틀 크기(px)</label><input id="fundingTitleSize" class="input" type="number" placeholder="20"></div>
+      <div class="row"><label>노래방 타이틀 크기(px)</label><input id="karaokeTitleSize" class="input" type="number" placeholder="20"></div>
     </div>
   </section>
 
   <section class="card">
     <h2>컨텐츠 / 펀딩바</h2>
     <div class="grid">
-      <div class="row"><label>기본 컨텐츠 컬러</label><input id="contentColor" class="input"></div>
-      <div class="row"><label>공지 컨텐츠 컬러</label><input id="noticeContentColor" class="input"></div>
-      <div class="row"><label>펀딩 컨텐츠 컬러</label><input id="fundingContentColor" class="input"></div>
-      <div class="row"><label>노래방 컨텐츠 컬러</label><input id="karaokeContentColor" class="input"></div>
-      <div class="row"><label>컨텐츠 기본 크기(px)</label><input id="contentFontSize" class="input" type="number"></div>
+      <div class="row"><label>기본 컨텐츠 컬러</label><input id="contentColor" class="input" placeholder="#ffffff"></div>
+      <div class="row"><label>공지 컨텐츠 컬러</label><input id="noticeContentColor" class="input" placeholder="#ffffff"></div>
+      <div class="row"><label>펀딩 컨텐츠 컬러</label><input id="fundingContentColor" class="input" placeholder="#f8fafc"></div>
+      <div class="row"><label>노래방 컨텐츠 컬러</label><input id="karaokeContentColor" class="input" placeholder="#ffffff"></div>
+      <div class="row"><label>컨텐츠 기본 크기(px)</label><input id="contentFontSize" class="input" type="number" placeholder="20"></div>
       <div class="row"><label>펀딩 그래프바 컬러</label><input id="fundingBarColor" class="input" placeholder="linear-gradient(...) 또는 #44f7ff"></div>
-      <div class="row"><label>계좌후원 VIP 기준금액</label><input id="vipAccountThreshold" class="input" type="number" placeholder="500000"></div>
-      <div class="row"><label>VIP 배경 컬러1</label><input id="vipAccountBg1" class="input" placeholder="rgba(255,216,77,.30)"></div>
-      <div class="row"><label>VIP 배경 컬러2</label><input id="vipAccountBg2" class="input" placeholder="rgba(255,79,216,.28)"></div>
     </div>
-    <button class="btn green" onclick="save()">방송국 스타일 저장</button>
-    <button class="btn blue" onclick="load()">다시 불러오기</button>
+  </section>
+
+  <section class="card">
+    <h2>계좌후원 VIP 배경 이펙트</h2>
+    <div class="grid">
+      <div class="row"><label>VIP 기준금액</label><input id="vipAccountThreshold" class="input" type="number" placeholder="500000"></div>
+      <div class="row"><label>VIP 배경 컬러 1</label><input id="vipAccountBg1" class="input" placeholder="rgba(255,79,216,.22)"></div>
+      <div class="row"><label>VIP 배경 컬러 2</label><input id="vipAccountBg2" class="input" placeholder="rgba(0,234,255,.18)"></div>
+    </div>
   </section>
 
   <section class="card">
@@ -70,60 +82,138 @@ body{background:#070b12;color:#e5e7eb;margin:0}.wrap{max-width:1180px;margin:0 a
       <div class="preview-content">컨텐츠 텍스트 / 펀딩 15/100</div>
     </div>
   </section>
+
+  <section class="card">
+    <div class="actions">
+      <button class="btn green" onclick="save()">스타일 저장</button>
+      <button class="btn blue" onclick="load()">다시 불러오기</button>
+      <button class="btn red" onclick="resetLocalInputs()">입력칸 비우기</button>
+    </div>
+  </section>
 </div>
 <script src="/common.js"></script>
 <script>
-const fields = ['boxBorderColor','boxBgTop','boxBgBottom','accountTitleColor','noticeTitleColor','fundingTitleColor','karaokeTitleColor','contentColor','noticeContentColor','fundingContentColor','karaokeContentColor','accountTitleSize','noticeTitleSize','fundingTitleSize','karaokeTitleSize','contentFontSize','fundingBarColor','vipAccountThreshold','vipAccountBg1','vipAccountBg2'];
-function st(){return getStation()}
+const fields = [
+  'boxBorderColor','boxBgTop','boxBgBottom',
+  'accountTitleColor','noticeTitleColor','fundingTitleColor','karaokeTitleColor','timerTitleColor',
+  'contentColor','noticeContentColor','fundingContentColor','karaokeContentColor',
+  'accountTitleSize','noticeTitleSize','fundingTitleSize','karaokeTitleSize','contentFontSize','fundingBarColor',
+  'vipAccountThreshold','vipAccountBg1','vipAccountBg2'
+];
+const defaults = {
+  boxBorderColor:'rgba(255,138,185,.95)',
+  boxBgTop:'rgba(18,22,32,.88)',
+  boxBgBottom:'rgba(10,12,20,.82)',
+  accountTitleColor:'#ffe680',
+  noticeTitleColor:'#8ee7ff',
+  fundingTitleColor:'#b8ff9d',
+  karaokeTitleColor:'#ff9bd6',
+  timerTitleColor:'#ffe680',
+  contentColor:'#ffffff',
+  noticeContentColor:'#ffffff',
+  fundingContentColor:'#f8fafc',
+  karaokeContentColor:'#ffffff',
+  accountTitleSize:20,
+  noticeTitleSize:20,
+  fundingTitleSize:20,
+  karaokeTitleSize:20,
+  contentFontSize:20,
+  fundingBarColor:'linear-gradient(90deg, rgba(0,234,255,.58), rgba(255,79,216,.48))',
+  vipAccountThreshold:500000,
+  vipAccountBg1:'rgba(255,79,216,.22)',
+  vipAccountBg2:'rgba(0,234,255,.18)'
+};
+function st(){ return typeof getStation === 'function' ? getStation() : (new URLSearchParams(location.search).get('station') || localStorage.getItem('STATION_SLUG') || 'default'); }
 function setLinks(token=''){
   const s=encodeURIComponent(st());
   stationLink.href='/station_control.html?station='+s;
   adminLink.href='/admin.html?station='+s;
   controlLink.href='/control.html?station='+s;
+  mControlLink.href='/m_control.html?station='+s;
   overlayLink.href='/overlay.html?station='+s+(token?'&token='+encodeURIComponent(token):'')+'&monitor=1&v='+Date.now();
+}
+async function apiNoCache(url,opt={}){
+  const join=url.includes('?')?'&':'?';
+  return await api(url+join+'_ts='+Date.now(), opt);
 }
 function collect(){
   const o={};
   for(const f of fields){
     const el=document.getElementById(f);
-    if(el.type==='number') o[f]=Number(el.value||0);
-    else o[f]=el.value.trim();
+    if(!el) continue;
+    const raw=String(el.value ?? '').trim();
+    if(raw==='') continue; // 빈칸은 저장하지 않음. 서버 기본값 덮어쓰기/초기화 방지
+    if(el.type==='number'){
+      const n=Number(raw);
+      if(Number.isFinite(n)) o[f]=n;
+    }else{
+      o[f]=raw;
+    }
   }
   return o;
 }
 function fill(o){
+  const src = {...defaults, ...(o||{})};
   for(const f of fields){
-    if(document.getElementById(f)) document.getElementById(f).value = o?.[f] ?? '';
+    const el=document.getElementById(f);
+    if(el) el.value = src[f] ?? '';
   }
   updatePreview();
 }
 function updatePreview(){
-  const o=collect();
+  const o={...defaults, ...collect()};
   const p=document.getElementById('preview');
-  p.style.setProperty('--p-border', o.boxBorderColor || 'rgba(255,138,185,.95)');
-  p.style.setProperty('--p-bg1', o.boxBgTop || 'rgba(18,22,32,.88)');
-  p.style.setProperty('--p-bg2', o.boxBgBottom || 'rgba(10,12,20,.82)');
-  p.style.setProperty('--p-title', o.noticeTitleColor || '#8ee7ff');
-  p.style.setProperty('--p-content', o.noticeContentColor || '#ffffff');
-  p.style.setProperty('--p-title-size', (o.noticeTitleSize || 20)+'px');
-  p.style.setProperty('--p-content-size', (o.contentFontSize || 20)+'px');
+  p.style.setProperty('--p-border', o.boxBorderColor);
+  p.style.setProperty('--p-bg1', o.boxBgTop);
+  p.style.setProperty('--p-bg2', o.boxBgBottom);
+  p.style.setProperty('--p-title', o.noticeTitleColor);
+  p.style.setProperty('--p-content', o.noticeContentColor || o.contentColor);
+  p.style.setProperty('--p-title-size', (Number(o.noticeTitleSize)||20)+'px');
+  p.style.setProperty('--p-content-size', (Number(o.contentFontSize)||20)+'px');
 }
-fields.forEach(f=>document.addEventListener('input',e=>{if(e.target.id===f)updatePreview()}));
+fields.forEach(f=>document.addEventListener('input',e=>{ if(e.target.id===f) updatePreview(); }));
 async function load(){
-  const data=await api('/api/settings');
-  document.getElementById('info').textContent=(data.station?.name||st())+' / 방송국별 스타일';
-  setLinks(data.station?.overlayToken||'');
+  const data=await apiNoCache('/api/settings');
+  const station=data.station||{};
+  document.getElementById('info').textContent=(station.name||st())+' / 방송국별 스타일';
+  setLinks(station.overlayToken||'');
   fill(data.stationStyle||{});
+  document.getElementById('saveHint').className='hint';
+  document.getElementById('saveHint').textContent='현재 서버 저장값을 불러왔습니다. 저장 후에도 이 값이 유지되는지 자동 확인합니다.';
 }
 async function save(){
   try{
     const stationStyle=collect();
+    if(!Object.keys(stationStyle).length) return alert('저장할 스타일 값이 없습니다.');
+
+    // 1순위: 방송국 공통 스타일 전용 API
     await api('/api/station-style',{method:'POST',body:JSON.stringify({stationStyle})});
-    alert('스타일 저장 완료');
-    await load();
-  }catch(e){alert(e.message)}
+
+    // 저장 직후 서버값 재확인. 캐시/초기값으로 되돌아가는지 확인.
+    const data=await apiNoCache('/api/settings');
+    const saved=data.stationStyle||{};
+    fill(saved);
+
+    const miss=Object.keys(stationStyle).filter(k=>String(saved[k] ?? '') !== String(stationStyle[k] ?? ''));
+    const hint=document.getElementById('saveHint');
+    if(miss.length){
+      hint.className='hint warn';
+      hint.textContent='저장은 요청됐지만 서버 확인값이 일부 다릅니다: '+miss.join(', ')+' / server.js의 normalizeStationStyle 또는 STATION_SHARED_SETTING_FIELDS 패치를 적용하세요.';
+    }else{
+      hint.className='hint';
+      hint.textContent='스타일 저장 완료. 서버 재확인까지 성공했습니다.';
+      alert('스타일 저장 완료');
+    }
+  }catch(e){
+    alert(e.message || '스타일 저장 실패');
+  }
 }
-load();
+function resetLocalInputs(){
+  if(!confirm('입력칸만 비웁니다. 서버 저장값은 삭제하지 않습니다.')) return;
+  fields.forEach(f=>{const el=document.getElementById(f); if(el) el.value='';});
+  updatePreview();
+}
+load().catch(e=>alert(e.message));
 </script>
 </body>
 </html>
