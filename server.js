@@ -226,16 +226,15 @@ function normalizeOverlaySections(raw, base) {
 
 function normalizeStationStyle(raw) {
   const value = raw && typeof raw === 'object' ? raw : {};
-  const pick = (key, fallback) => String(value[key] ?? fallback);
-  const num = (key, fallback, min = 0, max = 100000000) => {
+  const pick = (key, fallback) => {
+    const v = value[key];
+    if (v === undefined || v === null || String(v).trim() === '') return fallback;
+    return String(v).trim();
+  };
+  const num = (key, fallback, min = 0, max = 999999999) => {
     const n = Number(value[key]);
     if (!Number.isFinite(n)) return fallback;
     return Math.max(min, Math.min(max, n));
-  };
-  const size = (key, fallback) => {
-    const n = Number(value[key]);
-    if (!Number.isFinite(n)) return fallback;
-    return Math.max(10, Math.min(64, n));
   };
 
   return {
@@ -254,18 +253,20 @@ function normalizeStationStyle(raw) {
     fundingContentColor: pick('fundingContentColor', '#f8fafc'),
     karaokeContentColor: pick('karaokeContentColor', '#ffffff'),
 
-    accountTitleSize: size('accountTitleSize', 20),
-    noticeTitleSize: size('noticeTitleSize', 20),
-    fundingTitleSize: size('fundingTitleSize', 20),
-    karaokeTitleSize: size('karaokeTitleSize', 20),
-    contentFontSize: size('contentFontSize', 20),
+    accountTitleSize: num('accountTitleSize', 20, 10, 80),
+    noticeTitleSize: num('noticeTitleSize', 20, 10, 80),
+    fundingTitleSize: num('fundingTitleSize', 20, 10, 80),
+    karaokeTitleSize: num('karaokeTitleSize', 20, 10, 80),
+    contentFontSize: num('contentFontSize', 20, 10, 80),
+
     fundingBarColor: pick('fundingBarColor', 'linear-gradient(90deg, rgba(0,234,255,.58), rgba(255,79,216,.48))'),
 
-    vipAccountThreshold: num('vipAccountThreshold', 500000),
-    vipAccountBg1: pick('vipAccountBg1', 'rgba(255,216,77,.30)'),
-    vipAccountBg2: pick('vipAccountBg2', 'rgba(255,79,216,.28)')
+    vipAccountThreshold: num('vipAccountThreshold', 500000, 0, 999999999),
+    vipAccountBg1: pick('vipAccountBg1', 'rgba(255,79,216,.22)'),
+    vipAccountBg2: pick('vipAccountBg2', 'rgba(0,234,255,.18)')
   };
 }
+
 
 function normalizeSettings(settings) {
   const base = defaultSettings();
@@ -1718,7 +1719,9 @@ app.post('/api/station-style', async (req, res) => {
     if (!requireDb(res)) return;
     const ctx = await getStationContext(req, res);
     if (!ctx) return;
-    if (!await stationAllowed(req, ctx.station)) return res.status(401).json({ error: '방송국 관리자 권한이 필요합니다.' });
+    if (!await stationAllowed(req, ctx.station)) {
+      return res.status(401).json({ error: '방송국 관리자 권한이 필요합니다.' });
+    }
 
     const stationStyle = normalizeStationStyle(req.body.stationStyle || req.body || {});
     await saveSharedStationSettings(ctx.station.slug, { stationStyle });
@@ -1728,6 +1731,7 @@ app.post('/api/station-style', async (req, res) => {
     res.status(500).json({ error: e.message || '스타일 저장 실패' });
   }
 });
+
 
 app.post('/api/broadcast-timer/start', async (req, res) => {
   try {
