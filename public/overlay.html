@@ -181,6 +181,9 @@ html,body{
   --style-karaoke-title-size:20px;
   --style-account-title-size:20px;
   --style-content-size:20px;
+  --style-creator-content-size:24px;
+  --style-account-roll-size:25px;
+  --style-alert-size:30px;
   --style-funding-bar:linear-gradient(90deg, rgba(0,234,255,.58), rgba(255,79,216,.48));
 }
 
@@ -201,6 +204,9 @@ html,body{
 .karaoke-title{font-size:var(--style-karaoke-title-size) !important;color:var(--style-karaoke-title-color, #ff9bd6) !important}
 .notice-text,.notice-line{font-size:var(--style-content-size) !important;color:var(--style-notice-content-color, var(--style-content-color)) !important}
 .funding-value,.funding-line b{color:var(--style-funding-content-color, #f8fafc) !important}
+.creator-name,.donation-amount,.creator-sub{font-size:var(--style-creator-content-size) !important}
+.roller{font-size:var(--style-account-roll-size) !important}
+.alert-donor{font-size:var(--style-alert-size) !important}.alert-target{font-size:calc(var(--style-alert-size) * .86) !important}.alert-line2{font-size:calc(var(--style-alert-size) * .76) !important}
 .karaoke-notice,.karaoke-song-title-text{color:var(--style-karaoke-content-color, #ffffff) !important}
 
 /* 펀딩 그래프바 컬러 강조 */
@@ -274,6 +280,16 @@ body > #optionAlert.option-alert{
   display:none !important;
 }
 
+#overlayAlertRoot #optionAlert.option-alert::before{
+  content:"";position:absolute;inset:-2px;border-radius:20px;pointer-events:none;
+  background:linear-gradient(120deg,transparent 0%,rgba(255,255,255,.32) 18%,transparent 34%);
+  transform:translateX(-120%);animation:alertShineSweep 1.05s linear infinite;
+}
+@keyframes alertShineSweep{to{transform:translateX(120%)}}
+.alert-target{display:inline-block;font-size:28px!important;line-height:1.05!important;font-weight:1000!important;color:#ffe9a8!important;white-space:nowrap;}
+.alert-up-line{font-size:0!important;}
+
+
 to{opacity:.95;filter:brightness(1.35)}
 }
 
@@ -300,7 +316,7 @@ to{opacity:.95;filter:brightness(1.35)}
   left:0;
   right:0;
   top:50%;
-  height:78%;
+  height:100%;
   transform:translateY(-50%);
   z-index:-1;
   border-radius:999px;
@@ -309,7 +325,7 @@ to{opacity:.95;filter:brightness(1.35)}
       transparent 0%,
       var(--style-vip-bg1) 18%,
       var(--style-vip-bg2) 46%,
-      rgba(68,247,255,.28) 70%,
+      rgba(255,255,255,.32) 70%,
       transparent 100%);
   background-size:230% 100%;
   animation:vipAccountFlash .86s linear infinite;
@@ -322,7 +338,7 @@ to{opacity:.95;filter:brightness(1.35)}
   left:0;
   right:0;
   top:50%;
-  height:78%;
+  height:100%;
   transform:translateY(-50%);
   z-index:-1;
   border-radius:999px;
@@ -345,8 +361,8 @@ to{opacity:.95;filter:brightness(1.35)}
 }
 
 @keyframes vipAccountPulse{
-  from{opacity:.30;filter:brightness(1)}
-  to{opacity:.88;filter:brightness(1.28)}
+  from{opacity:.48;filter:brightness(1.08)}
+  to{opacity:1;filter:brightness(1.45)}
 }
 
 </style>
@@ -569,6 +585,9 @@ to{opacity:.95;filter:brightness(1.35)}
     if(st.fundingTitleSize) set("--style-funding-title-size", Number(st.fundingTitleSize) + "px");
     if(st.karaokeTitleSize) set("--style-karaoke-title-size", Number(st.karaokeTitleSize) + "px");
     if(st.contentFontSize) set("--style-content-size", Number(st.contentFontSize) + "px");
+    if(st.creatorContentSize) set("--style-creator-content-size", Number(st.creatorContentSize) + "px");
+    if(st.accountRollFontSize) set("--style-account-roll-size", Number(st.accountRollFontSize) + "px");
+    if(st.alertFontSize) set("--style-alert-size", Number(st.alertFontSize) + "px");
   }
 
 function getOverlaySections(settings){
@@ -719,7 +738,7 @@ function getOverlaySections(settings){
 
     textEl.innerHTML = text.split(/\r?\n/).map((line, idx) => {
       const color = colors[idx] || "";
-      const style = color ? ` style="color:${escapeHtml(color)}"` : "";
+      const style = color ? ` style="color:${escapeHtml(color)} !important"` : "";
       return `<span class="notice-line"${style}>${escapeHtml(line)}</span>`;
     }).join("");
   }
@@ -977,8 +996,7 @@ function getOverlaySections(settings){
     }
 
     return `
-      <div class="alert-donor">${donor}</div>
-      <div class="alert-target">→ ${creator}</div>
+      <div class="alert-up-line"><span class="alert-donor">${donor}</span><span class="alert-target">→ ${creator}</span></div>
       <div class="alert-line2"><span class="alert-amount">${amountText}</span>${optionText}</div>
     `;
   }
@@ -1077,10 +1095,13 @@ function getOverlaySections(settings){
       }, 280);
     };
 
+    const accountForDuration = num(row?.accountAmount ?? row?.account_amount);
+    const vipLimit = Number(getComputedStyle(document.documentElement).getPropertyValue('--style-vip-threshold')) || 500000;
+    const minAlertMs = accountForDuration >= vipLimit ? 3600 : 2600;
     setTimeout(() => {
       minDone = true;
       if(!audio || audio.ended || audio.paused) closeAlert();
-    }, 2600);
+    }, minAlertMs);
 
     if(audio){
       const onEnded = () => {
@@ -1101,7 +1122,7 @@ function getOverlaySections(settings){
       // 긴 음악은 최대 1분까지 Alert 유지
       fallbackTimer = setTimeout(closeAlert, 60000);
     }else{
-      fallbackTimer = setTimeout(closeAlert, 3200);
+      fallbackTimer = setTimeout(closeAlert, (row && num(row.accountAmount ?? row.account_amount) >= (Number(getComputedStyle(document.documentElement).getPropertyValue('--style-vip-threshold'))||500000)) ? 4600 : 3400);
     }
   }
 

@@ -258,6 +258,9 @@ function normalizeStationStyle(raw) {
     fundingTitleSize: num('fundingTitleSize', 20, 10, 80),
     karaokeTitleSize: num('karaokeTitleSize', 20, 10, 80),
     contentFontSize: num('contentFontSize', 20, 10, 80),
+    creatorContentSize: num('creatorContentSize', 24, 10, 80),
+    accountRollFontSize: num('accountRollFontSize', 25, 10, 80),
+    alertFontSize: num('alertFontSize', 30, 10, 90),
 
     fundingBarColor: pick('fundingBarColor', 'linear-gradient(90deg, rgba(0,234,255,.58), rgba(255,79,216,.48))'),
 
@@ -587,7 +590,7 @@ async function operatorAllowed(req, station, broadcast) {
 const STATION_SHARED_SETTING_FIELDS = [
   // 방송국별로 유지하면서, 같은 방송국의 새 방송에는 이어질 항목
   'title', 'titleImage', 'noticeTitle', 'notice', 'noticeColors',
-  'karaokeData', 'fundingData', 'stationStyle'
+  'karaokeData', 'fundingData', 'stationStyle', 'presets'
 ];
 
 function pickStationSharedSettings(settings) {
@@ -814,20 +817,30 @@ function calcCheck(processType, amount, settings) {
   const preset = findPreset(settings, processType);
   if (!preset) return result;
 
+  const value = normName(processType);
   const plusPrice = Number(preset.plusPrice || 0);
   const minusPrice = Number(preset.minusPrice || 0);
   let side = null;
-  let count = 0;
+  let price = 0;
 
-  if (amount > 0 && minusPrice > 0 && amount % minusPrice === 0) {
+  // 선택한 프리셋명/옵션명으로 + / - 를 명확히 결정합니다.
+  // 예: 50,000원 + 흡연(11,900원) => +4, 잔액은 후원금 원본에 그대로 남김.
+  if (value === preset.minusName || value === `${preset.title}:${preset.minusName}` || value === `${preset.id}:minus`) {
     side = 'minus';
-    count = amount / minusPrice;
+    price = minusPrice;
+  } else if (value === preset.plusName || value === `${preset.title}:${preset.plusName}` || value === `${preset.id}:plus` || value === preset.title || value === preset.id) {
+    side = 'plus';
+    price = plusPrice;
+  } else if (amount > 0 && minusPrice > 0 && amount % minusPrice === 0) {
+    side = 'minus';
+    price = minusPrice;
   } else if (amount > 0 && plusPrice > 0 && amount % plusPrice === 0) {
     side = 'plus';
-    count = amount / plusPrice;
+    price = plusPrice;
   }
 
-  if (!side) {
+  const count = side && price > 0 ? Math.floor(amount / price) : 0;
+  if (!side || count <= 0) {
     result.label = `${preset.title} 확인`;
     return result;
   }
@@ -837,11 +850,14 @@ function calcCheck(processType, amount, settings) {
     presetTitle: preset.title,
     side,
     name: side === 'plus' ? preset.plusName : preset.minusName,
-    count
+    price,
+    count,
+    usedAmount: count * price,
+    remainAmount: Math.max(0, amount - count * price)
   };
 
   result.checks.push(check);
-  result.label = `${check.name} ${count}`;
+  result.label = `${check.name}${side === 'minus' ? '-' : '+'}${count}`;
 
   if (preset.id === 'smoke') {
     if (side === 'plus') result.smoke = count;

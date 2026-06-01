@@ -37,6 +37,7 @@ async function login(){
     });
     const data = await res.json().catch(()=>({}));
     if(!res.ok) throw new Error(data.error || '로그인 실패');
+    try{ localStorage.setItem('MASTER_PW', pw); }catch{}
     location.href = next;
   }catch(e){ err.textContent = e.message; }
 }

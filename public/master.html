@@ -37,9 +37,23 @@ body{background:#070b12;color:#e5e7eb}.wrap{max-width:1220px;margin:0 auto;paddi
 <script>
 let stations=[];
 document.getElementById('masterPw').value=localStorage.getItem('MASTER_PW')||'';
+function masterPw(){return document.getElementById('masterPw').value || localStorage.getItem('MASTER_PW') || ''}
+async function masterApi(url,opt={}){
+  opt.headers={...(opt.headers||{}),'Content-Type':'application/json'};
+  const pw=masterPw();
+  if(pw) opt.headers['x-admin-password']=pw;
+  const r=await fetch(url,opt);
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok){
+    if(r.status===401){ location.href='/admin_login.html?next='+encodeURIComponent('/master.html'); return new Promise(()=>{}); }
+    throw new Error(j.error||'요청 실패');
+  }
+  return j;
+}
+
 async function load(){
   try{
-    const data=await api('/api/stations',{headers:{'x-admin-password':document.getElementById('masterPw').value}});
+    const data=await masterApi('/api/stations');
     stations=data.stations||[];
     render();
   }catch(e){
@@ -73,7 +87,7 @@ async function createStation(){
   const spw=document.getElementById('stationPw').value;
   if(!confirm('이 방송국을 생성할까요?')) return;
   try{
-    await api('/api/stations',{method:'POST',headers:{'x-admin-password':pw},body:JSON.stringify({
+    await masterApi('/api/stations',{method:'POST',body:JSON.stringify({
       name:document.getElementById('name').value,
       slug:document.getElementById('slug').value,
       stationAdminPassword:spw
@@ -88,7 +102,7 @@ async function updateStationPw(id){
   if(a!==b) return alert('비밀번호 확인이 다릅니다.');
   if(!confirm('이 방송국의 관리자 비밀번호를 변경할까요?')) return;
   try{
-    await api('/api/stations/'+id,{method:'PUT',headers:{'x-admin-password':pw},body:JSON.stringify({stationAdminPassword:a})});
+    await masterApi('/api/stations/'+id,{method:'PUT',body:JSON.stringify({stationAdminPassword:a})});
     alert('변경 완료'); await load();
   }catch(e){alert(e.message)}
 }
@@ -96,13 +110,13 @@ async function deleteStation(id,name){
   const pw=document.getElementById('masterPw').value;
   if(!confirm(`방송국 "${name}" 을 삭제할까요? 후원/방송 데이터도 같이 삭제됩니다.`)) return;
   if(prompt('삭제하려면 DELETE 를 입력하세요') !== 'DELETE') return;
-  try{await api('/api/stations/'+id,{method:'DELETE',headers:{'x-admin-password':pw}}); alert('삭제 완료'); await load();}catch(e){alert(e.message)}
+  try{await masterApi('/api/stations/'+id,{method:'DELETE'}); alert('삭제 완료'); await load();}catch(e){alert(e.message)}
 }
 async function regen(id){
   const pw=document.getElementById('masterPw').value;
   if(!confirm('토큰을 재생성하면 기존 오버레이 URL은 더 이상 작동하지 않습니다. 계속할까요?')) return;
   if(prompt('재생성하려면 TOKEN 을 입력하세요') !== 'TOKEN') return;
-  try{await api('/api/stations/'+id+'/token',{method:'POST',headers:{'x-admin-password':pw}}); alert('토큰 재생성 완료'); await load();}catch(e){alert(e.message)}
+  try{await masterApi('/api/stations/'+id+'/token',{method:'POST'}); alert('토큰 재생성 완료'); await load();}catch(e){alert(e.message)}
 }
 async function copyOverlay(slug,token){
   const url=`${location.origin}/overlay.html?station=${encodeURIComponent(slug)}&token=${encodeURIComponent(token)}`;

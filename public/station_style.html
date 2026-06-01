@@ -30,6 +30,17 @@
     <div class="hint" id="saveHint">스타일은 방송별이 아니라 방송국 공통(_shared)에 저장됩니다. PC/모바일 설정 저장으로 초기화되지 않게 저장 직후 서버값을 다시 확인합니다.</div>
   </section>
 
+
+  <section class="card">
+    <h2>컬러 팔레트 빠른 적용</h2>
+    <div class="actions">
+      <button class="btn" onclick="applyPalette('lovelyPink')">러블리 핑크</button>
+      <button class="btn" onclick="applyPalette('neonBlue')">네온 블루핑크</button>
+      <button class="btn" onclick="applyPalette('gold')">럭셔리 골드</button>
+      <button class="btn" onclick="applyPalette('dark')">다크 투명</button>
+    </div>
+  </section>
+
   <section class="card">
     <h2>박스 / 배경</h2>
     <div class="grid">
@@ -62,6 +73,9 @@
       <div class="row"><label>펀딩 컨텐츠 컬러</label><input id="fundingContentColor" class="input" placeholder="#f8fafc"></div>
       <div class="row"><label>노래방 컨텐츠 컬러</label><input id="karaokeContentColor" class="input" placeholder="#ffffff"></div>
       <div class="row"><label>컨텐츠 기본 크기(px)</label><input id="contentFontSize" class="input" type="number" placeholder="20"></div>
+      <div class="row"><label>크리에이터 글자 크기(px)</label><input id="creatorContentSize" class="input" type="number" placeholder="24"></div>
+      <div class="row"><label>계좌 롤링 글자 크기(px)</label><input id="accountRollFontSize" class="input" type="number" placeholder="25"></div>
+      <div class="row"><label>ALERT 글자 크기(px)</label><input id="alertFontSize" class="input" type="number" placeholder="30"></div>
       <div class="row"><label>펀딩 그래프바 컬러</label><input id="fundingBarColor" class="input" placeholder="linear-gradient(...) 또는 #44f7ff"></div>
     </div>
   </section>
@@ -97,7 +111,7 @@ const fields = [
   'boxBorderColor','boxBgTop','boxBgBottom',
   'accountTitleColor','noticeTitleColor','fundingTitleColor','karaokeTitleColor','timerTitleColor',
   'contentColor','noticeContentColor','fundingContentColor','karaokeContentColor',
-  'accountTitleSize','noticeTitleSize','fundingTitleSize','karaokeTitleSize','contentFontSize','fundingBarColor',
+  'accountTitleSize','noticeTitleSize','fundingTitleSize','karaokeTitleSize','contentFontSize','creatorContentSize','accountRollFontSize','alertFontSize','fundingBarColor',
   'vipAccountThreshold','vipAccountBg1','vipAccountBg2'
 ];
 const defaults = {
@@ -118,6 +132,9 @@ const defaults = {
   fundingTitleSize:20,
   karaokeTitleSize:20,
   contentFontSize:20,
+  creatorContentSize:24,
+  accountRollFontSize:25,
+  alertFontSize:30,
   fundingBarColor:'linear-gradient(90deg, rgba(0,234,255,.58), rgba(255,79,216,.48))',
   vipAccountThreshold:500000,
   vipAccountBg1:'rgba(255,79,216,.22)',
@@ -136,6 +153,19 @@ async function apiNoCache(url,opt={}){
   const join=url.includes('?')?'&':'?';
   return await api(url+join+'_ts='+Date.now(), opt);
 }
+
+function applyPalette(name){
+  const palettes={
+    lovelyPink:{boxBorderColor:'rgba(255,122,191,.95)',boxBgTop:'rgba(34,18,32,.88)',boxBgBottom:'rgba(20,10,22,.82)',accountTitleColor:'#ffe680',noticeTitleColor:'#ffb6d5',fundingTitleColor:'#ff9bd3',karaokeTitleColor:'#ff7abf',contentColor:'#ffffff',noticeContentColor:'#fff0f8',fundingContentColor:'#fff5fb',karaokeContentColor:'#ffffff',fundingBarColor:'repeating-linear-gradient(135deg, rgba(255,182,213,.9) 0px, rgba(255,182,213,.9) 10px, rgba(255,79,163,.86) 10px, rgba(255,79,163,.86) 20px)',vipAccountBg1:'rgba(255,122,191,.45)',vipAccountBg2:'rgba(255,79,163,.38)'},
+    neonBlue:{boxBorderColor:'rgba(0,234,255,.85)',boxBgTop:'rgba(10,22,38,.88)',boxBgBottom:'rgba(8,10,22,.82)',noticeTitleColor:'#8ee7ff',fundingTitleColor:'#b8ff9d',fundingBarColor:'linear-gradient(90deg, rgba(0,234,255,.58), rgba(255,79,216,.48))',vipAccountBg1:'rgba(0,234,255,.35)',vipAccountBg2:'rgba(255,79,216,.30)'},
+    gold:{boxBorderColor:'rgba(255,214,102,.95)',boxBgTop:'rgba(36,27,12,.88)',boxBgBottom:'rgba(18,14,8,.82)',accountTitleColor:'#ffe680',noticeTitleColor:'#ffd166',fundingTitleColor:'#ffe680',fundingBarColor:'repeating-linear-gradient(135deg, rgba(255,230,128,.92) 0px, rgba(255,230,128,.92) 10px, rgba(255,177,66,.86) 10px, rgba(255,177,66,.86) 20px)',vipAccountBg1:'rgba(255,214,102,.45)',vipAccountBg2:'rgba(255,177,66,.35)'},
+    dark:{boxBorderColor:'rgba(255,255,255,.22)',boxBgTop:'rgba(18,22,32,.78)',boxBgBottom:'rgba(10,12,20,.64)',contentColor:'#ffffff',fundingBarColor:'linear-gradient(90deg, rgba(255,255,255,.22), rgba(255,255,255,.08))'}
+  };
+  const p=palettes[name]||{};
+  Object.entries(p).forEach(([k,v])=>{const el=document.getElementById(k);if(el)el.value=v});
+  updatePreview();
+}
+
 function collect(){
   const o={};
   for(const f of fields){
