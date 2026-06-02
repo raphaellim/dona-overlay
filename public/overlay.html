@@ -88,6 +88,11 @@ html,body{
 .funding-line{position:relative;display:flex;align-items:center;justify-content:space-between;gap:10px;overflow:hidden;border-radius:10px;padding:8px 10px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);text-shadow:none!important;filter:none!important}
 .funding-line span,.funding-line b{position:relative;z-index:2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.funding-line b{flex:0 0 auto;color:#f8fafc!important}.funding-line em{position:absolute;left:0;top:0;bottom:0;z-index:1;background:linear-gradient(90deg,rgba(0,234,255,.20),rgba(255,79,216,.12));pointer-events:none}
 
+
+.funding-roller{position:relative;height:42px;overflow:hidden}
+.funding-track{position:absolute;left:0;right:0;top:0;transition:transform .45s ease;will-change:transform}
+.funding-track .funding-line{height:42px;margin:0 0 6px}
+
 /* ===== 노래방 ===== */
 .karaoke-mini-title{display:none!important}
 .karaoke-notice{margin-top:4px;color:#fde68a!important;font-size:17px!important;line-height:1.15!important;font-weight:1000!important;text-align:left!important;text-shadow:none!important;filter:none!important}
@@ -184,7 +189,15 @@ html,body{
   --style-creator-content-size:24px;
   --style-account-roll-size:25px;
   --style-alert-size:30px;
-  --style-funding-bar:linear-gradient(90deg, rgba(0,234,255,.58), rgba(255,79,216,.48));
+  --style-funding-bar:repeating-linear-gradient(135deg, rgba(255,182,213,.9) 0px, rgba(255,182,213,.9) 10px, rgba(255,79,163,.86) 10px, rgba(255,79,163,.86) 20px);
+  --style-karaoke-notice-size:17px;
+  --style-karaoke-current-size:18px;
+  --style-karaoke-queue-size:15px;
+  --style-karaoke-coin-size:15px;
+  --style-box-radius:18px;
+  --style-overlay-gap:8px;
+  --top-slide-height:105px;
+  --top-slide-opacity:1;
 }
 
 .overlay-box,
@@ -365,11 +378,75 @@ to{opacity:.95;filter:brightness(1.35)}
   to{opacity:1;filter:brightness(1.45)}
 }
 
+
+
+/* v2 UX compact overlay: funding 1 line / notice 3-line rolling / karaoke font sizes / single panel */
+.funding-title{display:none!important}
+.funding-box{padding:10px 12px!important}
+.funding-value{margin-top:0!important;gap:0!important}
+.funding-value .funding-line:not(:first-child){display:none!important}
+.funding-line{min-height:42px!important;font-size:var(--style-content-size)!important}
+
+.notice-roll-window{height:calc(var(--style-content-size) * 1.28 * 3);overflow:hidden;position:relative}
+.notice-roll-track{display:flex;flex-direction:column;animation:noticeRollUp var(--notice-roll-duration, 8s) linear infinite}
+.notice-roll-track .notice-line{min-height:calc(var(--style-content-size) * 1.28)}
+@keyframes noticeRollUp{0%,18%{transform:translateY(0)}100%{transform:translateY(var(--notice-roll-distance, -50%))}}
+.notice-text:not(.rolling) .notice-line:nth-child(n+4){display:none!important}
+
+.karaoke-notice{font-size:var(--style-karaoke-notice-size)!important}
+.karaoke-current{font-size:var(--style-karaoke-current-size)!important}
+.karaoke-song-row{font-size:var(--style-karaoke-queue-size)!important}
+.karaoke-coin-ticker span{font-size:var(--style-karaoke-coin-size)!important}
+
+.overlay-stack{gap:var(--style-overlay-gap)!important;width:var(--overlay-w)!important;top:var(--top)!important;right:var(--right)!important}
+.overlay-box{border-radius:var(--style-box-radius)!important}
+body.box-group-single .overlay-stack{
+  gap:0!important;
+  padding:12px!important;
+  border:2px solid var(--style-box-border)!important;
+  border-radius:calc(var(--style-box-radius) + 10px)!important;
+  background:linear-gradient(180deg,var(--style-box-bg-top),var(--style-box-bg-bottom))!important;
+  box-shadow:0 0 18px rgba(255,182,213,.22)!important;
+  backdrop-filter:blur(8px)!important;
+  overflow:hidden!important;
+}
+body.box-group-single .overlay-box{
+  background:transparent!important;
+  border:0!important;
+  box-shadow:none!important;
+  border-radius:0!important;
+  padding-left:6px!important;
+  padding-right:6px!important;
+}
+body.box-group-single .overlay-box:not(.hidden)+.overlay-box:not(.hidden){border-top:1px solid rgba(255,210,235,.42)!important}
+
+.top-slide-box{position:relative;width:100%;height:var(--top-slide-height);border-radius:var(--style-box-radius);overflow:hidden;border:1px solid var(--style-box-border);background:rgba(255,255,255,.08);box-shadow:0 0 14px rgba(255,182,213,.22);opacity:var(--top-slide-opacity);margin-bottom:var(--style-overlay-gap)}
+.top-slide-box.hidden{display:none!important}
+.top-slide-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .75s ease}
+.top-slide-img.active{opacity:1}
+body.box-group-single .top-slide-box{margin-bottom:10px}
+
+
+
+.karaoke-notice{color:var(--style-karaoke-notice-color,#fde68a)!important}
+.karaoke-current{color:var(--style-karaoke-current-color,#e0f2fe)!important}
+.karaoke-current b,.karaoke-heart{color:var(--style-karaoke-heart-color,#ff4fa3)!important}
+.karaoke-donor,.karaoke-current em{color:var(--style-karaoke-donor-color,#39ff88)!important}
+.karaoke-song-row{color:var(--style-karaoke-queue-color,#fff)!important}
+.karaoke-ticker{color:var(--style-karaoke-coin-color,#ffffff)!important}
+
+/* ===== 방송 종료/대기 기본화면 ===== */
+.overlay-idle-screen{position:fixed;inset:0;display:none;align-items:center;justify-content:center;text-align:center;color:#fff;font-weight:1000;font-size:46px;letter-spacing:-.06em;background:transparent;pointer-events:none;text-shadow:0 0 18px rgba(255,122,191,.55)}
+body.broadcast-not-live .overlay-stack,body.broadcast-not-live #topSlideBox{display:none!important}
+body.broadcast-not-live .overlay-idle-screen{display:flex}
+
 </style>
 </head>
 <body>
-  <div class="overlay-root">
+  <div id="overlayIdleScreen" class="overlay-idle-screen">방송 준비중</div>
+<div class="overlay-root">
     <div class="overlay-stack">
+      <section class="top-slide-box hidden" id="topSlideBox"></section>
       <section class="overlay-box broadcast-timer-box hidden" id="broadcastTimerBox">
         <span class="timer-label">방송시간</span>
         <span class="timer-value" id="broadcastTimerValue">00:00:00</span>
@@ -575,7 +652,25 @@ to{opacity:.95;filter:brightness(1.35)}
     set("--style-notice-content-color", st.noticeContentColor);
     set("--style-funding-content-color", st.fundingContentColor);
     set("--style-karaoke-content-color", st.karaokeContentColor);
+    set("--style-karaoke-notice-color", st.karaokeNoticeColor);
+    set("--style-karaoke-current-color", st.karaokeCurrentColor);
+    set("--style-karaoke-queue-color", st.karaokeQueueColor);
+    set("--style-karaoke-coin-color", st.karaokeCoinColor);
+    set("--style-karaoke-donor-color", st.karaokeDonorColor);
+    set("--style-karaoke-heart-color", st.karaokeHeartColor);
     set("--style-funding-bar", st.fundingBarColor);
+    if(st.overlayWidth) set("--overlay-w", Number(st.overlayWidth) + "px");
+    if(st.overlayTop !== undefined) set("--top", Number(st.overlayTop) + "px");
+    if(st.overlayRight !== undefined) set("--right", Number(st.overlayRight) + "px");
+    if(st.overlayGap !== undefined) set("--style-overlay-gap", Number(st.overlayGap) + "px");
+    if(st.boxRadius !== undefined) set("--style-box-radius", Number(st.boxRadius) + "px");
+    if(st.topSlideHeight !== undefined) set("--top-slide-height", Number(st.topSlideHeight) + "px");
+    if(st.topSlideOpacity !== undefined) set("--top-slide-opacity", Number(st.topSlideOpacity));
+    if(st.karaokeNoticeSize) set("--style-karaoke-notice-size", Number(st.karaokeNoticeSize) + "px");
+    if(st.karaokeCurrentSize) set("--style-karaoke-current-size", Number(st.karaokeCurrentSize) + "px");
+    if(st.karaokeQueueSize) set("--style-karaoke-queue-size", Number(st.karaokeQueueSize) + "px");
+    if(st.karaokeCoinSize) set("--style-karaoke-coin-size", Number(st.karaokeCoinSize) + "px");
+    document.body.classList.toggle("box-group-single", st.boxGroupMode === "single");
     set("--style-vip-bg1", st.vipAccountBg1);
     set("--style-vip-bg2", st.vipAccountBg2);
     if(st.vipAccountThreshold !== undefined) set("--style-vip-threshold", Number(st.vipAccountThreshold));
@@ -606,6 +701,36 @@ function getOverlaySections(settings){
 
   
   
+
+  let fundingRollIndex = 0;
+  let topSlideTimer = null;
+  let topSlideIndex = 0;
+  function renderTopSlide(settings){
+    const box = document.getElementById("topSlideBox");
+    if(!box) return;
+    const st = settings?.stationStyle || {};
+    const images = Array.isArray(st.topSlideImages) ? st.topSlideImages.filter(Boolean) : [];
+    if(topSlideTimer){ clearInterval(topSlideTimer); topSlideTimer = null; }
+    topSlideIndex = 0;
+    if(!images.length || Number(st.topSlideHeight || 0) <= 0){
+      box.classList.add("hidden");
+      box.innerHTML = "";
+      return;
+    }
+    box.classList.remove("hidden");
+    box.innerHTML = images.map((src, idx) => `<img class="top-slide-img ${idx===0?'active':''}" src="${escapeHtml(src)}">`).join("");
+    if(images.length > 1){
+      const interval = Math.max(800, Number(st.topSlideInterval || 3500));
+      topSlideTimer = setInterval(() => {
+        const imgs = Array.from(box.querySelectorAll(".top-slide-img"));
+        if(!imgs.length) return;
+        imgs.forEach(img => img.classList.remove("active"));
+        topSlideIndex = (topSlideIndex + 1) % imgs.length;
+        imgs[topSlideIndex].classList.add("active");
+      }, interval);
+    }
+  }
+
   function renderFunding(settings){
     if(!$fundingBox) return;
     const items = (settings?.fundingData?.items || []).filter(f => f.enabled !== false);
@@ -615,23 +740,37 @@ function getOverlaySections(settings){
       valueEl.innerHTML = `<div class="funding-line">등록된 펀딩 없음</div>`;
       return;
     }
-    valueEl.innerHTML = items.map((f, idx) => {
+    const rowHtml = (f) => {
       const cur = Number(f.current || 0);
       const target = Number(f.target || 0);
       const pct = target > 0 ? Math.min(100, Math.round(cur / target * 100)) : 0;
-      return `<div class="funding-line"><span>${idx+1}. ${escapeHtml(f.title)}</span><b>${cur}/${target}</b><em style="width:${pct}%"></em></div>`;
-    }).join("");
+      return `<div class="funding-line"><span>${escapeHtml(f.title)}</span><b>${cur}/${target}</b><em style="width:${pct}%"></em></div>`;
+    };
+    if(items.length === 1){
+      valueEl.innerHTML = rowHtml(items[0]);
+      return;
+    }
+    fundingRollIndex = fundingRollIndex % items.length;
+    valueEl.innerHTML = `<div class="funding-roller"><div class="funding-track" style="transform:translateY(-${fundingRollIndex * 48}px)">${items.concat(items[0]).map(rowHtml).join("")}</div></div>`;
+    fundingRollIndex = (fundingRollIndex + 1) % items.length;
   }
 
   function timerBaseMs(settings){
     const t = settings?.broadcastTimerData || {};
+    const now = Date.now();
+    if(t.mode === "until" && t.targetAt){
+      const target = new Date(t.targetAt).getTime();
+      return Math.max(0, target - now);
+    }
     let elapsed = Math.max(0, Number(t.elapsedMs || 0));
-
     if(t.running && t.startedAt){
       const start = new Date(t.startedAt).getTime();
-      if(start) elapsed += Math.max(0, Date.now() - start);
+      if(start) elapsed += Math.max(0, now - start);
     }
-
+    if(t.mode === "countdown"){
+      const dur = Math.max(0, Number(t.durationMs || 0));
+      return Math.max(0, dur - elapsed);
+    }
     return elapsed;
   }
 
@@ -1168,7 +1307,9 @@ function getOverlaySections(settings){
     lastDonationKey=lastKey;
     localStorage.setItem("overlay_last_alert_key",lastKey);
 
-    newRows.forEach(row=>alertQueue.push({ html: makeDonationAlertHtml(row), row }));
+    newRows
+      .filter(row => !(row.silentAlert === true || String(row.memo || '').includes('[무알림]') || (Array.isArray(row.checks) && row.checks.some(c => c && c.meta === true && c.silentAlert === true))))
+      .forEach(row=>alertQueue.push({ html: makeDonationAlertHtml(row), row }));
     playAlertQueue();
   }
 
@@ -1368,6 +1509,8 @@ function getOverlaySections(settings){
     if(!$broadcastTimerValue) return;
 
     const diff = latestSettingsForTimer ? timerBaseMs(latestSettingsForTimer) : 0;
+    const labelEl = document.querySelector(".timer-label");
+    if(labelEl) labelEl.textContent = latestSettingsForTimer?.broadcastTimerData?.label || "미션타이머";
     const sec = Math.floor(diff / 1000);
 
     const h = String(Math.floor(sec / 3600)).padStart(2, "0");
@@ -1390,6 +1533,11 @@ function getOverlaySections(settings){
     catch(e){ data={settings:defaultSettings,accountDonors:[],creators:[],donations:[]}; }
 
     const settings = data.settings || defaultSettings;
+    const liveData = settings.broadcastLiveData || {};
+    const isLive = liveData.live === true || liveData.status === "live";
+    document.body.classList.toggle("broadcast-not-live", !isLive);
+    const idle = document.getElementById("overlayIdleScreen");
+    if(idle) idle.textContent = liveData.status === "ended" ? "방송 종료" : "방송 준비중";
     applyStationStyle(settings);
     cacheSoundRules(settings);
     enabledPresets=getEnabledPresets(settings);
@@ -1420,6 +1568,7 @@ function getOverlaySections(settings){
     applySections(settings);
     renderNotice(settings);
     renderKaraoke(settings);
+    renderTopSlide(settings);
     renderFunding(settings);
       renderAccountRoller(data.accountDonors);
       renderCreators(creators);

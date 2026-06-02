@@ -48,6 +48,7 @@ function defaultSettings() {
     fundingData: normalizeFundingData({}),
     stationStyle: normalizeStationStyle({}),
     broadcastTimerData: normalizeBroadcastTimerData({}),
+    broadcastLiveData: normalizeBroadcastLiveData({}),
     soundRules: {
       enabled: true,
       defaultSound: 'alert.mp3',
@@ -156,12 +157,34 @@ function normalizeFundingData(raw) {
 
 function normalizeBroadcastTimerData(raw) {
   const value = raw && typeof raw === 'object' ? raw : {};
+  const mode = ['countdown','until','countup'].includes(String(value.mode || '')) ? String(value.mode) : 'countdown';
   return {
     running: value.running === true,
+    mode,
+    label: String(value.label || '미션타이머'),
     startedAt: value.startedAt ? String(value.startedAt) : '',
     endedAt: value.endedAt ? String(value.endedAt) : '',
-    elapsedMs: Math.max(0, Number(value.elapsedMs || 0))
+    elapsedMs: Math.max(0, Number(value.elapsedMs || 0)),
+    durationMs: Math.max(0, Number(value.durationMs || 0)),
+    targetAt: value.targetAt ? String(value.targetAt) : ''
   };
+}
+
+function normalizeBroadcastLiveData(raw) {
+  const value = raw && typeof raw === 'object' ? raw : {};
+  const status = ['ready','live','ended'].includes(String(value.status || '')) ? String(value.status) : 'ready';
+  return {
+    status,
+    live: status === 'live' || value.live === true,
+    startedAt: value.startedAt ? String(value.startedAt) : '',
+    endedAt: value.endedAt ? String(value.endedAt) : ''
+  };
+}
+
+async function inputAllowedForActiveBroadcast(ctx) {
+  const current = await readEffectiveSettings(ctx.station.slug, ctx.active.id);
+  const live = normalizeBroadcastLiveData(current.broadcastLiveData);
+  return live.live === true && live.status === 'live';
 }
 
 function normalizeKaraokeData(raw) {
@@ -252,6 +275,12 @@ function normalizeStationStyle(raw) {
     noticeContentColor: pick('noticeContentColor', '#ffffff'),
     fundingContentColor: pick('fundingContentColor', '#f8fafc'),
     karaokeContentColor: pick('karaokeContentColor', '#ffffff'),
+    karaokeNoticeColor: pick('karaokeNoticeColor', '#fde68a'),
+    karaokeCurrentColor: pick('karaokeCurrentColor', '#e0f2fe'),
+    karaokeQueueColor: pick('karaokeQueueColor', '#ffffff'),
+    karaokeCoinColor: pick('karaokeCoinColor', '#ffffff'),
+    karaokeDonorColor: pick('karaokeDonorColor', '#39ff88'),
+    karaokeHeartColor: pick('karaokeHeartColor', '#ff4fa3'),
 
     accountTitleSize: num('accountTitleSize', 20, 10, 80),
     noticeTitleSize: num('noticeTitleSize', 20, 10, 80),
@@ -262,7 +291,27 @@ function normalizeStationStyle(raw) {
     accountRollFontSize: num('accountRollFontSize', 25, 10, 80),
     alertFontSize: num('alertFontSize', 30, 10, 90),
 
-    fundingBarColor: pick('fundingBarColor', 'linear-gradient(90deg, rgba(0,234,255,.58), rgba(255,79,216,.48))'),
+    fundingBarColor: pick('fundingBarColor', 'repeating-linear-gradient(135deg, rgba(255,182,213,.9) 0px, rgba(255,182,213,.9) 10px, rgba(255,79,163,.86) 10px, rgba(255,79,163,.86) 20px)'),
+
+    // 오버레이 레이아웃 / 단일 패널 / 상단 이미지 슬라이드
+    boxGroupMode: ['single','separate'].includes(String(value.boxGroupMode || '').trim()) ? String(value.boxGroupMode).trim() : 'separate',
+    overlayWidth: num('overlayWidth', 285, 180, 900),
+    overlayTop: num('overlayTop', 54, 0, 2000),
+    overlayRight: num('overlayRight', 14, 0, 2000),
+    overlayGap: num('overlayGap', 8, 0, 80),
+    boxRadius: num('boxRadius', 18, 0, 80),
+    topSlideImages: Array.isArray(value.topSlideImages)
+      ? value.topSlideImages.map(v => String(v || '').trim()).filter(Boolean).slice(0, 30)
+      : String(value.topSlideImages || '').split(/\r?\n|,/).map(v => v.trim()).filter(Boolean).slice(0, 30),
+    topSlideHeight: num('topSlideHeight', 105, 0, 420),
+    topSlideInterval: num('topSlideInterval', 3500, 800, 20000),
+    topSlideOpacity: num('topSlideOpacity', 1, 0, 1),
+
+    // 노래방 세부 폰트 크기
+    karaokeNoticeSize: num('karaokeNoticeSize', 17, 10, 80),
+    karaokeCurrentSize: num('karaokeCurrentSize', 18, 10, 80),
+    karaokeQueueSize: num('karaokeQueueSize', 15, 10, 80),
+    karaokeCoinSize: num('karaokeCoinSize', 15, 10, 80),
 
     vipAccountThreshold: num('vipAccountThreshold', 500000, 0, 999999999),
     vipAccountBg1: pick('vipAccountBg1', 'rgba(255,79,216,.22)'),
@@ -305,6 +354,7 @@ function normalizeSettings(settings) {
     fundingData: normalizeFundingData(raw.fundingData || base.fundingData),
     stationStyle: normalizeStationStyle(raw.stationStyle || base.stationStyle),
     broadcastTimerData: normalizeBroadcastTimerData(raw.broadcastTimerData || base.broadcastTimerData),
+    broadcastLiveData: normalizeBroadcastLiveData(raw.broadcastLiveData || base.broadcastLiveData),
     columns: Math.max(1, Math.min(6, Number(raw.columns || base.columns))),
     maxCreators: Math.max(1, Math.min(50, Number(raw.maxCreators || base.maxCreators))),
     creators: Array.isArray(raw.creators) ? raw.creators.map(normName).filter(Boolean) : base.creators,
@@ -882,6 +932,19 @@ function makeDonationRow(body, settings, stationId, broadcastId) {
   if (total <= 0) throw new Error(`${creator}: 금액을 입력하세요.`);
 
   const check = calcCheck(processType, total, settings);
+  const silentAlert = body.silentAlert === true || body.noAlert === true || String(body.alert || '').toLowerCase() === 'false';
+  const manualKind = normName(body.manualKind || body.entryKind || '');
+  if (silentAlert || manualKind) {
+    check.checks = Array.isArray(check.checks) ? check.checks : [];
+    check.checks.push({
+      meta: true,
+      silentAlert,
+      manualKind,
+      sourceType: normName(body.sourceType || body.source || ''),
+      fundingId: String(body.fundingId || '').trim(),
+      editedAt: body.editedAt || ''
+    });
+  }
 
   return {
     station_id: stationId,
@@ -899,11 +962,15 @@ function makeDonationRow(body, settings, stationId, broadcastId) {
     noeat: check.noeat,
     checks: check.checks,
     result_label: check.label,
-    memo: String(body.memo || '').trim()
+    memo: (silentAlert ? '[무알림] ' : '') + String(body.memo || '').trim()
   };
 }
 
 function dbRowToDonation(row) {
+  const checks = Array.isArray(row.checks) ? row.checks : [];
+  const meta = checks.find(c => c && c.meta === true) || {};
+  const memoText = String(row.memo || '');
+  const silentAlert = meta.silentAlert === true || memoText.includes('[무알림]');
   return {
     id: row.id,
     stationId: row.station_id,
@@ -920,9 +987,13 @@ function dbRowToDonation(row) {
     nosmoke: row.nosmoke || 0,
     eat: row.eat || 0,
     noeat: row.noeat || 0,
-    checks: Array.isArray(row.checks) ? row.checks : [],
+    checks,
     resultLabel: row.result_label || '후원',
-    memo: row.memo || ''
+    memo: row.memo || '',
+    silentAlert,
+    manualKind: meta.manualKind || '',
+    sourceType: meta.sourceType || '',
+    fundingId: meta.fundingId || ''
   };
 }
 
@@ -1263,7 +1334,8 @@ app.get('/api/broadcasts', async (req, res) => {
       const settings = await readEffectiveSettings(station.slug, b.id);
       return {
         ...b,
-        broadcastTimerData: normalizeBroadcastTimerData(settings.broadcastTimerData)
+        broadcastTimerData: normalizeBroadcastTimerData(settings.broadcastTimerData),
+        broadcastLiveData: normalizeBroadcastLiveData(settings.broadcastLiveData)
       };
     }));
 
@@ -1636,6 +1708,30 @@ app.post('/api/sound-events/release', async (req, res) => {
 });
 
 
+/* 서버 이미지 목록: station_style.html 썸네일 선택용 */
+app.get('/api/server-images', async (req, res) => {
+  try {
+    const dirs = ['images', 'slides', 'uploads', 'img'];
+    const exts = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif']);
+    const list = [];
+    for (const dir of dirs) {
+      const abs = path.join(__dirname, 'public', dir);
+      if (!fs.existsSync(abs)) continue;
+      const files = fs.readdirSync(abs, { withFileTypes: true });
+      for (const f of files) {
+        if (!f.isFile()) continue;
+        const ext = path.extname(f.name).toLowerCase();
+        if (!exts.has(ext)) continue;
+        list.push({ name: f.name, url: '/' + dir + '/' + encodeURIComponent(f.name), dir });
+      }
+    }
+    res.json({ images: list });
+  } catch (e) {
+    res.status(500).json({ error: e.message || '이미지 목록 조회 실패' });
+  }
+});
+
+
 /* 설정 */
 app.get('/api/settings', async (req, res) => {
   try {
@@ -1680,6 +1776,7 @@ app.post('/api/settings', async (req, res) => {
     if (has('creators')) updates.creators = Array.isArray(body.creators) ? body.creators.map(normName).filter(Boolean) : [];
     if (has('presets')) updates.presets = Array.isArray(body.presets) ? body.presets : [];
     if (has('broadcastTimerData')) updates.broadcastTimerData = normalizeBroadcastTimerData(body.broadcastTimerData);
+    if (has('broadcastLiveData')) updates.broadcastLiveData = normalizeBroadcastLiveData(body.broadcastLiveData);
     if (has('soundRules')) updates.soundRules = normalizeSoundRules(body.soundRules, undefined);
 
     await saveSharedStationSettings(ctx.station.slug, updates);
@@ -1760,20 +1857,9 @@ app.post('/api/broadcast-timer/start', async (req, res) => {
 
     const broadcastId = req.body.broadcastId || req.query.broadcastId || ctx.active.id;
     const current = await readEffectiveSettings(ctx.station.slug, broadcastId);
-    const prev = normalizeBroadcastTimerData(current.broadcastTimerData);
-
-    // 이미 실행 중이면 기존 시작시간/누적시간 유지
-    const broadcastTimerData = prev.running
-      ? prev
-      : {
-          running: true,
-          startedAt: new Date().toISOString(),
-          endedAt: '',
-          elapsedMs: Math.max(0, Number(prev.elapsedMs || 0))
-        };
-
-    await saveEffectiveSettings(ctx.station.slug, broadcastId, { ...current, broadcastTimerData });
-    res.json({ ok: true, broadcastId, broadcastTimerData });
+    const broadcastLiveData = { status: 'live', live: true, startedAt: new Date().toISOString(), endedAt: '' };
+    await saveEffectiveSettings(ctx.station.slug, broadcastId, { ...current, broadcastLiveData });
+    res.json({ ok: true, broadcastId, broadcastLiveData });
   } catch (e) {
     res.status(500).json({ error: e.message || '방송 시작 실패' });
   }
@@ -1790,26 +1876,44 @@ app.post('/api/broadcast-timer/end', async (req, res) => {
 
     const broadcastId = req.body.broadcastId || req.query.broadcastId || ctx.active.id;
     const current = await readEffectiveSettings(ctx.station.slug, broadcastId);
-    const prev = normalizeBroadcastTimerData(current.broadcastTimerData);
-
-    let elapsedMs = Math.max(0, Number(prev.elapsedMs || 0));
-    if (prev.running && prev.startedAt) {
-      const started = new Date(prev.startedAt).getTime();
-      if (Number.isFinite(started)) elapsedMs += Math.max(0, Date.now() - started);
-    }
-
-    const broadcastTimerData = {
-      running: false,
-      startedAt: '',
-      endedAt: new Date().toISOString(),
-      elapsedMs
-    };
-
-    await saveEffectiveSettings(ctx.station.slug, broadcastId, { ...current, broadcastTimerData });
-    res.json({ ok: true, broadcastId, broadcastTimerData });
+    const broadcastLiveData = { status: 'ended', live: false, startedAt: current.broadcastLiveData?.startedAt || '', endedAt: new Date().toISOString() };
+    await saveEffectiveSettings(ctx.station.slug, broadcastId, { ...current, broadcastLiveData });
+    res.json({ ok: true, broadcastId, broadcastLiveData });
   } catch (e) {
     res.status(500).json({ error: e.message || '방송 종료 실패' });
   }
+});
+
+app.post('/api/mission-timer/start', async (req, res) => {
+  try {
+    if (!requireDb(res)) return;
+    const ctx = await getStationContext(req, res);
+    if (!ctx) return;
+    if (!await operatorAllowed(req, ctx.station, ctx.active)) return res.status(401).json({ error: '방송 비밀번호 또는 방송국 관리자 권한이 필요합니다.' });
+    const mode = ['countdown','until','countup'].includes(String(req.body.mode || '')) ? String(req.body.mode) : 'countdown';
+    const durationMin = Math.max(0, Number(req.body.durationMin || 0));
+    const durationMs = durationMin > 0 ? Math.round(durationMin * 60 * 1000) : Math.max(0, Number(req.body.durationMs || 0));
+    const targetAt = req.body.targetAt ? String(req.body.targetAt) : '';
+    const label = String(req.body.label || '미션타이머');
+    const broadcastTimerData = normalizeBroadcastTimerData({ running: true, mode, label, startedAt: new Date().toISOString(), endedAt: '', elapsedMs: 0, durationMs, targetAt });
+    const current = await readEffectiveSettings(ctx.station.slug, ctx.active.id);
+    await saveEffectiveSettings(ctx.station.slug, ctx.active.id, { ...current, broadcastTimerData });
+    res.json({ ok: true, broadcastTimerData });
+  } catch(e){ res.status(500).json({ error: e.message || '미션타이머 시작 실패' }); }
+});
+
+app.post('/api/mission-timer/stop', async (req, res) => {
+  try {
+    if (!requireDb(res)) return;
+    const ctx = await getStationContext(req, res);
+    if (!ctx) return;
+    if (!await operatorAllowed(req, ctx.station, ctx.active)) return res.status(401).json({ error: '방송 비밀번호 또는 방송국 관리자 권한이 필요합니다.' });
+    const current = await readEffectiveSettings(ctx.station.slug, ctx.active.id);
+    const prev = normalizeBroadcastTimerData(current.broadcastTimerData);
+    const broadcastTimerData = normalizeBroadcastTimerData({ ...prev, running: false, endedAt: new Date().toISOString() });
+    await saveEffectiveSettings(ctx.station.slug, ctx.active.id, { ...current, broadcastTimerData });
+    res.json({ ok: true, broadcastTimerData });
+  } catch(e){ res.status(500).json({ error: e.message || '미션타이머 종료 실패' }); }
 });
 
 
@@ -1933,6 +2037,7 @@ app.post('/api/donations', async (req, res) => {
     const ctx = await getStationContext(req, res);
     if (!ctx) return;
     if (!await operatorAllowed(req, ctx.station, ctx.active)) return res.status(401).json({ error: '방송 비밀번호 또는 방송국 관리자 권한이 필요합니다.' });
+    if (!await inputAllowedForActiveBroadcast(ctx)) return res.status(403).json({ error: '방송시작 상태에서만 입력할 수 있습니다.' });
 
     const settings = await readEffectiveSettings(ctx.station.slug, ctx.active.id);
     const row = makeDonationRow(req.body || {}, settings, ctx.station.id, ctx.active.id);
@@ -1951,6 +2056,7 @@ app.post('/api/donations/batch', async (req, res) => {
     const ctx = await getStationContext(req, res);
     if (!ctx) return;
     if (!await operatorAllowed(req, ctx.station, ctx.active)) return res.status(401).json({ error: '방송 비밀번호 또는 방송국 관리자 권한이 필요합니다.' });
+    if (!await inputAllowedForActiveBroadcast(ctx)) return res.status(403).json({ error: '방송시작 상태에서만 입력할 수 있습니다.' });
 
     const settings = await readEffectiveSettings(ctx.station.slug, ctx.active.id);
     const donor = normName(req.body.donor);
@@ -2013,6 +2119,128 @@ app.post('/api/donations/batch', async (req, res) => {
     res.json({ ok: true, station: stationToClient(ctx.station), broadcast: broadcastToClient(ctx.active), count: data.length, donations: data.map(dbRowToDonation) });
   } catch (e) {
     res.status(400).json({ error: e.message || '저장 실패' });
+  }
+});
+
+
+app.post('/api/manual-entry', async (req, res) => {
+  try {
+    if (!requireDb(res)) return;
+    const ctx = await getStationContext(req, res);
+    if (!ctx) return;
+    if (!await operatorAllowed(req, ctx.station, ctx.active)) return res.status(401).json({ error: '방송 비밀번호 또는 방송국 관리자 권한이 필요합니다.' });
+    if (!await inputAllowedForActiveBroadcast(ctx)) return res.status(403).json({ error: '방송시작 상태에서만 수동 입력할 수 있습니다.' });
+
+    const settings = await readEffectiveSettings(ctx.station.slug, ctx.active.id);
+    const body = req.body || {};
+    const donor = normName(body.donor);
+    const amount = toWon(body.amount ?? body.totalAmount);
+    const sourceType = normName(body.sourceType || body.source || 'toonie');
+    const kind = normName(body.kind || body.manualKind || 'manual');
+    const fundingId = String(body.fundingId || '').trim();
+    let creator = normName(body.creator);
+    let processType = normName(body.processType) || '후원';
+
+    if (!donor) return res.status(400).json({ error: '도네이터명을 입력하세요.' });
+    if (amount <= 0) return res.status(400).json({ error: '금액을 입력하세요.' });
+
+    if (kind === 'funding') {
+      const f = (settings.fundingData?.items || []).find(x => String(x.id) === fundingId);
+      if (!f) return res.status(400).json({ error: '펀딩을 선택하세요.' });
+      creator = creator || f.title || '펀딩';
+      processType = processType || '펀딩';
+    }
+    if (!creator) creator = '수동입력';
+
+    const donationBody = {
+      donor,
+      creator,
+      processType,
+      accountAmount: sourceType === 'account' ? amount : 0,
+      toonieAmount: sourceType === 'account' ? 0 : amount,
+      memo: body.memo || '',
+      silentAlert: true,
+      manualKind: kind,
+      sourceType,
+      fundingId
+    };
+
+    const row = makeDonationRow(donationBody, settings, ctx.station.id, ctx.active.id);
+    const { data, error } = await supabase.from('donations').insert(row).select().single();
+    if (error) throw error;
+
+    if (kind === 'funding' && fundingId) {
+      const current = await readEffectiveSettings(ctx.station.slug, ctx.active.id);
+      const fundingData = normalizeFundingData(current.fundingData);
+      const item = fundingData.items.find(f => String(f.id) === fundingId);
+      if (item) {
+        item.current = Math.max(0, Number(item.current || 0) + amount);
+        await saveSharedStationSettings(ctx.station.slug, { fundingData });
+        await saveEffectiveSettings(ctx.station.slug, ctx.active.id, { fundingData });
+      }
+    }
+
+    res.json({ ok: true, donation: dbRowToDonation(data) });
+  } catch (e) {
+    res.status(400).json({ error: e.message || '수동 입력 저장 실패' });
+  }
+});
+
+app.put('/api/donations/:id', async (req, res) => {
+  try {
+    if (!requireDb(res)) return;
+    const ctx = await getStationContext(req, res);
+    if (!ctx) return;
+    if (!await operatorAllowed(req, ctx.station, ctx.active)) return res.status(401).json({ error: '방송 비밀번호 또는 방송국 관리자 권한이 필요합니다.' });
+
+    const settings = await readEffectiveSettings(ctx.station.slug, ctx.active.id);
+    const old = await supabase.from('donations').select('*').eq('station_id', ctx.station.id).eq('id', req.params.id).maybeSingle();
+    if (old.error) throw old.error;
+    if (!old.data) return res.status(404).json({ error: '내역을 찾을 수 없습니다.' });
+
+    const prev = dbRowToDonation(old.data);
+    const body = req.body || {};
+    const accountAmount = body.accountAmount !== undefined ? toWon(body.accountAmount) : Number(prev.accountAmount || 0);
+    const toonieAmount = body.toonieAmount !== undefined ? toWon(body.toonieAmount) : Number(prev.toonieAmount || 0);
+    const nextRow = makeDonationRow({
+      donor: body.donor !== undefined ? body.donor : prev.donor,
+      creator: body.creator !== undefined ? body.creator : prev.creator,
+      processType: body.processType !== undefined ? body.processType : prev.processType,
+      accountAmount,
+      toonieAmount,
+      memo: body.memo !== undefined ? body.memo : prev.memo,
+      silentAlert: body.silentAlert !== undefined ? body.silentAlert : prev.silentAlert,
+      manualKind: body.manualKind || prev.manualKind,
+      sourceType: body.sourceType || prev.sourceType,
+      fundingId: body.fundingId || prev.fundingId,
+      editedAt: new Date().toISOString()
+    }, settings, ctx.station.id, prev.broadcastId || ctx.active.id);
+
+    const { data, error } = await supabase.from('donations')
+      .update({
+        donor: nextRow.donor,
+        creator: nextRow.creator,
+        process_type: nextRow.process_type,
+        account_amount: nextRow.account_amount,
+        toonie_amount: nextRow.toonie_amount,
+        total_amount: nextRow.total_amount,
+        display_amount: nextRow.display_amount,
+        smoke: nextRow.smoke,
+        nosmoke: nextRow.nosmoke,
+        eat: nextRow.eat,
+        noeat: nextRow.noeat,
+        checks: nextRow.checks,
+        result_label: nextRow.result_label,
+        memo: nextRow.memo
+      })
+      .eq('station_id', ctx.station.id)
+      .eq('id', req.params.id)
+      .select()
+      .single();
+    if (error) throw error;
+    res.json({ ok: true, donation: dbRowToDonation(data) });
+  } catch (e) {
+    res.status(400).json({ error: e.message || '후원 내역 수정 실패' });
   }
 });
 

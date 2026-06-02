@@ -243,6 +243,20 @@ textarea{resize:vertical;line-height:1.45}
         </div>
         <button class="btn blue" onclick="addFundingItem()">펀딩 추가</button>
         <div id="fundingList" style="margin-top:10px"></div>
+        <div class="sub-card" style="margin-top:12px">
+          <h2 style="font-size:17px">펀딩 수동 입력 <span class="muted">ALERT 없음</span></h2>
+          <div class="grid-3">
+            <div class="row"><label>펀딩</label><select id="fundManualFundingPc" class="input"></select></div>
+            <div class="row"><label>도네이터</label><input id="fundManualDonorPc" class="input" placeholder="예: 열려"></div>
+            <div class="row"><label>금액</label><input id="fundManualAmountPc" class="input" placeholder="20000 / 2.0"></div>
+          </div>
+          <div class="grid-2">
+            <div class="row"><label>구분</label><select id="fundManualSourcePc" class="input"><option value="toonie">투네</option><option value="account">계좌</option></select></div>
+            <div class="row"><label>메모</label><input id="fundManualMemoPc" class="input"></div>
+          </div>
+          <button class="btn pink" onclick="saveFundingManualPc()">펀딩 수동 저장</button>
+        </div>
+
       </section>
 
 
@@ -263,6 +277,26 @@ textarea{resize:vertical;line-height:1.45}
         <h2>처리 프리셋 <button class="btn blue mini" onclick="addPreset()">프리셋 추가</button></h2>
         <p class="muted">프리셋마다 사운드 파일을 지정하면 해당 프리셋 처리 시 자동 재생됩니다.</p>
         <div id="presetList" class="preset-grid"></div>
+        <div class="sub-card" style="margin-top:12px">
+          <h2 style="font-size:17px">프리셋 수동 입력 <span class="muted">ALERT 없음</span></h2>
+          <div class="grid-3">
+            <div class="row"><label>도네이터</label><input id="presetManualDonorPc" class="input" placeholder="예: 열려"></div>
+            <div class="row"><label>금액</label><input id="presetManualAmountPc" class="input" placeholder="20000 / 2.0"></div>
+            <div class="row"><label>구분</label><select id="presetManualSourcePc" class="input"><option value="toonie">투네</option><option value="account">계좌</option></select></div>
+          </div>
+          <div class="grid-2">
+            <div class="row"><label>크리에이터</label><select id="presetManualCreatorPc" class="input"></select></div>
+            <div class="row"><label>프리셋 옵션</label><select id="presetManualProcessPc" class="input"></select></div>
+          </div>
+          <div class="row"><label>메모</label><input id="presetManualMemoPc" class="input"></div>
+          <button class="btn pink" onclick="savePresetManualPc()">프리셋 수동 저장</button>
+        </div>
+        <div class="sub-card" style="margin-top:12px">
+          <h2 style="font-size:17px">수동입력 최근 내역</h2>
+          <button class="btn mini" onclick="loadManualListPc()">새로고침</button>
+          <div id="manualListPc" style="margin-top:10px"></div>
+        </div>
+
       </section>
     </div>
   </div>
@@ -298,6 +332,7 @@ const defaultAmountRules = [
 ];
 
 function escAttr(v){return String(v ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));}
+const esc = escAttr;
 function safeId(v){return String(v||'').replace(/[^a-zA-Z0-9_-]/g,'') || ('preset_'+Date.now());}
 
 async function load(){
@@ -355,7 +390,7 @@ function findKaraokeUser(nick){
 function renderKaraokeManager(){
   const data = getKaraokeData();
   if($('#karaokeTitle')) $('#karaokeTitle').value = data.title || '노래방 공지 알림판';
-  if($('#karaokeTicker')) $('#karaokeTicker').value = data.ticker || '';
+  if($('#karaokeTicker')) $('#karaokeTicker').value = data.notice || data.ticker || '';
 
   const userBox = $('#karaokeUserList');
   if(userBox){
@@ -400,7 +435,7 @@ function renderKaraokeManager(){
 function syncKaraokeInputs(){
   const data = getKaraokeData();
   if($('#karaokeTitle')) data.title = $('#karaokeTitle').value.trim() || '노래방 공지 알림판';
-  if($('#karaokeTicker')) data.ticker = $('#karaokeTicker').value.trim();
+  if($('#karaokeTicker')) { data.ticker = $('#karaokeTicker').value.trim(); data.notice = data.ticker; }
 }
 
 function addKaraokeCoin(){
@@ -648,6 +683,8 @@ async function loadSettings(){
   renderFundingManager();
 
   renderPresets();
+  renderManualSelectsPc();
+  loadManualListPc().catch(()=>{});
   $('#saveHint').textContent = settings.broadcast ? `현재 방송 "${settings.broadcast.title}" 설정 저장` : '현재 방송 설정 저장';
 }
 
@@ -729,6 +766,86 @@ function deletePreset(idx){
   renderPresets();
 }
 
+
+function renderManualSelectsPc(){
+  if($('#fundManualFundingPc')){
+    const items = (getFundingData().items || []);
+    $('#fundManualFundingPc').innerHTML = items.map(f=>`<option value="${escAttr(f.id)}">${esc(f.title)}</option>`).join('') || '<option value="">펀딩 없음</option>';
+  }
+  if($('#presetManualCreatorPc')){
+    const list = ($('#creators')?.value || '').split(/\n+/).map(v=>v.trim()).filter(Boolean);
+    $('#presetManualCreatorPc').innerHTML = list.map(c=>`<option value="${escAttr(c)}">${esc(c)}</option>`).join('') || '<option value="수동입력">수동입력</option>';
+  }
+  if($('#presetManualProcessPc')){
+    const opts=[];
+    (settings.presets||[]).filter(p=>p.enabled!==false).forEach(p=>{
+      opts.push(`<option value="${escAttr(p.plusName)}">${esc(p.title)} - ${esc(p.plusName)} +</option>`);
+      opts.push(`<option value="${escAttr(p.minusName)}">${esc(p.title)} - ${esc(p.minusName)} -</option>`);
+    });
+    $('#presetManualProcessPc').innerHTML = opts.join('') || '<option value="후원">후원</option>';
+  }
+}
+
+async function saveFundingManualPc(){
+  try{
+    const fundingId = $('#fundManualFundingPc').value;
+    if(!fundingId) return alert('펀딩을 선택하세요.');
+    await api('/api/manual-entry',{method:'POST',body:JSON.stringify({
+      kind:'funding', fundingId,
+      donor:$('#fundManualDonorPc').value.trim(),
+      amount:$('#fundManualAmountPc').value,
+      sourceType:$('#fundManualSourcePc').value,
+      memo:$('#fundManualMemoPc').value.trim()
+    })});
+    alert('펀딩 수동 저장 완료');
+    $('#fundManualDonorPc').value=$('#fundManualAmountPc').value=$('#fundManualMemoPc').value='';
+    await loadSettings();
+  }catch(e){alert(e.message)}
+}
+
+async function savePresetManualPc(){
+  try{
+    await api('/api/manual-entry',{method:'POST',body:JSON.stringify({
+      kind:'preset',
+      donor:$('#presetManualDonorPc').value.trim(),
+      amount:$('#presetManualAmountPc').value,
+      sourceType:$('#presetManualSourcePc').value,
+      creator:$('#presetManualCreatorPc').value,
+      processType:$('#presetManualProcessPc').value,
+      memo:$('#presetManualMemoPc').value.trim()
+    })});
+    alert('프리셋 수동 저장 완료');
+    $('#presetManualDonorPc').value=$('#presetManualAmountPc').value=$('#presetManualMemoPc').value='';
+    await loadManualListPc();
+  }catch(e){alert(e.message)}
+}
+
+async function loadManualListPc(){
+  const box=$('#manualListPc');
+  if(!box) return;
+  try{
+    const d=await api('/api/donations');
+    const arr=(d.donations||[]).filter(x=>x.silentAlert||String(x.memo||'').includes('[무알림]')).slice(-30).reverse();
+    box.innerHTML=arr.length?arr.map(x=>`<div class="resultBox"><b>${esc(x.donor)} → ${esc(x.creator)}</b><br><span class="muted">${esc(x.processType)} / ${Number(x.totalAmount||0).toLocaleString('ko-KR')}원 / ${esc(x.sourceType||'')}</span><div style="display:flex;gap:6px;margin-top:6px"><button class="btn mini" onclick="editManualPc('${x.id}')">수정</button><button class="btn red mini" onclick="deleteManualPc('${x.id}')">삭제</button></div></div>`).join(''):'<div class="resultBox">수동입력 내역 없음</div>';
+  }catch(e){box.innerHTML='<div class="resultBox">'+esc(e.message)+'</div>'}
+}
+
+async function editManualPc(id){
+  try{
+    const d=await api('/api/donations');
+    const x=(d.donations||[]).find(v=>v.id===id);
+    if(!x) return alert('내역 없음');
+    const donor=prompt('도네이터',x.donor); if(donor===null) return;
+    const amount=prompt('금액',x.totalAmount||0); if(amount===null) return;
+    const source=prompt('구분(account/toonie)',x.sourceType||((x.accountAmount>0)?'account':'toonie'))||'toonie';
+    const creator=prompt('대상/크리에이터',x.creator)||x.creator;
+    const processType=prompt('처리/프리셋',x.processType)||x.processType;
+    await api('/api/donations/'+id,{method:'PUT',body:JSON.stringify({donor,creator,processType,accountAmount:source==='account'?amount:0,toonieAmount:source==='account'?0:amount,silentAlert:true,manualKind:x.manualKind||'manual',sourceType:source,memo:(x.memo||'').replace('[무알림]','').trim()})});
+    await loadManualListPc();
+  }catch(e){alert(e.message)}
+}
+async function deleteManualPc(id){if(!confirm('삭제할까요?'))return;try{await api('/api/donations/'+id,{method:'DELETE'});await loadManualListPc()}catch(e){alert(e.message)}}
+
 async function saveSettings(){
   try{
     syncKaraokeInputs();
@@ -754,6 +871,7 @@ async function saveSettings(){
       },
       
       fundingData: collectFundingData(),
+      karaokeData: getKaraokeData(),
       soundRules: {
         enabled: $('#soundEnabled').checked,
         defaultSound: $('#soundDefault').value.trim() || 'alert.mp3',

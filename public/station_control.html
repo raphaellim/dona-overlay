@@ -122,6 +122,7 @@ function render(){
 
   box.innerHTML = broadcasts.map(b => {
     const timer = b.broadcastTimerData || {};
+    const live = b.broadcastLiveData || {};
     const running = timer.running === true;
 
     return `
@@ -129,12 +130,12 @@ function render(){
         <div>
           <b>${esc(b.title || '제목 없음')}</b>
           ${b.isActive ? '<span class="muted">현재</span>' : ''}
-          ${running ? '<span class="muted">타이머 실행중</span>' : ''}
+          ${live.status==='live' ? '<span class="muted">방송중</span>' : (live.status==='ended' ? '<span class="muted">종료</span>' : '<span class="muted">대기</span>')} ${running ? '<span class="muted">미션타이머</span>' : ''}
           <br>
           <span class="muted">
             ${b.createdAt ? new Date(b.createdAt).toLocaleString('ko-KR') : ''}
             / 비번 ${b.hasPassword ? '있음' : '없음'}
-            / 누적 ${timerText(timer.elapsedMs)}
+            / 상태 ${live.status==='live'?'방송중':(live.status==='ended'?'종료':'대기')} / 미션 ${timerText(timer.elapsedMs)}
           </span>
         </div>
         <div class="actions">

@@ -682,7 +682,7 @@
             </div>
         </section>
     </main>
-    <div class="bottom"><button class="btn green" onclick="saveBatch()">▣ 후원 입력 저장</button></div>
+    <div class="bottom"><button id="saveBtn" class="btn green" onclick="saveBatch()">▣ 후원 입력 저장</button></div>
     <div class="toast" id="toast"></div>
     <script>
 const PARAMS = new URLSearchParams(location.search);
@@ -950,8 +950,25 @@ function collectRows() {
     .filter(r => toWon(r.amount) > 0);
 }
 
+
+function isBroadcastLive(){
+  const live = settings?.broadcastLiveData || {};
+  return live.live === true || live.status === 'live';
+}
+function applyBroadcastLock(){
+  const btn = document.getElementById('saveBtn');
+  const live = isBroadcastLive();
+  if(btn){
+    btn.disabled = !live;
+    btn.textContent = live ? '▣ 후원 입력 저장' : '방송 시작 전/종료 상태 - 입력 불가';
+    btn.style.opacity = live ? '1' : '.55';
+  }
+  const badge = document.getElementById('broadcastBadge');
+  if(badge) badge.textContent = (settings?.broadcast?.title || '현재 방송') + (live ? ' · 방송중' : ' · 입력잠김');
+}
 async function saveBatch() {
   try {
+    if (!isBroadcastLive()) return alert('방송시작 상태에서만 입력할 수 있습니다. 방송국 컨트롤/모바일 설정에서 방송시작을 눌러주세요.');
     const donor = $('#donor').value.trim();
     if (!donor) return toast('도네이터명을 입력하세요');
 
@@ -1029,6 +1046,7 @@ async function loadSettings(updateAuthInfo = true) {
   renderProcessOptions();
   renderSplitRows();
   updatePreview();
+  applyBroadcastLock();
 
   if (updateAuthInfo && active?.id) {
     mobileAuth.broadcastId = active.id;
