@@ -423,25 +423,29 @@ body.box-group-single .overlay-box:not(.hidden)+.overlay-box:not(.hidden){border
 
 /* ===== 상단 미디어 슬라이드: overlay-stack 밖에서 독립 표시 ===== */
 .top-slide-box{
-  position:fixed!important;
-  top:8px!important;
-  left:50%!important;
-  transform:translateX(-50%)!important;
-  width:min(720px,92vw)!important;
-  aspect-ratio:16/9!important;
+  position:relative!important;
+  width:100%!important;
   height:auto!important;
-  max-height:var(--top-slide-height)!important;
-  border-radius:var(--style-box-radius)!important;
+  aspect-ratio:16/9!important;
+  border-radius:16px!important;
   overflow:hidden!important;
-  border:1px solid var(--style-box-border)!important;
+  border:2px solid var(--style-box-border)!important;
   background:rgba(0,0,0,.22)!important;
-  box-shadow:0 0 14px rgba(255,182,213,.22)!important;
-  opacity:var(--top-slide-opacity)!important;
-  z-index:50!important;
-  pointer-events:none!important;
+  margin:0!important;
+  flex:0 0 auto!important;
 }
 .top-slide-box.hidden{display:none!important}
-.top-slide-img,.top-slide-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .75s ease;background:#000}
+.top-slide-img,
+.top-slide-video{
+  position:absolute!important;
+  inset:0!important;
+  width:100%!important;
+  height:100%!important;
+  object-fit:contain!important;
+  background:#000!important;
+  opacity:0;
+  transition:.6s;
+}
 .top-slide-img.active,.top-slide-video.active{opacity:1}
 
 
@@ -462,14 +466,14 @@ body.broadcast-not-live .overlay-idle-screen{display:flex}
 </head>
 <body>
   <div id="overlayIdleScreen" class="overlay-idle-screen">시스템설정</div>
-<section class="top-slide-box hidden" id="topSlideBox"></section>
+
 <div class="overlay-root">
     <div class="overlay-stack">
       <section class="overlay-box broadcast-timer-box hidden" id="broadcastTimerBox">
         <span class="timer-label">방송시간</span>
         <span class="timer-value" id="broadcastTimerValue">00:00:00</span>
       </section>
-
+      <section class="top-slide-box hidden" id="topSlideBox"></section>
 
       <section class="overlay-box account-box" id="accountBox">
         <div class="account-row">
