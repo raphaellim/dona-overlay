@@ -603,6 +603,80 @@ body.broadcast-not-live .overlay-idle-screen{display:flex}
 .karaoke-coin-ticker span{
   line-height:24px!important;
 }
+  /* ===== 이미지 슬라이드는 같은 흐름 유지, 박스 느낌만 제거 ===== */
+.overlay-stack{
+  gap:0!important;
+  padding:8px!important;
+  border:2px solid var(--style-box-border)!important;
+  border-radius:calc(var(--style-box-radius) + 8px)!important;
+  background:linear-gradient(180deg,var(--style-box-bg-top),var(--style-box-bg-bottom))!important;
+  overflow:hidden!important;
+}
+
+/* 내부 박스 배경/테두리 제거 */
+.overlay-stack > .overlay-box{
+  background:transparent!important;
+  border:0!important;
+  box-shadow:none!important;
+  border-radius:0!important;
+  margin:0!important;
+}
+
+/* 이미지 슬라이드는 크기 유지 + 선/배경 제거 */
+.overlay-stack > .top-slide-box{
+  position:relative!important;
+  width:100%!important;
+  aspect-ratio:16/9!important;
+  height:auto!important;
+  border:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  border-radius:0!important;
+  overflow:hidden!important;
+  margin:0!important;
+  flex:0 0 auto!important;
+}
+
+/* 이미지 자체는 16:9 안에 전체 보이게 */
+.top-slide-img,
+.top-slide-video{
+  position:absolute!important;
+  inset:0!important;
+  width:100%!important;
+  height:100%!important;
+  object-fit:contain!important;
+  background:transparent!important;
+}
+
+/* 이미지 다음부터만 구분선 */
+.overlay-stack > .top-slide-box:not(.hidden) + .overlay-box:not(.hidden),
+.overlay-stack > .overlay-box:not(.hidden) + .overlay-box:not(.hidden){
+  border-top:1px solid rgba(255,210,235,.55)!important;
+}
+
+/* 박스 내부 여백 축소 */
+.account-box{padding:5px 4px 6px!important}
+.funding-box{padding:7px 4px!important}
+.notice-box{padding:7px 4px!important}
+.karaoke-box{padding:8px 4px!important}
+.creator-box{padding:7px 4px!important}
+
+/* 계좌 줄 축소 */
+.account-row{height:30px!important}
+.roller{height:30px!important;font-size:22px!important}
+.roller-item{height:30px!important;min-height:30px!important}
+
+/* 펀딩/공지 공간 축소 */
+.funding-line{
+  min-height:34px!important;
+  padding:5px 8px!important;
+  border-radius:8px!important;
+}
+
+.notice-line{
+  margin:1px 0!important;
+  line-height:1.12!important;
+}
 
 </style>
 </head>
