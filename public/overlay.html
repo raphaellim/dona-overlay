@@ -420,26 +420,7 @@ body.box-group-single .overlay-box{
 }
 body.box-group-single .overlay-box:not(.hidden)+.overlay-box:not(.hidden){border-top:1px solid rgba(255,210,235,.42)!important}
 
-.top-slide-box{
-  position:fixed!important;
-  top:10px!important;
-  left:50%!important;
-  transform:translateX(-50%)!important;
-  width:420px!important;
-  aspect-ratio:16/9!important;
-  height:auto!important;
-  max-height:none!important;
-  z-index:20!important;
-  border-radius:18px!important;
-  overflow:hidden!important;
-  border:1px solid var(--style-box-border)!important;
-  background:rgba(0,0,0,.22)!important;
-  opacity:var(--top-slide-opacity)!important;
-}
-
-.top-slide-box.hidden{
-  display:none!important;
-}
+.top-slide-box{position:relative;width:100%;aspect-ratio:16/9;height:auto;min-height:0;max-height:var(--top-slide-height);border-radius:var(--style-box-radius);overflow:hidden;border:1px solid var(--style-box-border);background:rgba(0,0,0,.22);box-shadow:0 0 14px rgba(255,182,213,.22);opacity:var(--top-slide-opacity);margin-bottom:var(--style-overlay-gap)}
 .top-slide-box.hidden{display:none!important}
 .top-slide-img,.top-slide-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .75s ease;background:#000}
 .top-slide-img.active,.top-slide-video.active{opacity:1}
@@ -456,13 +437,7 @@ body.box-group-single .top-slide-box{margin-bottom:10px}
 
 /* ===== 방송 종료/대기 기본화면 ===== */
 .overlay-idle-screen{position:fixed;inset:0;display:none;align-items:center;justify-content:center;text-align:center;color:#fff;font-weight:1000;font-size:46px;letter-spacing:-.06em;background:transparent;pointer-events:none;text-shadow:0 0 18px rgba(255,122,191,.55)}
-body.broadcast-not-live .overlay-stack{
-  display:none!important;
-}
-
-body.broadcast-not-live #topSlideBox{
-  display:block!important;
-}
+body.broadcast-not-live .overlay-stack,body.broadcast-not-live #topSlideBox{display:none!important}
 body.broadcast-not-live .overlay-idle-screen{display:flex}
 
 </style>
@@ -470,9 +445,8 @@ body.broadcast-not-live .overlay-idle-screen{display:flex}
 <body>
   <div id="overlayIdleScreen" class="overlay-idle-screen">시스템설정</div>
 <div class="overlay-root">
-  <section class="top-slide-box hidden" id="topSlideBox"></section>
     <div class="overlay-stack">
-      
+      <section class="top-slide-box hidden" id="topSlideBox"></section>
       <section class="overlay-box broadcast-timer-box hidden" id="broadcastTimerBox">
         <span class="timer-label">방송시간</span>
         <span class="timer-value" id="broadcastTimerValue">00:00:00</span>
