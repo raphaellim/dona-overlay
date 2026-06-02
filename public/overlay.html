@@ -634,7 +634,7 @@ body.broadcast-not-live .overlay-idle-screen{display:flex}
 /* 이미지 슬라이드: 패널 가로폭 100%, 16:9, 둥근 모서리 */
 .overlay-stack > .top-slide-box{
   width:100%!important;
-  aspect-ratio:16/9!important;
+  aspect-ratio:var(--active-slide-ratio, 16/9)!important;
   height:auto!important;
   margin:0 0 6px 0!important;
   border:0!important;
@@ -647,11 +647,12 @@ body.broadcast-not-live .overlay-idle-screen{display:flex}
 /* 이미지가 박스 가로 기준 꽉 차게 */
 .top-slide-img,
 .top-slide-video{
+  position:absolute!important;
+  inset:0!important;
   width:100%!important;
   height:100%!important;
-  object-fit:contain!important;
+  object-fit:fill!important;
   border-radius:18px!important;
-  overflow:hidden!important;
   background:transparent!important;
 }
 
@@ -1082,7 +1083,30 @@ function getOverlaySections(settings){
       el.addEventListener("loadeddata", () => debugLog("topSlide video loaded", el.getAttribute("src")));
     });
 
-    box.querySelectorAll("img").forEach(img=>{ img.onload=()=>debugLog("slide img loaded", img.src); img.onerror=()=>debugLog("slide img error", img.src); });
+    function applySlideRatio(el){
+  if(!el) return;
+
+  if(el.tagName === "IMG" && el.naturalWidth && el.naturalHeight){
+    document.documentElement.style.setProperty(
+      "--active-slide-ratio",
+      `${el.naturalWidth} / ${el.naturalHeight}`
+    );
+  }
+
+  if(el.tagName === "VIDEO" && el.videoWidth && el.videoHeight){
+    document.documentElement.style.setProperty(
+      "--active-slide-ratio",
+      `${el.videoWidth} / ${el.videoHeight}`
+    );
+  }
+}
+
+box.querySelectorAll("img").forEach(img=>{
+  img.onload=()=>{
+    applySlideRatio(img);
+    debugLog("slide img loaded", img.src);
+  };
+  img.onerror=()=>debugLog("slide img error", img.src);
     box.querySelectorAll("video").forEach(v=>{ v.onloadedmetadata=()=>debugLog("slide video loaded", v.src); v.onerror=()=>debugLog("slide video error", v.src); });
     const playActive = () => {
       box.querySelectorAll("video").forEach(v => {
