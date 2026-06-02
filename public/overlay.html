@@ -4,6 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>후원현황 Overlay</title>
+<!-- overlay-debug-enabled-v2 -->
 <link rel="icon" href="data:,">
 <style>
 :root{
@@ -420,11 +421,28 @@ body.box-group-single .overlay-box{
 }
 body.box-group-single .overlay-box:not(.hidden)+.overlay-box:not(.hidden){border-top:1px solid rgba(255,210,235,.42)!important}
 
-.top-slide-box{position:relative;width:100%;aspect-ratio:16/9;height:auto;min-height:0;max-height:var(--top-slide-height);border-radius:var(--style-box-radius);overflow:hidden;border:1px solid var(--style-box-border);background:rgba(0,0,0,.22);box-shadow:0 0 14px rgba(255,182,213,.22);opacity:var(--top-slide-opacity);margin-bottom:var(--style-overlay-gap)}
+/* ===== 상단 미디어 슬라이드: overlay-stack 밖에서 독립 표시 ===== */
+.top-slide-box{
+  position:fixed!important;
+  top:8px!important;
+  left:50%!important;
+  transform:translateX(-50%)!important;
+  width:min(720px,92vw)!important;
+  aspect-ratio:16/9!important;
+  height:auto!important;
+  max-height:var(--top-slide-height)!important;
+  border-radius:var(--style-box-radius)!important;
+  overflow:hidden!important;
+  border:1px solid var(--style-box-border)!important;
+  background:rgba(0,0,0,.22)!important;
+  box-shadow:0 0 14px rgba(255,182,213,.22)!important;
+  opacity:var(--top-slide-opacity)!important;
+  z-index:50!important;
+  pointer-events:none!important;
+}
 .top-slide-box.hidden{display:none!important}
 .top-slide-img,.top-slide-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .75s ease;background:#000}
 .top-slide-img.active,.top-slide-video.active{opacity:1}
-body.box-group-single .top-slide-box{margin-bottom:10px}
 
 
 
@@ -437,16 +455,16 @@ body.box-group-single .top-slide-box{margin-bottom:10px}
 
 /* ===== 방송 종료/대기 기본화면 ===== */
 .overlay-idle-screen{position:fixed;inset:0;display:none;align-items:center;justify-content:center;text-align:center;color:#fff;font-weight:1000;font-size:46px;letter-spacing:-.06em;background:transparent;pointer-events:none;text-shadow:0 0 18px rgba(255,122,191,.55)}
-body.broadcast-not-live .overlay-stack,body.broadcast-not-live #topSlideBox{display:none!important}
+body.broadcast-not-live .overlay-stack{display:none!important}
 body.broadcast-not-live .overlay-idle-screen{display:flex}
 
 </style>
 </head>
 <body>
   <div id="overlayIdleScreen" class="overlay-idle-screen">시스템설정</div>
+<section class="top-slide-box hidden" id="topSlideBox"></section>
 <div class="overlay-root">
     <div class="overlay-stack">
-      <section class="top-slide-box hidden" id="topSlideBox"></section>
       <section class="overlay-box broadcast-timer-box hidden" id="broadcastTimerBox">
         <span class="timer-label">방송시간</span>
         <span class="timer-value" id="broadcastTimerValue">00:00:00</span>
@@ -493,7 +511,10 @@ body.broadcast-not-live .overlay-idle-screen{display:flex}
     </div>
   </div>
 <div id="overlayAlertRoot"><div class="option-alert" id="optionAlert"></div></div>
+
+<div id="debugPanel" style="position:fixed;left:10px;bottom:10px;width:520px;max-width:calc(100vw - 20px);max-height:320px;overflow:auto;background:rgba(0,0,0,.88);color:#00ff66;font-size:12px;font-family:Consolas,monospace;padding:10px;border:1px solid #00ff66;z-index:9999999;display:none;pointer-events:auto;white-space:pre-wrap"></div>
 <script>
+if(new URLSearchParams(location.search).get("debug")==="1"){ console.log("[overlay-debug] overlay.html loaded", location.href); }
   let latestSettingsForTimer = null;
   let showCreatorDonations = true;
 (() => {
@@ -503,6 +524,55 @@ body.broadcast-not-live .overlay-idle-screen{display:flex}
   const ACCESS_TOKEN = PARAMS.get("token") || "";
   const STATION_SLUG = PARAMS.get("station") || "default";
   const IS_MONITOR = PARAMS.get("monitor") === "1";
+  const DEBUG_MODE = PARAMS.get("debug") === "1";
+
+  function debugLog(...args){
+    if(!DEBUG_MODE) return;
+
+    // F12 Console 전용 로그
+    try{
+      console.log("[overlay-debug]", ...args);
+    }catch(e){}
+
+    // 화면 디버그 패널도 있으면 같이 출력
+    const panel = document.getElementById("debugPanel");
+    if(!panel) return;
+    panel.style.display = "block";
+    const line = document.createElement("div");
+    line.textContent = "[" + new Date().toLocaleTimeString() + "] " + args.map(v => {
+      try { return typeof v === "object" ? JSON.stringify(v) : String(v); }
+      catch(e){ return String(v); }
+    }).join(" ");
+    panel.prepend(line);
+    while(panel.children.length > 80) panel.removeChild(panel.lastChild);
+  }
+
+  if(DEBUG_MODE){
+    console.log("[overlay-debug] debug mode ON", {
+      station: STATION_SLUG,
+      monitor: IS_MONITOR,
+      tokenExists: !!ACCESS_TOKEN,
+      href: location.href
+    });
+  }
+
+  window.__overlayDebug = () => {
+    const box = document.getElementById("topSlideBox");
+    const cs = box ? getComputedStyle(box) : null;
+    const info = {
+      station: STATION_SLUG,
+      bodyClass: document.body.className,
+      topSlideBoxExists: !!box,
+      topSlideClass: box?.className,
+      topSlideDisplay: cs?.display,
+      topSlideWidth: cs?.width,
+      topSlideHeight: cs?.height,
+      topSlideHtml: box?.innerHTML?.slice(0,300)
+    };
+    console.log("[overlay debug]", info);
+    debugLog("manual debug", info);
+    return info;
+  };
 
   const $accountBox = document.getElementById("accountBox");
   const $noticeBox = document.getElementById("noticeBox");
@@ -707,6 +777,7 @@ function getOverlaySections(settings){
   let topSlideTimer = null;
   let topSlideIndex = 0;
   function renderTopSlide(settings){
+    debugLog("renderTopSlide input", {stationStyle:settings?.stationStyle, overlaySections:settings?.overlaySections, media:settings?.media});
     const box = document.getElementById("topSlideBox");
     if(!box) return;
 
@@ -770,6 +841,20 @@ function getOverlaySections(settings){
 
     const slideHeight = Number(st.topSlideHeight || 105);
 
+    debugLog("topSlide enabled", enabled);
+    debugLog("topSlide sections.media", sections.media);
+    debugLog("topSlide media count", media.length);
+    debugLog("topSlide media", media);
+    debugLog("topSlide style keys", {
+      topSlideEnabled: st.topSlideEnabled,
+      topSlideHeight: st.topSlideHeight,
+      topSlideInterval: st.topSlideInterval,
+      topSlideImages: st.topSlideImages,
+      topSlideItems: st.topSlideItems,
+      mediaSlides: st.mediaSlides,
+      slides: st.slides
+    });
+
     if(!enabled || !media.length || slideHeight <= 0){
       box.classList.add("hidden");
       box.innerHTML = "";
@@ -784,13 +869,21 @@ function getOverlaySections(settings){
       const active = idx === 0 ? "active" : "";
       const safe = escapeHtml(src);
       return isVideo(src)
-        ? `<video class="top-slide-video ${active}" src="${safe}" muted playsinline loop preload="metadata"></video>`
-        : `<img class="top-slide-img ${active}" src="${safe}" alt="slide">`;
+        ? `<video class="top-slide-video ${active}" data-debug-slide="${idx}" src="${safe}" muted playsinline loop preload="metadata"></video>`
+        : `<img class="top-slide-img ${active}" data-debug-slide="${idx}" src="${safe}" alt="slide">`;
     }).join("");
 
     box.classList.remove("hidden");
     box.innerHTML = html;
+    debugLog("topSlide rendered html length", html.length);
+    box.querySelectorAll("img,video").forEach(el => {
+      el.addEventListener("error", () => debugLog("topSlide load error", el.getAttribute("src")));
+      el.addEventListener("load", () => debugLog("topSlide image loaded", el.getAttribute("src")));
+      el.addEventListener("loadeddata", () => debugLog("topSlide video loaded", el.getAttribute("src")));
+    });
 
+    box.querySelectorAll("img").forEach(img=>{ img.onload=()=>debugLog("slide img loaded", img.src); img.onerror=()=>debugLog("slide img error", img.src); });
+    box.querySelectorAll("video").forEach(v=>{ v.onloadedmetadata=()=>debugLog("slide video loaded", v.src); v.onerror=()=>debugLog("slide video error", v.src); });
     const playActive = () => {
       box.querySelectorAll("video").forEach(v => {
         try { v.pause(); v.currentTime = 0; } catch(_){}
@@ -1616,6 +1709,12 @@ function getOverlaySections(settings){
     catch(e){ data={settings:defaultSettings,accountDonors:[],creators:[],donations:[]}; }
 
     const settings = data.settings || defaultSettings;
+    debugLog("refresh settings", {broadcastLiveData:settings.broadcastLiveData, overlaySections:settings.overlaySections, stationStyle:settings.stationStyle});
+    debugLog("refresh settings loaded", {
+      overlaySections: settings.overlaySections,
+      broadcastLiveData: settings.broadcastLiveData,
+      stationStyle: settings.stationStyle
+    });
     const liveData = settings.broadcastLiveData || {};
     const isLive = liveData.live === true || liveData.status === "live";
     document.body.classList.toggle("broadcast-not-live", !isLive);
