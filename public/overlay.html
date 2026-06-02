@@ -461,6 +461,148 @@ body.box-group-single .overlay-box:not(.hidden)+.overlay-box:not(.hidden){border
 .overlay-idle-screen{position:fixed;inset:0;display:none;align-items:center;justify-content:center;text-align:center;color:#fff;font-weight:1000;font-size:46px;letter-spacing:-.06em;background:transparent;pointer-events:none;text-shadow:0 0 18px rgba(255,122,191,.55)}
 body.broadcast-not-live .overlay-stack{display:none!important}
 body.broadcast-not-live .overlay-idle-screen{display:flex}
+  /* ===== ONE PANEL COMPACT MODE ===== */
+/* 각 기능은 분리 유지, 화면에서는 하나의 박스로 보이게 */
+.overlay-stack{
+  gap:0!important;
+  padding:8px!important;
+  border:2px solid var(--style-box-border)!important;
+  border-radius:calc(var(--style-box-radius) + 8px)!important;
+  background:linear-gradient(180deg,var(--style-box-bg-top),var(--style-box-bg-bottom))!important;
+  box-shadow:0 0 14px rgba(255,182,213,.18)!important;
+  overflow:hidden!important;
+}
+
+/* 내부 박스들은 개별 테두리/배경 제거 */
+.overlay-stack > .overlay-box,
+.overlay-stack > .top-slide-box{
+  background:transparent!important;
+  border:0!important;
+  box-shadow:none!important;
+  border-radius:0!important;
+  margin:0!important;
+}
+
+/* 섹션 사이 구분선만 얇게 */
+.overlay-stack > .overlay-box:not(.hidden) + .overlay-box:not(.hidden),
+.overlay-stack > .top-slide-box:not(.hidden) + .overlay-box:not(.hidden){
+  border-top:1px solid rgba(255,210,235,.28)!important;
+}
+
+/* 전체 패널 안쪽 여백 최소화 */
+.account-box{
+  padding:5px 4px 6px!important;
+}
+
+.funding-box{
+  padding:7px 4px!important;
+}
+
+.notice-box{
+  padding:7px 4px!important;
+}
+
+.karaoke-box{
+  padding:8px 4px!important;
+}
+
+.creator-box{
+  padding:7px 4px!important;
+}
+
+/* 상단 미디어는 같은 패널 첫 섹션처럼 */
+.top-slide-box{
+  width:100%!important;
+  aspect-ratio:16/9!important;
+  min-height:0!important;
+  flex:0 0 auto!important;
+  overflow:hidden!important;
+  background:rgba(0,0,0,.18)!important;
+}
+
+/* 이미지/영상 16:9 안에서 전체 보이게 */
+.top-slide-img,
+.top-slide-video{
+  object-fit:contain!important;
+  background:#000!important;
+}
+
+/* 계좌 줄 높이 축소 */
+.account-row{
+  height:30px!important;
+}
+
+.roller{
+  height:30px!important;
+  font-size:22px!important;
+}
+
+.roller-item{
+  height:30px!important;
+  min-height:30px!important;
+}
+
+/* 제목 배지 공간 축소 */
+.notice-title,
+.funding-title,
+.karaoke-title{
+  margin-bottom:4px!important;
+  padding:2px 9px!important;
+  font-size:16px!important;
+}
+
+/* 공지/펀딩 라인 여백 축소 */
+.notice-line{
+  margin:1px 0!important;
+  line-height:1.12!important;
+}
+
+.funding-line{
+  min-height:34px!important;
+  padding:5px 8px!important;
+  border-radius:8px!important;
+}
+
+/* 크리에이터 공간 축소 */
+.creator-list{
+  gap:4px!important;
+}
+
+.creator-main{
+  min-height:24px!important;
+}
+
+.creator-sub{
+  margin-top:0!important;
+  padding-top:0!important;
+  gap:7px!important;
+}
+
+/* 노래방 공간 축소 */
+.karaoke-notice{
+  margin-top:2px!important;
+}
+
+.karaoke-current{
+  margin-top:5px!important;
+}
+
+.karaoke-reserve-title{
+  margin-top:5px!important;
+}
+
+.karaoke-queue{
+  gap:2px!important;
+  margin-top:3px!important;
+}
+
+.karaoke-coin-ticker{
+  margin-top:6px!important;
+}
+
+.karaoke-coin-ticker span{
+  line-height:24px!important;
+}
 
 </style>
 </head>
