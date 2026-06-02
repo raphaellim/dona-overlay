@@ -642,6 +642,7 @@ body.broadcast-not-live .overlay-idle-screen{display:flex}
   overflow:hidden!important;
   background:transparent!important;
   box-shadow:none!important;
+  flex:0 0 auto!important;
 }
 
 /* 이미지가 박스 가로 기준 꽉 차게 */
@@ -655,7 +656,6 @@ body.broadcast-not-live .overlay-idle-screen{display:flex}
   border-radius:18px!important;
   background:transparent!important;
 }
-
 </style>
 </head>
 <body>
@@ -977,182 +977,180 @@ function getOverlaySections(settings){
   let fundingRollIndex = 0;
   let topSlideTimer = null;
   let topSlideIndex = 0;
-  function renderTopSlide(settings){
-    debugLog("renderTopSlide input", {stationStyle:settings?.stationStyle, overlaySections:settings?.overlaySections, media:settings?.media});
-    const box = document.getElementById("topSlideBox");
-    if(!box) return;
+function renderTopSlide(settings){
+  debugLog("renderTopSlide input", {
+    stationStyle: settings?.stationStyle,
+    overlaySections: settings?.overlaySections,
+    media: settings?.media
+  });
 
-    const st = settings?.stationStyle || {};
-    const sections = getOverlaySections(settings);
+  const box = document.getElementById("topSlideBox");
+  if(!box) return;
 
-    const enabled =
-      sections.media !== false &&
-      st.topSlideEnabled !== false &&
-      String(st.topSlideEnabled ?? "true") !== "false";
+  const st = settings?.stationStyle || {};
+  const sections = getOverlaySections(settings);
 
-    const normalizeSlideSrc = (item) => {
-      if(!item) return "";
-      if(typeof item === "string") return item.trim();
-      if(typeof item === "object") return String(item.url || item.src || item.path || item.file || "").trim();
-      return "";
-    };
+  const enabled = sections.media !== false;
 
-    const splitTextList = (value) => String(value || "")
-      .split(/\r?\n|,/)
-      .map(v => v.trim())
-      .filter(Boolean);
+  const normalizeSlideSrc = (item) => {
+    if(!item) return "";
+    if(typeof item === "string") return item.trim();
+    if(typeof item === "object"){
+      return String(item.url || item.src || item.path || item.file || "").trim();
+    }
+    return "";
+  };
 
-    let media = [];
+  const splitTextList = (value) => String(value || "")
+    .split(/\r?\n|,/)
+    .map(v => v.trim())
+    .filter(Boolean);
 
-    // 기존/신규 저장 키 모두 호환
-    [
-      st.topSlideImages,
-      st.topSlideItems,
-      st.mediaSlides,
-      st.slideImages,
-      st.slides,
-      settings?.media?.slides,
-      settings?.media?.items,
-      settings?.topSlideImages,
-      settings?.mediaSlides
-    ].forEach(list => {
-      if(Array.isArray(list)){
-        list.map(normalizeSlideSrc).filter(Boolean).forEach(src => {
-          if(!media.includes(src)) media.push(src);
-        });
-      }else if(typeof list === "string"){
-        splitTextList(list).forEach(src => {
-          if(!media.includes(src)) media.push(src);
-        });
-      }
-    });
+  let media = [];
 
-    // 서버 미디어 목록을 통째로 저장한 경우도 지원
-    if(Array.isArray(st.mediaItems)){
-      st.mediaItems.map(normalizeSlideSrc).filter(Boolean).forEach(src => {
+  [
+    st.topSlideImages,
+    st.topSlideItems,
+    st.mediaSlides,
+    st.slideImages,
+    st.slides,
+    settings?.media?.slides,
+    settings?.media?.items,
+    settings?.topSlideImages,
+    settings?.mediaSlides
+  ].forEach(list => {
+    if(Array.isArray(list)){
+      list.map(normalizeSlideSrc).filter(Boolean).forEach(src => {
+        if(!media.includes(src)) media.push(src);
+      });
+    }else if(typeof list === "string"){
+      splitTextList(list).forEach(src => {
         if(!media.includes(src)) media.push(src);
       });
     }
+  });
 
-    if(topSlideTimer){
-      clearInterval(topSlideTimer);
-      topSlideTimer = null;
-    }
-    topSlideIndex = 0;
-
-    const slideHeight = Number(st.topSlideHeight || 105);
-
-    debugLog("topSlide enabled", enabled);
-    debugLog("topSlide sections.media", sections.media);
-    debugLog("topSlide media count", media.length);
-    debugLog("topSlide media", media);
-    debugLog("topSlide style keys", {
-      topSlideEnabled: st.topSlideEnabled,
-      topSlideHeight: st.topSlideHeight,
-      topSlideInterval: st.topSlideInterval,
-      topSlideImages: st.topSlideImages,
-      topSlideItems: st.topSlideItems,
-      mediaSlides: st.mediaSlides,
-      slides: st.slides
+  if(Array.isArray(st.mediaItems)){
+    st.mediaItems.map(normalizeSlideSrc).filter(Boolean).forEach(src => {
+      if(!media.includes(src)) media.push(src);
     });
-
-    if(!enabled || !media.length || slideHeight <= 0){
-      box.classList.add("hidden");
-      box.innerHTML = "";
-      return;
-    }
-
-    document.documentElement.style.setProperty("--top-slide-height", slideHeight + "px");
-
-    const isVideo = (src) => /\.(mp4|webm|mov)(\?|#|$)/i.test(String(src));
-
-    const html = media.map((src, idx) => {
-      const active = idx === 0 ? "active" : "";
-      const safe = escapeHtml(src);
-      return isVideo(src)
-        ? `<video class="top-slide-video ${active}" data-debug-slide="${idx}" src="${safe}" muted playsinline loop preload="metadata"></video>`
-        : `<img class="top-slide-img ${active}" data-debug-slide="${idx}" src="${safe}" alt="slide">`;
-    }).join("");
-
-    box.classList.remove("hidden");
-    box.innerHTML = html;
-    debugLog("topSlide rendered html length", html.length);
-    box.querySelectorAll("img,video").forEach(el => {
-      el.addEventListener("error", () => debugLog("topSlide load error", el.getAttribute("src")));
-      el.addEventListener("load", () => debugLog("topSlide image loaded", el.getAttribute("src")));
-      el.addEventListener("loadeddata", () => debugLog("topSlide video loaded", el.getAttribute("src")));
-    });
-
-    function applySlideRatio(el){
-  if(!el) return;
-
-  if(el.tagName === "IMG" && el.naturalWidth && el.naturalHeight){
-    document.documentElement.style.setProperty(
-      "--active-slide-ratio",
-      `${el.naturalWidth} / ${el.naturalHeight}`
-    );
   }
 
-  if(el.tagName === "VIDEO" && el.videoWidth && el.videoHeight){
-    document.documentElement.style.setProperty(
-      "--active-slide-ratio",
-      `${el.videoWidth} / ${el.videoHeight}`
-    );
+  if(topSlideTimer){
+    clearInterval(topSlideTimer);
+    topSlideTimer = null;
   }
-}
 
-box.querySelectorAll("img").forEach(img=>{
-  img.onload=()=>{
-    applySlideRatio(img);
-    debugLog("slide img loaded", img.src);
-  };
-  img.onerror=()=>debugLog("slide img error", img.src);
-   box.querySelectorAll("img").forEach(img=>{
-  img.onload = () => {
-    applySlideRatio(img);
-    debugLog("slide img loaded", img.src);
-  };
+  topSlideIndex = 0;
 
-  img.onerror = () => {
-    debugLog("slide img error", img.src);
-  };
-});
+  debugLog("topSlide enabled", enabled);
+  debugLog("topSlide sections.media", sections.media);
+  debugLog("topSlide media count", media.length);
+  debugLog("topSlide media", media);
 
-box.querySelectorAll("video").forEach(v=>{
-  v.onloadedmetadata = () => {
-    applySlideRatio(v);
-    debugLog("slide video loaded", v.src);
-  };
+  if(!enabled || !media.length){
+    box.classList.add("hidden");
+    box.innerHTML = "";
+    return;
+  }
 
-  v.onerror = () => {
-    debugLog("slide video error", v.src);
-  };
-});
-    const playActive = () => {
-      box.querySelectorAll("video").forEach(v => {
-        try { v.pause(); v.currentTime = 0; } catch(_){}
-      });
-     const active = box.querySelector(".active");
+  const isVideo = (src) => /\.(mp4|webm|mov)(\?|#|$)/i.test(String(src));
 
-applySlideRatio(active);
+  const html = media.map((src, idx) => {
+    const active = idx === 0 ? "active" : "";
+    const safe = escapeHtml(src);
 
-if(active && active.tagName === "VIDEO") active.play().catch(()=>{});
+    return isVideo(src)
+      ? '<video class="top-slide-video ' + active + '" data-debug-slide="' + idx + '" src="' + safe + '" muted playsinline loop preload="metadata"></video>'
+      : '<img class="top-slide-img ' + active + '" data-debug-slide="' + idx + '" src="' + safe + '" alt="slide">';
+  }).join("");
+
+  box.classList.remove("hidden");
+  box.innerHTML = html;
+
+  debugLog("topSlide rendered html length", html.length);
+
+  function applySlideRatio(el){
+    if(!el) return;
+
+    if(el.tagName === "IMG" && el.naturalWidth && el.naturalHeight){
+      document.documentElement.style.setProperty(
+        "--active-slide-ratio",
+        el.naturalWidth + " / " + el.naturalHeight
+      );
+    }
+
+    if(el.tagName === "VIDEO" && el.videoWidth && el.videoHeight){
+      document.documentElement.style.setProperty(
+        "--active-slide-ratio",
+        el.videoWidth + " / " + el.videoHeight
+      );
+    }
+  }
+
+  box.querySelectorAll("img").forEach(img => {
+    img.onload = () => {
+      applySlideRatio(img);
+      debugLog("slide img loaded", img.src);
     };
 
-    playActive();
+    img.onerror = () => {
+      debugLog("slide img error", img.src);
+    };
 
-    if(media.length > 1){
-      const interval = Math.max(800, Number(st.topSlideInterval || 3500));
-      topSlideTimer = setInterval(() => {
-        const slides = Array.from(box.querySelectorAll(".top-slide-img,.top-slide-video"));
-        if(!slides.length) return;
-        slides.forEach(el => el.classList.remove("active"));
-        topSlideIndex = (topSlideIndex + 1) % slides.length;
-        slides[topSlideIndex].classList.add("active");
-        playActive();
-      }, interval);
+    if(img.complete){
+      applySlideRatio(img);
     }
+  });
+
+  box.querySelectorAll("video").forEach(v => {
+    v.onloadedmetadata = () => {
+      applySlideRatio(v);
+      debugLog("slide video loaded", v.src);
+    };
+
+    v.onerror = () => {
+      debugLog("slide video error", v.src);
+    };
+  });
+
+  const playActive = () => {
+    box.querySelectorAll("video").forEach(v => {
+      try{
+        v.pause();
+        v.currentTime = 0;
+      }catch(_){}
+    });
+
+    const active = box.querySelector(".active");
+    applySlideRatio(active);
+
+    if(active && active.tagName === "VIDEO"){
+      active.play().catch(()=>{});
+    }
+  };
+
+  playActive();
+
+  if(media.length > 1){
+    const interval = Math.max(800, Number(st.topSlideInterval || 3500));
+
+    topSlideTimer = setInterval(() => {
+      const slides = Array.from(
+        box.querySelectorAll(".top-slide-img,.top-slide-video")
+      );
+
+      if(!slides.length) return;
+
+      slides.forEach(el => el.classList.remove("active"));
+
+      topSlideIndex = (topSlideIndex + 1) % slides.length;
+      slides[topSlideIndex].classList.add("active");
+
+      playActive();
+    }, interval);
   }
+}
 
   function renderFunding(settings){
     if(!$fundingBox) return;
