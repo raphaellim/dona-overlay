@@ -602,6 +602,30 @@ body.broadcast-not-live .overlay-idle-screen{display:flex}
 .notice-text:not(.rolling) .notice-line:nth-child(n+4){
   display:none!important;
 }
+  .overlay-stack{
+  gap:6px!important;
+  background:transparent!important;
+  border:0!important;
+  padding:0!important;
+}
+
+.top-slide-box{
+  position:relative!important;
+  width:100%!important;
+  aspect-ratio:16/9!important;
+  border:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  margin:0!important;
+  z-index:1!important;
+}
+
+.content-panel{
+  border:2px solid var(--style-box-border)!important;
+  border-radius:calc(var(--style-box-radius) + 8px)!important;
+  background:linear-gradient(180deg,var(--style-box-bg-top),var(--style-box-bg-bottom))!important;
+  overflow:hidden!important;
+}
 
 </style>
 </head>
