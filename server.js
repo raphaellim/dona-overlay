@@ -120,7 +120,7 @@ function defaultSettings() {
     noticeColors: ['#ffffff', '#ffe066', '#5ecbff', '#ffb4ca', '#ff4d5e'],
     viewerPassword: '',
     viewerToken: '',
-    overlaySections: { account: true, notice: false, creators: true, creatorDonations: true, karaoke: false, funding: false, broadcastTimer: false },
+    overlaySections: { account: true, notice: false, creators: true, creatorDonations: true, karaoke: false, funding: false, broadcastTimer: false, media: true },
     columns: 4,
     maxCreators: 12,
     creators: [],
@@ -314,7 +314,8 @@ function normalizeOverlaySections(raw, base) {
     creatorDonations: true,
     karaoke: false,
     funding: false,
-    broadcastTimer: false
+    broadcastTimer: false,
+    media: true
   };
   const value = raw && typeof raw === 'object' ? raw : fallback;
   return {
@@ -324,7 +325,8 @@ function normalizeOverlaySections(raw, base) {
     creatorDonations: value.creatorDonations !== false,
     karaoke: value.karaoke === true,
     funding: value.funding === true,
-    broadcastTimer: value.broadcastTimer === true
+    broadcastTimer: value.broadcastTimer === true,
+    media: value.media !== false
   };
 }
 
@@ -455,7 +457,7 @@ function normalizeSettings(settings) {
 const SETTING_FIELDS = [
   'viewerPassword', 'viewerToken', 'overlaySections',
   'columns', 'maxCreators', 'creators', 'presets', 'prices', 'soundRules',
-  'broadcastTimerData'
+  'broadcastTimerData', 'broadcastLiveData'
 ];
 
 function pickScopedSettings(settings) {
@@ -613,6 +615,9 @@ async function overlayAllowed(req, station) {
 }
 
 async function ensureActiveBroadcast(stationId) {
+  // 활성 방송이 없을 때마다 새 방송이 자동 생성되면 station_control 목록에
+  // 같은 날짜 방송이 중복으로 생깁니다. 기존 방송이 있으면 최신 방송을
+  // 현재 방송으로 복구하고, 방송이 하나도 없을 때만 최초 방송을 생성합니다.
   let { data, error } = await supabase
     .from('broadcasts')
     .select('*')
@@ -624,6 +629,27 @@ async function ensureActiveBroadcast(stationId) {
 
   if (error) throw error;
   if (data) return data;
+
+  const latest = await supabase
+    .from('broadcasts')
+    .select('*')
+    .eq('station_id', stationId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (latest.error) throw latest.error;
+  if (latest.data) {
+    const restored = await supabase
+      .from('broadcasts')
+      .update({ is_active: true })
+      .eq('station_id', stationId)
+      .eq('id', latest.data.id)
+      .select()
+      .single();
+    if (restored.error) throw restored.error;
+    return restored.data;
+  }
 
   const today = new Date();
   const mm = String(today.getMonth() + 1).padStart(2, '0');
@@ -1404,7 +1430,13 @@ app.get('/api/station-info', async (req, res) => {
     const station = await getStation(req);
     if (!station) return res.status(404).json({ error: '방송국을 찾을 수 없습니다.' });
     const active = await ensureActiveBroadcast(station.id);
-    res.json({ station: stationToClient(station), active: broadcastToClient(active), allowed: await stationAllowed(req, station) });
+    const activeSettings = await readEffectiveSettings(station.slug, active.id);
+    const activeClient = {
+      ...broadcastToClient(active),
+      broadcastLiveData: normalizeBroadcastLiveData(activeSettings.broadcastLiveData),
+      broadcastTimerData: normalizeBroadcastTimerData(activeSettings.broadcastTimerData)
+    };
+    res.json({ station: stationToClient(station), active: activeClient, allowed: await stationAllowed(req, station) });
   } catch (e) {
     res.status(500).json({ error: e.message || '방송국 정보 조회 실패' });
   }
@@ -1880,7 +1912,12 @@ app.get('/api/settings', async (req, res) => {
     if (!station) return res.status(404).json({ error: '방송국을 찾을 수 없습니다.' });
     const active = await ensureActiveBroadcast(station.id);
     const settings = await readEffectiveSettings(station.slug, active.id);
-    res.json({ ...settings, station: stationToClient(station), broadcast: broadcastToClient(active) });
+    const broadcastClient = {
+      ...broadcastToClient(active),
+      broadcastLiveData: normalizeBroadcastLiveData(settings.broadcastLiveData),
+      broadcastTimerData: normalizeBroadcastTimerData(settings.broadcastTimerData)
+    };
+    res.json({ ...settings, station: stationToClient(station), broadcast: broadcastClient });
   } catch (e) {
     res.status(500).json({ error: e.message || '설정 조회 실패' });
   }
@@ -1910,7 +1947,7 @@ app.post('/api/settings', async (req, res) => {
     // 방송별/운영 설정
     if (has('viewerPassword')) updates.viewerPassword = String(body.viewerPassword ?? '');
     if (has('viewerToken')) updates.viewerToken = String(body.viewerToken ?? '');
-    if (has('overlaySections')) updates.overlaySections = normalizeOverlaySections(body.overlaySections, { account: true, notice: false, creators: true, creatorDonations: true, karaoke: false, funding: false, broadcastTimer: false });
+    if (has('overlaySections')) updates.overlaySections = normalizeOverlaySections(body.overlaySections, { account: true, notice: false, creators: true, creatorDonations: true, karaoke: false, funding: false, broadcastTimer: false, media: true });
     if (has('columns')) updates.columns = body.columns ?? 4;
     if (has('maxCreators')) updates.maxCreators = body.maxCreators ?? 12;
     if (has('creators')) updates.creators = Array.isArray(body.creators) ? body.creators.map(normName).filter(Boolean) : [];
@@ -1923,7 +1960,12 @@ app.post('/api/settings', async (req, res) => {
     await saveEffectiveSettings(ctx.station.slug, ctx.active.id, updates);
     const effective = await readEffectiveSettings(ctx.station.slug, ctx.active.id);
 
-    res.json({ ok: true, settings: { ...effective, station: stationToClient(ctx.station), broadcast: broadcastToClient(ctx.active) } });
+    const broadcastClient = {
+      ...broadcastToClient(ctx.active),
+      broadcastLiveData: normalizeBroadcastLiveData(effective.broadcastLiveData),
+      broadcastTimerData: normalizeBroadcastTimerData(effective.broadcastTimerData)
+    };
+    res.json({ ok: true, settings: { ...effective, station: stationToClient(ctx.station), broadcast: broadcastClient } });
   } catch (e) {
     res.status(500).json({ error: e.message || '설정 저장 실패' });
   }
@@ -2004,7 +2046,7 @@ app.post('/api/broadcast-timer/start', async (req, res) => {
     const activeBroadcast = await setActiveBroadcast(ctx.station.id, broadcastId);
 
     const current = await readEffectiveSettings(ctx.station.slug, broadcastId);
-    const broadcastLiveData = { status: 'live', live: true, startedAt: new Date().toISOString(), endedAt: '' };
+    const broadcastLiveData = normalizeBroadcastLiveData({ status: 'live', live: true, startedAt: new Date().toISOString(), endedAt: '' });
     await saveEffectiveSettings(ctx.station.slug, broadcastId, { ...current, broadcastLiveData });
 
     const given = req.body?.broadcastPassword || req.body?.password || req.query?.broadcastPassword || req.query?.password;
@@ -2033,12 +2075,12 @@ app.post('/api/broadcast-timer/end', async (req, res) => {
     }
 
     const current = await readEffectiveSettings(ctx.station.slug, broadcastId);
-    const broadcastLiveData = {
+    const broadcastLiveData = normalizeBroadcastLiveData({
       status: 'ended',
       live: false,
       startedAt: current.broadcastLiveData?.startedAt || '',
       endedAt: new Date().toISOString()
-    };
+    });
     await saveEffectiveSettings(ctx.station.slug, broadcastId, { ...current, broadcastLiveData });
 
     const given = req.body?.broadcastPassword || req.body?.password || req.query?.broadcastPassword || req.query?.password;

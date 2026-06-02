@@ -213,7 +213,8 @@ textarea{resize:vertical;line-height:1.45}
 
             <label class="toggle-box"><input type="checkbox" id="overlayKaraokeBox">노래방창</label>
             <label class="toggle-box"><input type="checkbox" id="overlayFundingBox">펀딩창</label>
-            <label class="toggle-box"><input type="checkbox" id="overlayBroadcastTimer">방송시간 타이머</label>
+            <label class="toggle-box"><input type="checkbox" id="overlayBroadcastTimer">미션타이머</label>
+            <label class="toggle-box"><input type="checkbox" id="overlayMediaBox">상단 미디어 슬라이드</label>
           </div>
           <p class="muted" style="margin-top:8px">크리에이터 후원 표시를 OFF 하면 크리에이터 박스에 후원금액은 숨기고 옵션만 표시합니다.</p>
         </div>
@@ -336,8 +337,16 @@ const esc = escAttr;
 function safeId(v){return String(v||'').replace(/[^a-zA-Z0-9_-]/g,'') || ('preset_'+Date.now());}
 
 async function load(){
-  await loadSoundFiles();
-  await loadSettings();
+  try{
+    await loadSoundFiles();
+    await loadSettings();
+  }catch(e){
+    console.error(e);
+    const box = $('#activeBroadcast');
+    if(box){
+      box.innerHTML = '현재 방송정보를 불러오지 못했습니다.<br><span class="muted">'+esc(e.message || e)+'</span><br><a href="'+stationUrl('/station_control.html')+'" style="color:#93c5fd;font-weight:900">방송국 컨트롤로 이동</a>';
+    }
+  }
 }
 
 async function loadSoundFiles(){
@@ -662,9 +671,10 @@ async function loadSettings(){
   if(info){
     settings.station = settings.station || info.station;
     settings.broadcast = settings.broadcast || info.active;
+    if(info.active?.broadcastLiveData && !settings.broadcastLiveData) settings.broadcastLiveData = info.active.broadcastLiveData;
   }
 
-  const live = settings.broadcastLiveData || {};
+  const live = settings.broadcast?.broadcastLiveData || settings.broadcastLiveData || {};
   if(settings.broadcast){
     $('#activeBroadcast').innerHTML = `방송국: <b>${esc(settings.station?.name || settings.station?.slug || '')}</b><br>현재 방송: <b>${esc(settings.broadcast.title || '제목 없음')}</b> <span class="muted">(${broadcastStatusText(live)})</span>`;
   }else{
@@ -689,6 +699,7 @@ async function loadSettings(){
   if($('#overlayKaraokeBox')) $('#overlayKaraokeBox').checked = overlaySections.karaoke === true;
   if($('#overlayFundingBox')) $('#overlayFundingBox').checked = overlaySections.funding === true;
   if($('#overlayBroadcastTimer')) $('#overlayBroadcastTimer').checked = overlaySections.broadcastTimer === true;
+  if($('#overlayMediaBox')) $('#overlayMediaBox').checked = overlaySections.media !== false;
 
   const soundRules = settings.soundRules || {};
   $('#soundEnabled').checked = soundRules.enabled !== false;
@@ -891,7 +902,8 @@ async function saveSettings(){
         creatorDonations: $('#overlayCreatorDonations') ? $('#overlayCreatorDonations').checked : true,
         karaoke: $('#overlayKaraokeBox') ? $('#overlayKaraokeBox').checked : false,
         funding: $('#overlayFundingBox') ? $('#overlayFundingBox').checked : false,
-        broadcastTimer: $('#overlayBroadcastTimer') ? $('#overlayBroadcastTimer').checked : false
+        broadcastTimer: $('#overlayBroadcastTimer') ? $('#overlayBroadcastTimer').checked : false,
+        media: $('#overlayMediaBox') ? $('#overlayMediaBox').checked : true
       },
       
       fundingData: collectFundingData(),

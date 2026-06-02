@@ -443,7 +443,7 @@ body.broadcast-not-live .overlay-idle-screen{display:flex}
 </style>
 </head>
 <body>
-  <div id="overlayIdleScreen" class="overlay-idle-screen">방송 준비중</div>
+  <div id="overlayIdleScreen" class="overlay-idle-screen">시스템설정</div>
 <div class="overlay-root">
     <div class="overlay-stack">
       <section class="top-slide-box hidden" id="topSlideBox"></section>
@@ -579,7 +579,7 @@ body.broadcast-not-live .overlay-idle-screen{display:flex}
     noticeTitle:"공지",
     notice:"",
     noticeColors:["#ffffff", "#ffe066", "#5ecbff", "#ffb4ca", "#ff4d5e"],
-    overlaySections:{ account:true, notice:false, creators:true },
+    overlaySections:{ account:true, notice:false, creators:true, media:true },
     soundRules:{
       enabled:true,
       defaultSound:"alert.mp3",
@@ -601,7 +601,7 @@ body.broadcast-not-live .overlay-idle-screen{display:flex}
     settings:{
       ...defaultSettings,
       notice:"오늘 룰 확인하고 후원해주세요",
-      overlaySections:{account:true,notice:true,creators:true}
+      overlaySections:{account:true,notice:true,creators:true,media:true}
     },
     accountDonors:[{donor:"열려",amount:36000},{donor:"이잉",amount:123400}],
     creators:[],
@@ -694,7 +694,8 @@ function getOverlaySections(settings){
       creatorDonations: s.creatorDonations !== false,
       karaoke: s.karaoke === true,
       funding: s.funding === true,
-      broadcastTimer: s.broadcastTimer === true
+      broadcastTimer: s.broadcastTimer === true,
+      media: s.media !== false
     };
   }
 
@@ -709,7 +710,8 @@ function getOverlaySections(settings){
     const box = document.getElementById("topSlideBox");
     if(!box) return;
     const st = settings?.stationStyle || {};
-    const enabled = st.topSlideEnabled !== false && String(st.topSlideEnabled || 'true') !== 'false';
+    const sections = getOverlaySections(settings);
+    const enabled = sections.media !== false && st.topSlideEnabled !== false && String(st.topSlideEnabled || 'true') !== 'false';
     const media = Array.isArray(st.topSlideImages) ? st.topSlideImages.filter(Boolean) : [];
     if(topSlideTimer){ clearInterval(topSlideTimer); topSlideTimer = null; }
     topSlideIndex = 0;
@@ -1553,7 +1555,7 @@ function getOverlaySections(settings){
     const isLive = liveData.live === true || liveData.status === "live";
     document.body.classList.toggle("broadcast-not-live", !isLive);
     const idle = document.getElementById("overlayIdleScreen");
-    if(idle) idle.textContent = liveData.status === "ended" ? "방송 종료" : "방송 준비중";
+    if(idle) idle.textContent = liveData.status === "ended" ? "방송 종료" : "시스템설정";
     applyStationStyle(settings);
     cacheSoundRules(settings);
     enabledPresets=getEnabledPresets(settings);
