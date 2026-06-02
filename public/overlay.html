@@ -626,6 +626,37 @@ body.broadcast-not-live .overlay-idle-screen{display:flex}
   background:linear-gradient(180deg,var(--style-box-bg-top),var(--style-box-bg-bottom))!important;
   overflow:hidden!important;
 }
+  /* ===== TOP SLIDE SIZE/GAP/RADIUS FIX ===== */
+.overlay-stack{
+  gap:6px!important;
+}
+
+/* 이미지 슬라이드: 패널 가로폭 100%, 16:9, 둥근 모서리 */
+.overlay-stack > .top-slide-box{
+  width:100%!important;
+  aspect-ratio:16/9!important;
+  height:auto!important;
+
+  margin:0 0 6px 0!important;
+
+  border:0!important;
+  border-radius:18px!important;
+  overflow:hidden!important;
+
+  background:transparent!important;
+  box-shadow:none!important;
+}
+
+/* 이미지가 박스 가로 기준 꽉 차게 */
+.top-slide-img,
+.top-slide-video{
+  width:100%!important;
+  height:100%!important;
+  object-fit:cover!important;
+  border-radius:18px!important;
+  overflow:hidden!important;
+  background:transparent!important;
+}
 
 </style>
 </head>
