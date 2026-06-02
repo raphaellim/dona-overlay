@@ -1107,13 +1107,36 @@ box.querySelectorAll("img").forEach(img=>{
     debugLog("slide img loaded", img.src);
   };
   img.onerror=()=>debugLog("slide img error", img.src);
-    box.querySelectorAll("video").forEach(v=>{ v.onloadedmetadata=()=>debugLog("slide video loaded", v.src); v.onerror=()=>debugLog("slide video error", v.src); });
+   box.querySelectorAll("img").forEach(img=>{
+  img.onload = () => {
+    applySlideRatio(img);
+    debugLog("slide img loaded", img.src);
+  };
+
+  img.onerror = () => {
+    debugLog("slide img error", img.src);
+  };
+});
+
+box.querySelectorAll("video").forEach(v=>{
+  v.onloadedmetadata = () => {
+    applySlideRatio(v);
+    debugLog("slide video loaded", v.src);
+  };
+
+  v.onerror = () => {
+    debugLog("slide video error", v.src);
+  };
+});
     const playActive = () => {
       box.querySelectorAll("video").forEach(v => {
         try { v.pause(); v.currentTime = 0; } catch(_){}
       });
-      const active = box.querySelector(".active");
-      if(active && active.tagName === "VIDEO") active.play().catch(()=>{});
+     const active = box.querySelector(".active");
+
+applySlideRatio(active);
+
+if(active && active.tagName === "VIDEO") active.play().catch(()=>{});
     };
 
     playActive();
