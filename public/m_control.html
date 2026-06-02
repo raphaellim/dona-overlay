@@ -22,7 +22,25 @@
 </div><div class="bottom"><button class="btn green" onclick="saveAll()">설정 저장</button></div>
 <script>
 const P=new URLSearchParams(location.search),STATION=P.get('station')||localStorage.getItem('STATION_SLUG')||'default';localStorage.setItem('STATION_SLUG',STATION);let settings={};const $=s=>document.querySelector(s);function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]))}function toWon(v){const raw=String(v??'').trim().replace(/,/g,'');if(!raw)return 0;const n=Number(raw.replace(/[^0-9.-]/g,''));if(!Number.isFinite(n))return 0;if(Math.abs(n)>0&&Math.abs(n)<1000)return Math.round(n*1000);return Math.trunc(n)}function fmt(n){return Math.trunc(Number(n||0)).toLocaleString('ko-KR')}function stationUrl(path){const u=new URL(path,location.origin);u.searchParams.set('station',STATION);return u.pathname+u.search}
-function api(url,opt={}){const u=new URL(url,location.origin);u.searchParams.set('station',STATION);opt.headers=opt.headers||{};if(opt.body&&!opt.headers['Content-Type'])opt.headers['Content-Type']='application/json';const r=await fetch(u.pathname+u.search,opt),d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||r.statusText);return d}
+async function api(url,opt={}) {
+  const u=new URL(url,location.origin);
+  u.searchParams.set('station',STATION);
+
+  opt.headers=opt.headers||{};
+
+  if(opt.body&&!opt.headers['Content-Type']){
+    opt.headers['Content-Type']='application/json';
+  }
+
+  const r=await fetch(u.pathname+u.search,opt);
+  const d=await r.json().catch(()=>({}));
+
+  if(!r.ok){
+    throw new Error(d.error||r.statusText);
+  }
+
+  return d;
+}
 document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active',p.id===b.dataset.tab))});
 function sections(){const s=settings.overlaySections||{};return {account:s.account!==false,funding:s.funding===true,notice:s.notice===true,karaoke:s.karaoke===true,broadcastTimer:s.broadcastTimer===true,media:s.media!==false,creators:s.creators!==false,creatorDonations:s.creatorDonations!==false}}
 function renderToggles(){const s=sections(),labels={account:'계좌후원',funding:'펀딩',notice:'공지',karaoke:'노래방',broadcastTimer:'미션타이머',media:'상단 미디어 슬라이드',creators:'크리에이터 박스',creatorDonations:'크리에이터 후원금액'};$('#toggles').innerHTML=Object.keys(labels).map(k=>`<label class="toggle">${labels[k]}<input class="sec" data-key="${k}" type="checkbox" ${s[k]?'checked':''}></label>`).join('')}
