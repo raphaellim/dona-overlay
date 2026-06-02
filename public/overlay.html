@@ -423,29 +423,25 @@ body.box-group-single .overlay-box:not(.hidden)+.overlay-box:not(.hidden){border
 
 /* ===== 상단 미디어 슬라이드: overlay-stack 밖에서 독립 표시 ===== */
 .top-slide-box{
-  position:relative!important;
-  width:100%!important;
-  height:auto!important;
+  position:fixed!important;
+  top:8px!important;
+  left:50%!important;
+  transform:translateX(-50%)!important;
+  width:min(720px,92vw)!important;
   aspect-ratio:16/9!important;
-  border-radius:16px!important;
+  height:auto!important;
+  max-height:var(--top-slide-height)!important;
+  border-radius:var(--style-box-radius)!important;
   overflow:hidden!important;
-  border:2px solid var(--style-box-border)!important;
+  border:1px solid var(--style-box-border)!important;
   background:rgba(0,0,0,.22)!important;
-  margin:0!important;
-  flex:0 0 auto!important;
+  box-shadow:0 0 14px rgba(255,182,213,.22)!important;
+  opacity:var(--top-slide-opacity)!important;
+  z-index:50!important;
+  pointer-events:none!important;
 }
 .top-slide-box.hidden{display:none!important}
-.top-slide-img,
-.top-slide-video{
-  position:absolute!important;
-  inset:0!important;
-  width:100%!important;
-  height:100%!important;
-  object-fit:contain!important;
-  background:#000!important;
-  opacity:0;
-  transition:.6s;
-}
+.top-slide-img,.top-slide-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .75s ease;background:#000}
 .top-slide-img.active,.top-slide-video.active{opacity:1}
 
 
@@ -461,27 +457,35 @@ body.box-group-single .overlay-box:not(.hidden)+.overlay-box:not(.hidden){border
 .overlay-idle-screen{position:fixed;inset:0;display:none;align-items:center;justify-content:center;text-align:center;color:#fff;font-weight:1000;font-size:46px;letter-spacing:-.06em;background:transparent;pointer-events:none;text-shadow:0 0 18px rgba(255,122,191,.55)}
 body.broadcast-not-live .overlay-stack{display:none!important}
 body.broadcast-not-live .overlay-idle-screen{display:flex}
-  /* ===== ONE PANEL COMPACT MODE ===== */
-/* ===== 이미지 슬라이드는 같은 흐름 유지, 박스 느낌만 제거 ===== */
+
+
+/* ===== PANEL_SEPARATE_MEDIA_COMPACT_ROLLING_FIX ===== */
+/* 미디어는 같은 흐름에 두되, 패널 바깥처럼 보이게 하고 16:9 유지 */
 .overlay-stack{
-  gap:0!important;
-  padding:8px!important;
-  border:2px solid var(--style-box-border)!important;
-  border-radius:calc(var(--style-box-radius) + 8px)!important;
-  background:linear-gradient(180deg,var(--style-box-bg-top),var(--style-box-bg-bottom))!important;
-  overflow:hidden!important;
-}
-
-/* 내부 박스 배경/테두리 제거 */
-.overlay-stack > .overlay-box{
-  background:transparent!important;
+  gap:6px!important;
+  padding:0!important;
   border:0!important;
-  box-shadow:none!important;
   border-radius:0!important;
-  margin:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  overflow:visible!important;
 }
 
-/* 이미지 슬라이드는 크기 유지 + 선/배경 제거 */
+.overlay-panel{
+  width:100%!important;
+  display:flex!important;
+  flex-direction:column!important;
+  gap:0!important;
+  padding:7px 8px!important;
+  border:2px solid var(--style-box-border)!important;
+  border-radius:calc(var(--style-box-radius) + 6px)!important;
+  background:linear-gradient(180deg,var(--style-box-bg-top),var(--style-box-bg-bottom))!important;
+  box-shadow:0 0 14px rgba(255,182,213,.16)!important;
+  overflow:hidden!important;
+  pointer-events:none!important;
+}
+
+/* 이미지 슬라이드는 패널 밖: 선/배경 없음 */
 .overlay-stack > .top-slide-box{
   position:relative!important;
   width:100%!important;
@@ -496,7 +500,7 @@ body.broadcast-not-live .overlay-idle-screen{display:flex}
   flex:0 0 auto!important;
 }
 
-/* 이미지 자체는 16:9 안에 전체 보이게 */
+/* 이미지/영상은 가로 기준 16:9 안에 전체 표시 */
 .top-slide-img,
 .top-slide-video{
   position:absolute!important;
@@ -507,48 +511,113 @@ body.broadcast-not-live .overlay-idle-screen{display:flex}
   background:transparent!important;
 }
 
-/* 이미지 다음부터만 구분선 */
-.overlay-stack > .top-slide-box:not(.hidden) + .overlay-box:not(.hidden),
-.overlay-stack > .overlay-box:not(.hidden) + .overlay-box:not(.hidden){
-  border-top:1px solid rgba(255,210,235,.55)!important;
+/* 패널 내부 박스들은 독립 기능 유지, 겉보기는 하나의 패널 */
+.overlay-panel > .overlay-box{
+  background:transparent!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+  margin:0!important;
 }
 
-/* 박스 내부 여백 축소 */
-.account-box{padding:5px 4px 6px!important}
-.funding-box{padding:7px 4px!important}
-.notice-box{padding:7px 4px!important}
-.karaoke-box{padding:8px 4px!important}
-.creator-box{padding:7px 4px!important}
+/* 섹션 구분선: 펀딩만 보이던 문제 보정 */
+.overlay-panel > #broadcastTimerBox:not(.hidden) + #accountBox,
+.overlay-panel > #fundingBox:not(.hidden),
+.overlay-panel > #noticeBox:not(.hidden),
+.overlay-panel > #karaokeBox:not(.hidden),
+.overlay-panel > #creatorBox:not(.hidden){
+  border-top:1px solid rgba(255,210,235,.58)!important;
+}
 
-/* 계좌 줄 축소 */
+.overlay-panel > #broadcastTimerBox.hidden + #accountBox{
+  border-top:0!important;
+}
+
+/* 내부 여백 축소 */
+.account-box{padding:4px 2px 5px!important}
+.funding-box{padding:6px 2px!important}
+.notice-box{padding:6px 2px!important}
+.karaoke-box{padding:7px 2px!important}
+.creator-box{padding:6px 2px!important}
+
 .account-row{height:30px!important}
 .roller{height:30px!important;font-size:22px!important}
 .roller-item{height:30px!important;min-height:30px!important}
 
-/* 펀딩/공지 공간 축소 */
-.funding-line{
-  min-height:34px!important;
-  padding:5px 8px!important;
-  border-radius:8px!important;
+.notice-title,
+.funding-title,
+.karaoke-title{
+  margin-bottom:3px!important;
+  padding:2px 8px!important;
+  font-size:16px!important;
 }
 
 .notice-line{
   margin:1px 0!important;
-  line-height:1.12!important;
+  line-height:1.13!important;
+}
+
+.funding-line{
+  min-height:34px!important;
+  height:34px!important;
+  padding:5px 8px!important;
+  border-radius:8px!important;
+}
+
+/* 기존 "펀딩 첫 줄만 표시" CSS가 롤링 내부 줄을 숨기는 문제 보정 */
+.funding-value > .funding-line:not(:first-child){
+  display:none!important;
+}
+.funding-value .funding-roller .funding-line{
+  display:flex!important;
+}
+
+/* 펀딩 2개 이상 롤링 높이 보정 */
+.funding-roller{
+  height:34px!important;
+  overflow:hidden!important;
+}
+.funding-track .funding-line{
+  height:34px!important;
+  margin:0 0 4px!important;
+}
+
+/* 공지 3줄 초과 롤링 */
+.notice-roll-window{
+  height:calc(var(--style-content-size) * 1.13 * 3)!important;
+  overflow:hidden!important;
+  position:relative!important;
+}
+.notice-roll-track{
+  display:flex!important;
+  flex-direction:column!important;
+  animation:noticeRollUp var(--notice-roll-duration, 10s) linear infinite!important;
+}
+.notice-roll-track .notice-line{
+  min-height:calc(var(--style-content-size) * 1.13)!important;
+}
+.notice-text.rolling .notice-line:nth-child(n+4){
+  display:block!important;
+}
+.notice-text:not(.rolling) .notice-line:nth-child(n+4){
+  display:none!important;
 }
 
 </style>
 </head>
 <body>
   <div id="overlayIdleScreen" class="overlay-idle-screen">시스템설정</div>
-
+<section class="top-slide-box hidden" id="topSlideBox"></section>
 <div class="overlay-root">
     <div class="overlay-stack">
+      <section class="top-slide-box hidden" id="topSlideBox"></section>
+
+      <div class="overlay-panel" id="overlayPanel">
       <section class="overlay-box broadcast-timer-box hidden" id="broadcastTimerBox">
         <span class="timer-label">방송시간</span>
         <span class="timer-value" id="broadcastTimerValue">00:00:00</span>
       </section>
-      <section class="top-slide-box hidden" id="topSlideBox"></section>
+
 
       <section class="overlay-box account-box" id="accountBox">
         <div class="account-row">
@@ -587,6 +656,7 @@ body.broadcast-not-live .overlay-idle-screen{display:flex}
       <section class="overlay-box creator-box" id="creatorBox">
 <div class="creator-list" id="creatorList"></div>
       </section>
+      </div>
     </div>
   </div>
 <div id="overlayAlertRoot"><div class="option-alert" id="optionAlert"></div></div>
@@ -1130,11 +1200,29 @@ function getOverlaySections(settings){
       return;
     }
 
-    textEl.innerHTML = text.split(/\r?\n/).map((line, idx) => {
+    const lines = text.split(/\r?\n/).filter(line => String(line).trim() !== "");
+    const lineHtml = lines.map((line, idx) => {
       const color = colors[idx] || "";
       const style = color ? ` style="color:${escapeHtml(color)} !important"` : "";
       return `<span class="notice-line"${style}>${escapeHtml(line)}</span>`;
     }).join("");
+
+    if(lines.length > 3){
+      textEl.classList.add("rolling");
+      const duration = Math.max(8, lines.length * 2.4);
+      textEl.style.setProperty("--notice-roll-duration", duration + "s");
+      textEl.innerHTML = `
+        <div class="notice-roll-window">
+          <div class="notice-roll-track">
+            ${lineHtml}
+            ${lineHtml}
+          </div>
+        </div>
+      `;
+    }else{
+      textEl.classList.remove("rolling");
+      textEl.innerHTML = lineHtml;
+    }
   }
 
   function applySections(settings){
@@ -1700,22 +1788,24 @@ function getOverlaySections(settings){
     const root = document.getElementById("overlayAlertRoot");
     const alertEl = document.getElementById("optionAlert");
     const stack = document.querySelector(".overlay-stack");
+    const panel = document.getElementById("overlayPanel") || stack;
     const accountBox = document.getElementById("accountBox");
 
-    if(!root || !alertEl || !stack) return;
+    if(!root || !alertEl || !stack || !panel) return;
 
     if(alertEl.parentElement !== root){
       root.appendChild(alertEl);
     }
 
     // ALERT root를 계좌후원 박스 바로 다음 DOM 위치로 이동
-    if(accountBox && accountBox.parentElement === stack){
-      if(root.parentElement !== stack || root.previousElementSibling !== accountBox){
-        stack.insertBefore(root, accountBox.nextSibling);
+    // overlayPanel 구조에서도 기존처럼 계좌후원 바로 아래에 고정
+    if(accountBox && accountBox.parentElement === panel){
+      if(root.parentElement !== panel || root.previousElementSibling !== accountBox){
+        panel.insertBefore(root, accountBox.nextSibling);
       }
     }else{
-      if(root.parentElement !== stack){
-        stack.insertBefore(root, stack.firstChild);
+      if(root.parentElement !== panel){
+        panel.insertBefore(root, panel.firstChild);
       }
     }
 
@@ -1833,6 +1923,12 @@ function getOverlaySections(settings){
     renderFunding(settings);
       renderAccountRoller(data.accountDonors);
       renderCreators(creators);
+    }
+
+    // 펀딩은 2개 이상일 때 주기적으로 한 줄 롤링되어야 하므로
+    // 설정 변화가 없어도 refresh 주기마다 다시 렌더링
+    if(getOverlaySections(settings).funding === true){
+      renderFunding(settings);
     }
   }
 
