@@ -333,7 +333,6 @@ const defaultAmountRules = [
 ];
 
 function escAttr(v){return String(v ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));}
-const esc = escAttr;
 function safeId(v){return String(v||'').replace(/[^a-zA-Z0-9_-]/g,'') || ('preset_'+Date.now());}
 
 async function load(){
