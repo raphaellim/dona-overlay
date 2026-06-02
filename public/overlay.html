@@ -420,10 +420,10 @@ body.box-group-single .overlay-box{
 }
 body.box-group-single .overlay-box:not(.hidden)+.overlay-box:not(.hidden){border-top:1px solid rgba(255,210,235,.42)!important}
 
-.top-slide-box{position:relative;width:100%;height:var(--top-slide-height);border-radius:var(--style-box-radius);overflow:hidden;border:1px solid var(--style-box-border);background:rgba(255,255,255,.08);box-shadow:0 0 14px rgba(255,182,213,.22);opacity:var(--top-slide-opacity);margin-bottom:var(--style-overlay-gap)}
+.top-slide-box{position:relative;width:100%;aspect-ratio:16/9;height:auto;min-height:0;max-height:var(--top-slide-height);border-radius:var(--style-box-radius);overflow:hidden;border:1px solid var(--style-box-border);background:rgba(0,0,0,.22);box-shadow:0 0 14px rgba(255,182,213,.22);opacity:var(--top-slide-opacity);margin-bottom:var(--style-overlay-gap)}
 .top-slide-box.hidden{display:none!important}
-.top-slide-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .75s ease}
-.top-slide-img.active{opacity:1}
+.top-slide-img,.top-slide-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .75s ease;background:#000}
+.top-slide-img.active,.top-slide-video.active{opacity:1}
 body.box-group-single .top-slide-box{margin-bottom:10px}
 
 
@@ -709,24 +709,40 @@ function getOverlaySections(settings){
     const box = document.getElementById("topSlideBox");
     if(!box) return;
     const st = settings?.stationStyle || {};
-    const images = Array.isArray(st.topSlideImages) ? st.topSlideImages.filter(Boolean) : [];
+    const enabled = st.topSlideEnabled !== false && String(st.topSlideEnabled || 'true') !== 'false';
+    const media = Array.isArray(st.topSlideImages) ? st.topSlideImages.filter(Boolean) : [];
     if(topSlideTimer){ clearInterval(topSlideTimer); topSlideTimer = null; }
     topSlideIndex = 0;
-    if(!images.length || Number(st.topSlideHeight || 0) <= 0){
+    if(!enabled || !media.length || Number(st.topSlideHeight || 0) <= 0){
       box.classList.add("hidden");
       box.innerHTML = "";
       return;
     }
+    const isVideo = (src) => /\.(mp4|webm|mov)(\?|#|$)/i.test(String(src));
+    const html = media.map((src, idx) => {
+      const active = idx === 0 ? 'active' : '';
+      const safe = escapeHtml(src);
+      return isVideo(src)
+        ? `<video class="top-slide-video ${active}" src="${safe}" muted playsinline loop preload="metadata"></video>`
+        : `<img class="top-slide-img ${active}" src="${safe}" alt="slide">`;
+    }).join("");
     box.classList.remove("hidden");
-    box.innerHTML = images.map((src, idx) => `<img class="top-slide-img ${idx===0?'active':''}" src="${escapeHtml(src)}">`).join("");
-    if(images.length > 1){
+    box.innerHTML = html;
+    const playActive = () => {
+      box.querySelectorAll('video').forEach(v => { try { v.pause(); v.currentTime = 0; } catch(_){} });
+      const active = box.querySelector('.active');
+      if(active && active.tagName === 'VIDEO') active.play().catch(()=>{});
+    };
+    playActive();
+    if(media.length > 1){
       const interval = Math.max(800, Number(st.topSlideInterval || 3500));
       topSlideTimer = setInterval(() => {
-        const imgs = Array.from(box.querySelectorAll(".top-slide-img"));
-        if(!imgs.length) return;
-        imgs.forEach(img => img.classList.remove("active"));
-        topSlideIndex = (topSlideIndex + 1) % imgs.length;
-        imgs[topSlideIndex].classList.add("active");
+        const slides = Array.from(box.querySelectorAll(".top-slide-img,.top-slide-video"));
+        if(!slides.length) return;
+        slides.forEach(el => el.classList.remove("active"));
+        topSlideIndex = (topSlideIndex + 1) % slides.length;
+        slides[topSlideIndex].classList.add("active");
+        playActive();
       }, interval);
     }
   }

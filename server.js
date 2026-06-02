@@ -4,12 +4,94 @@ const { createClient } = require('@supabase/supabase-js');
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
+const multer = require('multer');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '1234';
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+
+const MEDIA_BASE_DIR = path.join(__dirname, 'public', 'uploads');
+const MEDIA_IMAGE_DIR = path.join(MEDIA_BASE_DIR, 'images');
+const MEDIA_VIDEO_DIR = path.join(MEDIA_BASE_DIR, 'videos');
+for (const d of [MEDIA_BASE_DIR, MEDIA_IMAGE_DIR, MEDIA_VIDEO_DIR]) {
+  try { fs.mkdirSync(d, { recursive: true }); } catch (_) {}
+}
+
+function safeMediaName(name) {
+  const ext = path.extname(String(name || '')).toLowerCase();
+  const base = path.basename(String(name || ''), ext)
+    .normalize('NFKD')
+    .replace(/[^a-zA-Z0-9가-힣_-]+/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .slice(0, 60) || 'media';
+  return `${Date.now()}_${crypto.randomBytes(4).toString('hex')}_${base}${ext}`;
+}
+
+const mediaUpload = multer({
+  storage: multer.diskStorage({
+    destination(req, file, cb) {
+      const mime = String(file.mimetype || '');
+      if (mime.startsWith('video/')) cb(null, MEDIA_VIDEO_DIR);
+      else cb(null, MEDIA_IMAGE_DIR);
+    },
+    filename(req, file, cb) { cb(null, safeMediaName(file.originalname)); }
+  }),
+  limits: { fileSize: 120 * 1024 * 1024, files: 10 },
+  fileFilter(req, file, cb) {
+    const mime = String(file.mimetype || '');
+    const ext = path.extname(String(file.originalname || '')).toLowerCase();
+    const okImage = mime.startsWith('image/') && ['.png','.jpg','.jpeg','.webp','.gif'].includes(ext);
+    const okVideo = mime.startsWith('video/') && ['.mp4','.webm','.mov'].includes(ext);
+    if (okImage || okVideo) return cb(null, true);
+    cb(new Error('이미지(png/jpg/webp/gif) 또는 영상(mp4/webm/mov)만 업로드할 수 있습니다.'));
+  }
+});
+
+function listMediaFiles() {
+  const items = [];
+  const scan = (dir, type, urlBase) => {
+    if (!fs.existsSync(dir)) return;
+    for (const f of fs.readdirSync(dir, { withFileTypes: true })) {
+      if (!f.isFile()) continue;
+      const ext = path.extname(f.name).toLowerCase();
+      if (type === 'image' && !['.png','.jpg','.jpeg','.webp','.gif'].includes(ext)) continue;
+      if (type === 'video' && !['.mp4','.webm','.mov'].includes(ext)) continue;
+      const abs = path.join(dir, f.name);
+      const st = fs.statSync(abs);
+      items.push({
+        id: Buffer.from(`${urlBase}/${f.name}`).toString('base64url'),
+        type,
+        name: f.name,
+        url: `${urlBase}/${encodeURIComponent(f.name)}`,
+        size: st.size,
+        createdAt: st.birthtime || st.mtime,
+        updatedAt: st.mtime
+      });
+    }
+  };
+  scan(MEDIA_IMAGE_DIR, 'image', '/uploads/images');
+  scan(MEDIA_VIDEO_DIR, 'video', '/uploads/videos');
+
+  // 기존 서버 이미지 폴더도 선택 가능하게 포함하되 삭제 대상은 uploads만 허용합니다.
+  for (const dirName of ['images', 'slides', 'img']) {
+    const dir = path.join(__dirname, 'public', dirName);
+    if (!fs.existsSync(dir)) continue;
+    for (const f of fs.readdirSync(dir, { withFileTypes: true })) {
+      if (!f.isFile()) continue;
+      const ext = path.extname(f.name).toLowerCase();
+      if (!['.png','.jpg','.jpeg','.webp','.gif'].includes(ext)) continue;
+      const abs = path.join(dir, f.name);
+      const st = fs.statSync(abs);
+      const url = `/${dirName}/${encodeURIComponent(f.name)}`;
+      items.push({ id: Buffer.from(url).toString('base64url'), type:'image', name:f.name, url, size:st.size, createdAt:st.birthtime || st.mtime, updatedAt:st.mtime, readonly:true });
+    }
+  }
+  return items.sort((a,b)=> new Date(b.updatedAt) - new Date(a.updatedAt));
+}
 
 const supabase = SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY
   ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
@@ -18,7 +100,7 @@ const supabase = SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY
   : null;
 
 app.use(cors());
-app.use(express.json({ limit: '2mb' }));
+app.use(express.json({ limit: '20mb' }));
 app.use(accessGuard);
 app.use(express.static('public'));
 
@@ -261,6 +343,7 @@ function normalizeStationStyle(raw) {
   };
 
   return {
+    topSlideEnabled: value.topSlideEnabled !== false && String(value.topSlideEnabled || 'true') !== 'false',
     boxBorderColor: pick('boxBorderColor', 'rgba(255,138,185,.95)'),
     boxBgTop: pick('boxBgTop', 'rgba(18,22,32,.88)'),
     boxBgBottom: pick('boxBgBottom', 'rgba(10,12,20,.82)'),
@@ -751,7 +834,12 @@ const MASTER_HTML = new Set([
 const STATION_HTML = new Set([
   '/admin.html',
   '/control.html',
-  '/station_control.html'
+  '/station_control.html',
+  '/m_admin.html',
+  '/m_control.html',
+  '/station_style.html',
+  '/media_manager.html',
+  '/m_media_manager.html'
 ]);
 
 const VIEWER_HTML = new Set([
@@ -1708,24 +1796,76 @@ app.post('/api/sound-events/release', async (req, res) => {
 });
 
 
+
+/* 미디어 업로드/관리: PC/모바일 공통 */
+app.get('/api/media', async (req, res) => {
+  try {
+    const media = listMediaFiles();
+    res.json({
+      media,
+      images: media.filter(x => x.type === 'image'),
+      videos: media.filter(x => x.type === 'video')
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message || '미디어 목록 조회 실패' });
+  }
+});
+
+app.post('/api/media/upload', mediaUpload.array('files', 10), async (req, res) => {
+  try {
+    const ctx = await getStationContext(req, res);
+    if (!ctx) return;
+    if (!await operatorAllowed(req, ctx.station, ctx.active)) {
+      return res.status(401).json({ error: '방송국 관리자 또는 방송 비밀번호 권한이 필요합니다.' });
+    }
+    const uploaded = (req.files || []).map(f => {
+      const type = String(f.mimetype || '').startsWith('video/') ? 'video' : 'image';
+      const urlBase = type === 'video' ? '/uploads/videos' : '/uploads/images';
+      return {
+        id: Buffer.from(`${urlBase}/${f.filename}`).toString('base64url'),
+        type,
+        name: f.filename,
+        originalName: f.originalname,
+        url: `${urlBase}/${encodeURIComponent(f.filename)}`,
+        size: f.size
+      };
+    });
+    res.json({ ok: true, uploaded, media: listMediaFiles() });
+  } catch (e) {
+    res.status(500).json({ error: e.message || '업로드 실패' });
+  }
+});
+
+app.delete('/api/media', async (req, res) => {
+  try {
+    const ctx = await getStationContext(req, res);
+    if (!ctx) return;
+    if (!await operatorAllowed(req, ctx.station, ctx.active)) {
+      return res.status(401).json({ error: '방송국 관리자 또는 방송 비밀번호 권한이 필요합니다.' });
+    }
+    const url = String(req.query.url || req.body?.url || '').trim();
+    if (!url) return res.status(400).json({ error: '삭제할 파일 URL이 없습니다.' });
+    const decoded = decodeURIComponent(url);
+    const allowedBases = ['/uploads/images/', '/uploads/videos/'];
+    if (!allowedBases.some(b => decoded.startsWith(b))) {
+      return res.status(400).json({ error: '업로드 폴더의 파일만 삭제할 수 있습니다.' });
+    }
+    const abs = path.normalize(path.join(__dirname, 'public', decoded));
+    if (!abs.startsWith(path.normalize(MEDIA_BASE_DIR))) {
+      return res.status(400).json({ error: '삭제 경로가 올바르지 않습니다.' });
+    }
+    if (fs.existsSync(abs)) fs.unlinkSync(abs);
+    res.json({ ok: true, media: listMediaFiles() });
+  } catch (e) {
+    res.status(500).json({ error: e.message || '삭제 실패' });
+  }
+});
+
 /* 서버 이미지 목록: station_style.html 썸네일 선택용 */
 app.get('/api/server-images', async (req, res) => {
   try {
-    const dirs = ['images', 'slides', 'uploads', 'img'];
-    const exts = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif']);
-    const list = [];
-    for (const dir of dirs) {
-      const abs = path.join(__dirname, 'public', dir);
-      if (!fs.existsSync(abs)) continue;
-      const files = fs.readdirSync(abs, { withFileTypes: true });
-      for (const f of files) {
-        if (!f.isFile()) continue;
-        const ext = path.extname(f.name).toLowerCase();
-        if (!exts.has(ext)) continue;
-        list.push({ name: f.name, url: '/' + dir + '/' + encodeURIComponent(f.name), dir });
-      }
-    }
-    res.json({ images: list });
+    const images = listMediaFiles().filter(x => x.type === 'image');
+    res.json({ images });
   } catch (e) {
     res.status(500).json({ error: e.message || '이미지 목록 조회 실패' });
   }
@@ -1851,15 +1991,28 @@ app.post('/api/broadcast-timer/start', async (req, res) => {
     if (!requireDb(res)) return;
     const ctx = await getStationContext(req, res);
     if (!ctx) return;
-    if (!await operatorAllowed(req, ctx.station, ctx.active)) {
+
+    const broadcastId = req.body.broadcastId || req.query.broadcastId || ctx.active.id;
+    const target = await getStationBroadcastOrNull(ctx.station.id, broadcastId);
+    if (!target) return res.status(404).json({ error: '방송을 찾을 수 없습니다.' });
+
+    if (!await operatorAllowed(req, ctx.station, target)) {
       return res.status(401).json({ error: '방송 비밀번호 또는 방송국 관리자 권한이 필요합니다.' });
     }
 
-    const broadcastId = req.body.broadcastId || req.query.broadcastId || ctx.active.id;
+    // 방송시작 버튼은 해당 방송을 현재 방송으로도 선택합니다.
+    const activeBroadcast = await setActiveBroadcast(ctx.station.id, broadcastId);
+
     const current = await readEffectiveSettings(ctx.station.slug, broadcastId);
     const broadcastLiveData = { status: 'live', live: true, startedAt: new Date().toISOString(), endedAt: '' };
     await saveEffectiveSettings(ctx.station.slug, broadcastId, { ...current, broadcastLiveData });
-    res.json({ ok: true, broadcastId, broadcastLiveData });
+
+    const given = req.body?.broadcastPassword || req.body?.password || req.query?.broadcastPassword || req.query?.password;
+    if (given && String(given) === String(target.broadcast_password || '')) {
+      setCookie(res, `broadcast_pw_${target.id}`, String(given), 60 * 60 * 24);
+    }
+
+    res.json({ ok: true, broadcastId, active: broadcastToClient(activeBroadcast), broadcastLiveData });
   } catch (e) {
     res.status(500).json({ error: e.message || '방송 시작 실패' });
   }
@@ -1870,14 +2023,29 @@ app.post('/api/broadcast-timer/end', async (req, res) => {
     if (!requireDb(res)) return;
     const ctx = await getStationContext(req, res);
     if (!ctx) return;
-    if (!await operatorAllowed(req, ctx.station, ctx.active)) {
+
+    const broadcastId = req.body.broadcastId || req.query.broadcastId || ctx.active.id;
+    const target = await getStationBroadcastOrNull(ctx.station.id, broadcastId);
+    if (!target) return res.status(404).json({ error: '방송을 찾을 수 없습니다.' });
+
+    if (!await operatorAllowed(req, ctx.station, target)) {
       return res.status(401).json({ error: '방송 비밀번호 또는 방송국 관리자 권한이 필요합니다.' });
     }
 
-    const broadcastId = req.body.broadcastId || req.query.broadcastId || ctx.active.id;
     const current = await readEffectiveSettings(ctx.station.slug, broadcastId);
-    const broadcastLiveData = { status: 'ended', live: false, startedAt: current.broadcastLiveData?.startedAt || '', endedAt: new Date().toISOString() };
+    const broadcastLiveData = {
+      status: 'ended',
+      live: false,
+      startedAt: current.broadcastLiveData?.startedAt || '',
+      endedAt: new Date().toISOString()
+    };
     await saveEffectiveSettings(ctx.station.slug, broadcastId, { ...current, broadcastLiveData });
+
+    const given = req.body?.broadcastPassword || req.body?.password || req.query?.broadcastPassword || req.query?.password;
+    if (given && String(given) === String(target.broadcast_password || '')) {
+      setCookie(res, `broadcast_pw_${target.id}`, String(given), 60 * 60 * 24);
+    }
+
     res.json({ ok: true, broadcastId, broadcastLiveData });
   } catch (e) {
     res.status(500).json({ error: e.message || '방송 종료 실패' });

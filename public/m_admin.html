@@ -639,7 +639,7 @@
                 onclick="location.href=stationUrl('/m_control.html')">⚙</button>
         </div>
         <div class="station-line"><span class="live-dot"></span><span id="stationInfo">방송국 확인 중.</span></div>
-        <div class="quick-links"><a id="mobileControlLink" class="primary">모바일 설정</a><a id="stationLink">방송국</a></div>
+        <div class="quick-links"><a id="mobileControlLink" class="primary">모바일 설정</a><a id="mediaMobileLink">미디어</a><a id="stationLink">방송국</a></div>
     </header>
     <main class="wrap">
         <section class="card">
@@ -831,6 +831,7 @@ function renderHeader() {
   if (loginInfo) loginInfo.textContent = `${stationName} / 현재 방송: ${broadcastTitle}`;
 
   $('#mobileControlLink').href = stationUrl('/m_control.html');
+  const mediaLink = $('#mediaMobileLink'); if(mediaLink) mediaLink.href = stationUrl('/m_media_manager.html');
   $('#stationLink').href = '/station_login.html?station=' + encodeURIComponent(STATION) + '&next=' + encodeURIComponent('/station_control.html?station=' + encodeURIComponent(STATION));
 }
 

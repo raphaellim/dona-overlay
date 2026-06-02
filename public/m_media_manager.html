@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>모바일 미디어 관리</title>
+<link rel="stylesheet" href="/app.css">
+<style>
+:root{--bg:#070b12;--card:#0b1220;--line:#253247;--line2:#334155;--text:#e5e7eb;--muted:#94a3b8;--blue:#2563eb;--green:#16a34a;--red:#dc2626;--pink:#ec4899}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 10% -10%,rgba(236,72,153,.18),transparent 34%),var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',Arial,sans-serif}.wrap{max-width:560px;margin:0 auto;padding:12px;padding-bottom:90px}.top{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:16px}.title{font-size:24px;font-weight:1000}.sub{color:var(--muted);font-size:13px;margin-top:5px}.nav{display:flex;gap:8px;flex-wrap:wrap}.nav a{color:#dbeafe;text-decoration:none;border:1px solid var(--line2);background:#111827;border-radius:12px;padding:10px 14px;font-weight:900}.card{background:linear-gradient(180deg,#0d1624,#08101c);border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:14px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.btn{border:0;border-radius:12px;padding:11px 14px;background:#334155;color:#fff;font-weight:1000;cursor:pointer}.blue{background:var(--blue)}.green{background:var(--green)}.red{background:var(--red)}.pink{background:var(--pink)}.input{width:100%;background:#070b12;color:#fff;border:1px solid var(--line2);border-radius:12px;padding:11px 12px;font-weight:800}.actions{display:flex;gap:8px;flex-wrap:wrap}.drop{border:2px dashed rgba(255,182,213,.45);border-radius:18px;padding:24px;text-align:center;background:rgba(255,255,255,.04)}.drop.drag{border-color:#38bdf8;background:rgba(56,189,248,.12)}.media-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.media{border:1px solid var(--line2);border-radius:16px;overflow:hidden;background:#07101c}.preview{position:relative;width:100%;aspect-ratio:16/9;background:#000;display:block;overflow:hidden}.preview img,.preview video{width:100%;height:100%;object-fit:cover;display:block}.media-body{padding:10px}.name{font-size:13px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.meta{color:var(--muted);font-size:12px;margin:4px 0 8px}.media .actions{display:grid;grid-template-columns:1fr 1fr;gap:6px}.slide-list{min-height:90px;white-space:pre-wrap;font-family:ui-monospace,Consolas,monospace;font-size:12px}.hint{color:#dbeafe;background:rgba(37,99,235,.12);border:1px solid rgba(96,165,250,.24);padding:10px 12px;border-radius:12px;font-size:13px;font-weight:800;line-height:1.45}.muted{color:var(--muted);font-size:13px}@media(max-width:800px){.grid{grid-template-columns:1fr}.top{flex-direction:column}.nav a,.btn{width:100%;text-align:center}.media-grid{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top"><div><div class="title">모바일 미디어</div><div id="info" class="sub">방송국 확인 중...</div></div><div class="nav"><a id="stationLink">방송국</a><a id="styleLink">스타일</a><a id="mMediaLink">모바일 미디어</a><a id="overlayLink" target="_blank">오버레이</a></div></div>
+  <section class="card"><div class="hint">모바일에서도 이미지/영상 업로드가 가능합니다. 슬라이드는 16:9 비율로 유지됩니다.</div></section>
+  <div class="grid">
+    <section class="card">
+      <h2>업로드</h2>
+      <div id="drop" class="drop"><p><b>이미지/영상 파일을 선택하거나 끌어다 놓으세요</b></p><p class="muted">이미지: png/jpg/webp/gif · 영상: mp4/webm/mov · 최대 120MB</p><input id="fileInput" class="input" type="file" accept="image/*,video/mp4,video/webm,video/quicktime" multiple></div>
+      <div class="actions" style="margin-top:12px"><button class="btn green" onclick="uploadFiles()">업로드</button><button class="btn blue" onclick="loadMedia()">목록 새로고침</button></div>
+    </section>
+    <section class="card">
+      <h2>상단 슬라이드 설정</h2>
+      <div class="actions" style="margin-bottom:10px"><button id="slideToggle" class="btn pink" onclick="toggleSlide()">슬라이드 ON/OFF</button><button class="btn green" onclick="saveSlideList()">슬라이드 저장</button><button class="btn red" onclick="clearSlideList()">목록 비우기</button></div>
+      <textarea id="slideList" class="input slide-list" placeholder="/uploads/images/example.png"></textarea>
+      <p class="muted">한 줄에 하나씩 저장됩니다. 이미지와 영상을 섞어서 사용할 수 있습니다.</p>
+    </section>
+  </div>
+  <section class="card"><h2>서버 미디어</h2><div id="mediaGrid" class="media-grid"><div class="muted">불러오는 중...</div></div></section>
+</div>
+<script src="/common.js"></script>
+<script>
+const STATION=(new URLSearchParams(location.search).get('station')||localStorage.getItem('STATION_SLUG')||'default');localStorage.setItem('STATION_SLUG',STATION);let settings=null;let media=[];
+function stationUrl(path){return path+'?station='+encodeURIComponent(STATION)}
+async function apiX(url,opt={}){const u=new URL(url,location.origin);u.searchParams.set('station',STATION);const options=Object.assign({headers:{}},opt||{});if(options.body&&!(options.body instanceof FormData)&&!options.headers['Content-Type'])options.headers['Content-Type']='application/json';const res=await fetch(u.pathname+u.search,options);const data=await res.json().catch(()=>({}));if(!res.ok)throw new Error(data.error||res.statusText||'API 오류');return data}
+function esc(v){return String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch]))}
+function fmtSize(n){n=Number(n||0);if(n>1024*1024)return (n/1024/1024).toFixed(1)+'MB';if(n>1024)return Math.round(n/1024)+'KB';return n+'B'}
+function renderLinks(){stationLink.href=stationUrl('/station_control.html');styleLink.href=stationUrl('/station_style.html');mMediaLink.href=stationUrl('/m_media_manager.html');overlayLink.href='/overlay.html?station='+encodeURIComponent(STATION)+'&token='+encodeURIComponent(settings?.station?.overlayToken||'')+'&monitor=1&v='+Date.now()}
+function renderSlide(){const st=settings?.stationStyle||{};slideList.value=Array.isArray(st.topSlideImages)?st.topSlideImages.join('\n'):'';slideToggle.textContent=(st.topSlideEnabled===false||String(st.topSlideEnabled)==='false')?'슬라이드 OFF':'슬라이드 ON';slideToggle.className='btn '+((st.topSlideEnabled===false||String(st.topSlideEnabled)==='false')?'red':'pink')}
+function previewHtml(m){return m.type==='video'?`<video src="${esc(m.url)}" muted playsinline preload="metadata"></video>`:`<img src="${esc(m.url)}">`}
+function renderMedia(){mediaGrid.innerHTML=media.length?media.map(m=>`<div class="media"><div class="preview">${previewHtml(m)}</div><div class="media-body"><div class="name">${esc(m.name)}</div><div class="meta">${m.type==='video'?'영상':'이미지'} · ${fmtSize(m.size)} ${m.readonly?'· 서버기본':''}</div><div class="actions"><button class="btn blue" onclick="addToSlide('${esc(m.url)}')">슬라이드 추가</button><button class="btn red" ${m.readonly?'disabled':''} onclick="deleteMedia('${esc(m.url)}')">삭제</button></div></div></div>`).join(''):'<div class="muted">업로드된 미디어가 없습니다.</div>'}
+function addToSlide(url){const list=slideList.value.split(/\r?\n|,/).map(v=>v.trim()).filter(Boolean);if(!list.includes(url))list.push(url);slideList.value=list.join('\n')}
+function clearSlideList(){if(confirm('슬라이드 목록을 비울까요?'))slideList.value=''}
+async function saveSlideList(){const stationStyle={...(settings.stationStyle||{}),topSlideEnabled:!(settings.stationStyle?.topSlideEnabled===false||String(settings.stationStyle?.topSlideEnabled)==='false'),topSlideImages:slideList.value.split(/\r?\n|,/).map(v=>v.trim()).filter(Boolean)};await apiX('/api/station-style',{method:'POST',body:JSON.stringify({stationStyle})});await loadAll();alert('슬라이드 저장 완료')}
+async function toggleSlide(){const now=!(settings.stationStyle?.topSlideEnabled===false||String(settings.stationStyle?.topSlideEnabled)==='false');const stationStyle={...(settings.stationStyle||{}),topSlideEnabled:!now,topSlideImages:slideList.value.split(/\r?\n|,/).map(v=>v.trim()).filter(Boolean)};await apiX('/api/station-style',{method:'POST',body:JSON.stringify({stationStyle})});await loadAll()}
+async function uploadFiles(){const files=fileInput.files;if(!files||!files.length)return alert('업로드할 파일을 선택하세요');const fd=new FormData();[...files].forEach(f=>fd.append('files',f));await apiX('/api/media/upload',{method:'POST',body:fd});fileInput.value='';await loadMedia();alert('업로드 완료')}
+async function deleteMedia(url){if(!confirm('삭제할까요?'))return;await apiX('/api/media?url='+encodeURIComponent(url),{method:'DELETE'});const list=slideList.value.split(/\r?\n|,/).map(v=>v.trim()).filter(v=>v&&v!==url);slideList.value=list.join('\n');await saveSlideList();await loadMedia()}
+async function loadMedia(){const d=await apiX('/api/media?_ts='+Date.now());media=d.media||[];renderMedia()}
+async function loadAll(){settings=await apiX('/api/settings?_ts='+Date.now());info.textContent=(settings.station?.name||STATION)+' / 미디어 업로드·슬라이드 관리';renderLinks();renderSlide();await loadMedia()}
+['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('drag')}));['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('drag')}));drop.addEventListener('drop',e=>{fileInput.files=e.dataTransfer.files});
+loadAll().catch(e=>alert(e.message));
+</script>
+</body>
+</html>

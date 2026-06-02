@@ -8,7 +8,7 @@
 <style>
 :root{--bg:#070b12;--card:#0b1220;--line:#253247;--line2:#334155;--text:#e5e7eb;--muted:#94a3b8;--blue:#2563eb;--green:#16a34a;--red:#dc2626}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',Arial,sans-serif}.wrap{max-width:1180px;margin:0 auto;padding:22px}.top{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:16px}.title{font-size:30px;font-weight:950}.nav{display:flex;gap:8px;flex-wrap:wrap}.nav a{text-decoration:none;color:#dbeafe;background:#111827;border:1px solid var(--line2);padding:10px 14px;border-radius:12px;font-weight:900}.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:14px}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.row{margin-bottom:10px}label{display:block;font-size:13px;color:#cbd5e1;font-weight:900;margin-bottom:6px}.input{width:100%;background:#070b12;color:#fff;border:1px solid var(--line2);border-radius:12px;padding:10px 11px;font-weight:800}.input:focus{outline:none;border-color:#60a5fa;box-shadow:0 0 0 3px rgba(59,130,246,.14)}.btn{border:0;border-radius:12px;padding:10px 13px;font-weight:900;cursor:pointer;background:#334155;color:#fff}.green{background:var(--green)}.blue{background:var(--blue)}.red{background:var(--red)}.muted{color:var(--muted);font-size:13px}.actions{display:flex;gap:8px;flex-wrap:wrap}.preview{width:285px;margin:0 auto;background:linear-gradient(180deg,var(--p-bg1),var(--p-bg2));border:2px solid var(--p-border);border-radius:16px;padding:12px;text-align:center}.preview-title{display:inline-flex;padding:4px 12px;border-radius:999px;background:rgba(255,255,255,.1);font-weight:1000;color:var(--p-title);font-size:var(--p-title-size)}.preview-content{margin-top:10px;text-align:left;font-weight:900;color:var(--p-content);font-size:var(--p-content-size)}.hint{padding:10px 12px;border-radius:12px;border:1px solid rgba(96,165,250,.25);background:rgba(37,99,235,.12);color:#dbeafe;font-size:13px;font-weight:800;line-height:1.45}.warn{border-color:rgba(248,113,113,.35);background:rgba(127,29,29,.18);color:#fecaca}@media(max-width:900px){.grid{grid-template-columns:1fr}.top{flex-direction:column;align-items:flex-start}.actions .btn{width:100%}}
-.thumb-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px;margin-top:10px}.thumb{border:1px solid var(--line2);background:#07101c;border-radius:12px;overflow:hidden;cursor:pointer;color:#cbd5e1;font-size:11px;font-weight:900;text-align:center}.thumb img{display:block;width:100%;height:58px;object-fit:cover}.thumb span{display:block;padding:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.thumb-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px;margin-top:10px}.thumb{border:1px solid var(--line2);background:#07101c;border-radius:12px;overflow:hidden;cursor:pointer;color:#cbd5e1;font-size:11px;font-weight:900;text-align:center}.thumb img,.thumb video{display:block;width:100%;aspect-ratio:16/9;height:auto;object-fit:cover;background:#000}.thumb span{display:block;padding:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 </style>
 </head>
 <body>
@@ -23,6 +23,8 @@
       <a id="adminLink" href="/admin.html">입력</a>
       <a id="controlLink" href="/control.html">설정</a>
       <a id="mControlLink" href="/m_control.html">모바일설정</a>
+      <a id="mediaLink" href="/media_manager.html">미디어</a>
+      <a id="mMediaLink" href="/m_media_manager.html">모바일미디어</a>
       <a id="overlayLink" target="_blank" href="/overlay.html">오버레이 TEST</a>
     </div>
   </div>
@@ -66,15 +68,16 @@
   </section>
 
   <section class="card">
-    <h2>상단 이미지 슬라이드</h2>
-    <div class="hint">서버 이미지 썸네일을 선택하거나 이미지 주소를 한 줄씩 입력하세요. 높이를 0으로 저장하면 슬라이드가 꺼집니다.</div>
+    <h2>상단 이미지/영상 슬라이드</h2>
+    <div class="hint">미디어 관리에서 업로드한 이미지/영상을 선택하거나 주소를 한 줄씩 입력하세요. 슬라이드는 16:9 비율로 표시됩니다.</div>
     <div class="grid">
-      <div class="row" style="grid-column:1/-1"><label>슬라이드 이미지 목록</label><textarea id="topSlideImages" class="input" style="min-height:96px" placeholder="/images/top1.png&#10;/slides/top2.png"></textarea></div>
+      <div class="row"><label>슬라이드 ON/OFF</label><select id="topSlideEnabled" class="input"><option value="true">ON</option><option value="false">OFF</option></select></div>
+      <div class="row" style="grid-column:1/-1"><label>슬라이드 이미지/영상 목록</label><textarea id="topSlideImages" class="input" style="min-height:96px" placeholder="/uploads/images/top1.png&#10;/uploads/videos/intro.mp4"></textarea></div>
       <div class="row"><label>슬라이드 높이(px)</label><input id="topSlideHeight" class="input" type="number" placeholder="105"></div>
       <div class="row"><label>전환 시간(ms)</label><input id="topSlideInterval" class="input" type="number" placeholder="3500"></div>
       <div class="row"><label>투명도(0~1)</label><input id="topSlideOpacity" class="input" type="number" step="0.05" placeholder="1"></div>
     </div>
-    <div class="actions"><button class="btn blue" onclick="loadServerImages()">서버 이미지 불러오기</button></div>
+    <div class="actions"><button class="btn blue" onclick="loadServerImages()">서버 미디어 불러오기</button><button class="btn" onclick="location.href=stationUrl('/media_manager.html')">미디어 관리</button></div>
     <div id="serverImageThumbs" class="thumb-grid"></div>
   </section>
 
@@ -149,7 +152,7 @@ const fields = [
   'boxBorderColor','boxBgTop','boxBgBottom',
   'accountTitleColor','noticeTitleColor','fundingTitleColor','karaokeTitleColor','timerTitleColor',
   'contentColor','noticeContentColor','fundingContentColor','karaokeContentColor','karaokeNoticeColor','karaokeCurrentColor','karaokeQueueColor','karaokeCoinColor','karaokeDonorColor','karaokeHeartColor',
-  'accountTitleSize','noticeTitleSize','fundingTitleSize','karaokeTitleSize','contentFontSize','creatorContentSize','accountRollFontSize','alertFontSize','karaokeNoticeSize','karaokeCurrentSize','karaokeQueueSize','karaokeCoinSize','fundingBarColor','boxGroupMode','overlayWidth','overlayTop','overlayRight','overlayGap','boxRadius','topSlideImages','topSlideHeight','topSlideInterval','topSlideOpacity',
+  'accountTitleSize','noticeTitleSize','fundingTitleSize','karaokeTitleSize','contentFontSize','creatorContentSize','accountRollFontSize','alertFontSize','karaokeNoticeSize','karaokeCurrentSize','karaokeQueueSize','karaokeCoinSize','fundingBarColor','boxGroupMode','overlayWidth','overlayTop','overlayRight','overlayGap','boxRadius','topSlideEnabled','topSlideImages','topSlideHeight','topSlideInterval','topSlideOpacity',
   'vipAccountThreshold','vipAccountBg1','vipAccountBg2'
 ];
 const defaults = {
@@ -186,6 +189,7 @@ const defaults = {
   overlayRight:14,
   overlayGap:8,
   boxRadius:18,
+  topSlideEnabled:'true',
   topSlideImages:'',
   topSlideHeight:105,
   topSlideInterval:3500,
@@ -199,6 +203,7 @@ const defaults = {
   vipAccountBg2:'rgba(0,234,255,.18)'
 };
 function st(){ return typeof getStation === 'function' ? getStation() : (new URLSearchParams(location.search).get('station') || localStorage.getItem('STATION_SLUG') || 'default'); }
+function stationUrl(path){ return path + '?station=' + encodeURIComponent(st()); }
 function setLinks(token=''){
   const s=encodeURIComponent(st());
   stationLink.href='/station_control.html?station='+s;
@@ -206,6 +211,8 @@ function setLinks(token=''){
   controlLink.href='/control.html?station='+s;
   mControlLink.href='/m_control.html?station='+s;
   overlayLink.href='/overlay.html?station='+s+(token?'&token='+encodeURIComponent(token):'')+'&monitor=1&v='+Date.now();
+  if(document.getElementById('mediaLink')) mediaLink.href='/media_manager.html?station='+s;
+  if(document.getElementById('mMediaLink')) mMediaLink.href='/m_media_manager.html?station='+s;
 }
 async function apiNoCache(url,opt={}){
   const join=url.includes('?')?'&':'?';
@@ -228,6 +235,7 @@ function applyPalette(name){
   overlayRight:14,
   overlayGap:8,
   boxRadius:18,
+  topSlideEnabled:'true',
   topSlideImages:'',
   topSlideHeight:105,
   topSlideInterval:3500,
@@ -288,13 +296,17 @@ fields.forEach(f=>document.addEventListener('input',e=>{ if(e.target.id===f) upd
 async function loadServerImages(){
   const box=document.getElementById('serverImageThumbs');
   if(!box) return;
-  box.innerHTML='<div class="muted">서버 이미지 불러오는 중...</div>';
+  box.innerHTML='<div class="muted">서버 미디어 불러오는 중...</div>';
   try{
-    const data=await apiNoCache('/api/server-images');
-    const images=data.images||[];
-    if(!images.length){ box.innerHTML='<div class="muted">public/images, public/slides, public/uploads, public/img 폴더에 이미지가 없습니다.</div>'; return; }
-    box.innerHTML=images.map(img=>`<button type="button" class="thumb" onclick="addSlideImage('${String(img.url).replace(/'/g,'&#039;')}')"><img src="${img.url}"><span>${img.dir}/${img.name}</span></button>`).join('');
-  }catch(e){ box.innerHTML='<div class="muted">이미지 목록 오류: '+(e.message||e)+'</div>'; }
+    const data=await apiNoCache('/api/media');
+    const media=data.media||[];
+    if(!media.length){ box.innerHTML='<div class="muted">업로드된 이미지/영상이 없습니다. 미디어 관리에서 업로드하세요.</div>'; return; }
+    box.innerHTML=media.map(m=>{
+      const url=String(m.url).replace(/'/g,'&#039;');
+      const prev=m.type==='video'?`<video src="${m.url}" muted playsinline></video>`:`<img src="${m.url}">`;
+      return `<button type="button" class="thumb" onclick="addSlideImage('${url}')">${prev}<span>${m.type==='video'?'영상':'이미지'} · ${m.name}</span></button>`;
+    }).join('');
+  }catch(e){ box.innerHTML='<div class="muted">미디어 목록 오류: '+(e.message||e)+'</div>'; }
 }
 function addSlideImage(url){
   const el=document.getElementById('topSlideImages');

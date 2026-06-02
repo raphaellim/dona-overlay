@@ -22,6 +22,8 @@ body{background:#070b12;color:#e5e7eb}.wrap{max-width:1220px;margin:0 auto;paddi
       <a id="controlLink" target="_blank" href="/control.html">PC 설정</a>
       <a id="mControlLink" target="_blank" href="/m_control.html">모바일 설정</a>
       <a id="styleLink" target="_blank" href="/station_style.html">스타일</a>
+      <a id="mediaLink" target="_blank" href="/media_manager.html">미디어</a>
+      <a id="mMediaLink" target="_blank" href="/m_media_manager.html">모바일 미디어</a>
       <a id="overlayLink" target="_blank" href="/overlay.html">오버레이 TEST</a>
     </div>
   </div>
@@ -81,6 +83,12 @@ function setLinks(){
 
   const styleLink = document.getElementById('styleLink');
   if (styleLink) styleLink.href = `/station_style.html?station=${slug}`;
+
+  const mediaLink = document.getElementById('mediaLink');
+  if (mediaLink) mediaLink.href = `/media_manager.html?station=${slug}`;
+
+  const mMediaLink = document.getElementById('mMediaLink');
+  if (mMediaLink) mMediaLink.href = `/m_media_manager.html?station=${slug}`;
 
   const overlayLink = document.getElementById('overlayLink');
   if (overlayLink && station?.overlayToken) {
@@ -258,12 +266,34 @@ async function deleteBroadcast(id){
   }
 }
 
+async function postBroadcastLiveStatus(url, id, bodyExtra = {}){
+  const savedPw = localStorage.getItem('broadcastPassword_' + id) || '';
+  const body = { broadcastId: id, broadcastPassword: savedPw, ...bodyExtra };
+
+  try{
+    return await api(url, {
+      method: 'POST',
+      body: JSON.stringify(body)
+    });
+  }catch(e){
+    const msg = String(e.message || '');
+    if (!msg.includes('비밀번호') && !msg.includes('권한') && !msg.includes('401')) throw e;
+
+    const pw = prompt('방송 비밀번호를 입력하세요. 방송국 관리자 로그인 상태면 빈칸으로도 가능합니다.', '') || '';
+    const retryBody = { broadcastId: id, broadcastPassword: pw, ...bodyExtra };
+    const result = await api(url, {
+      method: 'POST',
+      body: JSON.stringify(retryBody)
+    });
+    if (pw) localStorage.setItem('broadcastPassword_' + id, pw);
+    return result;
+  }
+}
+
 async function startBroadcastTimer(id){
   try{
-    await api('/api/broadcast-timer/start', {
-      method: 'POST',
-      body: JSON.stringify({ broadcastId: id })
-    });
+    await postBroadcastLiveStatus('/api/broadcast-timer/start', id);
+    alert('방송을 시작했습니다.');
     await load();
   }catch(e){
     alert(e.message);
@@ -271,13 +301,11 @@ async function startBroadcastTimer(id){
 }
 
 async function endBroadcastTimer(id){
-  if (!confirm('이 방송 타이머를 종료할까요?')) return;
+  if (!confirm('이 방송을 종료할까요? 종료 상태에서는 입력이 차단됩니다.')) return;
 
   try{
-    await api('/api/broadcast-timer/end', {
-      method: 'POST',
-      body: JSON.stringify({ broadcastId: id })
-    });
+    await postBroadcastLiveStatus('/api/broadcast-timer/end', id);
+    alert('방송을 종료했습니다.');
     await load();
   }catch(e){
     alert(e.message);

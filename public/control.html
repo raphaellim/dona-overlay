@@ -642,10 +642,34 @@ async function deleteFundingItem(idx){
   await saveFundingData(false);
 }
 
+function broadcastStatusText(live){
+  const status = String(live?.status || (live?.live ? 'live' : 'ready'));
+  if(status === 'live') return '방송중';
+  if(status === 'ended') return '방송종료';
+  return '방송대기';
+}
+
 async function loadSettings(){
+  let info = null;
+  try{
+    info = await api('/api/station-info');
+  }catch(e){
+    console.warn('station-info load failed', e);
+  }
+
   settings = await api('/api/settings');
 
-  $('#activeBroadcast').textContent = settings.broadcast ? `현재 방송: ${settings.broadcast.title}` : '현재 방송 없음';
+  if(info){
+    settings.station = settings.station || info.station;
+    settings.broadcast = settings.broadcast || info.active;
+  }
+
+  const live = settings.broadcastLiveData || {};
+  if(settings.broadcast){
+    $('#activeBroadcast').innerHTML = `방송국: <b>${esc(settings.station?.name || settings.station?.slug || '')}</b><br>현재 방송: <b>${esc(settings.broadcast.title || '제목 없음')}</b> <span class="muted">(${broadcastStatusText(live)})</span>`;
+  }else{
+    $('#activeBroadcast').innerHTML = '현재 방송 없음<br><span class="muted">station_control.html에서 방송을 먼저 생성/선택하세요.</span>';
+  }
   $('#title').value = settings.title || '';
   $('#titleImage').value = settings.titleImage || '';
   $('#noticeTitle').value = settings.noticeTitle || '공지';
