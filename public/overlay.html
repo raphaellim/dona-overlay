@@ -3157,39 +3157,42 @@ let missionCountdownLastSec = null;
     "mission_30sec.mp3";
 
   if (isCountdownMode) {
-    if (sec <= 30 && sec > 0 && !mission30SoundPlayed) {
-  mission30SoundPlayed = true;
+  if (sec <= 30 && sec > 0 && !mission30SoundPlayed) {
+    mission30SoundPlayed = true;
 
-  try {
-  const soundFile =
-    timerData.warningSoundFile ||
-    timerData.missionSoundFile ||
-    "mission_30sec.mp3";
+    try {
+      const soundFile =
+        timerData.warningSoundFile ||
+        timerData.missionSoundFile ||
+        "mission_30sec.mp3";
 
-  const audio = new Audio("/sounds/" + soundFile);
-  audio.volume = 1.0;
-  audio.play().catch(() => {});
-} catc
-    if (sec > 30) {
-      mission30SoundPlayed = false;
+      const audio = new Audio("/sounds/" + soundFile);
+      audio.volume = 1.0;
+      audio.play().catch(() => {});
+    } catch (e) {
+      console.warn("[mission-sound] play failed", e);
     }
+  }
 
-    const big = document.getElementById("missionCountdownBig");
+  if (sec > 30) {
+    mission30SoundPlayed = false;
+  }
 
-    if (big) {
-      if (sec <= 10 && sec > 0) {
-        if (missionCountdownLastSec !== sec) {
-          missionCountdownLastSec = sec;
+  const big = document.getElementById("missionCountdownBig");
 
-          big.textContent = sec;
-          big.classList.remove("show");
-          void big.offsetWidth;
-          big.classList.add("show");
-        }
-      } else {
+  if (big) {
+    if (sec <= 10 && sec > 0) {
+      if (missionCountdownLastSec !== sec) {
+        missionCountdownLastSec = sec;
+
+        big.textContent = sec;
         big.classList.remove("show");
-        missionCountdownLastSec = null;
+        void big.offsetWidth;
+        big.classList.add("show");
       }
+    } else {
+      big.classList.remove("show");
+      missionCountdownLastSec = null;
     }
   }
 }
