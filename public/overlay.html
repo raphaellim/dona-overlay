@@ -3127,7 +3127,7 @@ function showMissionTimerVideoAlert(videoFile) {
 
   alert.innerHTML = `
     <div class="mission-video-alert">
-      <video src="/videos/${safeFile}" autoplay muted playsinline></video>
+      <video src="/videos/${safeFile}" autoplay playsinline></video>
     </div>
   `;
 
@@ -3148,6 +3148,10 @@ function showMissionTimerVideoAlert(videoFile) {
       alert.classList.remove("show");
       alert.innerHTML = "";
     };
+    if(video){
+  video.muted = false;
+  video.volume = 1.0;
+
 
     video.play().catch(() => {});
   }
