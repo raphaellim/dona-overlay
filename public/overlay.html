@@ -90,8 +90,14 @@ html,body{
 .funding-line span,.funding-line b{position:relative;z-index:2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.funding-line b{flex:0 0 auto;color:#f8fafc!important}.funding-line em{position:absolute;left:0;top:0;bottom:0;z-index:1;background:linear-gradient(90deg,rgba(0,234,255,.20),rgba(255,79,216,.12));pointer-events:none}
 
 
-.funding-roller{position:relative;height:42px;overflow:hidden}
-.funding-track{position:absolute;left:0;right:0;top:0;transition:transform .45s ease;will-change:transform}
+.funding-roller{
+  position:relative!important;
+  height:34px!important;
+  overflow:hidden!important;
+}
+  .funding-track.no-transition{
+  transition:none!important;
+}
 .funding-track .funding-line{height:42px;margin:0 0 6px}
 
 /* ===== 노래방 ===== */
@@ -385,7 +391,9 @@ to{opacity:.95;filter:brightness(1.35)}
 .funding-title{display:none!important}
 .funding-box{padding:10px 12px!important}
 .funding-value{margin-top:0!important;gap:0!important}
-.funding-value .funding-line:not(:first-child){display:none!important}
+.funding-value > .funding-line:not(:first-child){
+  display:none!important;
+}
 .funding-line{min-height:42px!important;font-size:var(--style-content-size)!important}
 
 .notice-roll-window{height:calc(var(--style-content-size) * 1.28 * 3);overflow:hidden;position:relative}
@@ -1181,29 +1189,81 @@ function renderTopSlide(settings){
   }
 }
 
-  function renderFunding(settings){
-    if(!$fundingBox) return;
-    const items = (settings?.fundingData?.items || []).filter(f => f.enabled !== false);
-    const valueEl = $fundingBox.querySelector(".funding-value");
-    if(!valueEl) return;
-    if(!items.length){
-      valueEl.innerHTML = `<div class="funding-line">등록된 펀딩 없음</div>`;
-      return;
-    }
-    const rowHtml = (f) => {
-      const cur = Number(f.current || 0);
-      const target = Number(f.target || 0);
-      const pct = target > 0 ? Math.min(100, Math.round(cur / target * 100)) : 0;
-      return `<div class="funding-line"><span>${escapeHtml(f.title)}</span><b>${cur}/${target}</b><em style="width:${pct}%"></em></div>`;
-    };
-    if(items.length === 1){
-      valueEl.innerHTML = rowHtml(items[0]);
-      return;
-    }
-    fundingRollIndex = fundingRollIndex % items.length;
-    valueEl.innerHTML = `<div class="funding-roller"><div class="funding-track" style="transform:translateY(-${fundingRollIndex * 48}px)">${items.concat(items[0]).map(rowHtml).join("")}</div></div>`;
-    fundingRollIndex = (fundingRollIndex + 1) % items.length;
+function renderFunding(settings){
+  if(!$fundingBox) return;
+
+  const items = (settings?.fundingData?.items || [])
+    .filter(f => f.enabled !== false);
+
+  const valueEl = $fundingBox.querySelector(".funding-value");
+  if(!valueEl) return;
+
+  const rowHtml = (f) => {
+    const cur = Number(f.current || 0);
+    const target = Number(f.target || 0);
+    const pct = target > 0 ? Math.min(100, Math.round(cur / target * 100)) : 0;
+
+    return `
+      <div class="funding-line">
+        <span>${escapeHtml(f.title)}</span>
+        <b>${cur}/${target}</b>
+        <em style="width:${pct}%"></em>
+      </div>
+    `;
+  };
+
+  if(!items.length){
+    valueEl.innerHTML = `<div class="funding-line">등록된 펀딩 없음</div>`;
+    return;
   }
+
+  if(items.length === 1){
+    valueEl.innerHTML = rowHtml(items[0]);
+    return;
+  }
+
+  valueEl.innerHTML = `
+    <div class="funding-roller">
+      <div class="funding-track" id="fundingTrack">
+        ${items.concat(items[0]).map(rowHtml).join("")}
+      </div>
+    </div>
+  `;
+
+  const track = valueEl.querySelector("#fundingTrack");
+  const rows = Array.from(track.children);
+
+  fundingRollIndex = fundingRollIndex % items.length;
+
+  const moveToIndex = (index, useTransition=true) => {
+    const row = rows[index];
+    const y = row ? row.offsetTop : 0;
+
+    if(useTransition){
+      track.classList.remove("no-transition");
+    }else{
+      track.classList.add("no-transition");
+    }
+
+    track.style.transform = `translate3d(0, ${-y}px, 0)`;
+  };
+
+  moveToIndex(fundingRollIndex, false);
+
+  setTimeout(() => {
+    fundingRollIndex += 1;
+    moveToIndex(fundingRollIndex, true);
+
+    if(fundingRollIndex === items.length){
+      setTimeout(() => {
+        fundingRollIndex = 0;
+        moveToIndex(0, false);
+        track.offsetHeight;
+        track.classList.remove("no-transition");
+      }, 460);
+    }
+  }, 2600);
+}
 
   function timerBaseMs(settings){
     const t = settings?.broadcastTimerData || {};
