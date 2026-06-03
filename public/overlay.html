@@ -3139,19 +3139,19 @@ function showMissionTimerVideoAlert(videoFile) {
   const video = alert.querySelector("video");
 
   if (video) {
+    video.muted = false;
+    video.volume = 1.0;
+
     video.onended = () => {
       alert.classList.remove("show");
       alert.innerHTML = "";
     };
 
     video.onerror = () => {
+      console.warn("[mission-video] load failed:", video.src);
       alert.classList.remove("show");
       alert.innerHTML = "";
     };
-    if(video){
-  video.muted = false;
-  video.volume = 1.0;
-
 
     video.play().catch(() => {});
   }
