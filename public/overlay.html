@@ -1752,19 +1752,8 @@
   70%{transform:scale(1.1);opacity:1}
   100%{transform:scale(1);opacity:1}
 }
-    .mission-video-alert{
-  width:100%;
-  overflow:hidden;
-  border-radius:18px;
-}
 
-.mission-video-alert video{
-  width:100%;
-  aspect-ratio:16/9;
-  object-fit:cover;
-  display:block;
-  border-radius:18px;
-}
+
   </style>
 </head>
 
@@ -3137,56 +3126,7 @@ let missionCountdownLastSec = null;
   missionVideoCache.load();
 }
       
-function showMissionTimerVideoAlert(videoFile) {
-  const alert = document.getElementById("optionAlert");
-  if (!alert) return;
 
-  const safeFile = String(videoFile || "mission_30sec.mp4").replace(/[\\\/]/g, "");
-  const src = "/videos/" + safeFile;
-
-  preloadMissionTimerVideo(safeFile);
-
-  alert.innerHTML = `
-    <div class="mission-video-alert">
-      <video src="${src}" autoplay playsinline preload="auto"></video>
-    </div>
-  `;
-
-  ensureAlertIndependent();
-
-  alert.classList.remove("hidden");
-  alert.classList.add("show");
-
-  const video = alert.querySelector("video");
-
-  if (video) {
-    video.currentTime = 0;
-    video.preload = "auto";
-    video.muted = false;
-    video.volume = 1.0;
-
-    const p = video.play();
-    if (p && typeof p.catch === "function") {
-      p.catch(err => {
-        console.warn("[mission-video] autoplay blocked or delayed", err);
-      });
-    }
-
-    video.onended = () => {
-      alert.classList.remove("show");
-      alert.innerHTML = "";
-    };
-
-    video.onerror = () => {
-      console.warn("[mission-video] load failed:", video.src);
-    };
-  }
-
-  setTimeout(() => {
-    alert.classList.remove("show");
-    alert.innerHTML = "";
-  }, 31000);
-}
 
       function updateBroadcastTimer() {
   if (!$broadcastTimerValue) return;
@@ -3220,12 +3160,16 @@ function showMissionTimerVideoAlert(videoFile) {
     if (sec <= 30 && sec > 0 && !mission30SoundPlayed) {
   mission30SoundPlayed = true;
 
-  showMissionTimerVideoAlert(
-    timerData.warningVideoFile ||
-    timerData.missionVideoFile ||
-    "mission_30sec.mp4"
-  );
-}
+  try {
+  const soundFile =
+    timerData.warningSoundFile ||
+    timerData.missionSoundFile ||
+    "mission_30sec.mp3";
+
+  const audio = new Audio("/sounds/" + soundFile);
+  audio.volume = 1.0;
+  audio.play().catch(() => {});
+} catc
     if (sec > 30) {
       mission30SoundPlayed = false;
     }
