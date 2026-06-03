@@ -430,7 +430,6 @@ body.box-group-single .overlay-box:not(.hidden)+.overlay-box:not(.hidden){border
   width:min(720px,92vw)!important;
   aspect-ratio:16/9!important;
   height:auto!important;
-  max-height:var(--top-slide-height)!important;
   border-radius:var(--style-box-radius)!important;
   overflow:hidden!important;
   border:1px solid var(--style-box-border)!important;
@@ -487,16 +486,16 @@ body.broadcast-not-live .overlay-idle-screen{display:flex}
 
 /* 이미지 슬라이드는 패널 밖: 선/배경 없음 */
 .overlay-stack > .top-slide-box{
-  position:relative!important;
   width:100%!important;
-  aspect-ratio:16/9!important;
+  aspect-ratio:var(--active-slide-ratio, 16/9)!important;
   height:auto!important;
+  min-height:0!important;
+  margin:0 0 6px 0!important;
   border:0!important;
+  border-radius:18px!important;
+  overflow:hidden!important;
   background:transparent!important;
   box-shadow:none!important;
-  border-radius:0!important;
-  overflow:hidden!important;
-  margin:0!important;
   flex:0 0 auto!important;
 }
 
@@ -965,7 +964,7 @@ if(new URLSearchParams(location.search).get("debug")==="1"){ console.log("[overl
     if(st.overlayRight !== undefined) set("--right", Number(st.overlayRight) + "px");
     if(st.overlayGap !== undefined) set("--style-overlay-gap", Number(st.overlayGap) + "px");
     if(st.boxRadius !== undefined) set("--style-box-radius", Number(st.boxRadius) + "px");
-    if(st.topSlideHeight !== undefined) set("--top-slide-height", Number(st.topSlideHeight) + "px");
+    // if(st.topSlideHeight !== undefined) set("--top-slide-height", Number(st.topSlideHeight) + "px");
     if(st.topSlideOpacity !== undefined) set("--top-slide-opacity", Number(st.topSlideOpacity));
     if(st.karaokeNoticeSize) set("--style-karaoke-notice-size", Number(st.karaokeNoticeSize) + "px");
     if(st.karaokeCurrentSize) set("--style-karaoke-current-size", Number(st.karaokeCurrentSize) + "px");
