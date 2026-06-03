@@ -656,6 +656,36 @@ body.broadcast-not-live .overlay-idle-screen{display:flex}
   border-radius:18px!important;
   background:transparent!important;
 }
+  .alert-source{
+  color:#8ee7ff!important;
+  background:rgba(142,231,255,.15)!important;
+  border:1px solid rgba(142,231,255,.35)!important;
+  border-radius:999px!important;
+  padding:4px 9px!important;
+  font-size:.85em!important;
+  font-weight:1000!important;
+}
+
+.blink-donor{
+  display:inline-block!important;
+  font-weight:1000!important;
+  background:linear-gradient(90deg,#fff,#ff4fa3,#ffd84d,#44f7ff,#8b5cff,#fff)!important;
+  background-size:300% 100%!important;
+  -webkit-background-clip:text!important;
+  background-clip:text!important;
+  color:transparent!important;
+  animation:donorColorFlow 1.15s linear infinite, donorPop .72s ease-in-out infinite alternate!important;
+}
+
+@keyframes donorColorFlow{
+  0%{background-position:0% 50%}
+  100%{background-position:300% 50%}
+}
+
+@keyframes donorPop{
+  0%{transform:scale(1);opacity:.92}
+  100%{transform:scale(1.055);opacity:1}
+}
 </style>
 </head>
 <body>
