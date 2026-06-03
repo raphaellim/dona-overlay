@@ -1547,37 +1547,44 @@ function renderTopSlide(settings){
     }).join("");
   }
 
-  function makeDonationAlertHtml(row){
-    const donor=escapeHtml(row.donor||"익명");
-    const creator=escapeHtml(row.creator||"익명");
-    const accountAmount=num(row.accountAmount??row.account_amount);
-    const toonieAmount=num(row.toonieAmount??row.toonie_amount);
-    const totalAmount=num(row.totalAmount??row.total_amount??accountAmount+toonieAmount);
-    const amountText=displayAmount(totalAmount);
-    const checks=Array.isArray(row.checks)?row.checks:[];
-    const manualSoundTitle = String(row.manualSoundTitle || row.manual_sound_title || '').trim();
-    let optionText="";
+function makeDonationAlertHtml(row){
+  const donor = escapeHtml(row.donor || "익명");
+  const creator = escapeHtml(row.creator || "익명");
 
-    if(checks.length){
-      const ch=checks[checks.length-1];
-      const sign=ch.side==="minus"?"-":"+";
-      const cls=ch.side==="minus"?"alert-minus":"alert-plus";
-      const name=escapeHtml(ch.name||"옵션");
-      const count=Math.abs(num(ch.count));
-      optionText=`<span class="${cls}">${name}${sign}${count}</span>`;
-    }
+  const accountAmount = num(row.accountAmount ?? row.account_amount);
+  const toonieAmount = num(row.toonieAmount ?? row.toonie_amount);
+  const totalAmount = num(row.totalAmount ?? row.total_amount ?? accountAmount + toonieAmount);
 
-    if(manualSoundTitle){
-      optionText = optionText
-        ? `${optionText}<span class="alert-sound-title">${escapeHtml(manualSoundTitle)}</span>`
-        : `<span class="alert-sound-title">${escapeHtml(manualSoundTitle)}</span>`;
-    }
+  const sourceLabel =
+    accountAmount > 0 && toonieAmount > 0 ? "계좌+투네" :
+    accountAmount > 0 ? "계좌" :
+    toonieAmount > 0 ? "투네" :
+    escapeHtml(row.sourceType || row.source_type || "후원");
 
-    return `
-      <div class="alert-up-line"><span class="alert-donor">${donor}</span><span class="alert-target">→ ${creator}</span></div>
-      <div class="alert-line2"><span class="alert-amount">${amountText}</span>${optionText}</div>
-    `;
+  let optionText = "";
+  const checks = Array.isArray(row.checks) ? row.checks : [];
+
+  if(checks.length){
+    const ch = checks[checks.length - 1];
+    const sign = ch.side === "minus" ? "-" : "+";
+    const cls = ch.side === "minus" ? "alert-minus" : "alert-plus";
+    const name = escapeHtml(ch.name || "옵션");
+    const count = Math.abs(num(ch.count || 1));
+    optionText = `<span class="${cls}">${name}${sign}${count}</span>`;
   }
+
+  return `
+    <div class="alert-up-line">
+      <span class="alert-donor blink-donor">${donor}</span>
+      <span class="alert-target">→ ${creator}</span>
+    </div>
+    <div class="alert-line2">
+      <span class="alert-source">${sourceLabel}</span>
+      <span class="alert-amount">${displayAmount(totalAmount)}</span>
+      ${optionText}
+    </div>
+  `;
+}
   function pickSoundFileForDonation(row){
     if(soundRulesCache && soundRulesCache.enabled === false) return "";
 
