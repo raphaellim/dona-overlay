@@ -1833,6 +1833,8 @@
     let latestSettingsForTimer = null;
     let showCreatorDonations = true;
     let mission30SoundPlayed = false;
+    let missionVideoCache = null;
+let missionVideoCacheSrc = "";
 let missionCountdownLastSec = null;
     (() => {
       const API_SUMMARY = "/api/summary";
@@ -3119,15 +3121,34 @@ let missionCountdownLastSec = null;
           alertEl.style.transform = "scale(.92)";
         }
       }
+      
+      function preloadMissionTimerVideo(videoFile){
+  const safeFile = String(videoFile || "mission_30sec.mp4").replace(/[\\\/]/g, "");
+  const src = "/videos/" + safeFile;
+
+  if(missionVideoCache && missionVideoCacheSrc === src) return;
+
+  missionVideoCacheSrc = src;
+  missionVideoCache = document.createElement("video");
+  missionVideoCache.src = src;
+  missionVideoCache.preload = "auto";
+  missionVideoCache.playsInline = true;
+  missionVideoCache.muted = true;
+  missionVideoCache.load();
+}
+      
 function showMissionTimerVideoAlert(videoFile) {
   const alert = document.getElementById("optionAlert");
   if (!alert) return;
 
   const safeFile = String(videoFile || "mission_30sec.mp4").replace(/[\\\/]/g, "");
+  const src = "/videos/" + safeFile;
+
+  preloadMissionTimerVideo(safeFile);
 
   alert.innerHTML = `
     <div class="mission-video-alert">
-      <video src="/videos/${safeFile}" autoplay playsinline></video>
+      <video src="${src}" autoplay playsinline preload="auto"></video>
     </div>
   `;
 
@@ -3139,8 +3160,17 @@ function showMissionTimerVideoAlert(videoFile) {
   const video = alert.querySelector("video");
 
   if (video) {
+    video.currentTime = 0;
+    video.preload = "auto";
     video.muted = false;
     video.volume = 1.0;
+
+    const p = video.play();
+    if (p && typeof p.catch === "function") {
+      p.catch(err => {
+        console.warn("[mission-video] autoplay blocked or delayed", err);
+      });
+    }
 
     video.onended = () => {
       alert.classList.remove("show");
@@ -3149,11 +3179,7 @@ function showMissionTimerVideoAlert(videoFile) {
 
     video.onerror = () => {
       console.warn("[mission-video] load failed:", video.src);
-      alert.classList.remove("show");
-      alert.innerHTML = "";
     };
-
-    video.play().catch(() => {});
   }
 
   setTimeout(() => {
@@ -3237,6 +3263,12 @@ function showMissionTimerVideoAlert(videoFile) {
         catch (e) { data = { settings: defaultSettings, accountDonors: [], creators: [], donations: [] }; }
 
         const settings = data.settings || defaultSettings;
+        const timerDataForPreload = settings.broadcastTimerData || {};
+preloadMissionTimerVideo(
+  timerDataForPreload.warningVideoFile ||
+  timerDataForPreload.missionVideoFile ||
+  "mission_30sec.mp4"
+);
         debugLog("refresh settings", { broadcastLiveData: settings.broadcastLiveData, overlaySections: settings.overlaySections, stationStyle: settings.stationStyle });
         debugLog("refresh settings loaded", {
           overlaySections: settings.overlaySections,
