@@ -314,6 +314,22 @@ function normalizeRouletteData(raw) {
     total: Math.max(0, Number(value.current.total || 0))
   } : null;
 
+  const queue = Array.isArray(value.queue) ? value.queue.map((q, idx) => ({
+    running: true,
+    runId: String(q.runId || `queue_${idx}_${Date.now()}`),
+    mode: ['manual', 'auto'].includes(String(q.mode || '')) ? String(q.mode) : 'auto',
+    listId: cleanRouletteId(q.listId, ''),
+    listTitle: String(q.listTitle || ''),
+    result: String(q.result || ''),
+    donor: String(q.donor || ''),
+    amount: Math.max(0, Number(q.amount || 0)),
+    startedAt: 0,
+    duration: Math.max(1200, Math.min(30000, Number(q.duration || value.duration || base.duration))),
+    batchId: String(q.batchId || ''),
+    sequence: Math.max(0, Number(q.sequence || 0)),
+    total: Math.max(0, Number(q.total || 0))
+  })).filter(q => q.result && q.listId).slice(0, 50) : [];
+
   const history = Array.isArray(value.history) ? value.history.map((h, idx) => ({
     id: String(h.id || h.runId || `hist_${idx}`),
     mode: ['manual', 'auto'].includes(String(h.mode || '')) ? String(h.mode) : 'manual',
@@ -337,9 +353,12 @@ function normalizeRouletteData(raw) {
     lists,
     autoRules,
     current,
+    queue,
     history
   };
 }
+
+const ROULETTE_MIN_RESULT_VISIBLE_MS = 2600;
 
 function pickRouletteWinner(list) {
   const activeItems = (list?.items || []).filter(item => item.enabled !== false && item.text);
@@ -355,67 +374,142 @@ async function saveRouletteForContext(ctx, roulette) {
   return normalized;
 }
 
-async function createRouletteRun(ctx, listId, mode, extra = {}) {
-  const currentSettings = await readEffectiveSettings(ctx.station.slug, ctx.active.id);
-  const roulette = normalizeRouletteData(currentSettings.roulette);
-  if (!roulette.enabled) throw new Error('룰렛 기능이 OFF 상태입니다.');
-  const list = roulette.lists.find(x => x.id === listId);
-  if (!list) throw new Error('룰렛 리스트를 찾을 수 없습니다.');
+function makeRouletteHistoryRow(run) {
+  return {
+    id: run.runId,
+    mode: run.mode,
+    listId: run.listId,
+    listTitle: run.listTitle,
+    result: run.result,
+    donor: run.donor,
+    amount: run.amount,
+    createdAt: Date.now(),
+    batchId: run.batchId || '',
+    sequence: Number(run.sequence || 0),
+    total: Number(run.total || 0)
+  };
+}
+
+function buildRouletteRun(list, mode, extra = {}) {
+  const now = Date.now();
   const result = pickRouletteWinner(list);
   if (!result) throw new Error('사용 가능한 룰렛 항목이 없습니다.');
-  const now = Date.now();
-  const runId = `roulette_${now}_${Math.random().toString(36).slice(2, 8)}`;
-  const current = {
+  return {
     running: true,
-    runId,
+    runId: `roulette_${now}_${Math.random().toString(36).slice(2, 8)}`,
     mode: mode === 'auto' ? 'auto' : 'manual',
     listId: list.id,
     listTitle: list.title,
     result,
     donor: String(extra.donor || ''),
     amount: Math.max(0, Number(extra.amount || 0)),
-    startedAt: now,
-    duration: Math.max(1200, Math.min(30000, Number(extra.duration || roulette.duration || 5000))),
+    startedAt: Math.max(0, Number(extra.startedAt || now)),
+    duration: Math.max(1200, Math.min(30000, Number(extra.duration || 5000))),
     batchId: String(extra.batchId || ''),
     sequence: Math.max(0, Number(extra.sequence || 0)),
     total: Math.max(0, Number(extra.total || 0))
   };
-  const historyRow = {
-    id: runId,
-    mode: current.mode,
-    listId: list.id,
-    listTitle: list.title,
-    result,
-    donor: current.donor,
-    amount: current.amount,
-    createdAt: now,
-    batchId: current.batchId,
-    sequence: current.sequence,
-    total: current.total
-  };
-  roulette.current = current;
-  roulette.history = [...(roulette.history || []), historyRow].slice(-roulette.historyLimit);
-  const saved = await saveRouletteForContext(ctx, roulette);
-  return { roulette: saved, run: current, historyRow };
 }
 
-async function maybeStartAutoRoulette(ctx, amount, donor = '') {
+async function createRouletteRun(ctx, listId, mode, extra = {}) {
+  return createRouletteBatch(ctx, listId, mode, 1, extra);
+}
+
+async function createRouletteBatch(ctx, listId, mode, count = 1, extra = {}) {
+  const currentSettings = await readEffectiveSettings(ctx.station.slug, ctx.active.id);
+  const roulette = normalizeRouletteData(currentSettings.roulette);
+  if (!roulette.enabled) throw new Error('룰렛 기능이 OFF 상태입니다.');
+  const list = roulette.lists.find(x => x.id === listId);
+  if (!list) throw new Error('룰렛 리스트를 찾을 수 없습니다.');
+  const now = Date.now();
+  const prev = roulette.current;
+  if (!extra.force && prev && prev.startedAt) {
+    const prevUnlockAt = Number(prev.startedAt || 0) + Number(prev.duration || roulette.duration || 3600) + ROULETTE_MIN_RESULT_VISIBLE_MS;
+    if (now < prevUnlockAt) {
+      const waitSec = Math.ceil((prevUnlockAt - now) / 1000);
+      throw new Error(`이전 룰렛 결과 표시 중입니다. ${waitSec}초 후 다시 실행하세요.`);
+    }
+  }
+  const safeCount = Math.max(1, Math.min(50, Math.trunc(Number(count || 1))));
+  const batchId = String(extra.batchId || (safeCount > 1 ? `batch_${now}_${Math.random().toString(36).slice(2, 8)}` : ''));
+  const duration = Math.max(1200, Math.min(30000, Number(extra.duration || roulette.duration || 5000)));
+  const runs = [];
+  for (let i = 1; i <= safeCount; i++) {
+    runs.push(buildRouletteRun(list, mode, {
+      ...extra,
+      duration,
+      startedAt: i === 1 ? now : 0,
+      batchId,
+      sequence: safeCount > 1 ? i : Math.max(0, Number(extra.sequence || 0)),
+      total: safeCount > 1 ? safeCount : Math.max(0, Number(extra.total || 0))
+    }));
+  }
+  roulette.current = runs[0];
+  roulette.queue = runs.slice(1);
+  roulette.history = [...(roulette.history || []), makeRouletteHistoryRow(runs[0])].slice(-roulette.historyLimit);
+  const saved = await saveRouletteForContext(ctx, roulette);
+  return { roulette: saved, run: runs[0], runs };
+}
+
+function resolveRouletteRuleForAmount(roulette, amount, body = {}) {
+  const total = Math.max(0, Number(amount || 0));
+  if (total <= 0) return null;
+  const rules = (roulette.autoRules || []).filter(rule => rule.enabled && Number(rule.minAmount || 0) > 0);
+  const explicitRuleId = cleanRouletteId(body.rouletteRuleId || '', '');
+  const explicitListId = cleanRouletteId(body.rouletteListId || body.listId || '', '');
+  let selected = null;
+  if (explicitRuleId) selected = rules.find(rule => rule.id === explicitRuleId) || null;
+  if (!selected && explicitListId) selected = rules.find(rule => rule.listId === explicitListId) || null;
+  if (!selected && String(body.processType || '').startsWith('roulette:')) {
+    const key = cleanRouletteId(String(body.processType).split(':')[1] || '', '');
+    selected = rules.find(rule => rule.id === key || rule.listId === key) || null;
+  }
+  if (!selected) {
+    selected = rules
+      .filter(rule => total >= Number(rule.minAmount || 0))
+      .sort((a, b) => Number(b.minAmount || 0) - Number(a.minAmount || 0))[0] || null;
+  }
+  if (!selected) return null;
+  const unit = Math.max(1, Number(selected.minAmount || 0));
+  const count = Math.max(0, Math.min(50, Math.floor(total / unit)));
+  if (count <= 0) return null;
+  return { rule: selected, count, unit };
+}
+
+async function maybeStartAutoRoulette(ctx, amount, donor = '', body = {}) {
   const total = Math.max(0, Number(amount || 0));
   if (total <= 0) return null;
   const currentSettings = await readEffectiveSettings(ctx.station.slug, ctx.active.id);
   const roulette = normalizeRouletteData(currentSettings.roulette);
   if (!roulette.enabled) return null;
-  if (roulette.current?.running) return null;
-  const matched = (roulette.autoRules || [])
-    .filter(rule => rule.enabled && total >= Number(rule.minAmount || 0))
-    .sort((a, b) => Number(b.minAmount || 0) - Number(a.minAmount || 0))[0];
+  if (roulette.current?.startedAt && Date.now() < Number(roulette.current.startedAt || 0) + Number(roulette.current.duration || roulette.duration || 3600) + ROULETTE_MIN_RESULT_VISIBLE_MS) return null;
+  const matched = resolveRouletteRuleForAmount(roulette, total, body);
   if (!matched) return null;
   try {
-    return await createRouletteRun(ctx, matched.listId, 'auto', { donor, amount: total });
+    return await createRouletteBatch(ctx, matched.rule.listId, 'auto', matched.count, { donor, amount: total, unitAmount: matched.unit });
   } catch (e) {
     console.warn('[roulette-auto] skipped:', e.message || e);
     return null;
   }
+}
+
+async function advanceRouletteQueue(ctx, currentRunId = '') {
+  const currentSettings = await readEffectiveSettings(ctx.station.slug, ctx.active.id);
+  const roulette = normalizeRouletteData(currentSettings.roulette);
+  if (!roulette.current || (currentRunId && roulette.current.runId !== currentRunId)) {
+    return { roulette, run: null };
+  }
+  const next = (roulette.queue || []).shift();
+  if (!next) {
+    const saved = await saveRouletteForContext(ctx, roulette);
+    return { roulette: saved, run: null };
+  }
+  next.startedAt = Date.now();
+  next.running = true;
+  roulette.current = next;
+  roulette.history = [...(roulette.history || []), makeRouletteHistoryRow(next)].slice(-roulette.historyLimit);
+  const saved = await saveRouletteForContext(ctx, roulette);
+  return { roulette: saved, run: next };
 }
 
 function normalizeFundingData(raw) {
@@ -2160,10 +2254,24 @@ app.post('/api/roulette/reset', async (req, res) => {
     const currentSettings = await readEffectiveSettings(ctx.station.slug, ctx.active.id);
     const roulette = normalizeRouletteData(currentSettings.roulette);
     roulette.current = null;
+    roulette.queue = [];
     const saved = await saveRouletteForContext(ctx, roulette);
     res.json({ ok: true, roulette: saved });
   } catch (e) {
     res.status(500).json({ error: e.message || '룰렛 초기화 실패' });
+  }
+});
+
+
+app.post('/api/roulette/advance', async (req, res) => {
+  try {
+    if (!requireDb(res)) return;
+    const ctx = await getStationContext(req, res);
+    if (!ctx) return;
+    const out = await advanceRouletteQueue(ctx, String(req.body?.runId || ''));
+    res.json({ ok: true, roulette: out.roulette, run: out.run });
+  } catch (e) {
+    res.status(400).json({ error: e.message || '룰렛 다음 회차 실행 실패' });
   }
 });
 
@@ -2534,7 +2642,7 @@ app.post('/api/donations', async (req, res) => {
 
     const { data, error } = await supabase.from('donations').insert(row).select().single();
     if (error) throw error;
-    const rouletteRun = await maybeStartAutoRoulette(ctx, row.total_amount, row.donor);
+    const rouletteRun = await maybeStartAutoRoulette(ctx, row.total_amount, row.donor, req.body || {});
     res.json({ ok: true, station: stationToClient(ctx.station), broadcast: broadcastToClient(ctx.active), donation: dbRowToDonation(data), rouletteRun: rouletteRun?.run || null });
   } catch (e) {
     res.status(400).json({ error: e.message || '저장 실패' });
@@ -2607,7 +2715,7 @@ app.post('/api/donations/batch', async (req, res) => {
       }
     }
 
-    const rouletteRun = await maybeStartAutoRoulette(ctx, grandTotal, donor);
+    const rouletteRun = await maybeStartAutoRoulette(ctx, grandTotal, donor, req.body || {});
     res.json({ ok: true, station: stationToClient(ctx.station), broadcast: broadcastToClient(ctx.active), count: data.length, donations: data.map(dbRowToDonation), rouletteRun: rouletteRun?.run || null });
   } catch (e) {
     res.status(400).json({ error: e.message || '저장 실패' });
@@ -2672,7 +2780,7 @@ app.post('/api/manual-entry', async (req, res) => {
       }
     }
 
-    const rouletteRun = await maybeStartAutoRoulette(ctx, row.total_amount, row.donor);
+    const rouletteRun = await maybeStartAutoRoulette(ctx, row.total_amount, row.donor, req.body || {});
     res.json({ ok: true, donation: dbRowToDonation(data), rouletteRun: rouletteRun?.run || null });
   } catch (e) {
     res.status(400).json({ error: e.message || '수동 입력 저장 실패' });

@@ -1754,7 +1754,15 @@
 }
 
 
-  </style>
+  
+    /* ===== 우측 잘림 방지: Prism/OBS 확대·축소 시 안전 여백 ===== */
+    @supports (right:max(1px,2px)) {
+      .overlay-stack {
+        right: max(var(--right), 28px) !important;
+        max-width: calc(100vw - 44px) !important;
+      }
+    }
+</style>
   <link rel="stylesheet" href="/assets/css/roulette-overlay.css">
 </head>
 

@@ -5,6 +5,10 @@
   let lastRunId = '';
   let spinTimer = null;
   let hideTimer = null;
+  let activeRunId = '';
+  let displayLockedUntil = 0;
+  let pending = null;
+  const MIN_RESULT_VISIBLE_MS = 2600;
 
   function apiUrl(path){
     const u = new URL(path, location.origin);
@@ -18,22 +22,21 @@
     if(!r.ok) throw new Error(j.error || 'roulette api failed');
     return j;
   }
+  async function postJson(path, body){
+    const r = await fetch(apiUrl(path), {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body||{})});
+    const j = await r.json().catch(()=>({}));
+    if(!r.ok) throw new Error(j.error || 'roulette api failed');
+    return j;
+  }
   function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
   function ensureRoot(){
     let root = document.getElementById('rouletteOverlayRoot');
     if(root) return root;
     root = document.createElement('section');
     root.id = 'rouletteOverlayRoot';
-    root.className = 'overlay-box roulette-overlay-root';
+    root.className = 'roulette-overlay-root roulette-alert-root';
     root.innerHTML = '<div class="roulette-stage"><div class="roulette-title" id="rouletteOverlayTitle">룰렛</div><div class="roulette-slot"><div class="roulette-name" id="rouletteOverlayName">-</div></div><div class="roulette-meta" id="rouletteOverlayMeta"></div><div class="roulette-result" id="rouletteOverlayResult"><div class="roulette-result-head">RESULT</div><div class="roulette-result-list" id="rouletteOverlayResultList"></div></div></div>';
-
-    const panel = document.getElementById('overlayPanel') || document.querySelector('.overlay-stack') || document.body;
-    const account = document.getElementById('accountBox');
-    if(account && account.parentElement === panel && account.nextSibling){
-      panel.insertBefore(root, account.nextSibling);
-    }else{
-      panel.appendChild(root);
-    }
+    document.body.appendChild(root);
     return root;
   }
   function enabledItems(roulette, listId){
@@ -68,10 +71,32 @@
     document.getElementById('rouletteOverlayMeta').textContent = meta;
     renderResultWindow(run, roulette);
     root.classList.add('show','done');
+    displayLockedUntil = Date.now() + MIN_RESULT_VISIBLE_MS;
     clearTimeout(hideTimer);
-    hideTimer = setTimeout(()=>{ root.classList.remove('show','done'); }, Number(roulette.resultHoldMs||10000));
+    const holdMs = Number(roulette.resultHoldMs||10000);
+    hideTimer = setTimeout(()=>{ root.classList.remove('show','done'); }, holdMs);
+    setTimeout(async ()=>{
+      try{
+        const out = await postJson('/api/roulette/advance', {runId: run.runId});
+        if(out && out.run && out.run.runId){
+          clearTimeout(hideTimer);
+          lastRunId = out.run.runId;
+          startSpin(out.run, out.roulette || roulette);
+          return;
+        }
+      }catch(e){}
+      if(pending && Date.now() >= displayLockedUntil){
+        const next=pending; pending=null; startSpin(next.run,next.roulette);
+      }
+    }, MIN_RESULT_VISIBLE_MS + 120);
   }
   function startSpin(run, roulette){
+    const now=Date.now();
+    if((spinTimer || now < displayLockedUntil) && activeRunId && run.runId !== activeRunId){
+      pending={run,roulette};
+      return;
+    }
+    activeRunId = run.runId || activeRunId;
     const root = ensureRoot();
     const nameEl = document.getElementById('rouletteOverlayName');
     document.getElementById('rouletteOverlayTitle').textContent = run.listTitle || '룰렛';
@@ -87,7 +112,7 @@
       const elapsed = Date.now() - started;
       if(elapsed >= duration){ showDone(run, roulette); return; }
       const progress = Math.max(0, Math.min(1, elapsed / duration));
-      const delay = 35 + Math.pow(progress, 2.4) * 210;
+      const delay = 38 + Math.pow(progress, 2.35) * 230;
       const value = pool.length ? pool[Math.floor(Math.random()*pool.length)] : run.result;
       nameEl.textContent = value || '-';
       clearInterval(spinTimer);

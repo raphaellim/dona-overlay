@@ -819,6 +819,21 @@ function getSplitTotal() {
 function getFundingItems() {
   return Array.isArray(settings?.fundingData?.items) ? settings.fundingData.items : [];
 }
+function getRouletteRules(){
+  const roulette=settings?.roulette||{};
+  const lists=Array.isArray(roulette.lists)?roulette.lists:[];
+  const rules=Array.isArray(roulette.autoRules)?roulette.autoRules:[];
+  return rules.filter(r=>r&&r.enabled!==false&&Number(r.minAmount||0)>0).map(r=>{
+    const list=lists.find(l=>l.id===r.listId);
+    return list?{...r,listTitle:list.title||'룰렛'}:null;
+  }).filter(Boolean);
+}
+function selectedRouletteRule(){
+  const v=$('#processType')?.value||'';
+  if(!v.startsWith('roulette:')) return null;
+  const id=v.split(':')[1]||'';
+  return getRouletteRules().find(r=>r.id===id||r.listId===id)||null;
+}
 
 function renderHeader() {
   const stationName = station?.name || settings?.station?.name || STATION;
@@ -854,8 +869,12 @@ function renderProcessOptions() {
   const fundHtml = funds.length
     ? `<optgroup label="펀딩">` + funds.map(f => `<option value="funding:${esc(f.id)}">펀딩 - ${esc(f.title)} ${Number(f.current || 0)}/${Number(f.target || 0)}</option>`).join('') + `</optgroup>`
     : '';
+  const rouletteRules = getRouletteRules();
+  const rouletteHtml = rouletteRules.length
+    ? `<optgroup label="룰렛">` + rouletteRules.map(r => `<option value="roulette:${esc(r.id)}">룰렛 - ${esc(r.listTitle)} (${Number(r.minAmount||0).toLocaleString('ko-KR')}원/회)</option>`).join('') + `</optgroup>`
+    : '';
 
-  $('#processType').innerHTML = `<option value="후원">후원</option>${presetHtml}${fundHtml}`;
+  $('#processType').innerHTML = `<option value="후원">후원</option>${presetHtml}${fundHtml}${rouletteHtml}`;
 }
 
 function renderSplitRows() {
@@ -897,7 +916,13 @@ function updatePreview() {
   $('#splitTotalText').textContent = fmtWon(split);
   $('#diffText').textContent = fmtWon(diff);
   $('#diffBox').classList.toggle('ok', diff === 0);
-  $('#preview').textContent = '자동결과: ' + ($('#processType').value || '후원');
+  const rr=selectedRouletteRule();
+  if(rr){
+    const count=Math.floor(top/Math.max(1,Number(rr.minAmount||0)));
+    $('#preview').textContent = `자동결과: 룰렛 ${rr.listTitle} / ${Number(rr.minAmount||0).toLocaleString('ko-KR')}원당 1회 / 예상 ${count}회`;
+  }else{
+    $('#preview').textContent = '자동결과: ' + ($('#processType').value || '후원');
+  }
 }
 
 function checkAll(flag) {
@@ -989,15 +1014,18 @@ async function saveBatch() {
 
     const selected = $('#processType').value || '후원';
     const isFunding = selected.startsWith('funding:');
+    const isRoulette = selected.startsWith('roulette:');
+    const rr = isRoulette ? selectedRouletteRule() : null;
 
     const body = {
       donor,
-      processType: isFunding ? '후원' : selected,
+      processType: isFunding ? '후원' : (isRoulette ? `룰렛:${rr?.listTitle || '룰렛'}` : selected),
       accountTotal: $('#accountTotal').value,
       toonieTotal: $('#toonieTotal').value,
       rows,
       fundingId: isFunding ? selected.replace('funding:', '') : '',
       fundingUnits: '',
+      rouletteRuleId: isRoulette ? selected.replace('roulette:', '') : '',
       broadcastId: active.id,
       broadcastPassword: savedPw
     };

@@ -771,14 +771,32 @@ async function loadSoundFiles(){
   }catch(e){ soundFiles = []; }
 }
 
+function getRouletteRules(){
+  const roulette=settings?.roulette||{};
+  const lists=Array.isArray(roulette.lists)?roulette.lists:[];
+  const rules=Array.isArray(roulette.autoRules)?roulette.autoRules:[];
+  return rules.filter(r=>r&&r.enabled!==false&&Number(r.minAmount||0)>0).map(r=>{
+    const list=lists.find(l=>l.id===r.listId);
+    return list?{...r,listTitle:list.title||'룰렛'}:null;
+  }).filter(Boolean);
+}
+function selectedRouletteRule(){
+  const v=$('#processType')?.value||'';
+  if(!v.startsWith('roulette:')) return null;
+  const id=v.split(':')[1]||'';
+  return getRouletteRules().find(r=>r.id===id||r.listId===id)||null;
+}
+
 function renderProcessOptions(){
   const presets = settings?.presets || [];
   const fundings = (settings?.fundingData?.items || []).filter(f => f.enabled !== false);
 
+  const rouletteRules=getRouletteRules();
   $('#processType').innerHTML = [
     `<option value="후원">후원</option>`,
     ...presets.filter(p => p.enabled !== false).map(p => `<option value="${escAttr(p.title)}">${esc(p.title)}</option>`),
-    ...fundings.map(f => `<option value="funding:${escAttr(f.id)}">펀딩: ${esc(f.title)} ${Number(f.current||0)}/${Number(f.target||0)}</option>`)
+    ...fundings.map(f => `<option value="funding:${escAttr(f.id)}">펀딩: ${esc(f.title)} ${Number(f.current||0)}/${Number(f.target||0)}</option>`),
+    ...rouletteRules.map(r => `<option value="roulette:${escAttr(r.id)}">룰렛: ${esc(r.listTitle)} (${Number(r.minAmount||0).toLocaleString('ko-KR')}원/회)</option>`)
   ].join('');
 }
 
@@ -842,7 +860,13 @@ function updatePreview(){
     else msg = `${preset.title} 확인`;
   }
 
-  $('#preview').textContent = '자동결과: ' + msg;
+  const rr=selectedRouletteRule();
+  if(rr){
+    const count=Math.floor(topTotal/Math.max(1,Number(rr.minAmount||0)));
+    $('#preview').textContent = `자동결과: 룰렛 ${rr.listTitle} / ${Number(rr.minAmount||0).toLocaleString('ko-KR')}원당 1회 / 예상 ${count}회`;
+  }else{
+    $('#preview').textContent = '자동결과: ' + msg;
+  }
   updateSoundPreview();
 }
 
@@ -1055,16 +1079,19 @@ async function saveBatch(){
 
     const selectedProcess = $('#processType').value || '후원';
     const isFunding = selectedProcess.startsWith('funding:');
+    const isRoulette = selectedProcess.startsWith('roulette:');
     const fundingId = isFunding ? selectedProcess.replace('funding:', '') : '';
+    const rr = isRoulette ? selectedRouletteRule() : null;
 
     const body = {
       donor,
-      processType: isFunding ? '후원' : selectedProcess,
+      processType: isFunding ? '후원' : (isRoulette ? `룰렛:${rr?.listTitle || '룰렛'}` : selectedProcess),
       accountTotal: $('#accountTotal').value,
       toonieTotal: $('#toonieTotal').value,
       rows: collectRows(),
       fundingId,
-      fundingUnits: ''
+      fundingUnits: '',
+      rouletteRuleId: isRoulette ? selectedProcess.replace('roulette:', '') : ''
     };
 
     await api('/api/donations/batch', {
