@@ -512,7 +512,10 @@ function rouletteRunExpireAt(run, roulette) {
   if (!run || !run.startedAt) return 0;
   const duration = Number(run.duration || roulette.duration || 3600);
   const hold = Math.max(ROULETTE_MIN_RESULT_VISIBLE_MS, Number(roulette.resultHoldMs || 0));
-  return Number(run.startedAt || 0) + duration + hold + 1200;
+  const total = Math.max(0, Number(run.total || 0));
+  const sequence = Math.max(0, Number(run.sequence || 0));
+  const finalPageCount = total > 5 && sequence >= total ? Math.ceil(total / 5) : 1;
+  return Number(run.startedAt || 0) + duration + (hold * finalPageCount) + 1800;
 }
 
 async function cleanupExpiredRoulette(ctx) {

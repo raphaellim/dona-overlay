@@ -10,6 +10,7 @@
   let pending = null;
   let spinAudio = null;
   let resultAudio = null;
+  let resultPageTimer = null;
   let resultSoundRunId = '';
   let doneRunId = '';
   const completedRunKey = `roulette_completed_${station}`;
@@ -72,6 +73,12 @@
       spinTimer = null;
     }
   }
+  function clearResultPageTimer(){
+    if(resultPageTimer){
+      clearTimeout(resultPageTimer);
+      resultPageTimer = null;
+    }
+  }
   function stopSpinSound(){
     if(spinAudio){
       try{ spinAudio.pause(); spinAudio.currentTime = 0; }catch(e){}
@@ -100,18 +107,51 @@
       setTimeout(()=>{ try{ resultAudio.pause(); resultAudio.currentTime = 0; }catch(e){} }, 1000);
     }catch(e){}
   }
-  function renderResultWindow(run, roulette){
+  function resultRowsForFinal(run, roulette){
+    const total = Number(run.total || 0);
+    const sequence = Number(run.sequence || 0);
+    if(total > 1 && sequence >= total){
+      const rows = batchRows(run, roulette);
+      if(rows.length > 1) return rows;
+    }
+    return [];
+  }
+  function renderResultPage(run, roulette, pageIndex){
     const head = document.getElementById('rouletteOverlayResult');
     const listEl = document.getElementById('rouletteOverlayResultList');
-    const rows = batchRows(run, roulette);
+    const rows = resultRowsForFinal(run, roulette);
+    const pageSize = 5;
     if(rows.length > 1){
-      const total = Number(run.total||0);
-      head.querySelector('.roulette-result-head').textContent = total ? `RESULT ${rows.length}/${total}` : 'RESULT';
-      listEl.innerHTML = rows.map((r,idx)=>`<div class="roulette-result-row"><span>${idx+1}.</span><b>${esc(r.result)}</b></div>`).join('');
-    }else{
-      head.querySelector('.roulette-result-head').textContent = 'RESULT';
-      listEl.innerHTML = `<div class="roulette-result-single">${esc(run.result || '-')}</div>`;
+      const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
+      const safePage = Math.max(0, Math.min(totalPages - 1, Number(pageIndex || 0)));
+      const pageRows = rows.slice(safePage * pageSize, safePage * pageSize + pageSize);
+      const total = Number(run.total || rows.length);
+      head.querySelector('.roulette-result-head').textContent = totalPages > 1 ? `RESULT ${safePage + 1}/${totalPages}` : `RESULT ${rows.length}/${total}`;
+      listEl.innerHTML = pageRows.map((r,idx)=>{
+        const num = safePage * pageSize + idx + 1;
+        return `<div class="roulette-result-row"><span>${num}.</span><b>${esc(r.result)}</b></div>`;
+      }).join('');
+      return totalPages;
     }
+    head.querySelector('.roulette-result-head').textContent = 'RESULT';
+    listEl.innerHTML = `<div class="roulette-result-single">${esc(run.result || '-')}</div>`;
+    return 1;
+  }
+  function startResultPaging(run, roulette, perPageMs){
+    clearResultPageTimer();
+    const totalPages = renderResultPage(run, roulette, 0);
+    if(totalPages <= 1) return totalPages;
+    let page = 1;
+    const next = ()=>{
+      if(page >= totalPages) return;
+      renderResultPage(run, roulette, page);
+      page += 1;
+      if(page < totalPages){
+        resultPageTimer = setTimeout(next, Math.max(700, Number(perPageMs || 1000)));
+      }
+    };
+    resultPageTimer = setTimeout(next, Math.max(700, Number(perPageMs || 1000)));
+    return totalPages;
   }
   function titleText(run){
     const donor = String(run.donor || '').trim();
@@ -123,6 +163,7 @@
     if(doneRunId === run.runId) return;
     doneRunId = run.runId;
     clearSpinTimer();
+    clearResultPageTimer();
     stopSpinSound();
 
     const root = ensureRoot();
@@ -130,9 +171,12 @@
     const sequence = Number(run.sequence || 0);
     const isBatch = total > 1;
     const isFinalInBatch = !isBatch || sequence >= total;
-    const resultVisibleMs = isFinalInBatch
+    const perPageResultVisibleMs = isFinalInBatch
       ? Math.max(MIN_RESULT_VISIBLE_MS, Number(roulette.resultHoldMs || 0))
       : INTERMEDIATE_RESULT_VISIBLE_MS;
+    const finalRows = resultRowsForFinal(run, roulette);
+    const resultPageCount = isFinalInBatch && finalRows.length > 5 ? Math.ceil(finalRows.length / 5) : 1;
+    const resultVisibleMs = perPageResultVisibleMs * resultPageCount;
 
     root.classList.remove('done');
     root.classList.add('stopped');
@@ -148,7 +192,7 @@
     hideTimer = setTimeout(()=>{
       root.classList.remove('stopped');
       root.classList.add('done');
-      renderResultWindow(run, roulette);
+      startResultPaging(run, roulette, perPageResultVisibleMs);
       playResultSound(run.runId);
 
       clearTimeout(hideTimer);
@@ -188,13 +232,14 @@
     }
     doneRunId = '';
     clearSpinTimer();
+    clearResultPageTimer();
     const root = ensureRoot();
     const nameEl = document.getElementById('rouletteOverlayName');
     document.getElementById('rouletteOverlayTitle').textContent = titleText(run);
     document.getElementById('rouletteOverlayMeta').textContent = run.mode === 'auto' ? '자동 룰렛' : (Number(run.total||0)>1 ? `연속 룰렛 ${run.sequence}/${run.total}` : '수동 룰렛');
     document.getElementById('rouletteOverlayResultList').innerHTML = '';
     root.classList.add('show');
-    root.classList.remove('done');
+    root.classList.remove('done','stopped');
     activeRunId = run.runId;
     const pool = enabledItems(roulette, run.listId);
     const started = Date.now();
@@ -231,6 +276,6 @@
       }
     }catch(e){/* keep overlay quiet */}
   }
-  window.addEventListener('beforeunload', ()=>{ clearSpinTimer(); stopSpinSound(); if(resultAudio){ try{ resultAudio.pause(); resultAudio.currentTime=0; }catch(e){} } });
+  window.addEventListener('beforeunload', ()=>{ clearSpinTimer(); clearResultPageTimer(); stopSpinSound(); if(resultAudio){ try{ resultAudio.pause(); resultAudio.currentTime=0; }catch(e){} } });
   window.addEventListener('DOMContentLoaded', ()=>{ ensureRoot(); poll(); setInterval(poll, 500); });
 })();
