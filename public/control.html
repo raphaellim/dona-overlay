@@ -1,0 +1,940 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>방송컨트롤</title>
+<link rel="stylesheet" href="/app.css">
+<style>
+:root{--bg:#070b12;--card:#0b1220;--card2:#0f172a;--line:#253247;--line2:#334155;--text:#e5e7eb;--muted:#94a3b8;--blue:#2563eb;--green:#16a34a;--red:#dc2626;--pink:#ec4899}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--text);margin:0}
+.wrap{max-width:1280px;margin:0 auto;padding:22px}
+.top{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:16px}
+.title{font-size:30px;font-weight:950;letter-spacing:-.06em}
+.nav{display:flex;gap:8px;flex-wrap:wrap}
+.nav a{text-decoration:none;color:#dbeafe;background:#111827;border:1px solid var(--line2);padding:10px 14px;border-radius:12px;font-weight:900}
+.layout{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;box-shadow:0 8px 24px rgba(0,0,0,.18);margin-bottom:14px}
+.card h2{font-size:20px;margin:0 0 12px;font-weight:950;letter-spacing:-.05em;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.sub-card{background:var(--card2);border:1px solid var(--line2);border-radius:14px;padding:12px;margin-top:10px}
+.muted{color:var(--muted);font-size:13px;line-height:1.45}
+.row{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+label{font-size:13px;color:#cbd5e1;font-weight:900}
+.input,select,textarea{width:100%;background:#070b12;color:var(--text);border:1px solid var(--line2);border-radius:12px;padding:11px 12px;font-size:15px;outline:none}
+.input:focus,select:focus,textarea:focus{border-color:#60a5fa;box-shadow:0 0 0 3px rgba(37,99,235,.18)}
+textarea{resize:vertical;line-height:1.45}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.btn{border:0;border-radius:12px;padding:10px 13px;font-weight:900;cursor:pointer;background:#334155;color:#fff}
+.btn.green{background:var(--green)}.btn.red{background:var(--red)}.btn.blue{background:var(--blue)}.btn.gray{background:#334155}.btn.mini{font-size:12px;padding:7px 9px;border-radius:9px}
+.resultBox{background:#08111f;border:1px solid var(--line2);border-radius:12px;padding:11px 12px;font-weight:900;color:#dbeafe;margin-bottom:10px}
+.toggle-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.toggle-box{display:flex;align-items:center;gap:9px;padding:12px;border:1px solid var(--line2);border-radius:13px;background:#070b12;color:var(--text);font-weight:950;cursor:pointer;user-select:none}
+.toggle-box input,.toggle input{width:18px;height:18px;accent-color:var(--pink)}
+.notice-area{min-height:110px}
+.creator-area{min-height:170px}
+.notice-color-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-top:8px}
+.notice-color-item{display:flex;flex-direction:column;gap:5px;padding:8px;border:1px solid #334155;border-radius:12px;background:#070b12}
+.notice-color-item label{font-size:11px}.notice-color-item input[type=color]{width:100%;height:36px;border:0;border-radius:8px;background:transparent;cursor:pointer}
+.sound-rule{display:grid;grid-template-columns:1.05fr .7fr .7fr 1fr;gap:8px;align-items:end;margin-bottom:8px;background:#08111f;border:1px solid #26364d;border-radius:12px;padding:9px}
+.preset-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.preset-card{background:var(--card2);border:1px solid var(--line2);border-radius:14px;padding:12px}
+.preset-card.off{opacity:.55}
+.preset-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+.preset-name{font-size:17px;font-weight:950}
+.preset-actions{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.toggle{display:flex;align-items:center;gap:6px;font-weight:900;color:#cbd5e1;font-size:13px}
+.preset-fields{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.preset-fields .full{grid-column:1/-1}.preset-fields label{font-size:11px}.preset-fields .input{padding:8px 9px;font-size:14px;border-radius:10px}
+.savebar{position:sticky;bottom:10px;z-index:10;background:rgba(15,23,42,.94);border:1px solid var(--line2);border-radius:16px;padding:10px;display:flex;gap:8px;align-items:center;justify-content:space-between;backdrop-filter:blur(4px)}
+@media(max-width:980px){.layout,.grid-2,.grid-3,.toggle-grid,.preset-grid,.sound-rule{grid-template-columns:1fr}.top{flex-direction:column}.notice-color-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+  .karaoke-manage-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+  }
+  .karaoke-panel{
+    border:1px solid #243047;
+    background:#101827;
+    border-radius:14px;
+    padding:12px;
+  }
+  .karaoke-panel h3{
+    margin:0 0 10px;
+    font-size:16px;
+  }
+  .karaoke-inline{
+    display:grid;
+    grid-template-columns:1fr 120px 90px auto;
+    gap:8px;
+    align-items:end;
+  }
+  .karaoke-song-inline{
+    display:grid;
+    grid-template-columns:1fr 110px 1.4fr auto;
+    gap:8px;
+    align-items:end;
+  }
+  .karaoke-list{
+    margin-top:10px;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    max-height:280px;
+    overflow:auto;
+  }
+  .karaoke-row{
+    border:1px solid #2c3a55;
+    background:#0b1220;
+    border-radius:12px;
+    padding:10px;
+  }
+  .karaoke-row-top{
+    display:flex;
+    justify-content:space-between;
+    gap:8px;
+    align-items:center;
+    font-weight:800;
+  }
+  .karaoke-row-sub{
+    margin-top:4px;
+    color:#94a3b8;
+    font-size:12px;
+  }
+  .karaoke-actions{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+    margin-top:8px;
+  }
+  .coin-pill{
+    display:inline-flex;
+    align-items:center;
+    gap:4px;
+    border-radius:999px;
+    padding:3px 8px;
+    background:#172033;
+    border:1px solid #334155;
+    font-size:12px;
+    margin-right:4px;
+  }
+  .status-pill{
+    display:inline-flex;
+    border-radius:999px;
+    padding:3px 8px;
+    font-size:12px;
+    font-weight:900;
+    border:1px solid #334155;
+    background:#172033;
+  }
+  .status-pill.run{color:#fef08a;border-color:#eab30855;background:#713f121f}
+  .status-pill.wait{color:#93c5fd;border-color:#3b82f655;background:#1e3a8a22}
+  .status-pill.hold{color:#fca5a5;border-color:#ef444455;background:#7f1d1d22}
+  .status-pill.done{color:#86efac;border-color:#22c55e55;background:#14532d22}
+  @media(max-width:900px){
+    .karaoke-manage-grid,
+    .karaoke-inline,
+    .karaoke-song-inline{
+      grid-template-columns:1fr;
+    }
+  }
+
+
+/* ===== 펀딩 관리 row 분리: 사운드 설정과 충돌 방지 ===== */
+.funding-rule{
+  display:grid;
+  grid-template-columns:1.3fr .7fr .7fr .6fr auto;
+  gap:8px;
+  align-items:end;
+  padding:10px;
+  border:1px solid #243047;
+  background:#0b1220;
+  border-radius:12px;
+  margin-top:8px;
+}
+.funding-rule input,
+.funding-rule select{
+  width:100%;
+  background:#070b12;
+  color:#fff;
+  border:1px solid #334155;
+  border-radius:10px;
+  padding:9px 10px;
+}
+@media(max-width:900px){
+  .funding-rule{grid-template-columns:1fr}
+}
+
+</style>
+<style>.roulette-quick-link{position:fixed;right:14px;bottom:14px;z-index:99999;padding:10px 14px;border-radius:999px;background:linear-gradient(90deg,#ff4fa3,#5ee7ff);color:#fff!important;font-weight:1000;text-decoration:none;box-shadow:0 0 18px rgba(255,79,163,.35)}</style>
+</head>
+<body><a class="roulette-quick-link" href="/roulette.html">🎰 룰렛관리</a>
+<script>(function(){var a=document.querySelector('.roulette-quick-link');if(!a)return;var st=new URLSearchParams(location.search).get('station')||localStorage.getItem('STATION_SLUG')||'default';a.href=a.getAttribute('href')+'?station='+encodeURIComponent(st);})();</script>
+<div class="wrap">
+  <div class="top">
+    <div>
+      <div class="title">방송컨트롤 / 설정</div>
+      <div class="muted">기본·금액구간·프리셋 사운드는 자동 적용, 수동 사운드는 입력페이지에서만 선택합니다.</div>
+    </div>
+    <div class="nav">
+      <a id="adminLink" href="/admin.html">입력</a>
+      <a id="controlLink" href="/control.html">설정</a>
+    </div>
+    </div>
+
+  <div class="layout">
+    <div>
+      <section class="card">
+        <h2>기본 설정</h2>
+        <div id="activeBroadcast" class="resultBox">현재 방송 확인 중...</div>
+        <div class="row"><label>방송 타이틀</label><input id="title" class="input" placeholder="도네이터 현황"></div>
+        <div class="row"><label>타이틀 이미지 URL</label><input id="titleImage" class="input" placeholder="https://..."></div>
+
+        <div class="sub-card">
+          <h2 style="font-size:17px">공지사항</h2>
+          <div class="row"><label>공지 타이틀</label><input id="noticeTitle" class="input" placeholder="예: 오늘 공지"></div>
+          <div class="row"><label>공지문구</label><textarea id="notice" class="input notice-area" placeholder="줄바꿈 가능&#10;계좌후원 반영 중&#10;흡연/금연 단가 확인"></textarea></div>
+          <div class="notice-color-grid">
+            <div class="notice-color-item"><label>1줄 색상</label><input type="color" id="noticeColor0"></div>
+            <div class="notice-color-item"><label>2줄 색상</label><input type="color" id="noticeColor1"></div>
+            <div class="notice-color-item"><label>3줄 색상</label><input type="color" id="noticeColor2"></div>
+            <div class="notice-color-item"><label>4줄 색상</label><input type="color" id="noticeColor3"></div>
+            <div class="notice-color-item"><label>5줄 색상</label><input type="color" id="noticeColor4"></div>
+          </div>
+        </div>
+
+        <div class="sub-card">
+          <h2 style="font-size:17px">오버레이 노출</h2>
+          <div class="toggle-grid">
+            <label class="toggle-box"><input type="checkbox" id="overlayAccountBox">계좌박스</label>
+            <label class="toggle-box"><input type="checkbox" id="overlayNoticeBox">공지박스</label>
+            <label class="toggle-box"><input type="checkbox" id="overlayCreatorBox">크리에이터박스</label>
+            <label class="toggle-box"><input type="checkbox" id="overlayCreatorDonations">크리에이터 후원 표시</label>
+
+            <label class="toggle-box"><input type="checkbox" id="overlayKaraokeBox">노래방창</label>
+            <label class="toggle-box"><input type="checkbox" id="overlayFundingBox">펀딩창</label>
+            <label class="toggle-box"><input type="checkbox" id="overlayBroadcastTimer">미션타이머</label>
+            <label class="toggle-box"><input type="checkbox" id="overlayMediaBox">상단 미디어 슬라이드</label>
+          </div>
+          <p class="muted" style="margin-top:8px">크리에이터 후원 표시를 OFF 하면 크리에이터 박스에 후원금액은 숨기고 옵션만 표시합니다.</p>
+        </div>
+
+        <div class="grid-2" style="margin-top:10px">
+          <div class="row"><label>최대 표시 크리에이터 수</label><input id="maxCreators" class="input" type="number" min="1" max="50"></div>
+          <div class="row"><label>OBS 박스 가로 개수</label><input id="columns" class="input" type="number" min="1" max="6"></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>크리에이터 목록</h2>
+        <p class="muted">한 줄에 한 명씩 입력하세요.</p>
+        <textarea id="creators" class="input creator-area" placeholder="빵떠기&#10;또영&#10;수박"></textarea>
+      </section>
+    </div>
+
+    <div>
+
+      <section class="card">
+        <h2>펀딩 관리</h2>
+        <p class="muted">여러 펀딩을 등록할 수 있습니다. 후원 입력 페이지에서 펀딩을 선택하면 만원단위로 현재값에 올라갑니다.</p>
+        <div class="grid-3">
+          <div class="row"><label>펀딩명</label><input id="fundingTitleInput" class="input" placeholder="예: 펀딩1"></div>
+          <div class="row"><label>현재</label><input id="fundingCurrentInput" class="input" type="number" min="0" value="0"></div>
+          <div class="row"><label>목표</label><input id="fundingTargetInput" class="input" type="number" min="0" value="10"></div>
+        </div>
+        <button class="btn blue" onclick="addFundingItem()">펀딩 추가</button>
+        <div id="fundingList" style="margin-top:10px"></div>
+        <div class="sub-card" style="margin-top:12px">
+          <h2 style="font-size:17px">펀딩 수동 입력 <span class="muted">ALERT 없음</span></h2>
+          <div class="grid-3">
+            <div class="row"><label>펀딩</label><select id="fundManualFundingPc" class="input"></select></div>
+            <div class="row"><label>도네이터</label><input id="fundManualDonorPc" class="input" placeholder="예: 열려"></div>
+            <div class="row"><label>금액</label><input id="fundManualAmountPc" class="input" placeholder="20000 / 2.0"></div>
+          </div>
+          <div class="grid-2">
+            <div class="row"><label>구분</label><select id="fundManualSourcePc" class="input"><option value="toonie">투네</option><option value="account">계좌</option></select></div>
+            <div class="row"><label>메모</label><input id="fundManualMemoPc" class="input"></div>
+          </div>
+          <button class="btn pink" onclick="saveFundingManualPc()">펀딩 수동 저장</button>
+        </div>
+
+      </section>
+
+
+      <section class="card">
+        <h2>사운드 설정</h2>
+        <p class="muted">파일은 <b>public/sounds/</b>에 업로드하고, 여기에는 파일명만 입력합니다. 입력페이지 수동 선택은 업로드된 파일 목록을 검색해서 사용합니다.</p>
+        <label class="toggle" style="margin-bottom:10px"><input type="checkbox" id="soundEnabled"> 사운드 사용</label>
+        <div class="row"><label>기본 사운드</label><input id="soundDefault" class="input" list="soundFiles" placeholder="alert.mp3"></div>
+
+        <div class="sub-card">
+          <h2 style="font-size:17px">금액 구간 사운드</h2>
+          <div id="amountSoundRules"></div>
+          <button class="btn blue mini" onclick="addAmountRule()">금액구간 추가</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>처리 프리셋 <button class="btn blue mini" onclick="addPreset()">프리셋 추가</button></h2>
+        <p class="muted">프리셋마다 사운드 파일을 지정하면 해당 프리셋 처리 시 자동 재생됩니다.</p>
+        <div id="presetList" class="preset-grid"></div>
+        <div class="sub-card" style="margin-top:12px">
+          <h2 style="font-size:17px">프리셋 수동 입력 <span class="muted">ALERT 없음</span></h2>
+          <div class="grid-3">
+            <div class="row"><label>도네이터</label><input id="presetManualDonorPc" class="input" placeholder="예: 열려"></div>
+            <div class="row"><label>금액</label><input id="presetManualAmountPc" class="input" placeholder="20000 / 2.0"></div>
+            <div class="row"><label>구분</label><select id="presetManualSourcePc" class="input"><option value="toonie">투네</option><option value="account">계좌</option></select></div>
+          </div>
+          <div class="grid-2">
+            <div class="row"><label>크리에이터</label><select id="presetManualCreatorPc" class="input"></select></div>
+            <div class="row"><label>프리셋 옵션</label><select id="presetManualProcessPc" class="input"></select></div>
+          </div>
+          <div class="row"><label>메모</label><input id="presetManualMemoPc" class="input"></div>
+          <button class="btn pink" onclick="savePresetManualPc()">프리셋 수동 저장</button>
+        </div>
+        <div class="sub-card" style="margin-top:12px">
+          <h2 style="font-size:17px">수동입력 최근 내역</h2>
+          <button class="btn mini" onclick="loadManualListPc()">새로고침</button>
+          <div id="manualListPc" style="margin-top:10px"></div>
+        </div>
+
+      </section>
+    </div>
+  </div>
+
+  <div class="savebar">
+    <div class="muted" id="saveHint">현재 방송 설정을 저장합니다.</div>
+    <button class="btn green" onclick="saveSettings()">설정 전체 저장</button>
+  </div>
+</div>
+
+<datalist id="soundFiles"></datalist>
+<script src="/common.js"></script>
+<script>
+
+function setSimpleLinks(){
+  const s=encodeURIComponent(getStation());
+  const a=document.getElementById('adminLink');
+  const c=document.getElementById('controlLink');
+  if(a) a.href='/admin.html?station='+s;
+  if(c) c.href='/control.html?station='+s;
+}
+setSimpleLinks();
+
+let settings = null;
+let soundFiles = [];
+
+const defaultColors = ['#ffffff', '#ffe066', '#5ecbff', '#ffb4ca', '#ff4d5e'];
+const defaultAmountRules = [
+  {id:'small', title:'계좌 1만원 미만', min:1, max:9999, sound:'account_small.mp3'},
+  {id:'mid', title:'계좌 1만원 이상', min:10000, max:49999, sound:'account_mid.mp3'},
+  {id:'big', title:'계좌 5만원 이상', min:50000, max:99999, sound:'account_big.mp3'},
+  {id:'super', title:'계좌 10만원 이상', min:100000, max:0, sound:'account_super.mp3'}
+];
+
+function escAttr(v){return String(v ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));}
+function safeId(v){return String(v||'').replace(/[^a-zA-Z0-9_-]/g,'') || ('preset_'+Date.now());}
+
+async function load(){
+  try{
+    await loadSoundFiles();
+    await loadSettings();
+  }catch(e){
+    console.error(e);
+    const box = $('#activeBroadcast');
+    if(box){
+      box.innerHTML = '현재 방송정보를 불러오지 못했습니다.<br><span class="muted">'+esc(e.message || e)+'</span><br><a href="'+stationUrl('/station_control.html')+'" style="color:#93c5fd;font-weight:900">방송국 컨트롤로 이동</a>';
+    }
+  }
+}
+
+async function loadSoundFiles(){
+  try{
+    const data = await api('/api/sounds');
+    soundFiles = (data.sounds || []).map(s => s.file);
+    $('#soundFiles').innerHTML = soundFiles.map(f => `<option value="${escAttr(f)}"></option>`).join('');
+  }catch(e){ soundFiles = []; }
+}
+
+
+function defaultKaraokeData(){
+  return {
+    title:'노래방 공지 알림판',
+    ticker:'신청곡은 채팅으로 남겨주세요',
+    users:[],
+    songs:[]
+  };
+}
+
+function getKaraokeData(){
+  if(!settings) settings = {};
+  if(!settings.karaokeData) settings.karaokeData = defaultKaraokeData();
+  if(!Array.isArray(settings.karaokeData.users)) settings.karaokeData.users = [];
+  if(!Array.isArray(settings.karaokeData.songs)) settings.karaokeData.songs = [];
+  return settings.karaokeData;
+}
+
+function coinLabel(type){
+  return type === 'full' ? '완곡' : type === 'special' ? '스페셜' : '1절';
+}
+
+function coinKeyLabel(type){
+  return type === 'full' ? '완곡코인' : type === 'special' ? '스페셜코인' : '1절코인';
+}
+
+function songStatusClass(status){
+  if(status === '진행') return 'run';
+  if(status === '보류') return 'hold';
+  if(status === '완료') return 'done';
+  return 'wait';
+}
+
+function findKaraokeUser(nick){
+  const data = getKaraokeData();
+  const name = String(nick || '').trim();
+  return data.users.find(u => u.nick === name);
+}
+
+function renderKaraokeManager(){
+  const data = getKaraokeData();
+  if($('#karaokeTitle')) $('#karaokeTitle').value = data.title || '노래방 공지 알림판';
+  if($('#karaokeTicker')) $('#karaokeTicker').value = data.notice || data.ticker || '';
+
+  const userBox = $('#karaokeUserList');
+  if(userBox){
+    userBox.innerHTML = data.users.length ? data.users.map(u => `
+      <div class="karaoke-row">
+        <div class="karaoke-row-top">
+          <span>${escAttr(u.nick)}</span>
+          <button class="btn red mini" onclick="deleteKaraokeUser('${escAttr(u.nick)}')">삭제</button>
+        </div>
+        <div class="karaoke-row-sub">
+          <span class="coin-pill">1절 ${Number(u.coins?.verse||0)}</span>
+          <span class="coin-pill">완곡 ${Number(u.coins?.full||0)}</span>
+          <span class="coin-pill">스페셜 ${Number(u.coins?.special||0)}</span>
+        </div>
+      </div>
+    `).join('') : `<div class="resultBox">코인을 추가한 닉네임이 없습니다.</div>`;
+  }
+
+  const songBox = $('#karaokeSongList');
+  if(songBox){
+    const activeSongs = data.songs.filter(s => s.status !== '삭제');
+    songBox.innerHTML = activeSongs.length ? activeSongs.map((s, idx) => `
+      <div class="karaoke-row">
+        <div class="karaoke-row-top">
+          <span>${idx+1}. ${escAttr(s.nick)} - ${escAttr(s.title)}</span>
+          <span class="status-pill ${songStatusClass(s.status)}">${escAttr(s.status || '대기')}</span>
+        </div>
+        <div class="karaoke-row-sub">${coinLabel(s.type)} · ID ${escAttr(s.id)}</div>
+        <div class="karaoke-actions">
+          <button class="btn blue mini" onclick="setKaraokeSongStatus('${escAttr(s.id)}','진행')">진행</button>
+          <button class="btn mini" onclick="setKaraokeSongStatus('${escAttr(s.id)}','대기')">대기</button>
+          <button class="btn mini" onclick="setKaraokeSongStatus('${escAttr(s.id)}','보류')">보류</button>
+          <button class="btn green mini" onclick="setKaraokeSongStatus('${escAttr(s.id)}','완료')">완료</button>
+          <button class="btn blue mini" onclick="editKaraokeSong('${escAttr(s.id)}')">변경</button>
+          <button class="btn red mini" onclick="deleteKaraokeSong('${escAttr(s.id)}')">삭제</button>
+        </div>
+      </div>
+    `).join('') : `<div class="resultBox">선곡 리스트가 없습니다.</div>`;
+  }
+}
+
+function syncKaraokeInputs(){
+  const data = getKaraokeData();
+  if($('#karaokeTitle')) data.title = $('#karaokeTitle').value.trim() || '노래방 공지 알림판';
+  if($('#karaokeTicker')) { data.ticker = $('#karaokeTicker').value.trim(); data.notice = data.ticker; }
+}
+
+function addKaraokeCoin(){
+  const data = getKaraokeData();
+  const nick = $('#karaokeCoinNick').value.trim();
+  const type = $('#karaokeCoinType').value;
+  const count = Math.max(1, Number($('#karaokeCoinCount').value || 1));
+
+  if(!nick) return alert('닉네임을 입력하세요.');
+
+  let user = data.users.find(u => u.nick === nick);
+  if(!user){
+    user = {nick, coins:{verse:0, full:0, special:0}};
+    data.users.push(user);
+  }
+  if(!user.coins) user.coins = {verse:0, full:0, special:0};
+  user.coins[type] = Number(user.coins[type] || 0) + count;
+
+  $('#karaokeCoinNick').value = '';
+  $('#karaokeCoinCount').value = 1;
+  renderKaraokeManager();
+}
+
+function addKaraokeSong(){
+  const data = getKaraokeData();
+  const nick = $('#karaokeSongNick').value.trim();
+  const type = $('#karaokeSongType').value;
+  const title = $('#karaokeSongTitle').value.trim();
+
+  if(!nick) return alert('닉네임을 입력하세요.');
+  if(!title) return alert('선곡을 입력하세요.');
+
+  const user = data.users.find(u => u.nick === nick);
+  if(!user) return alert('코인이 있는 닉네임만 선곡할 수 있습니다.');
+
+  if(!user.coins) user.coins = {verse:0, full:0, special:0};
+  if(Number(user.coins[type] || 0) <= 0){
+    return alert(`${nick}님은 ${coinKeyLabel(type)}이 없습니다.`);
+  }
+
+  user.coins[type] = Number(user.coins[type] || 0) - 1;
+
+  data.songs.push({
+    id:'song_' + Date.now() + '_' + Math.random().toString(36).slice(2,7),
+    nick,
+    type,
+    title,
+    status:'대기'
+  });
+
+  $('#karaokeSongNick').value = '';
+  $('#karaokeSongTitle').value = '';
+  renderKaraokeManager();
+}
+
+function setKaraokeSongStatus(id, status){
+  const data = getKaraokeData();
+  const song = data.songs.find(s => s.id === id);
+  if(!song) return;
+
+  if(status === '진행'){
+    data.songs.forEach(s => {
+      if(s.status === '진행') s.status = '대기';
+    });
+  }
+  song.status = status;
+  renderKaraokeManager();
+}
+
+function editKaraokeSong(id){
+  const data = getKaraokeData();
+  const song = data.songs.find(s => s.id === id);
+  if(!song) return;
+
+  const nextNick = prompt('닉네임 변경', song.nick);
+  if(nextNick === null) return;
+  const nextTitle = prompt('선곡 변경', song.title);
+  if(nextTitle === null) return;
+
+  song.nick = nextNick.trim() || song.nick;
+  song.title = nextTitle.trim() || song.title;
+  renderKaraokeManager();
+}
+
+function deleteKaraokeSong(id){
+  const data = getKaraokeData();
+  if(!confirm('이 선곡을 삭제할까요?')) return;
+  data.songs = data.songs.filter(s => s.id !== id);
+  renderKaraokeManager();
+}
+
+function deleteKaraokeUser(nick){
+  const data = getKaraokeData();
+  if(!confirm(`${nick} 닉네임과 보유 코인을 삭제할까요?`)) return;
+  data.users = data.users.filter(u => u.nick !== nick);
+  renderKaraokeManager();
+}
+
+
+
+function defaultFundingData(){
+  return {items:[]};
+}
+
+function getFundingData(){
+  if(!settings) settings = {};
+  if(!settings.fundingData) settings.fundingData = defaultFundingData();
+  if(!Array.isArray(settings.fundingData.items)) settings.fundingData.items = [];
+  return settings.fundingData;
+}
+
+function renderFundingManager(){
+  const data = getFundingData();
+  const box = $('#fundingList');
+  if(!box) return;
+  if(!data.items.length){
+    box.innerHTML = `<div class="resultBox">등록된 펀딩이 없습니다.</div>`;
+    return;
+  }
+  box.innerHTML = data.items.map((f, idx) => `
+    <div class="funding-rule">
+      <label>펀딩명<input class="fund-title" value="${escAttr(f.title)}" onchange="saveFundingData(false)"></label>
+      <label>현재<input class="fund-current" type="number" min="0" value="${Number(f.current||0)}" onchange="saveFundingData(false)"></label>
+      <label>목표<input class="fund-target" type="number" min="0" value="${Number(f.target||0)}" onchange="saveFundingData(false)"></label>
+      <label>표시
+        <select class="fund-enabled" onchange="saveFundingData(false)">
+          <option value="true" ${f.enabled!==false?'selected':''}>ON</option>
+          <option value="false" ${f.enabled===false?'selected':''}>OFF</option>
+        </select>
+      </label>
+      <button class="btn red mini" onclick="deleteFundingItem(${idx})">삭제</button>
+    </div>
+  `).join('');
+}
+
+function collectFundingData(){
+  const current = getFundingData();
+  const rows = Array.from(document.querySelectorAll('#fundingList .funding-rule'));
+
+  // 펀딩 리스트 DOM이 아직 렌더링되지 않은 상태에서 저장이 호출되면
+  // 빈 배열로 덮어쓰지 않고 현재 settings 값을 유지
+  if(rows.length === 0 && current.items && current.items.length){
+    return {items: current.items};
+  }
+
+  const items = rows.map((row, idx) => {
+    const titleEl = row.querySelector('.fund-title');
+    const currentEl = row.querySelector('.fund-current');
+    const targetEl = row.querySelector('.fund-target');
+    const enabledEl = row.querySelector('.fund-enabled');
+
+    const title = titleEl ? titleEl.value.trim() : '';
+    if(!title) return null;
+
+    return {
+      id: current.items[idx]?.id || ('fund_' + Date.now() + '_' + idx),
+      title,
+      current: Math.max(0, Number(currentEl ? currentEl.value : 0) || 0),
+      target: Math.max(0, Number(targetEl ? targetEl.value : 0) || 0),
+      enabled: enabledEl ? enabledEl.value !== 'false' : true
+    };
+  }).filter(Boolean);
+
+  return {items};
+}
+
+
+async function saveFundingData(showMessage=true){
+  try{
+    settings.fundingData = collectFundingData();
+    const saved = await api('/api/funding-data', {
+      method:'POST',
+      body:JSON.stringify({fundingData:settings.fundingData})
+    });
+    if(saved && saved.fundingData) settings.fundingData = saved.fundingData;
+    renderFundingManager();
+    if(showMessage) alert('펀딩 저장 완료');
+  }catch(e){ alert(e.message); }
+}
+
+async function addFundingItem(){
+  const data = getFundingData();
+  const title = $('#fundingTitleInput').value.trim();
+  if(!title) return alert('펀딩명을 입력하세요.');
+  data.items.push({
+    id:'fund_' + Date.now(),
+    title,
+    current: Math.max(0, Number($('#fundingCurrentInput').value || 0)),
+    target: Math.max(0, Number($('#fundingTargetInput').value || 0)),
+    enabled:true
+  });
+  $('#fundingTitleInput').value = '';
+  $('#fundingCurrentInput').value = 0;
+  $('#fundingTargetInput').value = 10;
+  renderFundingManager();
+  await saveFundingData(false);
+}
+
+async function deleteFundingItem(idx){
+  const data = getFundingData();
+  if(!confirm('이 펀딩을 삭제할까요?')) return;
+  data.items.splice(idx, 1);
+  renderFundingManager();
+  await saveFundingData(false);
+}
+
+function broadcastStatusText(live){
+  const status = String(live?.status || (live?.live ? 'live' : 'ready'));
+  if(status === 'live') return '방송중';
+  if(status === 'ended') return '방송종료';
+  return '방송대기';
+}
+
+async function loadSettings(){
+  let info = null;
+  try{
+    info = await api('/api/station-info');
+  }catch(e){
+    console.warn('station-info load failed', e);
+  }
+
+  settings = await api('/api/settings');
+
+  if(info){
+    settings.station = settings.station || info.station;
+    settings.broadcast = settings.broadcast || info.active;
+    if(info.active?.broadcastLiveData && !settings.broadcastLiveData) settings.broadcastLiveData = info.active.broadcastLiveData;
+  }
+
+  const live = settings.broadcast?.broadcastLiveData || settings.broadcastLiveData || {};
+  if(settings.broadcast){
+    $('#activeBroadcast').innerHTML = `방송국: <b>${esc(settings.station?.name || settings.station?.slug || '')}</b><br>현재 방송: <b>${esc(settings.broadcast.title || '제목 없음')}</b> <span class="muted">(${broadcastStatusText(live)})</span>`;
+  }else{
+    $('#activeBroadcast').innerHTML = '현재 방송 없음<br><span class="muted">station_control.html에서 방송을 먼저 생성/선택하세요.</span>';
+  }
+  $('#title').value = settings.title || '';
+  $('#titleImage').value = settings.titleImage || '';
+  $('#noticeTitle').value = settings.noticeTitle || '공지';
+  $('#notice').value = settings.notice || '';
+  $('#columns').value = settings.columns || 4;
+  $('#maxCreators').value = settings.maxCreators || 12;
+  $('#creators').value = (settings.creators || []).join('\n');
+
+  const noticeColors = settings.noticeColors || defaultColors;
+  for(let i=0;i<5;i++) $('#noticeColor'+i).value = noticeColors[i] || defaultColors[i];
+
+  const overlaySections = settings.overlaySections || { account:true, notice:false, creators:true };
+  $('#overlayAccountBox').checked = overlaySections.account !== false;
+  $('#overlayNoticeBox').checked = overlaySections.notice === true;
+  $('#overlayCreatorBox').checked = overlaySections.creators !== false;
+  $('#overlayCreatorDonations').checked = overlaySections.creatorDonations !== false;
+  if($('#overlayKaraokeBox')) $('#overlayKaraokeBox').checked = overlaySections.karaoke === true;
+  if($('#overlayFundingBox')) $('#overlayFundingBox').checked = overlaySections.funding === true;
+  if($('#overlayBroadcastTimer')) $('#overlayBroadcastTimer').checked = overlaySections.broadcastTimer === true;
+  if($('#overlayMediaBox')) $('#overlayMediaBox').checked = overlaySections.media !== false;
+
+  const soundRules = settings.soundRules || {};
+  $('#soundEnabled').checked = soundRules.enabled !== false;
+  $('#soundDefault').value = soundRules.defaultSound || 'alert.mp3';
+  renderAmountRules(soundRules.amountRules || defaultAmountRules);
+
+  if(!settings.presets || !settings.presets.length){
+    settings.presets = [
+      {id:'smoke',enabled:true,title:'펴피지마',plusName:'흡연',plusPrice:11900,minusName:'금연',minusPrice:12000,soundFile:'smoke_plus.mp3'},
+      {id:'food',enabled:true,title:'먹먹마',plusName:'먹어',plusPrice:14000,minusName:'먹지마',minusPrice:15000,soundFile:'food_plus.mp3'}
+    ];
+  }
+  if(!settings.fundingData || !Array.isArray(settings.fundingData.items)){
+    settings.fundingData = defaultFundingData();
+  }
+  renderFundingManager();
+
+  renderPresets();
+  renderManualSelectsPc();
+  loadManualListPc().catch(()=>{});
+  $('#saveHint').textContent = settings.broadcast ? `현재 방송 "${settings.broadcast.title}" 설정 저장` : '현재 방송 설정 저장';
+}
+
+function renderAmountRules(rules){
+  $('#amountSoundRules').innerHTML = (rules || []).map((r, idx) => `
+    <div class="sound-rule" data-idx="${idx}">
+      <div class="row"><label>구간명</label><input class="input amount-title" value="${escAttr(r.title)}"></div>
+      <div class="row"><label>최소원</label><input class="input amount-min" inputmode="numeric" value="${escAttr(r.min)}"></div>
+      <div class="row"><label>최대원</label><input class="input amount-max" inputmode="numeric" value="${escAttr(r.max || '')}" placeholder="무제한은 0"></div>
+      <div class="row"><label>사운드 파일</label><input class="input amount-sound" list="soundFiles" value="${escAttr(r.sound)}"></div>
+    </div>
+  `).join('');
+}
+
+function collectAmountRules(){
+  return Array.from(document.querySelectorAll('.sound-rule')).map((el, idx) => ({
+    id: 'amount_' + (idx + 1),
+    title: el.querySelector('.amount-title').value.trim(),
+    min: Number(el.querySelector('.amount-min').value || 0),
+    max: Number(el.querySelector('.amount-max').value || 0),
+    sound: el.querySelector('.amount-sound').value.trim()
+  })).filter(r => r.title && r.sound);
+}
+
+function addAmountRule(){
+  const rules = collectAmountRules();
+  rules.push({id:'amount_'+Date.now(), title:'새 금액구간', min:0, max:0, sound:''});
+  renderAmountRules(rules);
+}
+
+function renderPresets(){
+  $('#presetList').innerHTML = (settings.presets || []).map((p,idx)=>`
+    <div class="preset-card ${p.enabled===false?'off':''}" data-idx="${idx}">
+      <div class="preset-head">
+        <div class="preset-name">${esc(p.title||('프리셋 '+(idx+1)))}</div>
+        <div class="preset-actions">
+          <label class="toggle"><input type="checkbox" class="preset-enabled" ${p.enabled!==false?'checked':''}> ON</label>
+          <button class="btn red mini" onclick="deletePreset(${idx})">삭제</button>
+        </div>
+      </div>
+      <div class="preset-fields">
+        <div class="full"><label>프리셋 제목</label><input class="input preset-title-input" value="${escAttr(p.title||'')}" placeholder="예: 펴피지마"></div>
+        <div><label>+ 항목</label><input class="input preset-plus-name" value="${escAttr(p.plusName||'')}" placeholder="흡연"></div>
+        <div><label>+ 단가</label><input class="input preset-plus-price" inputmode="numeric" value="${escAttr(p.plusPrice||'')}" placeholder="11900"></div>
+        <div><label>- 항목</label><input class="input preset-minus-name" value="${escAttr(p.minusName||'')}" placeholder="금연"></div>
+        <div><label>- 단가</label><input class="input preset-minus-price" inputmode="numeric" value="${escAttr(p.minusPrice||'')}" placeholder="12000"></div>
+        <div class="full"><label>프리셋 사운드 파일</label><input class="input preset-sound-file" list="soundFiles" value="${escAttr(p.soundFile||'')}" placeholder="예: smoke_plus.mp3"></div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function collectPresets(){
+  return Array.from(document.querySelectorAll('.preset-card')).map((card,idx)=>{
+    const old = settings.presets[idx] || {};
+    return {
+      id: old.id || safeId(card.querySelector('.preset-title-input').value || ('preset_'+idx)),
+      enabled: card.querySelector('.preset-enabled').checked,
+      title: card.querySelector('.preset-title-input').value.trim(),
+      plusName: card.querySelector('.preset-plus-name').value.trim(),
+      plusPrice: toWon(card.querySelector('.preset-plus-price').value),
+      minusName: card.querySelector('.preset-minus-name').value.trim(),
+      minusPrice: toWon(card.querySelector('.preset-minus-price').value),
+      soundFile: card.querySelector('.preset-sound-file').value.trim()
+    };
+  }).filter(p=>p.title&&p.plusName&&p.minusName);
+}
+
+function addPreset(){
+  settings.presets = collectPresets();
+  settings.presets.push({id:'preset_'+Date.now(),enabled:true,title:'새프리셋',plusName:'플러스',plusPrice:10000,minusName:'마이너스',minusPrice:10000,soundFile:''});
+  renderPresets();
+}
+
+function deletePreset(idx){
+  settings.presets = collectPresets();
+  if(!confirm('이 프리셋을 삭제할까요?')) return;
+  settings.presets.splice(idx,1);
+  renderPresets();
+}
+
+
+function renderManualSelectsPc(){
+  if($('#fundManualFundingPc')){
+    const items = (getFundingData().items || []);
+    $('#fundManualFundingPc').innerHTML = items.map(f=>`<option value="${escAttr(f.id)}">${esc(f.title)}</option>`).join('') || '<option value="">펀딩 없음</option>';
+  }
+  if($('#presetManualCreatorPc')){
+    const list = ($('#creators')?.value || '').split(/\n+/).map(v=>v.trim()).filter(Boolean);
+    $('#presetManualCreatorPc').innerHTML = list.map(c=>`<option value="${escAttr(c)}">${esc(c)}</option>`).join('') || '<option value="수동입력">수동입력</option>';
+  }
+  if($('#presetManualProcessPc')){
+    const opts=[];
+    (settings.presets||[]).filter(p=>p.enabled!==false).forEach(p=>{
+      opts.push(`<option value="${escAttr(p.plusName)}">${esc(p.title)} - ${esc(p.plusName)} +</option>`);
+      opts.push(`<option value="${escAttr(p.minusName)}">${esc(p.title)} - ${esc(p.minusName)} -</option>`);
+    });
+    $('#presetManualProcessPc').innerHTML = opts.join('') || '<option value="후원">후원</option>';
+  }
+}
+
+async function saveFundingManualPc(){
+  try{
+    const fundingId = $('#fundManualFundingPc').value;
+    if(!fundingId) return alert('펀딩을 선택하세요.');
+    await api('/api/manual-entry',{method:'POST',body:JSON.stringify({
+      kind:'funding', fundingId,
+      donor:$('#fundManualDonorPc').value.trim(),
+      amount:$('#fundManualAmountPc').value,
+      sourceType:$('#fundManualSourcePc').value,
+      memo:$('#fundManualMemoPc').value.trim()
+    })});
+    alert('펀딩 수동 저장 완료');
+    $('#fundManualDonorPc').value=$('#fundManualAmountPc').value=$('#fundManualMemoPc').value='';
+    await loadSettings();
+  }catch(e){alert(e.message)}
+}
+
+async function savePresetManualPc(){
+  try{
+    await api('/api/manual-entry',{method:'POST',body:JSON.stringify({
+      kind:'preset',
+      donor:$('#presetManualDonorPc').value.trim(),
+      amount:$('#presetManualAmountPc').value,
+      sourceType:$('#presetManualSourcePc').value,
+      creator:$('#presetManualCreatorPc').value,
+      processType:$('#presetManualProcessPc').value,
+      memo:$('#presetManualMemoPc').value.trim()
+    })});
+    alert('프리셋 수동 저장 완료');
+    $('#presetManualDonorPc').value=$('#presetManualAmountPc').value=$('#presetManualMemoPc').value='';
+    await loadManualListPc();
+  }catch(e){alert(e.message)}
+}
+
+async function loadManualListPc(){
+  const box=$('#manualListPc');
+  if(!box) return;
+  try{
+    const d=await api('/api/donations');
+    const arr=(d.donations||[]).filter(x=>x.silentAlert||String(x.memo||'').includes('[무알림]')).slice(-30).reverse();
+    box.innerHTML=arr.length?arr.map(x=>`<div class="resultBox"><b>${esc(x.donor)} → ${esc(x.creator)}</b><br><span class="muted">${esc(x.processType)} / ${Number(x.totalAmount||0).toLocaleString('ko-KR')}원 / ${esc(x.sourceType||'')}</span><div style="display:flex;gap:6px;margin-top:6px"><button class="btn mini" onclick="editManualPc('${x.id}')">수정</button><button class="btn red mini" onclick="deleteManualPc('${x.id}')">삭제</button></div></div>`).join(''):'<div class="resultBox">수동입력 내역 없음</div>';
+  }catch(e){box.innerHTML='<div class="resultBox">'+esc(e.message)+'</div>'}
+}
+
+async function editManualPc(id){
+  try{
+    const d=await api('/api/donations');
+    const x=(d.donations||[]).find(v=>v.id===id);
+    if(!x) return alert('내역 없음');
+    const donor=prompt('도네이터',x.donor); if(donor===null) return;
+    const amount=prompt('금액',x.totalAmount||0); if(amount===null) return;
+    const source=prompt('구분(account/toonie)',x.sourceType||((x.accountAmount>0)?'account':'toonie'))||'toonie';
+    const creator=prompt('대상/크리에이터',x.creator)||x.creator;
+    const processType=prompt('처리/프리셋',x.processType)||x.processType;
+    await api('/api/donations/'+id,{method:'PUT',body:JSON.stringify({donor,creator,processType,accountAmount:source==='account'?amount:0,toonieAmount:source==='account'?0:amount,silentAlert:true,manualKind:x.manualKind||'manual',sourceType:source,memo:(x.memo||'').replace('[무알림]','').trim()})});
+    await loadManualListPc();
+  }catch(e){alert(e.message)}
+}
+async function deleteManualPc(id){if(!confirm('삭제할까요?'))return;try{await api('/api/donations/'+id,{method:'DELETE'});await loadManualListPc()}catch(e){alert(e.message)}}
+
+async function saveSettings(){
+  try{
+    syncKaraokeInputs();
+    settings.fundingData = collectFundingData();
+    const body = {
+      title: $('#title').value,
+      titleImage: $('#titleImage').value,
+      noticeTitle: $('#noticeTitle').value,
+      notice: $('#notice').value,
+      noticeColors: [0,1,2,3,4].map(i => $('#noticeColor'+i).value || defaultColors[i]),
+      columns: Number($('#columns').value||4),
+      maxCreators: Number($('#maxCreators').value||12),
+      creators: $('#creators').value.split(/\n+/).map(v=>v.trim()).filter(Boolean),
+      presets: collectPresets(),
+      overlaySections: {
+        account: $('#overlayAccountBox').checked,
+        notice: $('#overlayNoticeBox').checked,
+        creators: $('#overlayCreatorBox').checked,
+        creatorDonations: $('#overlayCreatorDonations') ? $('#overlayCreatorDonations').checked : true,
+        karaoke: $('#overlayKaraokeBox') ? $('#overlayKaraokeBox').checked : false,
+        funding: $('#overlayFundingBox') ? $('#overlayFundingBox').checked : false,
+        broadcastTimer: $('#overlayBroadcastTimer') ? $('#overlayBroadcastTimer').checked : false,
+        media: $('#overlayMediaBox') ? $('#overlayMediaBox').checked : true
+      },
+      
+      fundingData: collectFundingData(),
+      karaokeData: getKaraokeData(),
+      soundRules: {
+        enabled: $('#soundEnabled').checked,
+        defaultSound: $('#soundDefault').value.trim() || 'alert.mp3',
+        amountRules: collectAmountRules()
+      }
+    };
+    await api('/api/settings',{method:'POST',body:JSON.stringify(body)});
+    alert('현재 방송 설정 저장 완료');
+    await loadSettings();
+  }catch(e){alert(e.message)}
+}
+
+load();
+</script>
+<script>
+(function preserveStationLinks(){
+  const station = new URLSearchParams(location.search).get('station') || localStorage.getItem('STATION_SLUG') || 'default';
+  localStorage.setItem('STATION_SLUG', station);
+  document.querySelectorAll('a[href^="/"]').forEach(a=>{
+    const href=a.getAttribute('href');
+    if(!href || href.includes('station=') || href.startsWith('/api/')) return;
+    const u=new URL(href, location.origin);
+    u.searchParams.set('station', station);
+    a.setAttribute('href', u.pathname+u.search+(u.hash||''));
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>방송국 스타일 설정</title>
+<link rel="stylesheet" href="/app.css">
+<style>
+:root{--bg:#070b12;--card:#0b1220;--line:#253247;--line2:#334155;--text:#e5e7eb;--muted:#94a3b8;--blue:#2563eb;--green:#16a34a;--red:#dc2626}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',Arial,sans-serif}.wrap{max-width:1180px;margin:0 auto;padding:22px}.top{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:16px}.title{font-size:30px;font-weight:950}.nav{display:flex;gap:8px;flex-wrap:wrap}.nav a{text-decoration:none;color:#dbeafe;background:#111827;border:1px solid var(--line2);padding:10px 14px;border-radius:12px;font-weight:900}.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:14px}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.row{margin-bottom:10px}label{display:block;font-size:13px;color:#cbd5e1;font-weight:900;margin-bottom:6px}.input{width:100%;background:#070b12;color:#fff;border:1px solid var(--line2);border-radius:12px;padding:10px 11px;font-weight:800}.input:focus{outline:none;border-color:#60a5fa;box-shadow:0 0 0 3px rgba(59,130,246,.14)}.btn{border:0;border-radius:12px;padding:10px 13px;font-weight:900;cursor:pointer;background:#334155;color:#fff}.green{background:var(--green)}.blue{background:var(--blue)}.red{background:var(--red)}.muted{color:var(--muted);font-size:13px}.actions{display:flex;gap:8px;flex-wrap:wrap}.preview{width:285px;margin:0 auto;background:linear-gradient(180deg,var(--p-bg1),var(--p-bg2));border:2px solid var(--p-border);border-radius:16px;padding:12px;text-align:center}.preview-title{display:inline-flex;padding:4px 12px;border-radius:999px;background:rgba(255,255,255,.1);font-weight:1000;color:var(--p-title);font-size:var(--p-title-size)}.preview-content{margin-top:10px;text-align:left;font-weight:900;color:var(--p-content);font-size:var(--p-content-size)}.hint{padding:10px 12px;border-radius:12px;border:1px solid rgba(96,165,250,.25);background:rgba(37,99,235,.12);color:#dbeafe;font-size:13px;font-weight:800;line-height:1.45}.warn{border-color:rgba(248,113,113,.35);background:rgba(127,29,29,.18);color:#fecaca}@media(max-width:900px){.grid{grid-template-columns:1fr}.top{flex-direction:column;align-items:flex-start}.actions .btn{width:100%}}
+.thumb-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px;margin-top:10px}.thumb{border:1px solid var(--line2);background:#07101c;border-radius:12px;overflow:hidden;cursor:pointer;color:#cbd5e1;font-size:11px;font-weight:900;text-align:center}.thumb img,.thumb video{display:block;width:100%;aspect-ratio:16/9;height:auto;object-fit:cover;background:#000}.thumb span{display:block;padding:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div>
+      <div class="title">방송국별 스타일 설정</div>
+      <div class="muted" id="info">방송국 스타일을 불러오는 중...</div>
+    </div>
+    <div class="nav">
+      <a id="stationLink" href="/station_control.html">방송국</a>
+      <a id="adminLink" href="/admin.html">입력</a>
+      <a id="controlLink" href="/control.html">설정</a>
+      <a id="mControlLink" href="/m_control.html">모바일설정</a>
+      <a id="mediaLink" href="/media_manager.html">미디어</a>
+      <a id="mMediaLink" href="/m_media_manager.html">모바일미디어</a>
+      <a id="overlayLink" target="_blank" href="/overlay.html">오버레이 TEST</a>
+    </div>
+  </div>
+
+  <section class="card">
+    <div class="hint" id="saveHint">스타일은 방송별이 아니라 방송국 공통(_shared)에 저장됩니다. PC/모바일 설정 저장으로 초기화되지 않게 저장 직후 서버값을 다시 확인합니다.</div>
+  </section>
+
+
+  <section class="card">
+    <h2>컬러 팔레트 빠른 적용</h2>
+    <div class="actions">
+      <button class="btn" onclick="applyPalette('lovelyPink')">러블리 핑크</button>
+      <button class="btn" onclick="applyPalette('neonBlue')">네온 블루핑크</button>
+      <button class="btn" onclick="applyPalette('gold')">럭셔리 골드</button>
+      <button class="btn" onclick="applyPalette('dark')">다크 투명</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>박스 / 배경</h2>
+    <div class="grid">
+      <div class="row"><label>박스 테두리 컬러</label><input id="boxBorderColor" class="input" placeholder="rgba(255,138,185,.95)"></div>
+      <div class="row"><label>박스 배경 상단</label><input id="boxBgTop" class="input" placeholder="rgba(18,22,32,.88)"></div>
+      <div class="row"><label>박스 배경 하단</label><input id="boxBgBottom" class="input" placeholder="rgba(10,12,20,.82)"></div>
+    </div>
+  </section>
+
+
+
+  <section class="card">
+    <h2>오버레이 배치 / 박스 묶기</h2>
+    <div class="grid">
+      <div class="row"><label>박스 표시 방식</label><select id="boxGroupMode" class="input"><option value="separate">개별 박스</option><option value="single">선택 박스 하나로 묶기</option></select></div>
+      <div class="row"><label>전체 박스 폭(px)</label><input id="overlayWidth" class="input" type="number" placeholder="285"></div>
+      <div class="row"><label>상단 위치(px)</label><input id="overlayTop" class="input" type="number" placeholder="54"></div>
+      <div class="row"><label>오른쪽 위치(px)</label><input id="overlayRight" class="input" type="number" placeholder="14"></div>
+      <div class="row"><label>박스 간격(px)</label><input id="overlayGap" class="input" type="number" placeholder="8"></div>
+      <div class="row"><label>박스 둥글기(px)</label><input id="boxRadius" class="input" type="number" placeholder="18"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>상단 이미지/영상 슬라이드</h2>
+    <div class="hint">미디어 관리에서 업로드한 이미지/영상을 선택하거나 주소를 한 줄씩 입력하세요. 슬라이드는 16:9 비율로 표시됩니다.</div>
+    <div class="grid">
+      <div class="row"><label>슬라이드 ON/OFF</label><select id="topSlideEnabled" class="input"><option value="true">ON</option><option value="false">OFF</option></select></div>
+      <div class="row" style="grid-column:1/-1"><label>슬라이드 이미지/영상 목록</label><textarea id="topSlideImages" class="input" style="min-height:96px" placeholder="/uploads/images/top1.png&#10;/uploads/videos/intro.mp4"></textarea></div>
+      <div class="row"><label>슬라이드 높이(px)</label><input id="topSlideHeight" class="input" type="number" placeholder="105"></div>
+      <div class="row"><label>전환 시간(ms)</label><input id="topSlideInterval" class="input" type="number" placeholder="3500"></div>
+      <div class="row"><label>투명도(0~1)</label><input id="topSlideOpacity" class="input" type="number" step="0.05" placeholder="1"></div>
+    </div>
+    <div class="actions"><button class="btn blue" onclick="loadServerImages()">서버 미디어 불러오기</button><button class="btn" onclick="location.href=stationUrl('/media_manager.html')">미디어 관리</button></div>
+    <div id="serverImageThumbs" class="thumb-grid"></div>
+  </section>
+
+  <section class="card">
+    <h2>타이틀 컬러 / 크기</h2>
+    <div class="grid">
+      <div class="row"><label>계좌 타이틀 컬러</label><input id="accountTitleColor" class="input" placeholder="#ffe680"></div>
+      <div class="row"><label>공지 타이틀 컬러</label><input id="noticeTitleColor" class="input" placeholder="#8ee7ff"></div>
+      <div class="row"><label>펀딩 타이틀 컬러</label><input id="fundingTitleColor" class="input" placeholder="#b8ff9d"></div>
+      <div class="row"><label>노래방 타이틀 컬러</label><input id="karaokeTitleColor" class="input" placeholder="#ff9bd6"></div>
+      <div class="row"><label>타이머 타이틀 컬러</label><input id="timerTitleColor" class="input" placeholder="#ffe680"></div>
+      <div class="row"><label>계좌 타이틀 크기(px)</label><input id="accountTitleSize" class="input" type="number" placeholder="20"></div>
+      <div class="row"><label>공지 타이틀 크기(px)</label><input id="noticeTitleSize" class="input" type="number" placeholder="20"></div>
+      <div class="row"><label>펀딩 타이틀 크기(px)</label><input id="fundingTitleSize" class="input" type="number" placeholder="20"></div>
+      <div class="row"><label>노래방 타이틀 크기(px)</label><input id="karaokeTitleSize" class="input" type="number" placeholder="20"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>컨텐츠 / 펀딩바</h2>
+    <div class="grid">
+      <div class="row"><label>기본 컨텐츠 컬러</label><input id="contentColor" class="input" placeholder="#ffffff"></div>
+      <div class="row"><label>공지 컨텐츠 컬러</label><input id="noticeContentColor" class="input" placeholder="#ffffff"></div>
+      <div class="row"><label>펀딩 컨텐츠 컬러</label><input id="fundingContentColor" class="input" placeholder="#f8fafc"></div>
+      <div class="row"><label>노래방 컨텐츠 컬러</label><input id="karaokeContentColor" class="input" placeholder="#ffffff"></div>
+      <div class="row"><label>노래방 공지 컬러</label><input id="karaokeNoticeColor" class="input" placeholder="#fde68a"></div>
+      <div class="row"><label>노래방 진행중 컬러</label><input id="karaokeCurrentColor" class="input" placeholder="#e0f2fe"></div>
+      <div class="row"><label>노래방 예약목록 컬러</label><input id="karaokeQueueColor" class="input" placeholder="#ffffff"></div>
+      <div class="row"><label>노래방 코인롤링 컬러</label><input id="karaokeCoinColor" class="input" placeholder="#ffffff"></div>
+      <div class="row"><label>노래방 닉네임 컬러</label><input id="karaokeDonorColor" class="input" placeholder="#39ff88"></div>
+      <div class="row"><label>노래방 하트 컬러</label><input id="karaokeHeartColor" class="input" placeholder="#ff4fa3"></div>
+      <div class="row"><label>컨텐츠 기본 크기(px)</label><input id="contentFontSize" class="input" type="number" placeholder="20"></div>
+      <div class="row"><label>크리에이터 글자 크기(px)</label><input id="creatorContentSize" class="input" type="number" placeholder="24"></div>
+      <div class="row"><label>계좌 롤링 글자 크기(px)</label><input id="accountRollFontSize" class="input" type="number" placeholder="25"></div>
+      <div class="row"><label>ALERT 글자 크기(px)</label><input id="alertFontSize" class="input" type="number" placeholder="30"></div>
+      <div class="row"><label>노래방 공지 크기(px)</label><input id="karaokeNoticeSize" class="input" type="number" placeholder="17"></div>
+      <div class="row"><label>노래방 진행중 크기(px)</label><input id="karaokeCurrentSize" class="input" type="number" placeholder="18"></div>
+      <div class="row"><label>노래방 예약목록 크기(px)</label><input id="karaokeQueueSize" class="input" type="number" placeholder="15"></div>
+      <div class="row"><label>노래방 코인롤링 크기(px)</label><input id="karaokeCoinSize" class="input" type="number" placeholder="15"></div>
+      <div class="row"><label>펀딩 그래프바 컬러</label><input id="fundingBarColor" class="input" placeholder="linear-gradient(...) 또는 #44f7ff"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>계좌후원 VIP 배경 이펙트</h2>
+    <div class="grid">
+      <div class="row"><label>VIP 기준금액</label><input id="vipAccountThreshold" class="input" type="number" placeholder="500000"></div>
+      <div class="row"><label>VIP 배경 컬러 1</label><input id="vipAccountBg1" class="input" placeholder="rgba(255,79,216,.22)"></div>
+      <div class="row"><label>VIP 배경 컬러 2</label><input id="vipAccountBg2" class="input" placeholder="rgba(0,234,255,.18)"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>미리보기</h2>
+    <div class="preview" id="preview">
+      <div class="preview-title">타이틀</div>
+      <div class="preview-content">컨텐츠 텍스트 / 펀딩 15/100</div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="actions">
+      <button class="btn green" onclick="save()">스타일 저장</button>
+      <button class="btn blue" onclick="load()">다시 불러오기</button>
+      <button class="btn red" onclick="resetLocalInputs()">입력칸 비우기</button>
+    </div>
+  </section>
+</div>
+<script src="/common.js"></script>
+<script>
+const fields = [
+  'boxBorderColor','boxBgTop','boxBgBottom',
+  'accountTitleColor','noticeTitleColor','fundingTitleColor','karaokeTitleColor','timerTitleColor',
+  'contentColor','noticeContentColor','fundingContentColor','karaokeContentColor','karaokeNoticeColor','karaokeCurrentColor','karaokeQueueColor','karaokeCoinColor','karaokeDonorColor','karaokeHeartColor',
+  'accountTitleSize','noticeTitleSize','fundingTitleSize','karaokeTitleSize','contentFontSize','creatorContentSize','accountRollFontSize','alertFontSize','karaokeNoticeSize','karaokeCurrentSize','karaokeQueueSize','karaokeCoinSize','fundingBarColor','boxGroupMode','overlayWidth','overlayTop','overlayRight','overlayGap','boxRadius','topSlideEnabled','topSlideImages','topSlideHeight','topSlideInterval','topSlideOpacity',
+  'vipAccountThreshold','vipAccountBg1','vipAccountBg2'
+];
+const defaults = {
+  boxBorderColor:'rgba(255,138,185,.95)',
+  boxBgTop:'rgba(18,22,32,.88)',
+  boxBgBottom:'rgba(10,12,20,.82)',
+  accountTitleColor:'#ffe680',
+  noticeTitleColor:'#8ee7ff',
+  fundingTitleColor:'#b8ff9d',
+  karaokeTitleColor:'#ff9bd6',
+  timerTitleColor:'#ffe680',
+  contentColor:'#ffffff',
+  noticeContentColor:'#ffffff',
+  fundingContentColor:'#f8fafc',
+  karaokeContentColor:'#ffffff',
+  karaokeNoticeColor:'#fde68a',
+  karaokeCurrentColor:'#e0f2fe',
+  karaokeQueueColor:'#ffffff',
+  karaokeCoinColor:'#ffffff',
+  karaokeDonorColor:'#39ff88',
+  karaokeHeartColor:'#ff4fa3',
+  accountTitleSize:20,
+  noticeTitleSize:20,
+  fundingTitleSize:20,
+  karaokeTitleSize:20,
+  contentFontSize:20,
+  creatorContentSize:24,
+  accountRollFontSize:25,
+  alertFontSize:30,
+  fundingBarColor:'repeating-linear-gradient(135deg, rgba(255,182,213,.9) 0px, rgba(255,182,213,.9) 10px, rgba(255,79,163,.86) 10px, rgba(255,79,163,.86) 20px)',
+  boxGroupMode:'separate',
+  overlayWidth:285,
+  overlayTop:54,
+  overlayRight:14,
+  overlayGap:8,
+  boxRadius:18,
+  topSlideEnabled:'true',
+  topSlideImages:'',
+  topSlideHeight:105,
+  topSlideInterval:3500,
+  topSlideOpacity:1,
+  karaokeNoticeSize:17,
+  karaokeCurrentSize:18,
+  karaokeQueueSize:15,
+  karaokeCoinSize:15,
+  vipAccountThreshold:500000,
+  vipAccountBg1:'rgba(255,79,216,.22)',
+  vipAccountBg2:'rgba(0,234,255,.18)'
+};
+function st(){ return typeof getStation === 'function' ? getStation() : (new URLSearchParams(location.search).get('station') || localStorage.getItem('STATION_SLUG') || 'default'); }
+function stationUrl(path){ return path + '?station=' + encodeURIComponent(st()); }
+function setLinks(token=''){
+  const s=encodeURIComponent(st());
+  stationLink.href='/station_control.html?station='+s;
+  adminLink.href='/admin.html?station='+s;
+  controlLink.href='/control.html?station='+s;
+  mControlLink.href='/m_control.html?station='+s;
+  overlayLink.href='/overlay.html?station='+s+(token?'&token='+encodeURIComponent(token):'')+'&monitor=1&v='+Date.now();
+  if(document.getElementById('mediaLink')) mediaLink.href='/media_manager.html?station='+s;
+  if(document.getElementById('mMediaLink')) mMediaLink.href='/m_media_manager.html?station='+s;
+}
+async function apiNoCache(url,opt={}){
+  const join=url.includes('?')?'&':'?';
+  return await api(url+join+'_ts='+Date.now(), opt);
+}
+
+function applyPalette(name){
+  const palettes={
+    lovelyPink:{boxBorderColor:'rgba(255,122,191,.95)',boxBgTop:'rgba(34,18,32,.88)',boxBgBottom:'rgba(20,10,22,.82)',accountTitleColor:'#ffe680',noticeTitleColor:'#ffb6d5',fundingTitleColor:'#ff9bd3',karaokeTitleColor:'#ff7abf',contentColor:'#ffffff',noticeContentColor:'#fff0f8',fundingContentColor:'#fff5fb',karaokeContentColor:'#ffffff',
+  karaokeNoticeColor:'#fde68a',
+  karaokeCurrentColor:'#e0f2fe',
+  karaokeQueueColor:'#ffffff',
+  karaokeCoinColor:'#ffffff',
+  karaokeDonorColor:'#39ff88',
+  karaokeHeartColor:'#ff4fa3',fundingBarColor:'repeating-linear-gradient(135deg, rgba(255,182,213,.9) 0px, rgba(255,182,213,.9) 10px, rgba(255,79,163,.86) 10px, rgba(255,79,163,.86) 20px)',vipAccountBg1:'rgba(255,122,191,.45)',vipAccountBg2:'rgba(255,79,163,.38)'},
+    neonBlue:{boxBorderColor:'rgba(0,234,255,.85)',boxBgTop:'rgba(10,22,38,.88)',boxBgBottom:'rgba(8,10,22,.82)',noticeTitleColor:'#8ee7ff',fundingTitleColor:'#b8ff9d',fundingBarColor:'repeating-linear-gradient(135deg, rgba(255,182,213,.9) 0px, rgba(255,182,213,.9) 10px, rgba(255,79,163,.86) 10px, rgba(255,79,163,.86) 20px)',
+  boxGroupMode:'separate',
+  overlayWidth:285,
+  overlayTop:54,
+  overlayRight:14,
+  overlayGap:8,
+  boxRadius:18,
+  topSlideEnabled:'true',
+  topSlideImages:'',
+  topSlideHeight:105,
+  topSlideInterval:3500,
+  topSlideOpacity:1,
+  karaokeNoticeSize:17,
+  karaokeCurrentSize:18,
+  karaokeQueueSize:15,
+  karaokeCoinSize:15,vipAccountBg1:'rgba(0,234,255,.35)',vipAccountBg2:'rgba(255,79,216,.30)'},
+    gold:{boxBorderColor:'rgba(255,214,102,.95)',boxBgTop:'rgba(36,27,12,.88)',boxBgBottom:'rgba(18,14,8,.82)',accountTitleColor:'#ffe680',noticeTitleColor:'#ffd166',fundingTitleColor:'#ffe680',fundingBarColor:'repeating-linear-gradient(135deg, rgba(255,230,128,.92) 0px, rgba(255,230,128,.92) 10px, rgba(255,177,66,.86) 10px, rgba(255,177,66,.86) 20px)',vipAccountBg1:'rgba(255,214,102,.45)',vipAccountBg2:'rgba(255,177,66,.35)'},
+    dark:{boxBorderColor:'rgba(255,255,255,.22)',boxBgTop:'rgba(18,22,32,.78)',boxBgBottom:'rgba(10,12,20,.64)',contentColor:'#ffffff',fundingBarColor:'linear-gradient(90deg, rgba(255,255,255,.22), rgba(255,255,255,.08))'}
+  };
+  const p=palettes[name]||{};
+  Object.entries(p).forEach(([k,v])=>{const el=document.getElementById(k);if(el)el.value=v});
+  updatePreview();
+}
+
+function collect(){
+  const o={};
+  for(const f of fields){
+    const el=document.getElementById(f);
+    if(!el) continue;
+    const raw=String(el.value ?? '').trim();
+    if(raw==='') continue; // 빈칸은 저장하지 않음. 서버 기본값 덮어쓰기/초기화 방지
+    if(f==='topSlideImages'){ o[f]=raw.split(/\r?\n|,/).map(v=>v.trim()).filter(Boolean); continue; }
+    if(el.type==='number'){
+      const n=Number(raw);
+      if(Number.isFinite(n)) o[f]=n;
+    }else{
+      o[f]=raw;
+    }
+  }
+  return o;
+}
+function fill(o){
+  const src = {...defaults, ...(o||{})};
+  for(const f of fields){
+    const el=document.getElementById(f);
+    if(el){
+      if(f==='topSlideImages' && Array.isArray(src[f])) el.value = src[f].join('\n');
+      else el.value = src[f] ?? '';
+    }
+  }
+  updatePreview();
+}
+function updatePreview(){
+  const o={...defaults, ...collect()};
+  const p=document.getElementById('preview');
+  p.style.setProperty('--p-border', o.boxBorderColor);
+  p.style.setProperty('--p-bg1', o.boxBgTop);
+  p.style.setProperty('--p-bg2', o.boxBgBottom);
+  p.style.setProperty('--p-title', o.noticeTitleColor);
+  p.style.setProperty('--p-content', o.noticeContentColor || o.contentColor);
+  p.style.setProperty('--p-title-size', (Number(o.noticeTitleSize)||20)+'px');
+  p.style.setProperty('--p-content-size', (Number(o.contentFontSize)||20)+'px');
+}
+fields.forEach(f=>document.addEventListener('input',e=>{ if(e.target.id===f) updatePreview(); }));
+
+async function loadServerImages(){
+  const box=document.getElementById('serverImageThumbs');
+  if(!box) return;
+  box.innerHTML='<div class="muted">서버 미디어 불러오는 중...</div>';
+  try{
+    const data=await apiNoCache('/api/media');
+    const media=data.media||[];
+    if(!media.length){ box.innerHTML='<div class="muted">업로드된 이미지/영상이 없습니다. 미디어 관리에서 업로드하세요.</div>'; return; }
+    box.innerHTML=media.map(m=>{
+      const url=String(m.url).replace(/'/g,'&#039;');
+      const prev=m.type==='video'?`<video src="${m.url}" muted playsinline></video>`:`<img src="${m.url}">`;
+      return `<button type="button" class="thumb" onclick="addSlideImage('${url}')">${prev}<span>${m.type==='video'?'영상':'이미지'} · ${m.name}</span></button>`;
+    }).join('');
+  }catch(e){ box.innerHTML='<div class="muted">미디어 목록 오류: '+(e.message||e)+'</div>'; }
+}
+function addSlideImage(url){
+  const el=document.getElementById('topSlideImages');
+  const list=String(el.value||'').split(/\r?\n|,/).map(v=>v.trim()).filter(Boolean);
+  if(!list.includes(url)) list.push(url);
+  el.value=list.join('\n');
+  updatePreview();
+}
+
+async function load(){
+  const data=await apiNoCache('/api/settings');
+  const station=data.station||{};
+  document.getElementById('info').textContent=(station.name||st())+' / 방송국별 스타일';
+  setLinks(station.overlayToken||'');
+  fill(data.stationStyle||{});
+  document.getElementById('saveHint').className='hint';
+  document.getElementById('saveHint').textContent='현재 서버 저장값을 불러왔습니다. 저장 후에도 이 값이 유지되는지 자동 확인합니다.';
+}
+async function save(){
+  try{
+    const stationStyle=collect();
+    if(!Object.keys(stationStyle).length) return alert('저장할 스타일 값이 없습니다.');
+
+    // 1순위: 방송국 공통 스타일 전용 API
+    await api('/api/station-style',{method:'POST',body:JSON.stringify({stationStyle})});
+
+    // 저장 직후 서버값 재확인. 캐시/초기값으로 되돌아가는지 확인.
+    const data=await apiNoCache('/api/settings');
+    const saved=data.stationStyle||{};
+    fill(saved);
+
+    const miss=Object.keys(stationStyle).filter(k=>String(saved[k] ?? '') !== String(stationStyle[k] ?? ''));
+    const hint=document.getElementById('saveHint');
+    if(miss.length){
+      hint.className='hint warn';
+      hint.textContent='저장은 요청됐지만 서버 확인값이 일부 다릅니다: '+miss.join(', ')+' / server.js의 normalizeStationStyle 또는 STATION_SHARED_SETTING_FIELDS 패치를 적용하세요.';
+    }else{
+      hint.className='hint';
+      hint.textContent='스타일 저장 완료. 서버 재확인까지 성공했습니다.';
+      alert('스타일 저장 완료');
+    }
+  }catch(e){
+    alert(e.message || '스타일 저장 실패');
+  }
+}
+function resetLocalInputs(){
+  if(!confirm('입력칸만 비웁니다. 서버 저장값은 삭제하지 않습니다.')) return;
+  fields.forEach(f=>{const el=document.getElementById(f); if(el) el.value='';});
+  updatePreview();
+}
+load().catch(e=>alert(e.message));
+</script>
+</body>
+</html>

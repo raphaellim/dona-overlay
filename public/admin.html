@@ -1,0 +1,1136 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>후원 입력</title>
+<link rel="stylesheet" href="/app.css">
+<style>
+:root{
+  --bg:#070b12;
+  --card:#0b1220;
+  --card2:#0f172a;
+  --line:#253247;
+  --line2:#334155;
+  --text:#e5e7eb;
+  --muted:#94a3b8;
+  --blue:#2563eb;
+  --green:#16a34a;
+  --red:#dc2626;
+  --pink:#ec4899;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,'Noto Sans KR',sans-serif}
+.wrap{max-width:1280px;margin:0 auto;padding:20px}
+.top{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:14px}
+.title{font-size:30px;font-weight:950;letter-spacing:-.06em}
+.subtitle{color:var(--muted);font-size:14px;margin-top:4px}
+.nav{display:flex;gap:8px;flex-wrap:wrap}
+.nav a{text-decoration:none;color:#dbeafe;background:#111827;border:1px solid var(--line2);padding:10px 14px;border-radius:12px;font-weight:900}
+.layout{display:grid;grid-template-columns:1.18fr .82fr;gap:14px;align-items:start}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;box-shadow:0 8px 24px rgba(0,0,0,.18);margin-bottom:14px}
+.card h2{font-size:20px;margin:0 0 12px;font-weight:950;letter-spacing:-.05em;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.sub-card{background:var(--card2);border:1px solid var(--line2);border-radius:14px;padding:12px;margin-top:10px}
+.row{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+label{font-size:13px;color:#cbd5e1;font-weight:900}
+.input,select,textarea{width:100%;background:#070b12;color:var(--text);border:1px solid var(--line2);border-radius:12px;padding:11px 12px;font-size:15px;outline:none}
+.input:focus,select:focus,textarea:focus{border-color:#60a5fa;box-shadow:0 0 0 3px rgba(37,99,235,.18)}
+textarea{resize:vertical;line-height:1.45}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.btn{border:0;border-radius:12px;padding:10px 13px;font-weight:900;cursor:pointer;background:#334155;color:#fff}
+.btn.green{background:var(--green)}
+.btn.blue{background:var(--blue)}
+.btn.red{background:var(--red)}
+.btn.gray{background:#334155}
+.btn.pink{background:var(--pink)}
+.btn.full{width:100%;font-size:17px;padding:14px}
+.btn.mini{font-size:12px;padding:7px 9px;border-radius:9px}
+.muted{color:var(--muted);font-size:13px;line-height:1.45}
+.resultBox{background:#08111f;border:1px solid var(--line2);border-radius:12px;padding:11px 12px;font-weight:900;color:#dbeafe;margin-bottom:10px}
+.warningBox{background:rgba(220,38,38,.12);border:1px solid rgba(248,113,113,.38);color:#fecaca;border-radius:12px;padding:10px 12px;font-size:13px;font-weight:900;margin-bottom:10px}
+.split-head,.split-row{display:grid;grid-template-columns:1.05fr .8fr 1.2fr auto;gap:8px;align-items:center}
+.split-head{color:#94a3b8;font-size:12px;font-weight:900;margin-bottom:6px;padding:0 2px}
+.split-row{margin-bottom:8px}
+.split-row .name{font-weight:950;color:#e5e7eb;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.total-line{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.total-pill{background:#08111f;border:1px solid #334155;border-radius:12px;padding:10px 12px;text-align:center}
+.total-pill b{display:block;font-size:20px;color:#fff;margin-top:3px}
+.total-pill.diff.bad b{color:#ff8a8a}
+.total-pill.diff.ok b{color:#86efac}
+.sound-search-wrap{position:relative}
+.sound-search-results{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:50;max-height:220px;overflow:auto;background:#070b12;border:1px solid #334155;border-radius:12px;box-shadow:0 14px 32px rgba(0,0,0,.35);display:none}
+.sound-search-results.show{display:block}
+.sound-result{padding:10px 12px;border-bottom:1px solid rgba(51,65,85,.7);cursor:pointer;color:#e5e7eb;font-weight:800}
+.sound-result:hover{background:#1e293b}
+.sound-result small{display:block;color:#94a3b8;margin-top:2px;font-weight:700}
+.sound-grid{display:grid;grid-template-columns:1.2fr .85fr;gap:8px;align-items:end}
+.sound-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.recent-list{display:flex;flex-direction:column;gap:8px}
+.recent-item{background:#0f172a;border:1px solid #334155;border-radius:14px;padding:10px 12px;display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
+.recent-main{font-weight:950;color:#fff}
+.recent-sub{font-size:12px;color:#94a3b8;margin-top:3px}
+@media(max-width:1000px){
+  .layout,.grid-2,.grid-3,.sound-grid,.split-head,.split-row,.total-line{grid-template-columns:1fr}
+  .split-head{display:none}
+  .top{flex-direction:column}
+}
+
+  .sound-queue-list{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+  .sound-queue-item{background:#0f172a;border:1px solid #334155;border-radius:13px;padding:10px 12px;display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
+  .sound-queue-title{font-weight:950;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .sound-queue-sub{color:#94a3b8;font-size:12px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+
+  .sound-mode-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+    margin:10px 0;
+  }
+  .sound-mode{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:11px 12px;
+    border:1px solid #334155;
+    background:#070b12;
+    border-radius:12px;
+    font-weight:950;
+    color:#dbeafe;
+    cursor:pointer;
+  }
+  .sound-mode input{width:18px;height:18px;accent-color:#2563eb}
+  .queue-actions{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+    margin-top:8px;
+  }
+  .status-badge{
+    display:inline-flex;
+    align-items:center;
+    border-radius:999px;
+    padding:2px 7px;
+    font-size:11px;
+    font-weight:950;
+    margin-left:6px;
+  }
+  .status-badge.pending{background:rgba(34,197,94,.18);color:#86efac;border:1px solid rgba(34,197,94,.35)}
+  .status-badge.queued{background:rgba(59,130,246,.18);color:#93c5fd;border:1px solid rgba(59,130,246,.35)}
+
+
+  .toast-wrap{
+    position:fixed;
+    right:18px;
+    top:18px;
+    z-index:99999;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    width:min(360px, calc(100vw - 36px));
+    pointer-events:none;
+  }
+  .toast-item{
+    pointer-events:none;
+    background:#0f172a;
+    border:1px solid #334155;
+    color:#e5e7eb;
+    border-radius:14px;
+    padding:12px 14px;
+    box-shadow:0 16px 36px rgba(0,0,0,.35);
+    font-size:14px;
+    font-weight:900;
+    line-height:1.35;
+    opacity:0;
+    transform:translateY(-8px) scale(.98);
+    transition:opacity .18s ease, transform .18s ease;
+  }
+  .toast-item.show{opacity:1;transform:translateY(0) scale(1);}
+  .toast-item.success{border-color:rgba(34,197,94,.5);background:linear-gradient(135deg, rgba(22,163,74,.25), #0f172a 55%);}
+  .toast-item.error{border-color:rgba(248,113,113,.55);background:linear-gradient(135deg, rgba(220,38,38,.28), #0f172a 55%);}
+  .toast-item.info{border-color:rgba(96,165,250,.55);background:linear-gradient(135deg, rgba(37,99,235,.25), #0f172a 55%);}
+
+
+  .repeat-row{display:grid;grid-template-columns:1fr 110px;gap:8px;align-items:end;margin-top:8px}
+  .count-pill{display:inline-flex;align-items:center;border-radius:999px;padding:2px 8px;font-size:12px;font-weight:950;margin-left:6px;background:rgba(236,72,153,.18);color:#f9a8d4;border:1px solid rgba(236,72,153,.38)}
+
+  .manage-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .manage-panel{border:1px solid #243047;background:#101827;border-radius:14px;padding:12px}
+  .manage-panel h3{margin:0 0 10px;font-size:16px}
+  .karaoke-inline{display:grid;grid-template-columns:1fr 110px 80px auto;gap:8px;align-items:end}
+  .karaoke-song-inline{display:grid;grid-template-columns:1fr 100px 1.3fr auto;gap:8px;align-items:end}
+  .manage-list{margin-top:10px;display:flex;flex-direction:column;gap:8px;max-height:280px;overflow:auto}
+  .manage-row{border:1px solid #2c3a55;background:#0b1220;border-radius:12px;padding:10px}
+  .manage-row-top{display:flex;justify-content:space-between;gap:8px;align-items:center;font-weight:800}
+  .manage-row-sub{margin-top:4px;color:#94a3b8;font-size:12px}
+  .manage-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .coin-pill,.status-pill{display:inline-flex;border-radius:999px;padding:3px 8px;font-size:12px;font-weight:900;background:#172033;border:1px solid #334155;margin-right:4px}
+  .status-pill.run{color:#fef08a;border-color:#eab30855;background:#713f121f}
+  .status-pill.wait{color:#93c5fd;border-color:#3b82f655;background:#1e3a8a22}
+  .status-pill.hold{color:#fca5a5;border-color:#ef444455;background:#7f1d1d22}
+  .status-pill.done{color:#86efac;border-color:#22c55e55;background:#14532d22}
+  @media(max-width:900px){.manage-grid,.karaoke-inline,.karaoke-song-inline{grid-template-columns:1fr}}
+
+
+/* ===== 노래방/펀딩 UX 보정 ===== */
+#karaokeAdminCard .manage-grid{
+  grid-template-columns:1fr !important;
+}
+#karaokeAdminCard .karaoke-inline,
+#karaokeAdminCard .karaoke-song-inline{
+  grid-template-columns:1.4fr 120px 100px auto !important;
+}
+#karaokeAdminCard input,
+#karaokeAdminCard select{
+  min-height:42px !important;
+  font-size:15px !important;
+}
+#karaokeSongTitle{
+  min-width:220px !important;
+}
+#karaokeSongNick,
+#karaokeCoinNick{
+  min-width:170px !important;
+}
+@media(max-width:900px){
+  #karaokeAdminCard .karaoke-inline,
+  #karaokeAdminCard .karaoke-song-inline{
+    grid-template-columns:1fr !important;
+  }
+}
+
+
+/* ===== 노래방 UI/UX 최종 보정 ===== */
+#karaokeAdminCard .manage-grid{
+  grid-template-columns:1fr !important;
+  gap:12px !important;
+}
+
+#karaokeAdminCard .history-grid{
+  grid-template-columns:1fr 1fr !important;
+}
+
+#karaokeAdminCard .karaoke-inline{
+  grid-template-columns:minmax(180px,1.5fr) 120px 90px 78px !important;
+  align-items:end !important;
+}
+
+#karaokeAdminCard .karaoke-song-inline{
+  grid-template-columns:minmax(180px,1.2fr) 110px minmax(230px,1.8fr) 88px !important;
+  align-items:end !important;
+}
+
+#karaokeAdminCard .btn{
+  white-space:nowrap !important;
+  word-break:keep-all !important;
+  min-height:42px !important;
+}
+
+#karaokeAdminCard .karaoke-song-inline .btn,
+#karaokeAdminCard .karaoke-inline .btn{
+  writing-mode:horizontal-tb !important;
+  min-width:74px !important;
+}
+
+#karaokeAdminCard input,
+#karaokeAdminCard select{
+  font-size:15px !important;
+  min-height:42px !important;
+}
+
+#karaokeSongNick,
+#karaokeCoinNick{
+  min-width:180px !important;
+}
+
+#karaokeSongTitle{
+  min-width:230px !important;
+}
+
+.manage-actions .btn{
+  min-height:30px !important;
+}
+
+@media(max-width:1100px){
+  #karaokeAdminCard .karaoke-inline,
+  #karaokeAdminCard .karaoke-song-inline,
+  #karaokeAdminCard .history-grid{
+    grid-template-columns:1fr !important;
+  }
+}
+
+</style>
+</head>
+<body>
+<div id="toastWrap" class="toast-wrap"></div>
+<div class="wrap">
+  <div class="top">
+    <div>
+      <div class="title">후원 입력</div>
+      <div class="subtitle" id="pageInfo">방송 정보 확인 중...</div>
+    </div>
+    <div class="nav">
+      <a id="adminLink" href="/admin.html">입력</a>
+      <a id="controlLink" href="/control.html">설정</a>
+    </div>
+    </div>
+
+  <div class="layout">
+    <main>
+      <section class="card">
+        <h2>입력 권한</h2>
+        <div class="grid-2">
+          <div class="row">
+            <label>현재 방송 비밀번호</label>
+            <input id="broadcastPw" class="input" type="password" placeholder="현재 방송 입력/설정용 비밀번호">
+          </div>
+          <div class="row" style="justify-content:end">
+            <label>&nbsp;</label>
+            <button class="btn blue" onclick="loginBroadcast()">방송 비밀번호 저장</button>
+          </div>
+        </div>
+        <p class="muted">방송이 바뀌면 해당 방송 비밀번호를 한 번 입력하세요.</p>
+      </section>
+
+      <section class="card">
+        <h2>도네이터 / 금액 / 분배</h2>
+        <div class="grid-2">
+          <div class="row">
+            <label>도네이터명</label>
+            <input id="donor" class="input" placeholder="예: 열려">
+          </div>
+          <div class="row">
+            <label>처리 프리셋</label>
+            <select id="processType" class="input"></select>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="row">
+            <label>계좌 총액</label>
+            <input id="accountTotal" class="input" inputmode="decimal" placeholder="예: 6.6 또는 66000">
+          </div>
+          <div class="row">
+            <label>투네 총액</label>
+            <input id="toonieTotal" class="input" inputmode="decimal" placeholder="예: 2.5 또는 25000">
+          </div>
+        </div>
+        <div id="preview" class="resultBox">자동결과: -</div>
+
+        <div class="sub-card">
+          <h2 style="font-size:17px;margin-bottom:10px">크리에이터별 분배</h2>
+          <p class="muted">금액 입력은 천원단위입니다. 예: 66 = 66,000원 / 6.6 = 6,600원</p>
+          <div class="split-head">
+            <div>크리에이터</div>
+            <div>금액</div>
+            <div>메모</div>
+            <div></div>
+          </div>
+          <div id="splitRows"></div>
+
+          <div class="total-line">
+            <div class="total-pill">
+              <span class="muted">상단 총액</span>
+              <b id="topTotalText">0</b>
+            </div>
+            <div class="total-pill">
+              <span class="muted">분배 합계</span>
+              <b id="splitTotalText">0</b>
+            </div>
+            <div class="total-pill diff" id="diffBox">
+              <span class="muted">차이</span>
+              <b id="diffText">0</b>
+            </div>
+          </div>
+
+          <div class="grid-3" style="margin-top:10px">
+            <button class="btn gray" onclick="fillFirstCreator()">첫 크리에이터에 전액</button>
+            <button class="btn gray" onclick="clearAmounts()">금액 지우기</button>
+            <button class="btn green" onclick="saveBatch()">후원 입력 저장</button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <aside>
+      <section class="card">
+        <h2>수동 사운드 재생</h2>
+        <p class="muted">수동 사운드는 후원 저장과 별개입니다. 검색 후 오버레이 재생을 누르면 alert와 사운드만 나갑니다.</p>
+
+        <div class="resultBox" id="autoSoundPreview">자동 사운드: 기본</div>
+
+        <div class="sound-grid">
+          <div class="row sound-search-wrap">
+            <label>수동 사운드 검색</label>
+            <input id="manualSoundSearch" class="input" autocomplete="off" placeholder="예: 9900 / 윈도우 / 대박">
+            <input id="manualSoundFile" type="hidden">
+            <div id="soundSearchResults" class="sound-search-results"></div>
+          </div>
+          <div class="row">
+            <label>Alert 표시 제목</label>
+            <input id="manualSoundTitle" class="input" placeholder="예: 대박후원">
+          </div>
+        <div class="row">
+          <label>반복 횟수</label>
+          <input id="manualRepeatCount" class="input" type="number" min="1" max="100" value="1">
+        </div>
+        </div>
+
+        <div class="sound-mode-grid">
+          <label class="sound-mode"><input type="radio" name="manualSoundMode" value="immediate" checked> 바로 출력</label>
+          <label class="sound-mode"><input type="radio" name="manualSoundMode" value="queue"> 대기열 대기</label>
+        </div>
+        <div class="sound-btns">
+          <button class="btn gray" onclick="previewManualSound()">미리듣기</button>
+          <button class="btn blue" onclick="sendManualSound()">선택 실행</button>
+        </div>
+        <div class="queue-actions">
+          <button class="btn blue" onclick="releaseManualSoundQueue()">대기열 전송</button>
+          <button class="btn gray" onclick="loadManualSoundQueue()">새로고침</button>
+        </div>
+        <div class="sound-queue-list" id="manualSoundQueue"></div>
+      </section>
+
+      
+      <section class="card" id="karaokeAdminCard">
+        <h2>노래방 관리</h2>
+        <p class="muted">코인추가 후 코인이 있는 닉네임만 선곡 리스트에 추가할 수 있습니다.</p>
+        <div class="grid-2">
+          <div class="row"><label>노래방 제목</label><input id="karaokeTitle" class="input" placeholder="노래방 공지 알림판"></div>
+          <div class="row"><label>간단알림</label><input id="karaokeNotice" class="input" placeholder="예: 노래문의필수 / 노래 1절1만·완곡2만"></div>
+        </div>
+        <div class="manage-grid">
+          <div class="manage-panel">
+            <h3>코인추가</h3>
+            <div class="karaoke-inline">
+              <label>닉네임<input id="karaokeCoinNick" class="input" placeholder="닉네임"></label>
+              <label>코인종류<select id="karaokeCoinType" class="input"><option value="verse">1절</option><option value="full">완곡</option><option value="special">스페셜</option></select></label>
+              <label>개수<input id="karaokeCoinCount" class="input" type="number" min="1" value="1"></label>
+              <button class="btn blue" onclick="addKaraokeCoin()">추가</button>
+            </div>
+            <div id="karaokeUserList" class="manage-list"></div>
+          </div>
+          <div class="manage-panel">
+            <h3>선곡</h3>
+            <div class="karaoke-song-inline">
+              <label>닉네임<input id="karaokeSongNick" class="input" placeholder="코인 보유 닉네임"></label>
+              <label>구분<select id="karaokeSongType" class="input"><option value="verse">1절</option><option value="full">완곡</option><option value="special">스페셜</option></select></label>
+              <label>선곡<input id="karaokeSongTitle" class="input" placeholder="노래 제목"></label>
+              <button class="btn green" onclick="addKaraokeSong()">리스트업</button>
+            </div>
+            <div id="karaokeSongList" class="manage-list"></div>
+          </div>
+        </div>
+        <div style="margin-top:10px"><button class="btn green" onclick="saveKaraokeData()">노래방 저장</button></div>
+        <div class="manage-grid history-grid" style="margin-top:12px">
+          <div class="manage-panel">
+            <h3>코인내역</h3>
+            <div id="karaokeCoinHistoryList" class="manage-list"></div>
+          </div>
+          <div class="manage-panel">
+            <h3>완료된 노래</h3>
+            <div id="karaokeDoneList" class="manage-list"></div>
+          </div>
+        </div>
+      </section>
+
+
+      <section class="card">
+        <h2>최근 입력</h2>
+        <div id="recentList" class="recent-list"></div>
+      </section>
+    </aside>
+  </div>
+</div>
+
+<script src="/common.js"></script>
+<script>
+
+function setSimpleLinks(){
+  const s=encodeURIComponent(getStation());
+  const a=document.getElementById('adminLink');
+  const c=document.getElementById('controlLink');
+  if(a) a.href='/admin.html?station='+s;
+  if(c) c.href='/control.html?station='+s;
+}
+setSimpleLinks();
+
+
+const nativeAlert = window.alert.bind(window);
+
+function showToast(message, type='info', duration=2500){
+  const wrap = document.getElementById('toastWrap');
+  if(!wrap){
+    nativeAlert(message);
+    return;
+  }
+
+  const item = document.createElement('div');
+  item.className = 'toast-item ' + type;
+  item.textContent = String(message || '');
+  wrap.appendChild(item);
+
+  requestAnimationFrame(() => item.classList.add('show'));
+
+  setTimeout(() => {
+    item.classList.remove('show');
+    setTimeout(() => item.remove(), 220);
+  }, duration);
+}
+
+window.alert = function(message){
+  const text = String(message || '');
+  const type = /실패|오류|error|권한|틀렸|찾지 못|필요|삭제 실패|저장 실패/i.test(text)
+    ? 'error'
+    : /완료|성공|저장|전송|추가|삭제되었습니다|바로 전송|대기열/i.test(text)
+      ? 'success'
+      : 'info';
+  showToast(text, type);
+};
+
+
+let settings = null;
+let currentBroadcast = null;
+let soundFiles = [];
+let recentRows = [];
+
+function escAttr(v){
+  return String(v ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+}
+function fmt(n){
+  const v = Number(n || 0);
+  return (Math.trunc(v / 1000) / 10).toFixed(1).replace(/\.0$/, '');
+}
+
+// 입력칸은 천원단위 입력 방식입니다. 예: 66 = 66,000원 / 6.6 = 6,600원
+function inputValueFromWon(won){
+  const v = Number(won || 0) / 1000;
+  if(!Number.isFinite(v) || v === 0) return '';
+  return String(Math.round(v * 10) / 10).replace(/\.0$/, '');
+}
+function moneyInputValue(id){
+  return toWon($(id) ? $(id).value : 0);
+}
+function getTopTotal(){
+  return moneyInputValue('#accountTotal') + moneyInputValue('#toonieTotal');
+}
+function findPresetByTitle(title){
+  return (settings?.presets || []).find(p => p.title === title || p.id === title || p.plusName === title || p.minusName === title) || null;
+}
+
+
+function defaultKaraokeData(){return {title:'노래방 공지 알림판',ticker:'신청곡은 채팅으로 남겨주세요',users:[],songs:[]};}
+function getKaraokeData(){
+  if(!settings.karaokeData) settings.karaokeData = defaultKaraokeData();
+  if(!Array.isArray(settings.karaokeData.users)) settings.karaokeData.users=[];
+  if(!Array.isArray(settings.karaokeData.songs)) settings.karaokeData.songs=[];
+  return settings.karaokeData;
+}
+function coinLabel(type){return type==='full'?'완곡':type==='special'?'스페셜':'1절'}
+function coinKeyLabel(type){return type==='full'?'완곡코인':type==='special'?'스페셜코인':'1절코인'}
+function songStatusClass(status){return status==='진행'?'run':status==='보류'?'hold':status==='완료'?'done':'wait'}
+function renderFundingSelect(){
+  const box = $('#fundingSelect');
+  if(!box) return;
+  const items = settings?.fundingData?.items || [];
+  box.innerHTML = `<option value="">펀딩 반영 안함</option>` + items.filter(f=>f.enabled!==false).map(f => `<option value="${escAttr(f.id)}">${esc(f.title)} ${Number(f.current||0)}/${Number(f.target||0)}</option>`).join('');
+}
+function renderKaraokeManager(){
+  const card = $('#karaokeAdminCard');
+  const karaokeOn = settings?.overlaySections?.karaoke === true;
+  if(card) card.style.display = karaokeOn ? '' : 'none';
+  if(!karaokeOn) return;
+
+  const data = getKaraokeData();
+  if($('#karaokeTitle')) $('#karaokeTitle').value = data.title || '노래방 공지 알림판';
+  if($('#karaokeNotice')) $('#karaokeNotice').value = data.notice || data.ticker || '';
+
+  const hasCoin = u => {
+    const c = u.coins || {};
+    return Number(c.verse||0) + Number(c.full||0) + Number(c.special||0) > 0;
+  };
+
+  const userBox = $('#karaokeUserList');
+  if(userBox){
+    const activeUsers = data.users.filter(hasCoin);
+    userBox.innerHTML = activeUsers.length ? activeUsers.map(u => `
+      <div class="manage-row">
+        <div class="manage-row-top"><span>${esc(u.nick)}</span><button class="btn red mini" onclick="deleteKaraokeUser('${escAttr(u.nick)}')">삭제</button></div>
+        <div class="manage-row-sub">
+          <span class="coin-pill">1절 ${Number(u.coins?.verse||0)}</span>
+          <span class="coin-pill">완곡 ${Number(u.coins?.full||0)}</span>
+          <span class="coin-pill">스페셜 ${Number(u.coins?.special||0)}</span>
+        </div>
+        <div class="manage-actions">
+          <button class="btn mini" onclick="editKaraokeCoin('${escAttr(u.nick)}','verse')">1절수정</button>
+          <button class="btn mini" onclick="editKaraokeCoin('${escAttr(u.nick)}','full')">완곡수정</button>
+          <button class="btn mini" onclick="editKaraokeCoin('${escAttr(u.nick)}','special')">스페셜수정</button>
+        </div>
+      </div>`).join('') : `<div class="resultBox">보유 코인이 있는 닉네임이 없습니다.</div>`;
+  }
+
+  const songBox = $('#karaokeSongList');
+  if(songBox){
+    const activeSongs = data.songs.filter(s => s.status !== '삭제' && s.status !== '완료');
+    songBox.innerHTML = activeSongs.length ? activeSongs.map((s, idx) => `
+      <div class="manage-row">
+        <div class="manage-row-top"><span>${idx+1}. ${esc(s.nick)} - ${esc(s.title)}</span><span class="status-pill ${songStatusClass(s.status)}">${esc(s.status||'대기')}</span></div>
+        <div class="manage-row-sub">${coinLabel(s.type)}</div>
+        <div class="manage-actions">
+          <button class="btn blue mini" onclick="setKaraokeSongStatus('${escAttr(s.id)}','진행')">진행</button>
+          <button class="btn mini" onclick="setKaraokeSongStatus('${escAttr(s.id)}','대기')">대기</button>
+          <button class="btn mini" onclick="setKaraokeSongStatus('${escAttr(s.id)}','보류')">보류</button>
+          <button class="btn green mini" onclick="setKaraokeSongStatus('${escAttr(s.id)}','완료')">완료</button>
+          <button class="btn blue mini" onclick="editKaraokeSong('${escAttr(s.id)}')">변경</button>
+          <button class="btn red mini" onclick="deleteKaraokeSong('${escAttr(s.id)}')">삭제</button>
+        </div>
+      </div>`).join('') : `<div class="resultBox">진행/대기 중인 선곡이 없습니다.</div>`;
+  }
+
+  const coinHistory = $('#karaokeCoinHistoryList');
+  if(coinHistory){
+    coinHistory.innerHTML = data.users.length ? data.users.map(u => `
+      <div class="manage-row">
+        <div class="manage-row-top"><span>${esc(u.nick)}</span></div>
+        <div class="manage-row-sub">
+          <span class="coin-pill">1절 ${Number(u.coins?.verse||0)}</span>
+          <span class="coin-pill">완곡 ${Number(u.coins?.full||0)}</span>
+          <span class="coin-pill">스페셜 ${Number(u.coins?.special||0)}</span>
+        </div>
+      </div>`).join('') : `<div class="resultBox">코인 내역 없음</div>`;
+  }
+
+  const doneList = $('#karaokeDoneList');
+  if(doneList){
+    const doneSongs = data.songs.filter(s => s.status === '완료');
+    doneList.innerHTML = doneSongs.length ? doneSongs.map((s, idx) => `
+      <div class="manage-row">
+        <div class="manage-row-top"><span>${idx+1}. ${esc(s.nick)} - ${esc(s.title)}</span><span class="status-pill done">완료</span></div>
+        <div class="manage-row-sub">${coinLabel(s.type)}</div>
+      </div>`).join('') : `<div class="resultBox">완료된 노래 없음</div>`;
+  }
+}
+function syncKaraokeInputs(){
+  const data=getKaraokeData();
+  if($('#karaokeTitle')) data.title=$('#karaokeTitle').value.trim()||'노래방 공지 알림판';
+  if($('#karaokeNotice')) data.notice=$('#karaokeNotice').value.trim();
+}
+
+async function editKaraokeCoin(nick,type){
+  const data=getKaraokeData();
+  const user=data.users.find(u=>u.nick===nick);
+  if(!user) return;
+  if(!user.coins) user.coins={verse:0,full:0,special:0};
+  const now=Number(user.coins[type]||0);
+  const next=prompt(`${nick} ${coinKeyLabel(type)} 수량`, String(now));
+  if(next===null) return;
+  const n=Math.max(0, Number(next||0));
+  if(!Number.isFinite(n)) return alert('숫자로 입력하세요.');
+  user.coins[type]=n;
+  renderKaraokeManager();
+  await saveKaraokeData(false);
+}
+
+async function addKaraokeCoin(){
+  const data=getKaraokeData();
+  const nick=$('#karaokeCoinNick').value.trim();
+  const type=$('#karaokeCoinType').value;
+  const count=Math.max(1,Number($('#karaokeCoinCount').value||1));
+  if(!nick) return alert('닉네임을 입력하세요.');
+  let user=data.users.find(u=>u.nick===nick);
+  if(!user){user={nick,coins:{verse:0,full:0,special:0}};data.users.push(user)}
+  if(!user.coins) user.coins={verse:0,full:0,special:0};
+  user.coins[type]=Number(user.coins[type]||0)+count;
+  $('#karaokeCoinNick').value=''; $('#karaokeCoinCount').value=1;
+  renderKaraokeManager();
+  await saveKaraokeData(false);
+}
+async function addKaraokeSong(){
+  const data=getKaraokeData();
+  const nick=$('#karaokeSongNick').value.trim();
+  const type=$('#karaokeSongType').value;
+  const title=$('#karaokeSongTitle').value.trim();
+  if(!nick) return alert('닉네임을 입력하세요.');
+  if(!title) return alert('선곡을 입력하세요.');
+  const user=data.users.find(u=>u.nick===nick);
+  if(!user) return alert('코인이 있는 닉네임만 선곡할 수 있습니다.');
+  if(!user.coins) user.coins={verse:0,full:0,special:0};
+  if(Number(user.coins[type]||0)<=0) return alert(`${nick}님은 ${coinKeyLabel(type)}이 없습니다.`);
+  user.coins[type]=Number(user.coins[type]||0)-1;
+  data.songs.push({id:'song_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),nick,type,title,status:'대기'});
+  $('#karaokeSongNick').value=''; $('#karaokeSongTitle').value='';
+  renderKaraokeManager();
+  await saveKaraokeData(false);
+}
+async function setKaraokeSongStatus(id,status){
+  const data=getKaraokeData();
+  const idx=data.songs.findIndex(s=>s.id===id);
+  if(idx < 0) return;
+
+  const song=data.songs[idx];
+  const oldStatus=song.status || '대기';
+
+  if(status==='진행'){
+    data.songs.forEach(s=>{if(s.status==='진행') s.status='대기'});
+    song.holdPromoted = false;
+    song.status=status;
+  }else if(status==='대기' && oldStatus==='보류'){
+    // 보류곡을 대기로 올릴 때:
+    // 기존 예약 리스트의 최상단 그룹으로 올리되, 보류에서 올린 순서끼리는 유지
+    data.songs.splice(idx,1);
+    song.status='대기';
+    song.holdPromoted=true;
+
+    let insertAt = -1;
+    for(let i=0;i<data.songs.length;i++){
+      if(data.songs[i].status==='대기' && data.songs[i].holdPromoted===true){
+        insertAt = i;
+      }
+    }
+
+    if(insertAt >= 0){
+      data.songs.splice(insertAt + 1, 0, song);
+    }else{
+      const firstWait = data.songs.findIndex(s => s.status === '대기');
+      if(firstWait >= 0) data.songs.splice(firstWait, 0, song);
+      else data.songs.unshift(song);
+    }
+  }else if(status==='보류'){
+    data.songs.splice(idx,1);
+    song.status='보류';
+    song.holdPromoted=false;
+    data.songs.push(song);
+  }else{
+    song.status=status;
+    if(status!=='대기') song.holdPromoted=false;
+  }
+
+  renderKaraokeManager();
+  await saveKaraokeData(false);
+}
+async function editKaraokeSong(id){
+  const data=getKaraokeData();
+  const song=data.songs.find(s=>s.id===id);
+  if(!song)return;
+  const nextTitle=prompt('곡 수정', song.title);
+  if(nextTitle===null)return;
+  song.title=nextTitle.trim()||song.title;
+  renderKaraokeManager();
+  await saveKaraokeData(false);
+}
+async function deleteKaraokeSong(id){
+  const data=getKaraokeData();
+  if(!confirm('이 선곡을 삭제할까요?'))return;
+  data.songs=data.songs.filter(s=>s.id!==id);
+  renderKaraokeManager();
+  await saveKaraokeData(false);
+}
+async function deleteKaraokeUser(nick){
+  const data=getKaraokeData();
+  if(!confirm(`${nick} 닉네임과 보유 코인을 삭제할까요?`))return;
+  data.users=data.users.filter(u=>u.nick!==nick);
+  renderKaraokeManager();
+  await saveKaraokeData(false);
+}
+async function saveKaraokeData(showMessage=true){
+  try{
+    syncKaraokeInputs();
+    const saved = await api('/api/karaoke-data',{method:'POST',body:JSON.stringify({karaokeData:getKaraokeData()})});
+    if(saved && saved.karaokeData){
+      settings.karaokeData = saved.karaokeData;
+    }
+    if(showMessage) alert('노래방 저장 완료');
+    renderKaraokeManager();
+  }catch(e){alert(e.message)}
+}
+
+async function init(){
+  await loadSettings();
+  await loadSoundFiles();
+  renderProcessOptions();
+  renderKaraokeManager();
+  renderSplitRows();
+  bindInputs();
+  await loadRecent();
+  await loadManualSoundQueue();
+  updatePreview();
+}
+
+async function loadSettings(){
+  settings = await api('/api/settings');
+  currentBroadcast = settings.broadcast || null;
+  const station = settings.station || {};
+  $('#pageInfo').textContent = `${station.name || getStation()} / 현재 방송: ${currentBroadcast?.title || '-'}`;
+}
+
+async function loadSoundFiles(){
+  try{
+    const data = await api('/api/sounds');
+    soundFiles = (data.sounds || []).map(s => s.file);
+  }catch(e){ soundFiles = []; }
+}
+
+function renderProcessOptions(){
+  const presets = settings?.presets || [];
+  const fundings = (settings?.fundingData?.items || []).filter(f => f.enabled !== false);
+
+  $('#processType').innerHTML = [
+    `<option value="후원">후원</option>`,
+    ...presets.filter(p => p.enabled !== false).map(p => `<option value="${escAttr(p.title)}">${esc(p.title)}</option>`),
+    ...fundings.map(f => `<option value="funding:${escAttr(f.id)}">펀딩: ${esc(f.title)} ${Number(f.current||0)}/${Number(f.target||0)}</option>`)
+  ].join('');
+}
+
+function renderSplitRows(){
+  const creators = settings?.creators || [];
+  $('#splitRows').innerHTML = creators.map((name, idx) => `
+    <div class="split-row" data-idx="${idx}">
+      <div class="name">${esc(name)}</div>
+      <input class="input split-amount" inputmode="decimal" placeholder="금액">
+      <input class="input split-memo" placeholder="메모">
+      <button class="btn gray mini" onclick="setOnlyCreator(${idx})">전액</button>
+    </div>
+  `).join('');
+
+  document.querySelectorAll('.split-amount').forEach(el => el.addEventListener('input', updatePreview));
+}
+
+function bindInputs(){
+  ['#accountTotal','#toonieTotal','#processType','#donor'].forEach(sel => {
+    if($(sel)) $(sel).addEventListener('input', updatePreview);
+    if($(sel) && sel === '#processType') $(sel).addEventListener('change', updatePreview);
+  });
+
+  if($('#manualSoundSearch')){
+    $('#manualSoundSearch').addEventListener('input', e => {
+      $('#manualSoundFile').value = '';
+      renderSoundSearchResults(e.target.value);
+      updatePreview();
+    });
+    $('#manualSoundSearch').addEventListener('focus', e => renderSoundSearchResults(e.target.value));
+  }
+  if($('#manualSoundTitle')) $('#manualSoundTitle').addEventListener('input', updatePreview);
+
+  document.addEventListener('click', e => {
+    if(!e.target.closest('.sound-search-wrap') && $('#soundSearchResults')){
+      $('#soundSearchResults').classList.remove('show');
+    }
+  });
+}
+
+function updatePreview(){
+  const topTotal = getTopTotal();
+  const splitTotal = Array.from(document.querySelectorAll('.split-amount')).reduce((sum, el) => sum + toWon(el.value), 0);
+  const diff = topTotal - splitTotal;
+
+  $('#topTotalText').textContent = fmt(topTotal);
+  $('#splitTotalText').textContent = fmt(splitTotal);
+  $('#diffText').textContent = fmt(diff);
+
+  $('#diffBox').classList.toggle('ok', diff === 0);
+  $('#diffBox').classList.toggle('bad', diff !== 0);
+
+  const preset = findPresetByTitle($('#processType').value);
+  let msg = '후원';
+
+  if(preset && topTotal > 0){
+    const plusPrice = Number(preset.plusPrice || 0);
+    const minusPrice = Number(preset.minusPrice || 0);
+    if(minusPrice > 0 && topTotal % minusPrice === 0) msg = `${preset.minusName} ${topTotal / minusPrice}`;
+    else if(plusPrice > 0 && topTotal % plusPrice === 0) msg = `${preset.plusName} ${topTotal / plusPrice}`;
+    else msg = `${preset.title} 확인`;
+  }
+
+  $('#preview').textContent = '자동결과: ' + msg;
+  updateSoundPreview();
+}
+
+function getAutoSoundName(){
+  const manual = $('#manualSoundFile').value.trim();
+  if(manual) return '수동 선택됨: ' + manual;
+
+  const preset = findPresetByTitle($('#processType').value);
+  if(preset && preset.soundFile) return '프리셋 자동: ' + preset.soundFile;
+
+  const account = moneyInputValue('#accountTotal');
+  const rules = settings?.soundRules?.amountRules || [];
+  const matched = rules
+    .filter(r => account >= Number(r.min || 0) && (!Number(r.max || 0) || account <= Number(r.max || 0)) && r.sound)
+    .sort((a,b) => Number(b.min || 0) - Number(a.min || 0))[0];
+
+  if(matched) return '금액구간 자동: ' + matched.sound;
+  return '기본 자동: ' + (settings?.soundRules?.defaultSound || 'alert.mp3');
+}
+
+function updateSoundPreview(){
+  $('#autoSoundPreview').textContent = '사운드: ' + getAutoSoundName();
+}
+
+function normalizeSoundKeyword(v){
+  return String(v || '').toLowerCase().replace(/\s+/g, '');
+}
+
+function renderSoundSearchResults(keyword){
+  const q = normalizeSoundKeyword(keyword);
+  const box = $('#soundSearchResults');
+
+  if(!q){
+    box.classList.remove('show');
+    box.innerHTML = '';
+    return;
+  }
+
+  const matched = soundFiles.filter(file => normalizeSoundKeyword(file).includes(q)).slice(0,20);
+
+  if(!matched.length){
+    box.innerHTML = `<div class="sound-result">검색 결과 없음<small>public/sounds 폴더에 파일을 업로드하세요.</small></div>`;
+    box.classList.add('show');
+    return;
+  }
+
+  box.innerHTML = matched.map(file => `
+    <div class="sound-result" onclick="selectManualSound('${escAttr(file)}')">
+      ${esc(file)}
+      <small>클릭하면 수동 사운드로 선택됩니다.</small>
+    </div>
+  `).join('');
+  box.classList.add('show');
+}
+
+function selectManualSound(file){
+  $('#manualSoundFile').value = file;
+  $('#manualSoundSearch').value = file;
+  $('#soundSearchResults').classList.remove('show');
+  updatePreview();
+}
+
+function previewManualSound(){
+  const file = $('#manualSoundFile').value.trim();
+  if(!file) return alert('검색 결과에서 사운드 파일을 먼저 선택하세요.');
+
+  try{
+    const audio = new Audio('/sounds/' + file.replace(/[\\\\/]/g,''));
+    audio.volume = 0.85;
+    audio.play().catch(() => alert('브라우저가 소리 재생을 차단했거나 파일을 찾지 못했습니다.'));
+  }catch(e){ alert(e.message); }
+}
+
+
+async function loadManualSoundQueue(){
+  const box = $('#manualSoundQueue');
+  if(!box) return;
+  try{
+    const data = await api('/api/sound-events?all=1');
+    const events = data.events || [];
+    if(!events.length){
+      box.innerHTML = `<div class="resultBox">수동 사운드 대기열 없음</div>`;
+      return;
+    }
+    box.innerHTML = events.map((ev, idx) => {
+      const status = ev.status === 'queued' ? 'queued' : 'pending';
+      const statusText = status === 'queued' ? '대기' : '전송됨';
+      const total = Number(ev.repeatTotal || 1);
+      const played = Number(ev.repeatPlayed || 0);
+      const remain = Math.max(0, Number(ev.repeatRemaining ?? (total - played)));
+      const countText = total > 1 ? `<span class="count-pill">× ${remain}</span>` : '';
+      const progressText = total > 1 ? ` · ${played}/${total} 재생` : '';
+      return `
+        <div class="sound-queue-item">
+          <div>
+            <div class="sound-queue-title">${idx + 1}. ${esc(ev.title || ev.soundFile)} ${countText}<span class="status-badge ${status}">${statusText}</span></div>
+            <div class="sound-queue-sub">${esc(ev.soundFile)}${progressText} · ${new Date(ev.createdAt).toLocaleTimeString('ko-KR')}</div>
+          </div>
+          <button class="btn red mini" onclick="cancelManualSound('${ev.id}')">취소</button>
+        </div>
+      `;
+    }).join('');
+  }catch(e){
+    box.innerHTML = `<div class="warningBox">${esc(e.message)}</div>`;
+  }
+}
+
+async function cancelManualSound(id){
+  if(!confirm('이 수동 사운드 대기 항목을 취소할까요?')) return;
+  try{
+    await api('/api/sound-events/' + id, { method:'DELETE' });
+    await loadManualSoundQueue();
+  }catch(e){ alert(e.message); }
+}
+
+
+
+function getManualSoundMode(){
+  const checked = document.querySelector('input[name="manualSoundMode"]:checked');
+  return checked ? checked.value : 'immediate';
+}
+
+async function releaseManualSoundQueue(){
+  try{
+    await api('/api/sound-events/release', { method:'POST', body:JSON.stringify({}) });
+    await loadManualSoundQueue();
+    alert('대기열을 오버레이로 전송했습니다.');
+  }catch(e){ alert(e.message); }
+}
+
+
+async function sendManualSound(){
+  try{
+    const file = $('#manualSoundFile') ? $('#manualSoundFile').value.trim() : '';
+    if(!file) return alert('검색 결과에서 사운드 파일을 먼저 선택하세요.');
+
+    const repeatCount = Math.max(1, Math.min(100, Number($('#manualRepeatCount') ? $('#manualRepeatCount').value : 1) || 1));
+
+    const title = $('#manualSoundTitle') && $('#manualSoundTitle').value.trim()
+      ? $('#manualSoundTitle').value.trim()
+      : file.replace(/\.[^.]+$/, '');
+
+    const donorName = $('#donor') && $('#donor').value.trim()
+      ? $('#donor').value.trim()
+      : '';
+
+    await api('/api/sound-events', {
+      method:'POST',
+      body:JSON.stringify({
+        soundFile:file,
+        mode:getManualSoundMode(),
+        title,
+        message:donorName,
+        repeatCount
+      })
+    });
+
+    await loadManualSoundQueue();
+    alert(getManualSoundMode() === 'queue'
+      ? `대기열에 ${repeatCount}회 추가했습니다. 대기열 전송을 누르면 순차 재생됩니다.`
+      : `오버레이로 ${repeatCount}회 바로 전송했습니다.`);
+  }catch(e){ alert(e.message); }
+}
+
+function clearAmounts(){
+  $('#accountTotal').value = '';
+  $('#toonieTotal').value = '';
+  document.querySelectorAll('.split-amount').forEach(el => el.value = '');
+  document.querySelectorAll('.split-memo').forEach(el => el.value = '');
+  updatePreview();
+}
+
+function fillFirstCreator(){
+  const rows = Array.from(document.querySelectorAll('.split-row'));
+  if(!rows.length) return;
+  document.querySelectorAll('.split-amount').forEach(el => el.value = '');
+  rows[0].querySelector('.split-amount').value = inputValueFromWon(getTopTotal());
+  updatePreview();
+}
+
+function setOnlyCreator(idx){
+  const rows = Array.from(document.querySelectorAll('.split-row'));
+  document.querySelectorAll('.split-amount').forEach(el => el.value = '');
+  if(rows[idx]) rows[idx].querySelector('.split-amount').value = inputValueFromWon(getTopTotal());
+  updatePreview();
+}
+
+async function loginBroadcast(){
+  try{
+    await api('/api/broadcast-login', {
+      method:'POST',
+      body:JSON.stringify({ password:$('#broadcastPw').value })
+    });
+    alert('방송 비밀번호 저장 완료');
+  }catch(e){ alert(e.message); }
+}
+
+function collectRows(){
+  return Array.from(document.querySelectorAll('.split-row')).map(row => ({
+    creator: row.querySelector('.name').textContent.trim(),
+    amount: row.querySelector('.split-amount').value,
+    memo: row.querySelector('.split-memo').value
+  })).filter(r => toWon(r.amount) > 0);
+}
+
+async function saveBatch(){
+  try{
+    const donor = $('#donor').value.trim();
+    if(!donor) return alert('도네이터명을 입력하세요.');
+
+    const selectedProcess = $('#processType').value || '후원';
+    const isFunding = selectedProcess.startsWith('funding:');
+    const fundingId = isFunding ? selectedProcess.replace('funding:', '') : '';
+
+    const body = {
+      donor,
+      processType: isFunding ? '후원' : selectedProcess,
+      accountTotal: $('#accountTotal').value,
+      toonieTotal: $('#toonieTotal').value,
+      rows: collectRows(),
+      fundingId,
+      fundingUnits: ''
+    };
+
+    await api('/api/donations/batch', {
+      method:'POST',
+      body:JSON.stringify(body)
+    });
+
+    alert('저장 완료');
+    $('#donor').value = '';
+    clearAmounts();
+    await loadSettings();
+    renderProcessOptions();
+    await loadRecent();
+  }catch(e){ alert(e.message); }
+}
+
+async function loadRecent(){
+  try{
+    const data = await api('/api/donations');
+    recentRows = (data.donations || []).slice(-10).reverse();
+    renderRecent();
+  }catch(e){
+    $('#recentList').innerHTML = `<div class="warningBox">${esc(e.message)}</div>`;
+  }
+}
+
+function renderRecent(){
+  if(!recentRows.length){
+    $('#recentList').innerHTML = `<div class="resultBox">최근 입력 없음</div>`;
+    return;
+  }
+
+  $('#recentList').innerHTML = recentRows.map(row => `
+    <div class="recent-item">
+      <div>
+        <div class="recent-main">${esc(row.donor)} → ${esc(row.creator)} / ${fmt(row.totalAmount || 0)}</div>
+        <div class="recent-sub">${esc(row.processType || '후원')} · ${new Date(row.createdAt).toLocaleString('ko-KR')}</div>
+      </div>
+      <button class="btn red mini" onclick="deleteDonation('${row.id}')">삭제</button>
+    </div>
+  `).join('');
+}
+
+async function deleteDonation(id){
+  if(!confirm('이 입력을 삭제할까요?')) return;
+  try{
+    await api('/api/donations/' + id, { method:'DELETE' });
+    await loadRecent();
+  }catch(e){ alert(e.message); }
+}
+
+init();
+setInterval(loadManualSoundQueue, 2500);
+</script>
+<script>
+(function preserveStationLinks(){
+  const station = new URLSearchParams(location.search).get('station') || localStorage.getItem('STATION_SLUG') || 'default';
+  localStorage.setItem('STATION_SLUG', station);
+  document.querySelectorAll('a[href^="/"]').forEach(a=>{
+    const href=a.getAttribute('href');
+    if(!href || href.includes('station=') || href.startsWith('/api/')) return;
+    const u=new URL(href, location.origin);
+    u.searchParams.set('station', station);
+    a.setAttribute('href', u.pathname+u.search+(u.hash||''));
+  });
+})();
+</script>
+</body>
+</html>

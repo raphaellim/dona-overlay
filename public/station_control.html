@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>방송국 컨트롤</title>
+<link rel="stylesheet" href="/app.css">
+<style>
+body{background:#070b12;color:#e5e7eb}.wrap{max-width:1220px;margin:0 auto;padding:22px}.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}.title{font-size:30px;font-weight:950}.nav{display:flex;gap:8px;flex-wrap:wrap}.nav a{text-decoration:none;color:#dbeafe;background:#111827;border:1px solid #334155;padding:10px 14px;border-radius:12px;font-weight:900}.card{background:#0b1220;border:1px solid #253247;border-radius:18px;padding:16px;margin-bottom:14px}.grid{display:grid;grid-template-columns:1fr 1.2fr;gap:14px}.row{margin-bottom:10px}label{display:block;font-size:13px;color:#cbd5e1;font-weight:900;margin-bottom:6px}.input{width:100%;background:#070b12;color:#fff;border:1px solid #334155;border-radius:12px;padding:11px 12px}.btn{border:0;border-radius:12px;padding:10px 13px;font-weight:900;cursor:pointer;background:#334155;color:#fff;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}.green{background:#16a34a}.blue{background:#2563eb}.red{background:#dc2626}.mini{font-size:12px;padding:7px 9px}.broadcast{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;border:1px solid #334155;border-radius:14px;padding:12px;margin-bottom:8px;background:#0f172a}.broadcast.active{border-color:#22c55e}.muted{color:#94a3b8;font-size:13px}.mono{font-family:ui-monospace,Consolas,monospace}.actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}.pwrow{display:grid;grid-template-columns:1fr 1fr;gap:8px}@media(max-width:900px){.grid,.broadcast,.pwrow{grid-template-columns:1fr}.top{align-items:flex-start;flex-direction:column}.actions{justify-content:flex-start}}
+</style>
+<style>.roulette-quick-link{position:fixed;right:14px;bottom:14px;z-index:99999;padding:10px 14px;border-radius:999px;background:linear-gradient(90deg,#ff4fa3,#5ee7ff);color:#fff!important;font-weight:1000;text-decoration:none;box-shadow:0 0 18px rgba(255,79,163,.35)}</style>
+</head>
+<body><a class="roulette-quick-link" href="/roulette.html">🎰 룰렛관리</a>
+<script>(function(){var a=document.querySelector('.roulette-quick-link');if(!a)return;var st=new URLSearchParams(location.search).get('station')||localStorage.getItem('STATION_SLUG')||'default';a.href=a.getAttribute('href')+'?station='+encodeURIComponent(st);})();</script>
+<div class="wrap">
+  <div class="top">
+    <div>
+      <div class="title" id="title">방송국 컨트롤</div>
+      <div class="muted" id="info">방송국 정보 확인 중...</div>
+    </div>
+    <div class="nav">
+      <a id="summaryLink" target="_blank" href="/summary.html">합산</a>
+      <a id="adminLink" target="_blank" href="/admin.html">PC 입력</a>
+      <a id="mAdminLink" target="_blank" href="/m_admin.html">모바일 입력</a>
+      <a id="controlLink" target="_blank" href="/control.html">PC 설정</a>
+      <a id="mControlLink" target="_blank" href="/m_control.html">모바일 설정</a>
+      <a id="styleLink" target="_blank" href="/station_style.html">스타일</a>
+      <a id="mediaLink" target="_blank" href="/media_manager.html">미디어</a>
+      <a id="mMediaLink" target="_blank" href="/m_media_manager.html">모바일 미디어</a>
+      <a id="overlayLink" target="_blank" href="/overlay.html">오버레이 TEST</a>
+    </div>
+  </div>
+  <div class="grid">
+    <section class="card">
+      <h2>새 방송 생성</h2>
+      <div class="row"><label>방송 제목</label><input id="broadcastTitle" class="input" placeholder="0524 방송"></div>
+      <div class="pwrow">
+        <div class="row"><label>방송 비밀번호</label><input id="broadcastPw" class="input" type="password" placeholder="이 방송 입력/설정용"></div>
+        <div class="row"><label>방송 비밀번호 확인</label><input id="broadcastPw2" class="input" type="password" placeholder="한번 더 입력"></div>
+      </div>
+      <button class="btn green" onclick="createBroadcast()">새 방송 생성/선택</button>
+      <hr style="border-color:#334155;margin:16px 0">
+      <h2>방송별 비밀번호 확인</h2>
+      <div class="row"><label>선택/컨트롤할 방송 비밀번호</label><input id="loginBroadcastPw" class="input" type="password"></div>
+      <button class="btn blue" onclick="loginBroadcast()">현재 방송 비밀번호 저장</button>
+      <p class="muted">방송 비밀번호로는 해당 방송만 선택/입력/설정할 수 있습니다. 방송국 관리자 비밀번호는 모든 방송을 관리할 수 있습니다.</p>
+    </section>
+    <section class="card">
+      <h2>방송 목록</h2>
+      <div id="broadcasts"></div>
+    </section>
+  </div>
+</div>
+<script src="/common.js"></script>
+<script>
+let station = null;
+let active = null;
+let broadcasts = [];
+
+function st(){
+  return getStation();
+}
+
+function timerText(ms){
+  const sec = Math.floor(Number(ms || 0) / 1000);
+  return `${String(Math.floor(sec / 3600)).padStart(2,'0')}:${String(Math.floor((sec % 3600) / 60)).padStart(2,'0')}:${String(sec % 60).padStart(2,'0')}`;
+}
+
+function setLinks(){
+  const slug = encodeURIComponent(station?.slug || st());
+
+  const adminLink = document.getElementById('adminLink');
+  if (adminLink) adminLink.href = `/admin.html?station=${slug}`;
+
+  const controlLink = document.getElementById('controlLink');
+  if (controlLink) controlLink.href = `/control.html?station=${slug}`;
+
+  const mAdminLink = document.getElementById('mAdminLink');
+  if (mAdminLink) mAdminLink.href = `/m_admin.html?station=${slug}`;
+
+  const mControlLink = document.getElementById('mControlLink');
+  if (mControlLink) mControlLink.href = `/m_control.html?station=${slug}`;
+
+  const summaryLink = document.getElementById('summaryLink');
+  if (summaryLink) summaryLink.href = `/summary.html?station=${slug}`;
+
+  const styleLink = document.getElementById('styleLink');
+  if (styleLink) styleLink.href = `/station_style.html?station=${slug}`;
+
+  const mediaLink = document.getElementById('mediaLink');
+  if (mediaLink) mediaLink.href = `/media_manager.html?station=${slug}`;
+
+  const mMediaLink = document.getElementById('mMediaLink');
+  if (mMediaLink) mMediaLink.href = `/m_media_manager.html?station=${slug}`;
+
+  const overlayLink = document.getElementById('overlayLink');
+  if (overlayLink && station?.overlayToken) {
+    overlayLink.href = `/overlay.html?station=${encodeURIComponent(station.slug)}&token=${encodeURIComponent(station.overlayToken)}&monitor=1&v=${Date.now()}`;
+  }
+}
+
+async function load(){
+  try{
+    setLinks();
+
+    const info = await api('/api/station-info');
+    station = info.station;
+    active = info.active;
+
+    document.getElementById('title').textContent = (station?.name || st()) + ' 컨트롤';
+    document.getElementById('info').textContent = '방송국 코드: ' + (station?.slug || st()) + ' / 현재 방송: ' + (active?.title || '없음');
+
+    setLinks();
+
+    const data = await api('/api/broadcasts');
+    broadcasts = data.broadcasts || [];
+
+    render();
+  }catch(e){
+    console.error(e);
+    document.getElementById('info').textContent = '방송국 정보 또는 방송 목록을 불러오지 못했습니다.';
+    document.getElementById('broadcasts').innerHTML = `<div class="muted">오류: ${esc(e.message || e)}</div>`;
+  }
+}
+
+function render(){
+  const box = document.getElementById('broadcasts');
+
+  if (!broadcasts.length) {
+    box.innerHTML = `<div class="muted">생성된 방송이 없습니다.</div>`;
+    return;
+  }
+
+  box.innerHTML = broadcasts.map(b => {
+    const timer = b.broadcastTimerData || {};
+    const live = b.broadcastLiveData || {};
+    const status = live.status || (live.live ? 'live' : 'ready');
+    const running = timer.running === true;
+    const hasPw = b.hasPassword || !!localStorage.getItem('broadcastPassword_' + b.id);
+
+    return `
+      <div class="broadcast ${b.isActive ? 'active' : ''}">
+        <div>
+          <b>${esc(b.title || '제목 없음')}</b>
+          ${b.isActive ? '<span class="muted">현재</span>' : ''}
+          ${status==='live' ? '<span class="muted">방송중</span>' : (status==='ended' ? '<span class="muted">종료</span>' : '<span class="muted">대기</span>')} ${running ? '<span class="muted">미션타이머</span>' : ''}
+          <br>
+          <span class="muted">
+            ${b.createdAt ? new Date(b.createdAt).toLocaleString('ko-KR') : ''}
+            / 비번 ${hasPw ? '있음' : '없음'}
+            / 상태 ${status==='live'?'방송중':(status==='ended'?'종료':'대기')} / 미션 ${timerText(timer.elapsedMs)}
+          </span>
+        </div>
+        <div class="actions">
+          ${b.isActive ? '' : `<button class="btn blue mini" onclick="activateBroadcast('${b.id}')">선택</button>`}
+          <button class="btn mini" onclick="broadcastLogin('${b.id}')">비번확인</button>
+          <button class="btn blue mini" onclick="startBroadcastTimer('${b.id}')">방송시작</button>
+          <button class="btn mini" onclick="endBroadcastTimer('${b.id}')">방송종료</button>
+          <button class="btn mini" onclick="changeBroadcastPw('${b.id}')">PW변경</button>
+          <button class="btn red mini" onclick="deleteBroadcast('${b.id}')">삭제</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+async function createBroadcast(){
+  const pw1 = document.getElementById('broadcastPw').value;
+  const pw2 = document.getElementById('broadcastPw2').value;
+
+  if (pw1 !== pw2) return alert('방송 비밀번호 확인이 다릅니다.');
+
+  try{
+    await api('/api/broadcasts', {
+      method: 'POST',
+      body: JSON.stringify({
+        title: document.getElementById('broadcastTitle').value,
+        broadcastPassword: pw1,
+        activate: true
+      })
+    });
+
+    alert('방송 생성 완료');
+    await load();
+  }catch(e){
+    alert(e.message);
+  }
+}
+
+async function activateBroadcast(id){
+  const pw = prompt('해당 방송 비밀번호를 입력하세요. 방송국 관리자는 빈칸으로도 가능합니다.', '') || '';
+
+  try{
+    await api('/api/broadcasts/' + id + '/activate', {
+      method: 'POST',
+      body: JSON.stringify({ broadcastPassword: pw })
+    });
+
+    alert('현재 방송으로 선택했습니다.');
+    await load();
+  }catch(e){
+    alert(e.message);
+  }
+}
+
+async function broadcastLogin(id){
+  const pw = prompt('방송 비밀번호를 입력하세요.', '') || '';
+
+  try{
+    await api('/api/broadcast-login', {
+      method: 'POST',
+      body: JSON.stringify({ broadcastId: id, password: pw })
+    });
+
+    localStorage.setItem('broadcastPassword_' + id, pw);
+    alert('방송 비밀번호 확인 완료');
+  }catch(e){
+    alert(e.message);
+  }
+}
+
+async function loginBroadcast(){
+  if (!active?.id) return alert('현재 선택된 방송이 없습니다.');
+
+  const pw = document.getElementById('loginBroadcastPw').value;
+
+  try{
+    await api('/api/broadcast-login', {
+      method: 'POST',
+      body: JSON.stringify({ broadcastId: active.id, password: pw })
+    });
+
+    localStorage.setItem('broadcastPassword_' + active.id, pw);
+    alert('현재 방송 비밀번호 저장 완료');
+  }catch(e){
+    alert(e.message);
+  }
+}
+
+async function changeBroadcastPw(id){
+  const pw1 = prompt('새 방송 비밀번호 입력', '');
+  if (pw1 === null) return;
+
+  const pw2 = prompt('새 방송 비밀번호 확인', '');
+  if (pw1 !== pw2) return alert('비밀번호 확인이 다릅니다.');
+
+  try{
+    await api('/api/broadcasts/' + id, {
+      method: 'PUT',
+      body: JSON.stringify({ broadcastPassword: pw1 })
+    });
+
+    localStorage.removeItem('broadcastPassword_' + id);
+    alert('변경 완료');
+    await load();
+  }catch(e){
+    alert(e.message);
+  }
+}
+
+async function deleteBroadcast(id){
+  if (!confirm('이 방송을 삭제할까요?')) return;
+  if (prompt('삭제하려면 DELETE 입력') !== 'DELETE') return;
+
+  try{
+    await api('/api/broadcasts/' + id, { method: 'DELETE' });
+    localStorage.removeItem('broadcastPassword_' + id);
+    alert('삭제 완료');
+    await load();
+  }catch(e){
+    alert(e.message);
+  }
+}
+
+async function postBroadcastLiveStatus(url, id, bodyExtra = {}){
+  const savedPw = localStorage.getItem('broadcastPassword_' + id) || '';
+  const body = { broadcastId: id, broadcastPassword: savedPw, ...bodyExtra };
+
+  try{
+    return await api(url, {
+      method: 'POST',
+      body: JSON.stringify(body)
+    });
+  }catch(e){
+    const msg = String(e.message || '');
+    if (!msg.includes('비밀번호') && !msg.includes('권한') && !msg.includes('401')) throw e;
+
+    const pw = prompt('방송 비밀번호를 입력하세요. 방송국 관리자 로그인 상태면 빈칸으로도 가능합니다.', '') || '';
+    const retryBody = { broadcastId: id, broadcastPassword: pw, ...bodyExtra };
+    const result = await api(url, {
+      method: 'POST',
+      body: JSON.stringify(retryBody)
+    });
+    if (pw) localStorage.setItem('broadcastPassword_' + id, pw);
+    return result;
+  }
+}
+
+async function startBroadcastTimer(id){
+  try{
+    await postBroadcastLiveStatus('/api/broadcast-timer/start', id);
+    alert('방송을 시작했습니다.');
+    await load();
+  }catch(e){
+    alert(e.message);
+  }
+}
+
+async function endBroadcastTimer(id){
+  if (!confirm('이 방송을 종료할까요? 종료 상태에서는 입력이 차단됩니다.')) return;
+
+  try{
+    await postBroadcastLiveStatus('/api/broadcast-timer/end', id);
+    alert('방송을 종료했습니다.');
+    await load();
+  }catch(e){
+    alert(e.message);
+  }
+}
+
+load();
+</script>
+</body>
+</html>
