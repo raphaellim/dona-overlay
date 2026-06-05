@@ -11,6 +11,7 @@
   let spinAudio = null;
   let resultAudio = null;
   let resultSoundRunId = '';
+  let doneRunId = '';
   const completedRunKey = `roulette_completed_${station}`;
   const MIN_RESULT_VISIBLE_MS = 3100;
 
@@ -63,6 +64,12 @@
       .filter(h=>h.batchId===run.batchId)
       .sort((a,b)=>Number(a.sequence||0)-Number(b.sequence||0));
   }
+  function clearSpinTimer(){
+    if(spinTimer){
+      clearInterval(spinTimer);
+      spinTimer = null;
+    }
+  }
   function stopSpinSound(){
     if(spinAudio){
       try{ spinAudio.pause(); spinAudio.currentTime = 0; }catch(e){}
@@ -110,6 +117,10 @@
     return donor ? `${donor} · ${title}` : title;
   }
   function showDone(run, roulette){
+    if(!run || !run.runId) return;
+    if(doneRunId === run.runId) return;
+    doneRunId = run.runId;
+    clearSpinTimer();
     stopSpinSound();
     playResultSound(run.runId);
     const root = ensureRoot();
@@ -136,6 +147,7 @@
       markCompletedRun(run.runId);
       root.classList.remove('show','done');
       activeRunId = '';
+      doneRunId = '';
       stopSpinSound();
       if(resultAudio){ try{ resultAudio.pause(); resultAudio.currentTime = 0; }catch(e){} }
       if(pending){
@@ -155,6 +167,8 @@
       setTimeout(()=>{ if(pending && Date.now()>=displayLockedUntil){ const next=pending; pending=null; startSpin(next.run,next.roulette); } }, displayLockedUntil-now+50);
       return;
     }
+    doneRunId = '';
+    clearSpinTimer();
     const root = ensureRoot();
     const nameEl = document.getElementById('rouletteOverlayName');
     document.getElementById('rouletteOverlayTitle').textContent = titleText(run);
@@ -167,7 +181,7 @@
     const started = Date.now();
     const duration = Math.max(900, Number(run.duration || roulette.duration || 3600));
     playSpinSound(duration);
-    clearInterval(spinTimer);
+    clearSpinTimer();
     function tick(){
       const elapsed = Date.now() - started;
       if(elapsed >= duration){ showDone(run, roulette); return; }
@@ -175,7 +189,7 @@
       const delay = 38 + Math.pow(progress, 2.35) * 230;
       const value = pool.length ? pool[Math.floor(Math.random()*pool.length)] : run.result;
       nameEl.textContent = value || '-';
-      clearInterval(spinTimer);
+      clearSpinTimer();
       spinTimer = setInterval(tick, delay);
     }
     tick();
@@ -198,6 +212,6 @@
       }
     }catch(e){/* keep overlay quiet */}
   }
-  window.addEventListener('beforeunload', ()=>{ stopSpinSound(); if(resultAudio){ try{ resultAudio.pause(); resultAudio.currentTime=0; }catch(e){} } });
+  window.addEventListener('beforeunload', ()=>{ clearSpinTimer(); stopSpinSound(); if(resultAudio){ try{ resultAudio.pause(); resultAudio.currentTime=0; }catch(e){} } });
   window.addEventListener('DOMContentLoaded', ()=>{ ensureRoot(); poll(); setInterval(poll, 500); });
 })();
