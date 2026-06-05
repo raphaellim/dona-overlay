@@ -1085,7 +1085,7 @@ async function saveBatch(){
 
     const body = {
       donor,
-      processType: isFunding ? '후원' : (isRoulette ? `룰렛:${rr?.listTitle || '룰렛'}` : selectedProcess),
+      processType: isFunding ? '후원' : (isRoulette && rr ? `룰렛+${rr.listTitle}` : selectedProcess),
       accountTotal: $('#accountTotal').value,
       toonieTotal: $('#toonieTotal').value,
       rows: collectRows(),

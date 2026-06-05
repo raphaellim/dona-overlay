@@ -3,7 +3,7 @@ let selectedListId='';
 let editingListId='';
 let sequenceRunning=false;
 let singleRunLock=false;
-const MIN_RESULT_VISIBLE_MS=2600;
+const MIN_RESULT_VISIBLE_MS=3100;
 const IS_MOBILE=document.body.classList.contains('mobile');
 function RQ(s){return document.querySelector(s);}
 function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
@@ -27,7 +27,8 @@ async function startRoulette(extra={}){
   try{
     if(!selectedListId)return alert('룰렛을 선택하세요.');
     if(!isBatch){singleRunLock=true;setButtonsRunning(true);setStatus('룰렛 실행 중...');}
-    const d=await api('/api/roulette/start',{method:'POST',body:JSON.stringify({listId:selectedListId,duration:roulette.duration||3600,...extra})});
+    const donor=(RQ('#manualDonor')?.value||'').trim();
+    const d=await api('/api/roulette/start',{method:'POST',body:JSON.stringify({listId:selectedListId,duration:roulette.duration||3600,donor,...extra})});
     setStatus('RESULT: '+(d.result||''));
     roulette=d.roulette||roulette;
     render();
@@ -40,12 +41,27 @@ async function startRoulette(extra={}){
     }
   }
 }
-async function startMultiRoulette(){try{if(!selectedListId)return alert('룰렛을 선택하세요.');const inp=RQ('#repeatCount');const count=Math.max(1,Math.min(50,Number(inp?.value||1)));const batchId=gid('batch');setButtonsRunning(true);setStatus(`연속 룰렛 시작: 1/${count}`);for(let i=1;i<=count;i++){
-  await startRoulette({batchId,sequence:i,total:count});
-  setStatus(`연속 룰렛 진행: ${i}/${count}`);
-  if(i<count)await sleep(Math.max(2400,Number(roulette.duration||3600)+MIN_RESULT_VISIBLE_MS));
+async function startMultiRoulette(){
+  try{
+    if(!selectedListId)return alert('룰렛을 선택하세요.');
+    const inp=RQ('#repeatCount');
+    const count=Math.max(1,Math.min(50,Math.trunc(Number(inp?.value||1))));
+    const batchId=gid('batch');
+    const donor=(RQ('#manualDonor')?.value||'').trim();
+    setButtonsRunning(true);
+    setStatus(`연속 룰렛 예약: ${count}회`);
+    const d=await api('/api/roulette/start',{method:'POST',body:JSON.stringify({listId:selectedListId,duration:roulette.duration||3600,count,batchId,donor})});
+    roulette=d.roulette||roulette;
+    render();
+    setStatus(`연속 룰렛 실행 중: ${count}회`);
+    showTab('result');
+  }catch(e){alert(e.message)}
+  finally{
+    const count=Math.max(1,Math.min(50,Math.trunc(Number(RQ('#repeatCount')?.value||1))));
+    const wait=(Math.max(1200,Number(roulette.duration||3600))+MIN_RESULT_VISIBLE_MS)*count;
+    setTimeout(()=>{setButtonsRunning(false);setStatus('다음 룰렛 실행 가능');load();}, wait);
+  }
 }
-setStatus(`연속 룰렛 완료: ${count}회`);await load();showTab('result');}catch(e){}finally{setButtonsRunning(false);}}
 async function resetOverlay(){try{await api('/api/roulette/reset',{method:'POST',body:'{}'});setStatus('오버레이 룰렛 숨김');await load();}catch(e){alert(e.message)}}
 async function clearHistory(){if(!confirm('룰렛 결과 기록을 삭제할까요?'))return;try{await api('/api/roulette/history/clear',{method:'POST',body:'{}'});await load();}catch(e){alert(e.message)}}
 function renderResult(){const el=RQ('#history');if(!el)return;const cur=roulette.current&&roulette.current.result?roulette.current:null;const last=(roulette.history||[]).slice(-1)[0]||null;const h=cur||last;const rows=(roulette.history||[]).slice(-50).reverse();if(!h&&!rows.length){el.innerHTML='<div class="muted">아직 RESULT 없음</div>';return;}const lastBox=h?`<div class="resultBox"><div class="resultLabel">LAST RESULT</div><div class="resultValue">${esc(h.result)}</div><div class="muted">${esc(h.mode==='auto'?'자동':'수동')} / ${esc(h.listTitle||'룰렛')} ${h.donor?'/ '+esc(h.donor):''} ${h.amount?'/ '+fmt(h.amount)+'원':''}</div></div>`:'';const list=rows.length?`<div class="resultList">${rows.map((r,idx)=>`<div class="resultRow"><span class="num">${rows.length-idx}.</span><span class="txt">${esc(r.result)}</span><span class="meta">${esc(r.listTitle||'룰렛')}${r.batchId&&r.total?` / 연속 ${r.sequence}/${r.total}`:''}</span></div>`).join('')}</div>`:'';el.innerHTML=lastBox+list;}

@@ -358,7 +358,7 @@ function normalizeRouletteData(raw) {
   };
 }
 
-const ROULETTE_MIN_RESULT_VISIBLE_MS = 2600;
+const ROULETTE_MIN_RESULT_VISIBLE_MS = 3100;
 
 function pickRouletteWinner(list) {
   const activeItems = (list?.items || []).filter(item => item.enabled !== false && item.text);
@@ -456,19 +456,11 @@ function resolveRouletteRuleForAmount(roulette, amount, body = {}) {
   if (total <= 0) return null;
   const rules = (roulette.autoRules || []).filter(rule => rule.enabled && Number(rule.minAmount || 0) > 0);
   const explicitRuleId = cleanRouletteId(body.rouletteRuleId || '', '');
-  const explicitListId = cleanRouletteId(body.rouletteListId || body.listId || '', '');
   let selected = null;
-  if (explicitRuleId) selected = rules.find(rule => rule.id === explicitRuleId) || null;
-  if (!selected && explicitListId) selected = rules.find(rule => rule.listId === explicitListId) || null;
-  if (!selected && String(body.processType || '').startsWith('roulette:')) {
-    const key = cleanRouletteId(String(body.processType).split(':')[1] || '', '');
-    selected = rules.find(rule => rule.id === key || rule.listId === key) || null;
-  }
-  if (!selected) {
-    selected = rules
-      .filter(rule => total >= Number(rule.minAmount || 0))
-      .sort((a, b) => Number(b.minAmount || 0) - Number(a.minAmount || 0))[0] || null;
-  }
+  // v7: 룰렛은 rouletteRuleId가 명시적으로 같이 전달될 때만 실행합니다.
+  // 일반 후원, processType=후원, processType=roulette:* 값만으로는 자동 실행하지 않습니다.
+  if (!explicitRuleId) return null;
+  selected = rules.find(rule => rule.id === explicitRuleId) || null;
   if (!selected) return null;
   const unit = Math.max(1, Number(selected.minAmount || 0));
   const count = Math.max(0, Math.min(50, Math.floor(total / unit)));
@@ -1325,10 +1317,33 @@ function calcCheck(processType, amount, settings) {
   return result;
 }
 
+function getRouletteProcessTitle(settings, rouletteRuleId) {
+  const id = cleanRouletteId(rouletteRuleId || '', '');
+  if (!id) return '';
+  const roulette = normalizeRouletteData(settings?.roulette || {});
+  const rule = (roulette.autoRules || []).find(r => r.id === id);
+  if (!rule) return '';
+  const list = (roulette.lists || []).find(l => l.id === rule.listId);
+  return normName(list?.title || rule.title || '룰렛');
+}
+
+function resolveDonationProcessType(body, settings) {
+  const rouletteRuleId = cleanRouletteId(body?.rouletteRuleId || '', '');
+  if (rouletteRuleId) {
+    const title = getRouletteProcessTitle(settings, rouletteRuleId) || '룰렛';
+    return `룰렛+${title}`;
+  }
+  const raw = normName(body?.processType) || '후원';
+  // 룰렛은 rouletteRuleId가 같이 전달될 때만 인정합니다.
+  // processType 값만 roulette:* 형태로 들어온 경우 일반 후원으로 저장/처리합니다.
+  if (String(raw).startsWith('roulette:')) return '후원';
+  return raw;
+}
+
 function makeDonationRow(body, settings, stationId, broadcastId) {
   const donor = normName(body.donor);
   const creator = normName(body.creator);
-  const processType = normName(body.processType) || '후원';
+  const processType = resolveDonationProcessType(body, settings);
   const accountAmount = toWon(body.accountAmount);
   const toonieAmount = toWon(body.toonieAmount);
   const total = accountAmount + toonieAmount;
@@ -2233,13 +2248,13 @@ app.post('/api/roulette/start', async (req, res) => {
     if (!await operatorAllowed(req, ctx.station, ctx.active)) return res.status(401).json({ error: '방송 비밀번호 또는 방송국 관리자 권한이 필요합니다.' });
     const listId = cleanRouletteId(req.body?.listId || req.body?.rouletteId, '');
     if (!listId) return res.status(400).json({ error: '룰렛을 선택하세요.' });
-    const out = await createRouletteRun(ctx, listId, 'manual', {
+    const count = Math.max(1, Math.min(50, Math.trunc(Number(req.body?.count || 1))));
+    const out = await createRouletteBatch(ctx, listId, 'manual', count, {
       duration: req.body?.duration,
-      batchId: req.body?.batchId,
-      sequence: req.body?.sequence,
-      total: req.body?.total
+      donor: req.body?.donor,
+      batchId: req.body?.batchId
     });
-    res.json({ ok: true, roulette: out.roulette, result: out.run.result, run: out.run });
+    res.json({ ok: true, roulette: out.roulette, result: out.run.result, run: out.run, runs: out.runs });
   } catch (e) {
     res.status(400).json({ error: e.message || '룰렛 시작 실패' });
   }
@@ -2693,7 +2708,8 @@ app.post('/api/donations/batch', async (req, res) => {
         processType,
         accountAmount: accountPart,
         toonieAmount: tooniePart,
-        memo: r.memo
+        memo: r.memo,
+        rouletteRuleId: req.body.rouletteRuleId || ''
       }, settings, ctx.station.id, ctx.active.id);
     });
 

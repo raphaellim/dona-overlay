@@ -8,7 +8,9 @@
   let activeRunId = '';
   let displayLockedUntil = 0;
   let pending = null;
-  const MIN_RESULT_VISIBLE_MS = 2600;
+  let spinAudio = null;
+  let resultAudio = null;
+  const MIN_RESULT_VISIBLE_MS = 3100;
 
   function apiUrl(path){
     const u = new URL(path, location.origin);
@@ -40,21 +42,46 @@
     return root;
   }
   function enabledItems(roulette, listId){
-    const list = (roulette.lists||[]).find(x=>x.id===listId) || (roulette.lists||[])[0] || {items:[]};
-    return (list.items||[]).filter(x=>x.enabled!==false && x.text).map(x=>x.text);
+    const list = (roulette.lists||[]).find(x=>x.id===listId);
+    return (list?.items||[]).filter(i=>i.enabled!==false && i.text).map(i=>i.text);
   }
   function batchRows(run, roulette){
-    if(!run.batchId) return [];
+    if(!run.batchId || !run.total || run.total <= 1) return [];
     return (roulette.history||[])
       .filter(h=>h.batchId===run.batchId)
-      .sort((a,b)=>(Number(a.sequence||0)-Number(b.sequence||0)) || (Number(a.createdAt||0)-Number(b.createdAt||0)));
+      .sort((a,b)=>Number(a.sequence||0)-Number(b.sequence||0));
+  }
+  function stopSpinSound(){
+    if(spinAudio){
+      try{ spinAudio.pause(); spinAudio.currentTime = 0; }catch(e){}
+      spinAudio = null;
+    }
+  }
+  function playSpinSound(duration){
+    stopSpinSound();
+    try{
+      spinAudio = new Audio('/sounds/roulette_spin.mp3');
+      spinAudio.loop = true;
+      spinAudio.volume = 0.72;
+      spinAudio.play().catch(()=>{});
+      setTimeout(stopSpinSound, Math.max(900, Number(duration||0)) + 120);
+    }catch(e){}
+  }
+  function playResultSound(){
+    try{
+      if(resultAudio){ resultAudio.pause(); resultAudio.currentTime = 0; }
+      resultAudio = new Audio('/sounds/roulette_result.mp3');
+      resultAudio.volume = 0.95;
+      resultAudio.play().catch(()=>{});
+      setTimeout(()=>{ try{ resultAudio.pause(); resultAudio.currentTime = 0; }catch(e){} }, 1000);
+    }catch(e){}
   }
   function renderResultWindow(run, roulette){
     const head = document.getElementById('rouletteOverlayResult');
     const listEl = document.getElementById('rouletteOverlayResultList');
     const rows = batchRows(run, roulette);
-    if(rows.length > 1 || Number(run.total||0) > 1){
-      const total = Number(run.total || rows.length || 0);
+    if(rows.length > 1){
+      const total = Number(run.total||0);
       head.querySelector('.roulette-result-head').textContent = total ? `RESULT ${rows.length}/${total}` : 'RESULT';
       listEl.innerHTML = rows.map((r,idx)=>`<div class="roulette-result-row"><span>${idx+1}.</span><b>${esc(r.result)}</b></div>`).join('');
     }else{
@@ -62,51 +89,59 @@
       listEl.innerHTML = `<div class="roulette-result-single">${esc(run.result || '-')}</div>`;
     }
   }
+  function titleText(run){
+    const donor = String(run.donor || '').trim();
+    const title = String(run.listTitle || '룰렛').trim();
+    return donor ? `${donor} · ${title}` : title;
+  }
   function showDone(run, roulette){
+    stopSpinSound();
+    playResultSound();
     const root = ensureRoot();
-    clearInterval(spinTimer); spinTimer = null;
-    document.getElementById('rouletteOverlayTitle').textContent = run.listTitle || '룰렛 결과';
+    root.classList.add('done');
+    document.getElementById('rouletteOverlayTitle').textContent = titleText(run);
     document.getElementById('rouletteOverlayName').textContent = run.result || '-';
-    const meta = run.mode === 'auto' && run.donor ? `${run.donor} / ${Number(run.amount||0).toLocaleString()}원` : (Number(run.total||0)>1 ? `연속 룰렛 ${run.sequence}/${run.total}` : '룰렛 결과');
+    const meta = run.total && run.total > 1 ? `연속 룰렛 ${run.sequence}/${run.total}` : (run.mode === 'auto' ? '자동 룰렛' : '수동 룰렛');
     document.getElementById('rouletteOverlayMeta').textContent = meta;
     renderResultWindow(run, roulette);
-    root.classList.add('show','done');
-    displayLockedUntil = Date.now() + MIN_RESULT_VISIBLE_MS;
+    activeRunId = run.runId;
+    displayLockedUntil = Date.now() + Math.max(MIN_RESULT_VISIBLE_MS, Number(roulette.resultHoldMs || 0));
     clearTimeout(hideTimer);
     const holdMs = Number(roulette.resultHoldMs||10000);
-    hideTimer = setTimeout(()=>{ root.classList.remove('show','done'); }, holdMs);
-    setTimeout(async ()=>{
+    hideTimer = setTimeout(async ()=>{
       try{
         const out = await postJson('/api/roulette/advance', {runId: run.runId});
-        if(out && out.run && out.run.runId){
-          clearTimeout(hideTimer);
-          lastRunId = out.run.runId;
+        if(out.run){
+          root.classList.remove('done');
           startSpin(out.run, out.roulette || roulette);
           return;
         }
       }catch(e){}
-      if(pending && Date.now() >= displayLockedUntil){
+      root.classList.remove('show','done');
+      if(pending){
         const next=pending; pending=null; startSpin(next.run,next.roulette);
       }
-    }, MIN_RESULT_VISIBLE_MS + 120);
+    }, Math.max(MIN_RESULT_VISIBLE_MS, holdMs));
   }
   function startSpin(run, roulette){
     const now=Date.now();
-    if((spinTimer || now < displayLockedUntil) && activeRunId && run.runId !== activeRunId){
+    if(now < displayLockedUntil){
       pending={run,roulette};
+      setTimeout(()=>{ if(pending && Date.now()>=displayLockedUntil){ const next=pending; pending=null; startSpin(next.run,next.roulette); } }, displayLockedUntil-now+50);
       return;
     }
-    activeRunId = run.runId || activeRunId;
     const root = ensureRoot();
     const nameEl = document.getElementById('rouletteOverlayName');
-    document.getElementById('rouletteOverlayTitle').textContent = run.listTitle || '룰렛';
+    document.getElementById('rouletteOverlayTitle').textContent = titleText(run);
     document.getElementById('rouletteOverlayMeta').textContent = run.mode === 'auto' ? '자동 룰렛' : (Number(run.total||0)>1 ? `연속 룰렛 ${run.sequence}/${run.total}` : '수동 룰렛');
     document.getElementById('rouletteOverlayResultList').innerHTML = '';
     root.classList.add('show');
     root.classList.remove('done');
+    activeRunId = run.runId;
     const pool = enabledItems(roulette, run.listId);
-    const started = Number(run.startedAt || Date.now());
+    const started = Date.now();
     const duration = Math.max(900, Number(run.duration || roulette.duration || 3600));
+    playSpinSound(duration);
     clearInterval(spinTimer);
     function tick(){
       const elapsed = Date.now() - started;

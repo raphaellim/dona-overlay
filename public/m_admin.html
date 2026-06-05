@@ -1019,7 +1019,7 @@ async function saveBatch() {
 
     const body = {
       donor,
-      processType: isFunding ? '후원' : (isRoulette ? `룰렛:${rr?.listTitle || '룰렛'}` : selected),
+      processType: isFunding ? '후원' : (isRoulette && rr ? `룰렛+${rr.listTitle}` : selected),
       accountTotal: $('#accountTotal').value,
       toonieTotal: $('#toonieTotal').value,
       rows,
