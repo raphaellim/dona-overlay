@@ -228,8 +228,8 @@ function normalizeSoundRules(raw, base) {
 function defaultRouletteData() {
   return {
     enabled: true,
-    displayMode: 'center',
-    duration: 5000,
+    displayMode: 'box',
+    duration: 3600,
     resultHoldMs: 10000,
     historyLimit: 30,
     lists: [
@@ -308,7 +308,10 @@ function normalizeRouletteData(raw) {
     donor: String(value.current.donor || ''),
     amount: Math.max(0, Number(value.current.amount || 0)),
     startedAt: Math.max(0, Number(value.current.startedAt || 0)),
-    duration: Math.max(1200, Math.min(30000, Number(value.current.duration || value.duration || base.duration)))
+    duration: Math.max(1200, Math.min(30000, Number(value.current.duration || value.duration || base.duration))),
+    batchId: String(value.current.batchId || ''),
+    sequence: Math.max(0, Number(value.current.sequence || 0)),
+    total: Math.max(0, Number(value.current.total || 0))
   } : null;
 
   const history = Array.isArray(value.history) ? value.history.map((h, idx) => ({
@@ -319,12 +322,15 @@ function normalizeRouletteData(raw) {
     result: String(h.result || ''),
     donor: String(h.donor || ''),
     amount: Math.max(0, Number(h.amount || 0)),
-    createdAt: Math.max(0, Number(h.createdAt || 0))
+    createdAt: Math.max(0, Number(h.createdAt || 0)),
+    batchId: String(h.batchId || ''),
+    sequence: Math.max(0, Number(h.sequence || 0)),
+    total: Math.max(0, Number(h.total || 0))
   })).filter(h => h.result).slice(-100) : [];
 
   return {
     enabled: value.enabled !== false,
-    displayMode: ['center', 'side'].includes(String(value.displayMode || '')) ? String(value.displayMode) : base.displayMode,
+    displayMode: ['box', 'center', 'side'].includes(String(value.displayMode || '')) ? String(value.displayMode) : base.displayMode,
     duration: Math.max(1200, Math.min(30000, Number(value.duration || base.duration))),
     resultHoldMs: Math.max(1000, Math.min(60000, Number(value.resultHoldMs || base.resultHoldMs))),
     historyLimit: Math.max(1, Math.min(100, Number(value.historyLimit || base.historyLimit))),
@@ -369,7 +375,10 @@ async function createRouletteRun(ctx, listId, mode, extra = {}) {
     donor: String(extra.donor || ''),
     amount: Math.max(0, Number(extra.amount || 0)),
     startedAt: now,
-    duration: Math.max(1200, Math.min(30000, Number(extra.duration || roulette.duration || 5000)))
+    duration: Math.max(1200, Math.min(30000, Number(extra.duration || roulette.duration || 5000))),
+    batchId: String(extra.batchId || ''),
+    sequence: Math.max(0, Number(extra.sequence || 0)),
+    total: Math.max(0, Number(extra.total || 0))
   };
   const historyRow = {
     id: runId,
@@ -379,7 +388,10 @@ async function createRouletteRun(ctx, listId, mode, extra = {}) {
     result,
     donor: current.donor,
     amount: current.amount,
-    createdAt: now
+    createdAt: now,
+    batchId: current.batchId,
+    sequence: current.sequence,
+    total: current.total
   };
   roulette.current = current;
   roulette.history = [...(roulette.history || []), historyRow].slice(-roulette.historyLimit);
@@ -2127,7 +2139,12 @@ app.post('/api/roulette/start', async (req, res) => {
     if (!await operatorAllowed(req, ctx.station, ctx.active)) return res.status(401).json({ error: '방송 비밀번호 또는 방송국 관리자 권한이 필요합니다.' });
     const listId = cleanRouletteId(req.body?.listId || req.body?.rouletteId, '');
     if (!listId) return res.status(400).json({ error: '룰렛을 선택하세요.' });
-    const out = await createRouletteRun(ctx, listId, 'manual', { duration: req.body?.duration });
+    const out = await createRouletteRun(ctx, listId, 'manual', {
+      duration: req.body?.duration,
+      batchId: req.body?.batchId,
+      sequence: req.body?.sequence,
+      total: req.body?.total
+    });
     res.json({ ok: true, roulette: out.roulette, result: out.run.result, run: out.run });
   } catch (e) {
     res.status(400).json({ error: e.message || '룰렛 시작 실패' });

@@ -1,20 +1,18 @@
-/* 슬롯형 룰렛 오버레이 - 기존 디자인 톤 유지 */
-.roulette-overlay-root{position:fixed;inset:0;z-index:999990;pointer-events:none;display:none;font-family:inherit;color:#fff}
+/* 슬롯형 룰렛 오버레이 - 기존 오버레이 박스 안쪽/계좌후원 아래 표시 */
+.roulette-overlay-root{display:none;pointer-events:none;box-sizing:border-box;color:#fff;font-family:inherit;width:100%;position:relative;z-index:50}
 .roulette-overlay-root.show{display:block}
-.roulette-stage{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(680px,72vw);padding:22px 24px;border:2px solid rgba(255,138,185,.9);border-radius:28px;background:linear-gradient(180deg,rgba(18,22,32,.88),rgba(10,12,20,.82));box-shadow:0 0 32px rgba(255,79,216,.36),0 0 60px rgba(0,234,255,.20),inset 0 0 24px rgba(255,255,255,.08);backdrop-filter:blur(7px)}
-.roulette-overlay-root.side .roulette-stage{left:auto;right:14px;top:auto;bottom:70px;transform:none;width:320px;padding:14px;border-radius:20px}
-.roulette-title{font-size:24px;font-weight:1000;text-align:center;color:#ffe680;text-shadow:0 0 10px rgba(255,230,128,.75),0 0 26px rgba(255,79,216,.45);letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.roulette-slot{position:relative;margin:16px auto 10px;width:100%;height:126px;border-radius:22px;display:flex;align-items:center;justify-content:center;overflow:hidden;background:rgba(0,0,0,.42);border:1px solid rgba(255,255,255,.18);box-shadow:inset 0 0 26px rgba(0,0,0,.55),0 0 28px rgba(255,79,216,.18)}
-.roulette-overlay-root.side .roulette-slot{height:76px;margin:10px auto 8px;border-radius:16px}
-.roulette-name{font-size:68px;font-weight:1000;line-height:1;color:#fff;text-align:center;text-shadow:0 2px 0 rgba(0,0,0,.75),0 0 16px rgba(255,255,255,.55),0 0 38px rgba(255,79,216,.72);max-width:96%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transform:translateY(0)}
-.roulette-overlay-root.side .roulette-name{font-size:34px}
-.roulette-meta{text-align:center;font-size:18px;font-weight:900;color:#8ee7ff;text-shadow:0 0 14px rgba(0,234,255,.6);min-height:24px}
-.roulette-overlay-root.side .roulette-meta{font-size:13px;min-height:18px}
-.roulette-result{display:none;text-align:center;margin-top:10px;font-size:28px;font-weight:1000;color:#ff9bd6;text-shadow:0 0 16px rgba(255,79,216,.9),0 0 30px rgba(255,230,128,.55)}
-.roulette-overlay-root.done .roulette-result{display:block;animation:roulettePop .55s ease-out both}
-.roulette-overlay-root.done .roulette-name{animation:rouletteWinner .75s ease-out both}
-.roulette-history{position:absolute;left:50%;top:calc(50% + 210px);transform:translateX(-50%);width:min(520px,60vw);padding:10px 14px;border-radius:18px;background:rgba(10,12,20,.62);border:1px solid rgba(255,255,255,.14);box-shadow:0 0 22px rgba(255,79,216,.18);font-weight:800;text-align:center}
-.roulette-overlay-root.side .roulette-history{left:auto;right:14px;top:auto;bottom:18px;transform:none;width:320px;font-size:12px}
-.roulette-history-title{color:#ffe680;font-size:14px;margin-bottom:5px}.roulette-history-list{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}.roulette-history-chip{padding:4px 8px;border-radius:999px;background:rgba(255,255,255,.10);color:#fff;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-@keyframes roulettePop{0%{transform:scale(.76);opacity:.2}70%{transform:scale(1.08);opacity:1}100%{transform:scale(1);opacity:1}}
-@keyframes rouletteWinner{0%,100%{transform:scale(1)}35%{transform:scale(1.08)}70%{transform:scale(.98)}}
+.roulette-stage{width:100%;box-sizing:border-box;padding:8px 10px;border-radius:14px;background:rgba(0,0,0,.38);border:1px solid rgba(255,255,255,.15);box-shadow:inset 0 0 18px rgba(0,0,0,.42),0 0 18px rgba(255,79,216,.18);backdrop-filter:blur(2px)}
+.roulette-title{font-size:14px;font-weight:1000;text-align:center;color:#ffe680;text-shadow:0 0 8px rgba(255,230,128,.65),0 0 16px rgba(255,79,216,.35);letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.roulette-slot{position:relative;margin:7px auto 5px;width:100%;height:68px;border-radius:12px;display:flex;align-items:center;justify-content:center;overflow:hidden;background:rgba(0,0,0,.42);border:1px solid rgba(255,255,255,.16);box-shadow:inset 0 0 18px rgba(0,0,0,.5)}
+.roulette-name{font-size:23px;font-weight:1000;line-height:1.08;color:#fff;text-align:center;text-shadow:0 2px 0 rgba(0,0,0,.78),0 0 10px rgba(255,255,255,.42),0 0 22px rgba(255,79,216,.55);max-width:96%;white-space:normal;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:keep-all;overflow-wrap:anywhere;transform:translateY(0);padding:0 2px}
+.roulette-meta{text-align:center;font-size:12px;font-weight:900;color:#8ee7ff;text-shadow:0 0 10px rgba(0,234,255,.52);min-height:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.roulette-result{display:none;text-align:center;margin-top:6px;padding:7px 8px;border-radius:12px;background:rgba(0,0,0,.26);border:1px solid rgba(255,255,255,.12);box-shadow:inset 0 0 14px rgba(0,0,0,.32)}
+.roulette-result-head{font-size:13px;font-weight:1000;color:#ff9bd6;text-shadow:0 0 12px rgba(255,79,216,.82),0 0 22px rgba(255,230,128,.45);margin-bottom:4px}
+.roulette-result-list{display:flex;flex-direction:column;gap:3px;max-height:180px;overflow:hidden}
+.roulette-result-row{display:grid;grid-template-columns:26px 1fr;align-items:center;gap:4px;text-align:left;font-size:16px;font-weight:1000;color:#fff;text-shadow:0 1px 0 rgba(0,0,0,.7),0 0 10px rgba(255,79,216,.45)}
+.roulette-result-row span{color:#ffe680;text-align:right;font-size:13px}.roulette-result-row b{font-weight:1000;line-height:1.12;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:keep-all;overflow-wrap:anywhere}.roulette-result-single{font-size:20px;font-weight:1000;line-height:1.12;color:#fff;text-shadow:0 1px 0 rgba(0,0,0,.72),0 0 14px rgba(255,79,216,.6);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:keep-all;overflow-wrap:anywhere}
+.roulette-overlay-root.done .roulette-result{display:block;animation:roulettePop .45s ease-out both}
+.roulette-overlay-root.done .roulette-name{animation:rouletteWinner .65s ease-out both}
+@keyframes roulettePop{0%{transform:scale(.82);opacity:.2}70%{transform:scale(1.04);opacity:1}100%{transform:scale(1);opacity:1}}
+@keyframes rouletteWinner{0%,100%{transform:scale(1)}35%{transform:scale(1.04)}70%{transform:scale(.98)}}
+@media(max-width:900px){.roulette-name{font-size:21px}.roulette-slot{height:64px}.roulette-result-row{font-size:15px}.roulette-result-single{font-size:18px}}
