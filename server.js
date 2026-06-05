@@ -493,6 +493,10 @@ async function advanceRouletteQueue(ctx, currentRunId = '') {
   }
   const next = (roulette.queue || []).shift();
   if (!next) {
+    // 마지막 회차까지 표시가 끝났으면 current를 반드시 비워서
+    // 새로고침/재접속 시 마지막 룰렛이 다시 재생되지 않게 합니다.
+    roulette.current = null;
+    roulette.queue = [];
     const saved = await saveRouletteForContext(ctx, roulette);
     return { roulette: saved, run: null };
   }
@@ -502,6 +506,28 @@ async function advanceRouletteQueue(ctx, currentRunId = '') {
   roulette.history = [...(roulette.history || []), makeRouletteHistoryRow(next)].slice(-roulette.historyLimit);
   const saved = await saveRouletteForContext(ctx, roulette);
   return { roulette: saved, run: next };
+}
+
+function rouletteRunExpireAt(run, roulette) {
+  if (!run || !run.startedAt) return 0;
+  const duration = Number(run.duration || roulette.duration || 3600);
+  const hold = Math.max(ROULETTE_MIN_RESULT_VISIBLE_MS, Number(roulette.resultHoldMs || 0));
+  return Number(run.startedAt || 0) + duration + hold + 1200;
+}
+
+async function cleanupExpiredRoulette(ctx) {
+  const currentSettings = await readEffectiveSettings(ctx.station.slug, ctx.active.id);
+  const roulette = normalizeRouletteData(currentSettings.roulette);
+  if (!roulette.current || !roulette.current.startedAt) return roulette;
+
+  // 표시 시간이 충분히 지난 마지막 current는 서버에서 자동 정리합니다.
+  // overlay가 꺼져 있거나 새로고침된 경우에도 같은 runId가 반복 재생되지 않습니다.
+  if (!(roulette.queue || []).length && Date.now() > rouletteRunExpireAt(roulette.current, roulette)) {
+    roulette.current = null;
+    roulette.queue = [];
+    return await saveRouletteForContext(ctx, roulette);
+  }
+  return roulette;
 }
 
 function normalizeFundingData(raw) {
@@ -2219,8 +2245,8 @@ app.get('/api/roulette', async (req, res) => {
     const station = await getStation(req);
     if (!station) return res.status(404).json({ error: '방송국을 찾을 수 없습니다.' });
     const active = await ensureActiveBroadcast(station.id);
-    const settings = await readEffectiveSettings(station.slug, active.id);
-    res.json({ ok: true, roulette: normalizeRouletteData(settings.roulette), station: stationToClient(station), broadcast: broadcastToClient(active) });
+    const roulette = await cleanupExpiredRoulette({ station, active });
+    res.json({ ok: true, roulette, station: stationToClient(station), broadcast: broadcastToClient(active) });
   } catch (e) {
     res.status(500).json({ error: e.message || '룰렛 조회 실패' });
   }

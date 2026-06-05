@@ -10,6 +10,8 @@
   let pending = null;
   let spinAudio = null;
   let resultAudio = null;
+  let resultSoundRunId = '';
+  const completedRunKey = `roulette_completed_${station}`;
   const MIN_RESULT_VISIBLE_MS = 3100;
 
   function apiUrl(path){
@@ -31,6 +33,16 @@
     return j;
   }
   function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
+  function getCompletedRuns(){
+    try{ return JSON.parse(localStorage.getItem(completedRunKey)||'[]').slice(-120); }catch(e){ return []; }
+  }
+  function isCompletedRun(runId){ return !!runId && getCompletedRuns().includes(String(runId)); }
+  function markCompletedRun(runId){
+    if(!runId) return;
+    const list = getCompletedRuns().filter(x=>x!==String(runId));
+    list.push(String(runId));
+    try{ localStorage.setItem(completedRunKey, JSON.stringify(list.slice(-120))); }catch(e){}
+  }
   function ensureRoot(){
     let root = document.getElementById('rouletteOverlayRoot');
     if(root) return root;
@@ -67,10 +79,13 @@
       setTimeout(stopSpinSound, Math.max(900, Number(duration||0)) + 120);
     }catch(e){}
   }
-  function playResultSound(){
+  function playResultSound(runId){
+    if(runId && resultSoundRunId === runId) return;
+    resultSoundRunId = runId || resultSoundRunId;
     try{
       if(resultAudio){ resultAudio.pause(); resultAudio.currentTime = 0; }
       resultAudio = new Audio('/sounds/roulette_result.mp3');
+      resultAudio.loop = false;
       resultAudio.volume = 0.95;
       resultAudio.play().catch(()=>{});
       setTimeout(()=>{ try{ resultAudio.pause(); resultAudio.currentTime = 0; }catch(e){} }, 1000);
@@ -96,7 +111,7 @@
   }
   function showDone(run, roulette){
     stopSpinSound();
-    playResultSound();
+    playResultSound(run.runId);
     const root = ensureRoot();
     root.classList.add('done');
     document.getElementById('rouletteOverlayTitle').textContent = titleText(run);
@@ -112,18 +127,28 @@
       try{
         const out = await postJson('/api/roulette/advance', {runId: run.runId});
         if(out.run){
+          markCompletedRun(run.runId);
           root.classList.remove('done');
           startSpin(out.run, out.roulette || roulette);
           return;
         }
       }catch(e){}
+      markCompletedRun(run.runId);
       root.classList.remove('show','done');
+      activeRunId = '';
+      stopSpinSound();
+      if(resultAudio){ try{ resultAudio.pause(); resultAudio.currentTime = 0; }catch(e){} }
       if(pending){
         const next=pending; pending=null; startSpin(next.run,next.roulette);
       }
     }, Math.max(MIN_RESULT_VISIBLE_MS, holdMs));
   }
   function startSpin(run, roulette){
+    if(run?.runId && isCompletedRun(run.runId)){
+      // 새로고침 후 서버에 마지막 current가 잠깐 남아 있어도 다시 돌리지 않습니다.
+      postJson('/api/roulette/advance', {runId: run.runId}).catch(()=>{});
+      return;
+    }
     const now=Date.now();
     if(now < displayLockedUntil){
       pending={run,roulette};
@@ -161,6 +186,11 @@
       const roulette = data.roulette || {};
       const run = roulette.current;
       if(run && run.running && run.runId){
+        if(isCompletedRun(run.runId)){
+          lastRunId = run.runId;
+          postJson('/api/roulette/advance', {runId: run.runId}).catch(()=>{});
+          return;
+        }
         if(run.runId !== lastRunId){
           lastRunId = run.runId;
           startSpin(run, roulette);
@@ -168,5 +198,6 @@
       }
     }catch(e){/* keep overlay quiet */}
   }
+  window.addEventListener('beforeunload', ()=>{ stopSpinSound(); if(resultAudio){ try{ resultAudio.pause(); resultAudio.currentTime=0; }catch(e){} } });
   window.addEventListener('DOMContentLoaded', ()=>{ ensureRoot(); poll(); setInterval(poll, 500); });
 })();
