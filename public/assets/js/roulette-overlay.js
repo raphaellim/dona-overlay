@@ -14,6 +14,8 @@
   let doneRunId = '';
   const completedRunKey = `roulette_completed_${station}`;
   const MIN_RESULT_VISIBLE_MS = 3100;
+  const RESULT_POP_DELAY_MS = 750;
+  const INTERMEDIATE_RESULT_VISIBLE_MS = 1000;
 
   function apiUrl(path){
     const u = new URL(path, location.origin);
@@ -122,38 +124,55 @@
     doneRunId = run.runId;
     clearSpinTimer();
     stopSpinSound();
-    playResultSound(run.runId);
+
     const root = ensureRoot();
-    root.classList.add('done');
+    const total = Number(run.total || 0);
+    const sequence = Number(run.sequence || 0);
+    const isBatch = total > 1;
+    const isFinalInBatch = !isBatch || sequence >= total;
+    const resultVisibleMs = isFinalInBatch
+      ? Math.max(MIN_RESULT_VISIBLE_MS, Number(roulette.resultHoldMs || 0))
+      : INTERMEDIATE_RESULT_VISIBLE_MS;
+
+    root.classList.remove('done');
+    root.classList.add('stopped');
     document.getElementById('rouletteOverlayTitle').textContent = titleText(run);
     document.getElementById('rouletteOverlayName').textContent = run.result || '-';
-    const meta = run.total && run.total > 1 ? `연속 룰렛 ${run.sequence}/${run.total}` : (run.mode === 'auto' ? '자동 룰렛' : '수동 룰렛');
+    const meta = isBatch ? `연속 룰렛 ${sequence}/${total}` : (run.mode === 'auto' ? '자동 룰렛' : '수동 룰렛');
     document.getElementById('rouletteOverlayMeta').textContent = meta;
-    renderResultWindow(run, roulette);
     activeRunId = run.runId;
-    displayLockedUntil = Date.now() + Math.max(MIN_RESULT_VISIBLE_MS, Number(roulette.resultHoldMs || 0));
+
+    // 멈춘 이름을 먼저 보여주고 0.5~1초 뒤 RESULT가 덮어 나오게 합니다.
+    displayLockedUntil = Date.now() + RESULT_POP_DELAY_MS + resultVisibleMs;
     clearTimeout(hideTimer);
-    const holdMs = Number(roulette.resultHoldMs||10000);
-    hideTimer = setTimeout(async ()=>{
-      try{
-        const out = await postJson('/api/roulette/advance', {runId: run.runId});
-        if(out.run){
-          markCompletedRun(run.runId);
-          root.classList.remove('done');
-          startSpin(out.run, out.roulette || roulette);
-          return;
+    hideTimer = setTimeout(()=>{
+      root.classList.remove('stopped');
+      root.classList.add('done');
+      renderResultWindow(run, roulette);
+      playResultSound(run.runId);
+
+      clearTimeout(hideTimer);
+      hideTimer = setTimeout(async ()=>{
+        try{
+          const out = await postJson('/api/roulette/advance', {runId: run.runId});
+          if(out.run){
+            markCompletedRun(run.runId);
+            root.classList.remove('done','stopped');
+            startSpin(out.run, out.roulette || roulette);
+            return;
+          }
+        }catch(e){}
+        markCompletedRun(run.runId);
+        root.classList.remove('show','done','stopped');
+        activeRunId = '';
+        doneRunId = '';
+        stopSpinSound();
+        if(resultAudio){ try{ resultAudio.pause(); resultAudio.currentTime = 0; }catch(e){} }
+        if(pending){
+          const next=pending; pending=null; startSpin(next.run,next.roulette);
         }
-      }catch(e){}
-      markCompletedRun(run.runId);
-      root.classList.remove('show','done');
-      activeRunId = '';
-      doneRunId = '';
-      stopSpinSound();
-      if(resultAudio){ try{ resultAudio.pause(); resultAudio.currentTime = 0; }catch(e){} }
-      if(pending){
-        const next=pending; pending=null; startSpin(next.run,next.roulette);
-      }
-    }, Math.max(MIN_RESULT_VISIBLE_MS, holdMs));
+      }, resultVisibleMs);
+    }, RESULT_POP_DELAY_MS);
   }
   function startSpin(run, roulette){
     if(run?.runId && isCompletedRun(run.runId)){

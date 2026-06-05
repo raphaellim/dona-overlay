@@ -2723,11 +2723,14 @@ let missionCountdownLastSec = null;
         const toonieAmount = num(row.toonieAmount ?? row.toonie_amount);
         const totalAmount = num(row.totalAmount ?? row.total_amount ?? accountAmount + toonieAmount);
 
-        const sourceLabel =
+        const baseSource =
           accountAmount > 0 && toonieAmount > 0 ? "계좌+투네" :
             accountAmount > 0 ? "계좌" :
               toonieAmount > 0 ? "투네" :
-                escapeHtml(row.sourceType || row.source_type || "후원");
+                (row.sourceType || row.source_type || "후원");
+        const rawProcess = String(row.processType || row.process_type || "후원").trim() || "후원";
+        const processLabel = rawProcess === "후원" ? "후원" : rawProcess;
+        const sourceLabel = escapeHtml(`${baseSource}+${processLabel}`);
 
         let optionText = "";
         const checks = Array.isArray(row.checks) ? row.checks : [];
