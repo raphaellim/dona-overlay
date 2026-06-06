@@ -2723,15 +2723,15 @@ let missionCountdownLastSec = null;
         const toonieAmount = num(row.toonieAmount ?? row.toonie_amount);
         const totalAmount = num(row.totalAmount ?? row.total_amount ?? accountAmount + toonieAmount);
 
-        const baseSource =
+       const baseSource =
   accountAmount > 0 && toonieAmount > 0 ? "계좌/투네" :
     accountAmount > 0 ? "계좌" :
       toonieAmount > 0 ? "투네" :
-        (row.sourceType || row.source_type || "후원");
+        (row.sourceType || row.source_type || "계좌");
 
-let processLabel = String(row.processType || row.process_type || "후원").trim();
+let processLabel = String(row.processType || row.process_type || "").trim();
 
-// 비어있거나 룰렛 제목 없이 들어온 값은 후원으로 처리
+// 룰렛 제목이 없는 값은 후원으로 처리
 if (
   !processLabel ||
   processLabel === "룰렛" ||
@@ -2742,11 +2742,16 @@ if (
   processLabel = "후원";
 }
 
-// 룰렛 중복 방지
+// 룰렛+룰렛, 룰렛+룰렛+시그 같은 중복 정리
 processLabel = processLabel.replace(/^룰렛\+룰렛\+?/, "룰렛+");
 processLabel = processLabel.replace(/^룰렛\+룰렛$/, "룰렛");
 
-// 표시용: 룰렛+시그 → 룰렛-시그
+// 그래도 룰렛 제목이 없으면 후원 처리
+if (processLabel === "룰렛" || processLabel === "룰렛+" || processLabel === "룰렛-") {
+  processLabel = "후원";
+}
+
+// 표시용 변환: 룰렛+시그 → 룰렛-시그
 processLabel = processLabel.replace(/^룰렛\+/, "룰렛-");
 
 const sourceLabel = escapeHtml(`(${baseSource})${processLabel}`);
