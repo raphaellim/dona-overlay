@@ -2729,7 +2729,18 @@ let missionCountdownLastSec = null;
       toonieAmount > 0 ? "투네" :
         (row.sourceType || row.source_type || "후원");
 
-let processLabel = String(row.processType || row.process_type || "후원").trim() || "후원";
+let processLabel = String(row.processType || row.process_type || "후원").trim();
+
+// 비어있거나 룰렛 제목 없이 들어온 값은 후원으로 처리
+if (
+  !processLabel ||
+  processLabel === "룰렛" ||
+  processLabel === "룰렛+" ||
+  processLabel === "룰렛-" ||
+  processLabel === "roulette"
+) {
+  processLabel = "후원";
+}
 
 // 룰렛 중복 방지
 processLabel = processLabel.replace(/^룰렛\+룰렛\+?/, "룰렛+");
@@ -2738,7 +2749,6 @@ processLabel = processLabel.replace(/^룰렛\+룰렛$/, "룰렛");
 // 표시용: 룰렛+시그 → 룰렛-시그
 processLabel = processLabel.replace(/^룰렛\+/, "룰렛-");
 
-// 최종 표시: (계좌)후원
 const sourceLabel = escapeHtml(`(${baseSource})${processLabel}`);
 
         let optionText = "";
