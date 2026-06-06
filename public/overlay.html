@@ -2724,13 +2724,22 @@ let missionCountdownLastSec = null;
         const totalAmount = num(row.totalAmount ?? row.total_amount ?? accountAmount + toonieAmount);
 
         const baseSource =
-          accountAmount > 0 && toonieAmount > 0 ? "계좌+투네" :
-            accountAmount > 0 ? "계좌" :
-              toonieAmount > 0 ? "투네" :
-                (row.sourceType || row.source_type || "후원");
-        const rawProcess = String(row.processType || row.process_type || "후원").trim() || "후원";
-        const processLabel = rawProcess === "후원" ? "후원" : rawProcess;
-        const sourceLabel = escapeHtml(`${baseSource}+${processLabel}`);
+  accountAmount > 0 && toonieAmount > 0 ? "계좌/투네" :
+    accountAmount > 0 ? "계좌" :
+      toonieAmount > 0 ? "투네" :
+        (row.sourceType || row.source_type || "후원");
+
+let processLabel = String(row.processType || row.process_type || "후원").trim() || "후원";
+
+// 룰렛 중복 방지
+processLabel = processLabel.replace(/^룰렛\+룰렛\+?/, "룰렛+");
+processLabel = processLabel.replace(/^룰렛\+룰렛$/, "룰렛");
+
+// 표시용: 룰렛+시그 → 룰렛-시그
+processLabel = processLabel.replace(/^룰렛\+/, "룰렛-");
+
+// 최종 표시: (계좌)후원
+const sourceLabel = escapeHtml(`(${baseSource})${processLabel}`);
 
         let optionText = "";
         const checks = Array.isArray(row.checks) ? row.checks : [];
