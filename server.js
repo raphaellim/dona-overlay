@@ -641,6 +641,7 @@ function normalizeOverlaySections(raw, base) {
   return {
     account: value.account !== false,
     notice: value.notice === true,
+     allowance: value.allowance === true,
     creators: value.creators !== false,
     creatorDonations: value.creatorDonations !== false,
     karaoke: value.karaoke === true,
