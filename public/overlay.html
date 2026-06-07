@@ -191,13 +191,17 @@
     /* ===== 계좌후원 롤링 ===== */
 
     .allowance-row {
-      margin-top: 2px !important;
-      padding: 2px 8px 3px !important;
+      margin-top: 7px !important;
+      padding: 7px 8px 1px !important;
+      border-top: 1px solid rgba(255, 210, 235, .42) !important;
       text-align: center !important;
       font-weight: 950 !important;
-      font-size: calc(var(--style-content-size) * .92) !important;
-      line-height: 1.15 !important;
+      font-size: calc(var(--style-content-size) * .88) !important;
+      line-height: 1.12 !important;
       color: #fff7cc !important;
+      white-space: nowrap !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
       text-shadow:
         0 2px 2px rgba(0,0,0,1),
         0 0 6px rgba(0,0,0,.9),
@@ -664,6 +668,39 @@
       width: auto !important;
       max-width: 100% !important;
       text-align: center !important
+    }
+
+    .creator-item.options-only .creator-main {
+      flex-wrap: nowrap !important;
+      justify-content: center !important;
+      gap: 8px !important;
+      min-width: 0 !important;
+    }
+
+    .creator-inline-options {
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      gap: 7px !important;
+      flex: 0 1 auto !important;
+      min-width: 0 !important;
+      overflow: hidden !important;
+      white-space: nowrap !important;
+      line-height: 1 !important;
+      font-size: calc(var(--style-creator-content-size) * .92) !important;
+      font-weight: 900 !important;
+    }
+
+    .creator-inline-options .state-item {
+      display: inline-flex !important;
+      align-items: center !important;
+      flex: 0 0 auto !important;
+      white-space: nowrap !important;
+      line-height: 1 !important;
+    }
+
+    .creator-item.options-only .creator-sub {
+      display: none !important;
     }
 
     .state-item {
@@ -1804,7 +1841,7 @@
               </div>
             </div>
           </div>
-          
+          <div class="allowance-row" id="allowanceRow">현재용돈 : 0원</div>
         </section>
 
         <section class="overlay-box funding-box hidden" id="fundingBox">
@@ -1816,8 +1853,8 @@
 
         <section class="overlay-box notice-box hidden" id="noticeBox">
           <div class="notice-title" id="noticeTitleText">공지</div>
-          <div class="allowance-row" id="allowanceRow">현재용돈 : 0원</div>
           <div class="notice-text" id="noticeText"></div>
+          <div class="allowance-row" id="allowanceRow">현재용돈 : 0원</div>
         </section>
 
         <section class="overlay-box karaoke-box hidden" id="karaokeBox">
@@ -2728,14 +2765,21 @@ let missionCountdownLastSec = null;
           const donationHtml = showDonation
             ? `<div class="donation-amount">후원(${total})</div>`
             : ``;
+          const compactLabelsHtml = (!showDonation && labels.length)
+            ? `<div class="creator-inline-options">${labels.map(label => `<span class="state-item">${label}</span>`).join("")}</div>`
+            : ``;
+          const subLabelsHtml = (showDonation && labels.length)
+            ? `<div class="creator-sub">${labels.map(label => `<span class="state-item">${label}</span>`).join("")}</div>`
+            : ``;
 
           return `
         <article class="creator-item ${showDonation ? "" : "options-only"}">
           <div class="creator-main">
             <div class="creator-name">${escapeHtml(name)}${showDonation ? " -" : ""}</div>
             ${donationHtml}
+            ${compactLabelsHtml}
           </div>
-          ${labels.length ? `<div class="creator-sub">${labels.map(label => `<span class="state-item">${label}</span>`).join("")}</div>` : ``}
+          ${subLabelsHtml}
         </article>
       `;
         }).join("");
