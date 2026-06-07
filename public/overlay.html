@@ -189,6 +189,22 @@
     }
 
     /* ===== 계좌후원 롤링 ===== */
+
+    .allowance-row {
+      margin-top: 2px !important;
+      padding: 2px 8px 3px !important;
+      text-align: center !important;
+      font-weight: 950 !important;
+      font-size: calc(var(--style-content-size) * .82) !important;
+      line-height: 1.15 !important;
+      color: #fff7cc !important;
+      text-shadow:
+        0 2px 2px rgba(0,0,0,1),
+        0 0 6px rgba(0,0,0,.9),
+        0 0 12px rgba(255,214,102,.45) !important;
+      -webkit-text-stroke: .45px rgba(0,0,0,.75);
+    }
+
     .account-row {
       display: flex !important;
       align-items: center !important;
@@ -1788,6 +1804,7 @@
               </div>
             </div>
           </div>
+          <div class="allowance-row" id="allowanceRow">현재용돈 : 0원</div>
         </section>
 
         <section class="overlay-box funding-box hidden" id="fundingBox">
@@ -2623,6 +2640,14 @@ let missionCountdownLastSec = null;
         return "heart-lv4";
       }
 
+
+      function renderAllowance(settings) {
+        const el = document.getElementById("allowanceRow");
+        if (!el) return;
+        const balance = Number(settings?.allowanceData?.balance || 0);
+        el.textContent = `현재용돈 : ${displayAmount(balance)}원`;
+      }
+
       function renderAccountRoller(items) {
         rollingItems = items && items.length ? items : [{ donor: "-", amount: 0 }];
         if (rollingTimer) { clearInterval(rollingTimer); rollingTimer = null; }
@@ -3279,6 +3304,7 @@ preloadMissionTimerVideo(
           karaokeData: settings.karaokeData || {},
           broadcastTimerData: settings.broadcastTimerData || {},
           stationStyle: settings.stationStyle || {},
+          allowanceData: settings.allowanceData || {},
           accountDonors: data.accountDonors || [],
           creators,
           presets: enabledPresets.map(p => ({ id: p.id, enabled: p.enabled, title: p.title, plusName: p.plusName, minusName: p.minusName }))
@@ -3296,6 +3322,7 @@ preloadMissionTimerVideo(
           renderKaraoke(settings);
           renderTopSlide(settings);
           renderFunding(settings);
+          renderAllowance(settings);
           renderAccountRoller(data.accountDonors);
           renderCreators(creators);
         }

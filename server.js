@@ -128,6 +128,7 @@ function defaultSettings() {
     prices: { smoke: 11900, nosmoke: 12000, eat: 14000, noeat: 15000 },
     karaokeData: normalizeKaraokeData({}),
     fundingData: normalizeFundingData({}),
+    allowanceData: normalizeAllowanceData({}),
     stationStyle: normalizeStationStyle({}),
     broadcastTimerData: normalizeBroadcastTimerData({}),
     broadcastLiveData: normalizeBroadcastLiveData({}),
@@ -533,6 +534,15 @@ async function cleanupExpiredRoulette(ctx) {
   return roulette;
 }
 
+
+function normalizeAllowanceData(raw) {
+  const value = raw && typeof raw === 'object' ? raw : {};
+  return {
+    balance: Math.trunc(Number(value.balance || value.current || 0)) || 0,
+    updatedAt: value.updatedAt ? String(value.updatedAt) : ''
+  };
+}
+
 function normalizeFundingData(raw) {
   const value = raw && typeof raw === 'object' ? raw : {};
   const items = Array.isArray(value.items) ? value.items : [];
@@ -748,6 +758,7 @@ function normalizeSettings(settings) {
     roulette: normalizeRouletteData(raw.roulette || base.roulette),
     karaokeData: normalizeKaraokeData(raw.karaokeData || base.karaokeData),
     fundingData: normalizeFundingData(raw.fundingData || base.fundingData),
+    allowanceData: normalizeAllowanceData(raw.allowanceData || base.allowanceData),
     stationStyle: normalizeStationStyle(raw.stationStyle || base.stationStyle),
     broadcastTimerData: normalizeBroadcastTimerData(raw.broadcastTimerData || base.broadcastTimerData),
     broadcastLiveData: normalizeBroadcastLiveData(raw.broadcastLiveData || base.broadcastLiveData),
@@ -1060,7 +1071,7 @@ async function operatorAllowed(req, station, broadcast) {
 const STATION_SHARED_SETTING_FIELDS = [
   // 방송국별로 유지하면서, 같은 방송국의 새 방송에는 이어질 항목
   'title', 'titleImage', 'noticeTitle', 'notice', 'noticeColors',
-  'karaokeData', 'fundingData', 'stationStyle', 'presets', 'roulette'
+  'karaokeData', 'fundingData', 'allowanceData', 'stationStyle', 'presets', 'roulette'
 ];
 
 function pickStationSharedSettings(settings) {
@@ -1114,6 +1125,7 @@ async function readEffectiveSettings(stationSlug, broadcastId) {
     noticeColors: stationShared.noticeColors ?? global.noticeColors,
     karaokeData: stationShared.karaokeData ?? global.karaokeData,
     fundingData: stationShared.fundingData ?? global.fundingData,
+    allowanceData: stationShared.allowanceData ?? global.allowanceData,
     stationStyle: stationShared.stationStyle ?? global.stationStyle,
 
     stationSettings: global.stationSettings || {}
@@ -2292,6 +2304,42 @@ app.get('/api/server-images', async (req, res) => {
 
 
 
+
+/* 용돈 관리: 계좌후원 아래 현재용돈 표시용 */
+app.post('/api/allowance/adjust', async (req, res) => {
+  try {
+    if (!requireDb(res)) return;
+    const ctx = await getStationContext(req, res);
+    if (!ctx) return;
+    if (!await operatorAllowed(req, ctx.station, ctx.active)) {
+      return res.status(401).json({ error: '방송 비밀번호 또는 방송국 관리자 권한이 필요합니다.' });
+    }
+
+    const current = await readEffectiveSettings(ctx.station.slug, ctx.active.id);
+    const allowanceData = normalizeAllowanceData(current.allowanceData);
+    const directionRaw = String(req.body?.direction || req.body?.type || 'plus').toLowerCase();
+    const direction = directionRaw === 'minus' || directionRaw === '-' || directionRaw === 'subtract' ? 'minus' : 'plus';
+    const amount = Math.max(0, toWon(req.body?.amount ?? req.body?.value ?? req.body?.delta));
+    if (amount <= 0) return res.status(400).json({ error: '용돈 금액을 입력하세요.' });
+
+    const nextBalance = direction === 'minus'
+      ? Math.max(0, Number(allowanceData.balance || 0) - amount)
+      : Number(allowanceData.balance || 0) + amount;
+
+    const next = normalizeAllowanceData({
+      balance: nextBalance,
+      updatedAt: new Date().toISOString()
+    });
+
+    await saveSharedStationSettings(ctx.station.slug, { allowanceData: next });
+    await saveEffectiveSettings(ctx.station.slug, ctx.active.id, { allowanceData: next });
+
+    res.json({ ok: true, allowanceData: next });
+  } catch (e) {
+    res.status(400).json({ error: e.message || '용돈 조정 실패' });
+  }
+});
+
 /* 슬롯형 룰렛 */
 app.get('/api/roulette', async (req, res) => {
   try {
@@ -2424,6 +2472,7 @@ app.post('/api/settings', async (req, res) => {
     if (has('noticeColors')) updates.noticeColors = Array.isArray(body.noticeColors) ? body.noticeColors.slice(0, 5) : undefined;
     if (has('karaokeData')) updates.karaokeData = normalizeKaraokeData(body.karaokeData);
     if (has('fundingData')) updates.fundingData = normalizeFundingData(body.fundingData);
+    if (has('allowanceData')) updates.allowanceData = normalizeAllowanceData(body.allowanceData);
     if (has('stationStyle')) updates.stationStyle = normalizeStationStyle(body.stationStyle);
 
     // 방송별/운영 설정

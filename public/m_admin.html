@@ -653,6 +653,15 @@
                 <div class="row"><label>투네 총액</label><input id="toonieTotal" class="input" inputmode="decimal"
                         placeholder="2.5 / 2500"></div>
             </div>
+            <div class="sub-card" style="margin-top:10px">
+                <div class="card-head"><h2 style="font-size:17px">용돈 조정</h2><span class="badge">계좌후원 아래 표시</span></div>
+                <div class="resultBox" id="allowanceCurrentBox">현재용돈 : 0원</div>
+                <div class="grid2">
+                    <div class="row"><label>용돈 금액</label><input id="allowanceAmount" class="input" inputmode="decimal" placeholder="10 = 10,000원"></div>
+                    <div class="row"><label>추가/제외</label><select id="allowanceDirection" class="input"><option value="plus">+ 추가</option><option value="minus">- 제외</option></select></div>
+                </div>
+                <button class="btn blue" type="button" onclick="saveAllowanceAdjust()">용돈 저장</button>
+            </div>
             <div class="row"><label>처리 프리셋 / 펀딩</label><select id="processType" class="input"></select></div>
             <div class="summary-grid">
                 <div class="summary-pill blue"><span>상단 총액</span><b id="topTotalText">₩0</b></div>
@@ -848,6 +857,33 @@ function renderHeader() {
   $('#mobileControlLink').href = stationUrl('/m_control.html');
   const mediaLink = $('#mediaMobileLink'); if(mediaLink) mediaLink.href = stationUrl('/m_media_manager.html');
   $('#stationLink').href = '/station_login.html?station=' + encodeURIComponent(STATION) + '&next=' + encodeURIComponent('/station_control.html?station=' + encodeURIComponent(STATION));
+}
+
+
+function renderAllowanceBox(){
+  const box = $('#allowanceCurrentBox');
+  if(!box) return;
+  const balance = Number(settings?.allowanceData?.balance || 0);
+  box.textContent = `현재용돈 : ${balance.toLocaleString('ko-KR')}원`;
+}
+
+async function saveAllowanceAdjust(){
+  try{
+    const amount = $('#allowanceAmount')?.value || '';
+    const direction = $('#allowanceDirection')?.value || 'plus';
+    if(!amount) return alert('용돈 금액을 입력하세요.');
+    const savedPw = mobileAuth.password || getSavedBroadcastPassword();
+    const data = await api('/api/allowance/adjust', {
+      method:'POST',
+      body:JSON.stringify({ amount, direction, broadcastId: active?.id || '', broadcastPassword: savedPw || '' })
+    });
+    if(data && data.allowanceData){
+      settings.allowanceData = data.allowanceData;
+      renderAllowanceBox();
+    }
+    $('#allowanceAmount').value = '';
+    toast('용돈 저장 완료');
+  }catch(e){ alert(e.message); }
 }
 
 function renderProcessOptions() {
@@ -1073,6 +1109,7 @@ async function loadSettings(updateAuthInfo = true) {
 
   renderHeader();
   renderProcessOptions();
+  renderAllowanceBox();
   renderSplitRows();
   updatePreview();
   applyBroadcastLock();
