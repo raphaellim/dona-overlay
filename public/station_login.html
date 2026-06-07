@@ -138,12 +138,14 @@ label{display:block;margin:0 0 7px;color:#cbd5e1;font-size:13px;font-weight:950}
       localStorage.setItem('STATION_SLUG', station);
       showMsg('로그인 완료. 이동합니다.', 'ok');
 
+      const target = nextUrl(station);
       setTimeout(function(){
-        location.href = nextUrl(station);
+        window.location.assign(target);
       }, 250);
+
+      return;
     }catch(err){
       showMsg(err.message || '방송국 로그인 실패', 'err');
-    }finally{
       btn.disabled = false;
       btn.textContent = '방송국 로그인';
     }
