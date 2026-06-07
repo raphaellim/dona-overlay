@@ -1833,6 +1833,7 @@
   color: #ff5c73 !important;
   font-weight: 1000 !important;
 }
+    
 </style>
   <link rel="stylesheet" href="/assets/css/roulette-overlay.css">
 </head>
@@ -2149,6 +2150,7 @@ let missionCountdownLastSec = null;
         return {
           account: s.account !== false,
           notice: s.notice === true,
+          allowance: s.allowance === true,
           creators: s.creators !== false,
           creatorDonations: s.creatorDonations !== false,
           karaoke: s.karaoke === true,
@@ -2699,6 +2701,15 @@ let missionCountdownLastSec = null;
    function renderAllowance(settings) {
   const el = document.getElementById("allowanceRow");
   if (!el) return;
+
+  const sections = getOverlaySections(settings);
+
+  if (sections.allowance !== true) {
+    el.classList.add("hidden");
+    return;
+  }
+
+  el.classList.remove("hidden");
 
   const balance = Number(settings?.allowanceData?.balance || 0);
 
