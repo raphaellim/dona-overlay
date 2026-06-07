@@ -210,6 +210,7 @@ textarea{resize:vertical;line-height:1.45}
           <div class="toggle-grid">
             <label class="toggle-box"><input type="checkbox" id="overlayAccountBox">계좌박스</label>
             <label class="toggle-box"><input type="checkbox" id="overlayNoticeBox">공지박스</label>
+            <label class="toggle-box"><input type="checkbox" id="overlayAllowanceBox">현재용돈</label>
             <label class="toggle-box"><input type="checkbox" id="overlayCreatorBox">크리에이터박스</label>
             <label class="toggle-box"><input type="checkbox" id="overlayCreatorDonations">크리에이터 후원 표시</label>
 
@@ -695,6 +696,8 @@ async function loadSettings(){
   const overlaySections = settings.overlaySections || { account:true, notice:false, creators:true };
   $('#overlayAccountBox').checked = overlaySections.account !== false;
   $('#overlayNoticeBox').checked = overlaySections.notice === true;
+  if ($('#overlayAllowanceBox')) {
+  $('#overlayAllowanceBox').checked = overlaySections.allowance === true;}
   $('#overlayCreatorBox').checked = overlaySections.creators !== false;
   $('#overlayCreatorDonations').checked = overlaySections.creatorDonations !== false;
   if($('#overlayKaraokeBox')) $('#overlayKaraokeBox').checked = overlaySections.karaoke === true;
@@ -899,6 +902,7 @@ async function saveSettings(){
       overlaySections: {
         account: $('#overlayAccountBox').checked,
         notice: $('#overlayNoticeBox').checked,
+        allowance: $('#overlayAllowanceBox') ? $('#overlayAllowanceBox').checked : false,
         creators: $('#overlayCreatorBox').checked,
         creatorDonations: $('#overlayCreatorDonations') ? $('#overlayCreatorDonations').checked : true,
         karaoke: $('#overlayKaraokeBox') ? $('#overlayKaraokeBox').checked : false,
