@@ -1288,19 +1288,8 @@ function findPreset(settings, processType) {
 
   const presets = settings.presets || defaultPresets();
 
-  // 룰렛은 자동 룰렛 로직에서 따로 처리하므로 프리셋 계산 대상에서 제외합니다.
-  if (value.startsWith('룰렛') || value.startsWith('roulette:')) return null;
-
-  const same = (a, b) => normName(a) && normName(a) === normName(b);
-  const has = needle => {
-    const n = normName(needle);
-    return !!n && value.includes(n);
-  };
-
-  // minusName을 먼저 검사합니다.
-  // 예: "먹지마" 안에 "먹" 같은 플러스 단어가 포함될 수 있으므로 마이너스 우선.
   return presets.find(p => {
-    if (!p || p.enabled === false || String(p.enabled) === 'false') return false;
+    if (!p || p.enabled === false) return false;
 
     const id = normName(p.id);
     const title = normName(p.title);
@@ -1308,59 +1297,55 @@ function findPreset(settings, processType) {
     const minusName = normName(p.minusName);
 
     return (
-      same(value, id) ||
-      same(value, title) ||
-      same(value, plusName) ||
-      same(value, minusName) ||
-      same(value, `${title}:${plusName}`) ||
-      same(value, `${title}:${minusName}`) ||
-      same(value, `${id}:plus`) ||
-      same(value, `${id}:minus`) ||
-      has(minusName) ||
-      has(plusName) ||
-      has(title)
+      value === id ||
+      value === title ||
+      value === plusName ||
+      value === minusName ||
+      value === `${title}:${plusName}` ||
+      value === `${title}:${minusName}` ||
+      value === `${id}:plus` ||
+      value === `${id}:minus` ||
+      (plusName && value.includes(plusName)) ||
+      (minusName && value.includes(minusName))
     );
   }) || null;
 }
 
 function calcCheck(processType, amount, settings) {
   const result = { smoke: 0, nosmoke: 0, eat: 0, noeat: 0, checks: [], label: '후원' };
-  const value = normName(processType);
-  const preset = findPreset(settings, value);
+  const preset = findPreset(settings, processType);
   if (!preset) return result;
+
+  const value = normName(processType);
 
   const presetId = normName(preset.id);
   const presetTitle = normName(preset.title);
   const plusName = normName(preset.plusName);
   const minusName = normName(preset.minusName);
+
   const plusPrice = Number(preset.plusPrice || 0);
   const minusPrice = Number(preset.minusPrice || 0);
 
   let side = null;
   let price = 0;
 
-  // 선택한 프리셋명/옵션명으로 + / - 를 명확히 결정합니다.
-  // 신규 프리셋이 추가돼도 plusName / minusName 기준으로 자동 대응합니다.
-  // 예: 50,000원 + 흡연(11,900원) => +4, 잔액은 후원금 원본에 그대로 남김.
-  const isMinus =
+  // 마이너스를 먼저 검사해야 먹어/먹지마 같은 포함관계에서 안전함
+  if (
     value === minusName ||
     value === `${presetTitle}:${minusName}` ||
     value === `${presetId}:minus` ||
-    (!!minusName && value.includes(minusName));
-
-  const isPlus =
+    (minusName && value.includes(minusName))
+  ) {
+    side = 'minus';
+    price = minusPrice;
+  } else if (
     value === plusName ||
     value === `${presetTitle}:${plusName}` ||
     value === `${presetId}:plus` ||
     value === presetTitle ||
     value === presetId ||
-    (!!plusName && value.includes(plusName));
-
-  // minus를 먼저 확정합니다. 먹어/먹지마처럼 단어가 겹치는 경우를 보호합니다.
-  if (isMinus) {
-    side = 'minus';
-    price = minusPrice;
-  } else if (isPlus) {
+    (plusName && value.includes(plusName))
+  ) {
     side = 'plus';
     price = plusPrice;
   } else if (amount > 0 && minusPrice > 0 && amount % minusPrice === 0) {
@@ -1372,6 +1357,7 @@ function calcCheck(processType, amount, settings) {
   }
 
   const count = side && price > 0 ? Math.floor(amount / price) : 0;
+
   if (!side || count <= 0) {
     result.label = `${preset.title} 확인`;
     return result;
@@ -1391,8 +1377,7 @@ function calcCheck(processType, amount, settings) {
   result.checks.push(check);
   result.label = `${check.name}${side === 'minus' ? '-' : '+'}${count}`;
 
-  // 기존 고정 표시 필드는 그대로 유지합니다.
-  // 추가 프리셋은 checks / presetNets에 누적되어 summary에서 범용 표시됩니다.
+  // 기존 기본 프리셋 기능 유지
   if (preset.id === 'smoke') {
     if (side === 'plus') result.smoke = count;
     else result.nosmoke = count;
