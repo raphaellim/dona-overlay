@@ -91,18 +91,26 @@ label{display:block;margin:0 0 7px;color:#cbd5e1;font-size:13px;font-weight:950}
   }
 
   function nextUrl(station){
-    const next = params.get('next');
-    if (next) {
-      try{
-        const u = new URL(next, location.origin);
-        u.searchParams.set('station', station);
-        return u.pathname + u.search + u.hash;
-      }catch(e){
-        return next;
+  const next = params.get('next');
+
+  if (next) {
+    try {
+      const u = new URL(next, location.origin);
+
+      // 같은 도메인 이동만 허용
+      if (u.origin !== location.origin) {
+        return stationUrl('/station_control.html', station);
       }
+
+      u.searchParams.set('station', station);
+      return u.pathname + u.search + u.hash;
+    } catch(e) {
+      return stationUrl('/station_control.html', station);
     }
-    return stationUrl('/station_control.html', station);
   }
+
+  return stationUrl('/station_control.html', station);
+}
 
   const initialStation = safeStation(params.get('station') || localStorage.getItem('STATION_SLUG') || 'default');
   stationInput.value = initialStation;
@@ -128,12 +136,14 @@ form.addEventListener('submit', async function(e){
   try {
     const res = await fetch('/api/station-login?station=' + encodeURIComponent(station), {
       method: 'POST',
-      credentials: 'same-origin',
-      cache: 'no-store',
+      credentials: 'same-origin'
+cache: 'no-store'
+window.location.replace(target)
       headers: {
-        'Content-Type': 'application/json',
-        'X-Station-Password': password
-      },
+  'Content-Type': 'application/json',
+  'X-Station-Password': password,
+  'x-station-password': password
+},
       body: JSON.stringify({ station, password })
     });
 
