@@ -1400,15 +1400,23 @@ function getRouletteProcessTitle(settings, rouletteRuleId) {
 }
 
 function resolveDonationProcessType(body, settings) {
+  const raw = normName(body?.processType) || '후원';
   const rouletteRuleId = cleanRouletteId(body?.rouletteRuleId || '', '');
-  if (rouletteRuleId) {
+
+  // 룰렛은 processType 자체가 룰렛일 때만 인정
+  const isRouletteProcess =
+    raw === '룰렛' ||
+    raw.startsWith('룰렛+') ||
+    raw.startsWith('roulette:');
+
+  if (isRouletteProcess && rouletteRuleId) {
     const title = getRouletteProcessTitle(settings, rouletteRuleId) || '룰렛';
     return `룰렛+${title}`;
   }
-  const raw = normName(body?.processType) || '후원';
-  // 룰렛은 rouletteRuleId가 같이 전달될 때만 인정합니다.
-  // processType 값만 roulette:* 형태로 들어온 경우 일반 후원으로 저장/처리합니다.
-  if (String(raw).startsWith('roulette:')) return '후원';
+
+  // rouletteRuleId가 남아 있어도 흡연/금연/먹어/먹지마면 프리셋 그대로 저장
+  if (raw.startsWith('roulette:')) return '후원';
+
   return raw;
 }
 
