@@ -914,7 +914,13 @@ async function stationAllowed(req, station) {
   const slug = station.slug;
   const cookieSlug = cookies.station_slug;
   const cookiePw = cookies.station_admin_password;
-  const given = req.headers['x-station-password'] || req.body?.stationPassword || req.query?.stationPassword;
+  const given =
+  req.headers['x-station-password'] ||
+  req.headers['X-Station-Password'] ||
+  req.body?.stationPassword ||
+  req.body?.password ||
+  req.query?.stationPassword ||
+  req.query?.password;
   const pw = String(station.station_admin_password || '');
 
   if (!pw) return true;
