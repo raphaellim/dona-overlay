@@ -1295,6 +1295,12 @@ function calcCheck(processType, amount, settings) {
   if (!preset) return result;
 
   const value = normName(processType);
+  let fixedValue = value;
+
+if (fixedValue.includes('흡연')) fixedValue = '흡연';
+if (fixedValue.includes('금연')) fixedValue = '금연';
+if (fixedValue.includes('먹지마')) fixedValue = '먹지마';
+else if (fixedValue.includes('먹어')) fixedValue = '먹어';
   const plusPrice = Number(preset.plusPrice || 0);
   const minusPrice = Number(preset.minusPrice || 0);
   let side = null;
@@ -1302,10 +1308,10 @@ function calcCheck(processType, amount, settings) {
 
   // 선택한 프리셋명/옵션명으로 + / - 를 명확히 결정합니다.
   // 예: 50,000원 + 흡연(11,900원) => +4, 잔액은 후원금 원본에 그대로 남김.
-  if (value === preset.minusName || value === `${preset.title}:${preset.minusName}` || value === `${preset.id}:minus`) {
+  if (fixedValue === preset.minusName || fixedValue === `${preset.title}:${preset.minusName}` || fixedValue === `${preset.id}:minus`) {
     side = 'minus';
     price = minusPrice;
-  } else if (value === preset.plusName || value === `${preset.title}:${preset.plusName}` || value === `${preset.id}:plus` || value === preset.title || value === preset.id) {
+  } else if (fixedValue === preset.plusName || fixedValue === `${preset.title}:${preset.plusName}` || fixedValue === `${preset.id}:plus` || fixedValue === preset.title || fixedValue === preset.id) {
     side = 'plus';
     price = plusPrice;
   } else if (amount > 0 && minusPrice > 0 && amount % minusPrice === 0) {
