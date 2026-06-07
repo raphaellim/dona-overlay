@@ -113,43 +113,49 @@ label{display:block;margin:0 0 7px;color:#cbd5e1;font-size:13px;font-weight:950}
     document.getElementById('goStation').href = stationUrl('/station_control.html', s);
   });
 
-  form.addEventListener('submit', async function(e){
-    e.preventDefault();
+form.addEventListener('submit', async function(e){
+  e.preventDefault();
 
-    const station = safeStation(stationInput.value);
-    const password = passwordInput.value || '';
+  const station = safeStation(stationInput.value);
+  const password = passwordInput.value || '';
 
-    if (!station) return showMsg('방송국 코드를 입력하세요.', 'err');
+  if (!station) return showMsg('방송국 코드를 입력하세요.', 'err');
 
-    btn.disabled = true;
-    btn.textContent = '로그인 중...';
-    msg.className = 'msg';
+  btn.disabled = true;
+  btn.textContent = '로그인 중...';
+  msg.className = 'msg';
 
-    try{
-      const res = await fetch('/api/station-login?station=' + encodeURIComponent(station), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ station, password })
-      });
+  try {
+    const res = await fetch('/api/station-login?station=' + encodeURIComponent(station), {
+      method: 'POST',
+      credentials: 'same-origin',
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Station-Password': password
+      },
+      body: JSON.stringify({ station, password })
+    });
 
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || '방송국 로그인 실패');
+    const data = await res.json().catch(() => ({}));
 
-      localStorage.setItem('STATION_SLUG', station);
-      showMsg('로그인 완료. 이동합니다.', 'ok');
-
-      const target = nextUrl(station);
-      setTimeout(function(){
-        window.location.assign(target);
-      }, 250);
-
-      return;
-    }catch(err){
-      showMsg(err.message || '방송국 로그인 실패', 'err');
-      btn.disabled = false;
-      btn.textContent = '방송국 로그인';
+    if (!res.ok || !data.ok) {
+      throw new Error(data.error || '방송국 로그인 실패');
     }
-  });
+
+    localStorage.setItem('STATION_SLUG', station);
+
+    const target = nextUrl(station);
+
+    // 브라우저별 캐시/히스토리 꼬임 방지
+    window.location.replace(target);
+
+  } catch (err) {
+    showMsg(err.message || '방송국 로그인 실패', 'err');
+    btn.disabled = false;
+    btn.textContent = '방송국 로그인';
+  }
+});
 })();
 </script>
 </body>
