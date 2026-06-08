@@ -660,7 +660,25 @@
                     <div class="row"><label>용돈 금액</label><input id="allowanceAmount" class="input" inputmode="decimal" placeholder="10 = 10,000원"></div>
                     <div class="row"><label>추가/제외</label><select id="allowanceDirection" class="input"><option value="plus">+ 추가</option><option value="minus">- 제외</option></select></div>
                 </div>
-                <button class="btn blue" type="button" onclick="saveAllowanceAdjust()">용돈 저장</button>
+                <div class="grid2"><button class="btn blue" type="button" onclick="saveAllowanceAdjust()">용돈 저장</button><button class="btn red" type="button" onclick="resetAllowanceAdjust()">용돈 0 초기화</button></div>
+            </div>
+            <div class="sub-card" style="margin-top:10px">
+                <div class="card-head"><h2 style="font-size:17px">미션타이머 컨트롤</h2><span class="badge" id="missionTimerBadge">미션타이머</span></div>
+                <div class="resultBox" id="missionTimerCurrent">미션타이머 : 00:00:00</div>
+                <div class="row"><label>타이머 제목</label><input id="missionLabel" class="input" placeholder="미션타이머"></div>
+                <div class="row"><label>타이머 방식</label><select id="missionMode" class="input" onchange="renderMissionHelp()"><option value="countdown">타임아웃</option><option value="countup">진행시간</option><option value="until">맞춤시간</option></select></div>
+                <div class="grid2">
+                    <div class="row"><label>타임아웃(분)</label><input id="missionTimeoutMin" class="input" inputmode="decimal" placeholder="30"></div>
+                    <div class="row"><label>맞춤시간</label><input id="missionTargetAt" class="input" type="datetime-local"></div>
+                </div>
+                <div class="muted" id="missionHelp">타임아웃/진행시간/맞춤시간 중 하나로 방송화면 미션타이머를 제어합니다.</div>
+                <div class="grid2" style="margin-top:10px"><button class="btn blue" type="button" onclick="startMissionTimer(false)">시작</button><button class="btn gray" type="button" onclick="pauseMissionTimer()">멈춤</button></div>
+                <div class="grid2" style="margin-top:8px"><button class="btn green" type="button" onclick="startMissionTimer(true)">다시시작</button><button class="btn red" type="button" onclick="endMissionTimer()">종료/초기화</button></div>
+            </div>
+            <div class="sub-card" style="margin-top:10px">
+                <div class="card-head"><h2 style="font-size:17px">프리셋 수동보정 초기화</h2><span class="badge">당일방송</span></div>
+                <button class="btn red" type="button" onclick="resetPresetManual()">프리셋 수동 0 초기화</button>
+                <div class="muted" style="margin-top:8px">프리셋 수동 보정값은 당일 방송 기준이며 다음 방송에서는 0부터 시작합니다.</div>
             </div>
             <div class="row"><label>처리 프리셋 / 펀딩</label><select id="processType" class="input"></select></div>
             <div class="summary-grid">
@@ -894,6 +912,35 @@ async function saveAllowanceAdjust(){
   }catch(e){ alert(e.message); }
 }
 
+
+async function resetAllowanceAdjust(){
+  if(!confirm('현재 방송의 용돈을 0으로 초기화할까요?')) return;
+  try{
+    const savedPw = mobileAuth.password || getSavedBroadcastPassword();
+    const data = await api('/api/allowance/reset', { method:'POST', body:JSON.stringify({ broadcastId: active?.id || '', broadcastPassword: isFullAdminRole() ? '' : savedPw }) });
+    if(data && data.allowanceData){ settings.allowanceData = data.allowanceData; renderAllowanceBox(); }
+    toast('용돈 0 초기화 완료');
+  }catch(e){ alert(e.message); }
+}
+
+function missionTimerMs(){
+  const t=settings?.broadcastTimerData||{}; const now=Date.now();
+  let elapsed=Math.max(0,Number(t.elapsedMs||0));
+  if(t.running&&t.startedAt){const st=new Date(t.startedAt).getTime(); if(st)elapsed+=Math.max(0,now-st)}
+  if(t.mode==='until'&&t.targetAt){const target=new Date(t.targetAt).getTime(); return Math.max(0,target-now)}
+  if(t.mode==='countdown') return Math.max(0,Number(t.durationMs||0)-elapsed);
+  return elapsed;
+}
+function formatHms(ms){let sec=Math.max(0,Math.floor(Number(ms||0)/1000));const h=String(Math.floor(sec/3600)).padStart(2,'0');sec%=3600;const m=String(Math.floor(sec/60)).padStart(2,'0');const s=String(sec%60).padStart(2,'0');return `${h}:${m}:${s}`}
+function renderMissionHelp(){const mode=$('#missionMode')?.value||'countdown';const help=$('#missionHelp');if(!help)return;help.textContent=mode==='countdown'?'타임아웃: 입력한 분부터 카운트다운합니다.':mode==='until'?'맞춤시간: 지정한 시각까지 남은 시간을 표시합니다.':'진행시간: 0부터 경과 시간을 표시합니다.'}
+function renderMissionTimerBox(){const t=settings?.broadcastTimerData||{}; if($('#missionLabel'))$('#missionLabel').value=t.label||'미션타이머'; if($('#missionMode'))$('#missionMode').value=t.mode||'countdown'; if($('#missionTimeoutMin'))$('#missionTimeoutMin').value=t.durationMs?String(Math.round(Number(t.durationMs||0)/60000)):''; if($('#missionTargetAt'))$('#missionTargetAt').value=t.targetAt?String(t.targetAt).slice(0,16):''; if($('#missionTimerCurrent'))$('#missionTimerCurrent').textContent=`미션타이머 : ${formatHms(missionTimerMs())} / ${t.running?'진행중':'멈춤'}`; if($('#missionTimerBadge'))$('#missionTimerBadge').textContent=(settings?.overlaySections?.broadcastTimer?'노출 ON':'노출 OFF'); renderMissionHelp()}
+function missionAuthBody(){const savedPw=mobileAuth.password||getSavedBroadcastPassword();return {broadcastId:active?.id||'',broadcastPassword:isFullAdminRole()?'':savedPw}}
+async function startMissionTimer(resume){try{const body={label:$('#missionLabel')?.value?.trim()||'미션타이머',mode:$('#missionMode')?.value||'countdown',durationMin:$('#missionTimeoutMin')?.value||'',targetAt:$('#missionTargetAt')?.value||'',resume:!!resume,...missionAuthBody()};const d=await api('/api/mission-timer/start',{method:'POST',body:JSON.stringify(body)});settings.broadcastTimerData=d.broadcastTimerData;settings.overlaySections=settings.overlaySections||{};settings.overlaySections.broadcastTimer=true;await api('/api/settings',{method:'POST',body:JSON.stringify({overlaySections:settings.overlaySections,...missionAuthBody()})});toast(resume?'미션타이머 다시시작':'미션타이머 시작');await loadSettings(false)}catch(e){alert(e.message)}}
+async function pauseMissionTimer(){try{const d=await api('/api/mission-timer/pause',{method:'POST',body:JSON.stringify(missionAuthBody())});settings.broadcastTimerData=d.broadcastTimerData;toast('미션타이머 멈춤');renderMissionTimerBox()}catch(e){alert(e.message)}}
+async function endMissionTimer(){try{const d=await api('/api/mission-timer/end',{method:'POST',body:JSON.stringify(missionAuthBody())});settings.broadcastTimerData=d.broadcastTimerData;toast('미션타이머 종료/초기화');await loadSettings(false)}catch(e){alert(e.message)}}
+async function resetPresetManual(){if(!confirm('현재 방송의 프리셋 수동보정 내역을 0으로 초기화할까요?'))return;try{await api('/api/preset-manual/reset',{method:'POST',body:JSON.stringify(missionAuthBody())});toast('프리셋 수동보정 0 초기화 완료');await loadRecent()}catch(e){alert(e.message)}}
+function startMissionTimerClock(){clearInterval(startMissionTimerClock._timer);startMissionTimerClock._timer=setInterval(renderMissionTimerBox,1000)}
+
 function renderProcessOptions() {
   const presets = Array.isArray(settings?.presets) ? settings.presets : [];
   const funds = getFundingItems().filter(f => f.enabled !== false);
@@ -1119,6 +1166,7 @@ async function loadSettings(updateAuthInfo = true) {
   renderHeader();
   renderProcessOptions();
   renderAllowanceBox();
+  renderMissionTimerBox();
   renderSplitRows();
   updatePreview();
   applyBroadcastLock();
@@ -1176,6 +1224,7 @@ document.addEventListener('keydown', e => {
 async function init(){
   try{
     await loadSettings();
+    startMissionTimerClock();
 
     if (isFullAdminRole()) {
       hideLoginGate();

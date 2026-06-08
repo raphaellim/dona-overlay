@@ -572,6 +572,16 @@ function normalizeBroadcastTimerData(raw) {
   };
 }
 
+function missionTimerElapsedMs(raw, nowMs = Date.now()) {
+  const t = normalizeBroadcastTimerData(raw);
+  let elapsed = Math.max(0, Number(t.elapsedMs || 0));
+  if (t.running && t.startedAt) {
+    const start = new Date(t.startedAt).getTime();
+    if (start) elapsed += Math.max(0, nowMs - start);
+  }
+  return elapsed;
+}
+
 function normalizeBroadcastLiveData(raw) {
   const value = raw && typeof raw === 'object' ? raw : {};
   const status = ['ready','live','ended'].includes(String(value.status || '')) ? String(value.status) : 'ready';
@@ -1189,7 +1199,13 @@ async function saveEffectiveSettings(stationSlug, broadcastId, updates) {
 
 async function copySettingsToBroadcast(stationSlug, broadcastId) {
   const current = await readEffectiveSettings(stationSlug, null);
-  await saveEffectiveSettings(stationSlug, broadcastId, current);
+  // 방송별로 새로 시작해야 하는 수동 컨트롤 값은 다음 방송으로 복사하지 않습니다.
+  // 프리셋 수동 보정은 donations 방송별 행 기준이라 새 방송에서는 자연히 0부터 시작합니다.
+  await saveEffectiveSettings(stationSlug, broadcastId, {
+    ...current,
+    allowanceData: normalizeAllowanceData({}),
+    broadcastTimerData: normalizeBroadcastTimerData({})
+  });
 }
 
 async function removeBroadcastSettings(stationSlug, broadcastId) {
@@ -2424,7 +2440,8 @@ app.post('/api/allowance/adjust', async (req, res) => {
       updatedAt: new Date().toISOString()
     });
 
-    if (await stationAllowed(req, ctx.station)) await saveSharedStationSettings(ctx.station.slug, { allowanceData: next });
+    // 용돈은 당일 방송 수동값이므로 방송국 공통값으로 저장하지 않습니다.
+    // 다음 방송은 copySettingsToBroadcast에서 0으로 초기화됩니다.
     await saveEffectiveSettings(ctx.station.slug, ctx.active.id, { allowanceData: next });
 
     res.json({ ok: true, allowanceData: next });
@@ -2432,6 +2449,45 @@ app.post('/api/allowance/adjust', async (req, res) => {
     res.status(400).json({ error: e.message || '용돈 조정 실패' });
   }
 });
+
+app.post('/api/allowance/reset', async (req, res) => {
+  try {
+    if (!requireDb(res)) return;
+    const ctx = await getStationContext(req, res);
+    if (!ctx) return;
+    if (!await managerAllowed(req, ctx.station, ctx.active)) {
+      return res.status(401).json({ error: '방송매니저 또는 방송국 관리자 권한이 필요합니다.' });
+    }
+    const next = normalizeAllowanceData({ balance: 0, updatedAt: new Date().toISOString() });
+    await saveEffectiveSettings(ctx.station.slug, ctx.active.id, { allowanceData: next });
+    res.json({ ok: true, allowanceData: next });
+  } catch (e) {
+    res.status(400).json({ error: e.message || '용돈 초기화 실패' });
+  }
+});
+
+app.post('/api/preset-manual/reset', async (req, res) => {
+  try {
+    if (!requireDb(res)) return;
+    const ctx = await getStationContext(req, res);
+    if (!ctx) return;
+    if (!await managerAllowed(req, ctx.station, ctx.active)) {
+      return res.status(401).json({ error: '방송매니저 또는 방송국 관리자 권한이 필요합니다.' });
+    }
+    const del = await supabase
+      .from('donations')
+      .delete()
+      .eq('station_id', ctx.station.id)
+      .eq('broadcast_id', ctx.active.id)
+      .eq('total_amount', 0)
+      .ilike('memo', '%프리셋 수동%');
+    if (del.error) throw del.error;
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(400).json({ error: e.message || '프리셋 수동보정 초기화 실패' });
+  }
+});
+
 
 /* 슬롯형 룰렛 */
 app.get('/api/roulette', async (req, res) => {
@@ -2775,18 +2831,29 @@ app.post('/api/mission-timer/start', async (req, res) => {
     if (!ctx) return;
     if (!await managerAllowed(req, ctx.station, ctx.active)) return res.status(401).json({ error: '방송매니저 또는 방송국 관리자 권한이 필요합니다.' });
     const mode = ['countdown','until','countup'].includes(String(req.body.mode || '')) ? String(req.body.mode) : 'countdown';
-    const durationMin = Math.max(0, Number(req.body.durationMin || 0));
+    const durationMin = Math.max(0, Number(req.body.durationMin || req.body.timeoutMin || 0));
     const durationMs = durationMin > 0 ? Math.round(durationMin * 60 * 1000) : Math.max(0, Number(req.body.durationMs || 0));
     const targetAt = req.body.targetAt ? String(req.body.targetAt) : '';
     const label = String(req.body.label || '미션타이머');
-    const broadcastTimerData = normalizeBroadcastTimerData({ running: true, mode, label, startedAt: new Date().toISOString(), endedAt: '', elapsedMs: 0, durationMs, targetAt });
     const current = await readEffectiveSettings(ctx.station.slug, ctx.active.id);
+    const prev = normalizeBroadcastTimerData(current.broadcastTimerData);
+    const resume = req.body.resume === true || String(req.body.resume || '') === 'true';
+    const broadcastTimerData = normalizeBroadcastTimerData({
+      running: true,
+      mode,
+      label,
+      startedAt: new Date().toISOString(),
+      endedAt: '',
+      elapsedMs: resume ? missionTimerElapsedMs(prev) : 0,
+      durationMs,
+      targetAt
+    });
     await saveEffectiveSettings(ctx.station.slug, ctx.active.id, { ...current, broadcastTimerData });
     res.json({ ok: true, broadcastTimerData });
   } catch(e){ res.status(500).json({ error: e.message || '미션타이머 시작 실패' }); }
 });
 
-app.post('/api/mission-timer/stop', async (req, res) => {
+async function pauseMissionTimerHandler(req, res) {
   try {
     if (!requireDb(res)) return;
     const ctx = await getStationContext(req, res);
@@ -2794,11 +2861,44 @@ app.post('/api/mission-timer/stop', async (req, res) => {
     if (!await managerAllowed(req, ctx.station, ctx.active)) return res.status(401).json({ error: '방송매니저 또는 방송국 관리자 권한이 필요합니다.' });
     const current = await readEffectiveSettings(ctx.station.slug, ctx.active.id);
     const prev = normalizeBroadcastTimerData(current.broadcastTimerData);
-    const broadcastTimerData = normalizeBroadcastTimerData({ ...prev, running: false, endedAt: new Date().toISOString() });
+    const broadcastTimerData = normalizeBroadcastTimerData({
+      ...prev,
+      running: false,
+      elapsedMs: missionTimerElapsedMs(prev),
+      startedAt: '',
+      endedAt: new Date().toISOString()
+    });
+    await saveEffectiveSettings(ctx.station.slug, ctx.active.id, { ...current, broadcastTimerData });
+    res.json({ ok: true, broadcastTimerData });
+  } catch(e){ res.status(500).json({ error: e.message || '미션타이머 멈춤 실패' }); }
+}
+
+app.post('/api/mission-timer/pause', pauseMissionTimerHandler);
+app.post('/api/mission-timer/stop', pauseMissionTimerHandler);
+
+app.post('/api/mission-timer/end', async (req, res) => {
+  try {
+    if (!requireDb(res)) return;
+    const ctx = await getStationContext(req, res);
+    if (!ctx) return;
+    if (!await managerAllowed(req, ctx.station, ctx.active)) return res.status(401).json({ error: '방송매니저 또는 방송국 관리자 권한이 필요합니다.' });
+    const current = await readEffectiveSettings(ctx.station.slug, ctx.active.id);
+    const prev = normalizeBroadcastTimerData(current.broadcastTimerData);
+    const broadcastTimerData = normalizeBroadcastTimerData({
+      running: false,
+      mode: prev.mode || 'countdown',
+      label: prev.label || '미션타이머',
+      startedAt: '',
+      endedAt: new Date().toISOString(),
+      elapsedMs: 0,
+      durationMs: 0,
+      targetAt: ''
+    });
     await saveEffectiveSettings(ctx.station.slug, ctx.active.id, { ...current, broadcastTimerData });
     res.json({ ok: true, broadcastTimerData });
   } catch(e){ res.status(500).json({ error: e.message || '미션타이머 종료 실패' }); }
 });
+
 
 
 /* 후원/합산 */

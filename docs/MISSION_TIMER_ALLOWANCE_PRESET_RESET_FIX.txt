@@ -1,0 +1,27 @@
+# v_f01 미션타이머/용돈/프리셋 초기화 수정
+
+## 추가 UI
+- public/m_creator.html
+  - 상단 탭에 미션타이머 추가
+  - 시작 / 다시시작 / 멈춤 / 종료·초기화 버튼 추가
+  - 타임아웃, 진행시간, 맞춤시간 모드 추가
+  - 용돈 0 초기화 버튼 추가
+  - 프리셋 수동보정 0 초기화 버튼 추가
+
+- public/m_admin.html
+  - 일반입력 화면 안에 미션타이머 컨트롤 추가
+  - 용돈 0 초기화 버튼 추가
+  - 프리셋 수동보정 0 초기화 버튼 추가
+
+## 서버 API
+- POST /api/mission-timer/start
+- POST /api/mission-timer/pause
+- POST /api/mission-timer/stop  (pause와 동일)
+- POST /api/mission-timer/end   (종료 후 0 초기화)
+- POST /api/allowance/reset
+- POST /api/preset-manual/reset
+
+## 방송별 초기화
+- 새 방송 생성/복사 시 allowanceData는 0으로 초기화
+- 새 방송 생성/복사 시 broadcastTimerData는 초기화
+- 프리셋 수동 보정은 donations의 방송별 수동 행 기준이라 다음 방송에서는 자동으로 0부터 시작
