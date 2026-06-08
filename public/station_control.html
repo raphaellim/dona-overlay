@@ -21,6 +21,7 @@ body{background:#070b12;color:#e5e7eb}.wrap{max-width:1220px;margin:0 auto;paddi
       <a id="summaryLink" target="_blank" href="/summary.html">합산</a>
       <a id="adminLink" target="_blank" href="/admin.html">PC 입력</a>
       <a id="mAdminLink" target="_blank" href="/m_admin.html">모바일 입력</a>
+      <a id="mCreatorLink" target="_blank" href="/m_creator.html">크리에이터</a>
       <a id="controlLink" target="_blank" href="/control.html">PC 설정</a>
       <a id="mControlLink" target="_blank" href="/m_control.html">모바일 설정</a>
       <a id="styleLink" target="_blank" href="/station_style.html">스타일</a>
@@ -76,6 +77,9 @@ function setLinks(){
 
   const mAdminLink = document.getElementById('mAdminLink');
   if (mAdminLink) mAdminLink.href = `/m_admin.html?station=${slug}`;
+
+  const mCreatorLink = document.getElementById('mCreatorLink');
+  if (mCreatorLink) mCreatorLink.href = `/m_creator.html?station=${slug}`;
 
   const mControlLink = document.getElementById('mControlLink');
   if (mControlLink) mControlLink.href = `/m_control.html?station=${slug}`;

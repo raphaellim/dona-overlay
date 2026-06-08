@@ -136,14 +136,13 @@ form.addEventListener('submit', async function(e){
   try {
     const res = await fetch('/api/station-login?station=' + encodeURIComponent(station), {
       method: 'POST',
-      credentials: 'same-origin'
-cache: 'no-store'
-window.location.replace(target)
+      credentials: 'same-origin',
+      cache: 'no-store',
       headers: {
-  'Content-Type': 'application/json',
-  'X-Station-Password': password,
-  'x-station-password': password
-},
+        'Content-Type': 'application/json',
+        'X-Station-Password': password,
+        'x-station-password': password
+      },
       body: JSON.stringify({ station, password })
     });
 

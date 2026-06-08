@@ -805,13 +805,24 @@ function parseCookies(req) {
   return out;
 }
 
+function appendCookieHeader(res, cookieValue) {
+  const prev = res.getHeader('Set-Cookie');
+  if (!prev) {
+    res.setHeader('Set-Cookie', cookieValue);
+  } else if (Array.isArray(prev)) {
+    res.setHeader('Set-Cookie', [...prev, cookieValue]);
+  } else {
+    res.setHeader('Set-Cookie', [prev, cookieValue]);
+  }
+}
+
 function setCookie(res, name, value, maxAgeSeconds = 60 * 60 * 12) {
   const safe = encodeURIComponent(String(value || ''));
-  res.setHeader('Set-Cookie', `${name}=${safe}; Max-Age=${maxAgeSeconds}; Path=/; HttpOnly; SameSite=Lax`);
+  appendCookieHeader(res, `${name}=${safe}; Max-Age=${maxAgeSeconds}; Path=/; HttpOnly; SameSite=Lax`);
 }
 
 function clearCookie(res, name) {
-  res.setHeader('Set-Cookie', `${name}=; Max-Age=0; Path=/; HttpOnly; SameSite=Lax`);
+  appendCookieHeader(res, `${name}=; Max-Age=0; Path=/; HttpOnly; SameSite=Lax`);
 }
 
 function isMasterRequest(req) {
@@ -1192,6 +1203,7 @@ const STATION_HTML = new Set([
   '/control.html',
   '/station_control.html',
   '/m_admin.html',
+  '/m_creator.html',
   '/m_control.html',
   '/station_style.html',
   '/media_manager.html',
