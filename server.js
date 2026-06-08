@@ -2905,6 +2905,60 @@ app.post('/api/manual-entry', async (req, res) => {
     let creator = normName(body.creator);
     let processType = normName(body.processType) || '후원';
 
+    if (kind === 'presetCount') {
+      if (!donor) return res.status(400).json({ error: '도네이터명을 입력하세요.' });
+      if (!creator) return res.status(400).json({ error: '크리에이터를 선택하세요.' });
+      const presetId = normName(body.presetId);
+      const presetSide = String(body.presetSide || 'plus').toLowerCase() === 'minus' ? 'minus' : 'plus';
+      const direction = String(body.direction || 'plus').toLowerCase() === 'minus' ? 'minus' : 'plus';
+      const count = Math.max(0, Math.trunc(Number(body.count || body.qty || body.value || 0)));
+      if (count <= 0) return res.status(400).json({ error: '갯수를 입력하세요.' });
+
+      const preset = (settings.presets || []).find(p => {
+        const id = normName(p.id);
+        const title = normName(p.title);
+        const plusName = normName(p.plusName);
+        const minusName = normName(p.minusName);
+        return id === presetId || title === presetId || plusName === presetId || minusName === presetId;
+      });
+      if (!preset) return res.status(400).json({ error: '프리셋을 선택하세요.' });
+
+      const sideName = presetSide === 'minus' ? normName(preset.minusName || '제외') : normName(preset.plusName || '추가');
+      const signedCount = direction === 'minus' ? -count : count;
+      const check = {
+        presetId: preset.id,
+        presetTitle: preset.title,
+        side: presetSide,
+        name: sideName,
+        price: Number(presetSide === 'minus' ? preset.minusPrice || 0 : preset.plusPrice || 0),
+        count: signedCount,
+        usedAmount: 0,
+        remainAmount: 0,
+        manualAdjust: true
+      };
+      const row = {
+        station_id: ctx.station.id,
+        broadcast_id: ctx.active.id,
+        donor,
+        creator,
+        process_type: sideName,
+        account_amount: 0,
+        toonie_amount: 0,
+        total_amount: 0,
+        display_amount: '0원',
+        smoke: preset.id === 'smoke' && presetSide === 'plus' ? signedCount : 0,
+        nosmoke: preset.id === 'smoke' && presetSide === 'minus' ? signedCount : 0,
+        eat: preset.id === 'food' && presetSide === 'plus' ? signedCount : 0,
+        noeat: preset.id === 'food' && presetSide === 'minus' ? signedCount : 0,
+        checks: [{ ...check }, { meta: true, silentAlert: true, manualKind: kind, sourceType: 'preset', editedAt: new Date().toISOString() }],
+        result_label: `${sideName}${direction === 'minus' ? '-' : '+'}${count}`,
+        memo: `[무알림] 프리셋 수동${direction === 'minus' ? '제외' : '추가'}`
+      };
+      const { data, error } = await supabase.from('donations').insert(row).select().single();
+      if (error) throw error;
+      return res.json({ ok: true, donation: dbRowToDonation(data) });
+    }
+
     if (!donor) return res.status(400).json({ error: '도네이터명을 입력하세요.' });
     if (amount <= 0) return res.status(400).json({ error: '금액을 입력하세요.' });
 
