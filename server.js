@@ -894,12 +894,12 @@ async function getStation(reqOrSlug) {
   return null;
 }
 
-function stationToClient(row, includeSecret = false) {
+function stationToClient(row, includeSecret = false, includeToken = false) {
   const out = {
     id: row.id,
     name: row.name,
     slug: row.slug,
-    overlayToken: row.overlay_token || '',
+    overlayToken: includeSecret || includeToken ? (row.overlay_token || '') : '',
     createdAt: row.created_at,
     hasAdminPassword: !!row.station_admin_password
   };
@@ -1081,8 +1081,29 @@ async function broadcastPasswordAllowed(req, broadcast) {
 }
 
 async function operatorAllowed(req, station, broadcast) {
+  // 방송매니저까지 포함하는 입력/실행 권한입니다.
+  // 전체 관리자 페이지/합산 조회에는 사용하지 말고, 당일 방송 입력 API에만 사용합니다.
   if (await stationAllowed(req, station)) return true;
   return await broadcastPasswordAllowed(req, broadcast);
+}
+
+async function managerAllowed(req, station, broadcast) {
+  return await operatorAllowed(req, station, broadcast);
+}
+
+async function stationAdminAllowed(req, station) {
+  return await stationAllowed(req, station);
+}
+
+async function accessRole(req, station, broadcast) {
+  if (isMasterRequest(req)) return 'master';
+  if (await stationAllowed(req, station)) return 'station_admin';
+  if (await broadcastPasswordAllowed(req, broadcast)) return 'broadcast_manager';
+  return 'guest';
+}
+
+function managerSafeStation(row, includeToken = false) {
+  return stationToClient(row, false, includeToken);
 }
 
 
@@ -1202,13 +1223,18 @@ const STATION_HTML = new Set([
   '/admin.html',
   '/control.html',
   '/station_control.html',
-  '/m_admin.html',
-  '/m_creator.html',
-  '/m_control.html',
   '/station_style.html',
   '/media_manager.html',
   '/m_media_manager.html',
-  '/roulette.html',
+  '/roulette.html'
+]);
+
+// 모바일 운영 페이지는 같은 파일을 권한별 모드로 사용합니다.
+// station_admin/master: 전체 기능, broadcast_manager: 당일 입력/수정 제한모드.
+const MANAGER_HTML = new Set([
+  '/m_creator.html',
+  '/m_admin.html',
+  '/m_control.html',
   '/m_roulette.html'
 ]);
 
@@ -1224,7 +1250,7 @@ const VIEWER_HTML = new Set([
 ]);
 
 async function viewerAllowed(req, station, broadcast) {
-  if (await operatorAllowed(req, station, broadcast)) return true;
+  if (await stationAllowed(req, station)) return true;
   const settings = await readEffectiveSettings(station.slug, broadcast.id);
   const viewerPassword = String(settings.viewerPassword || '');
   const viewerToken = String(settings.viewerToken || '');
@@ -1269,8 +1295,14 @@ async function accessGuard(req, res, next) {
         return res.status(403).send('오버레이 토큰이 필요합니다.');
       }
 
+      if (MANAGER_HTML.has(pathOnly)) {
+        // 모바일 페이지는 셸을 열어두고, 실제 저장/조회 API에서 권한을 분리합니다.
+        // 방송국관리자/크리에이터는 전체 기능, 방송매니저는 당일 입력/수정 제한모드입니다.
+        return next();
+      }
+
       if (STATION_HTML.has(pathOnly)) {
-        if (await operatorAllowed(req, station, active)) return next();
+        if (await stationAllowed(req, station)) return next();
         return htmlRedirect(res, `/station_login.html?station=${encodeURIComponent(station.slug)}&next=${encodeURIComponent(req.originalUrl || pathOnly)}`);
       }
 
@@ -1287,6 +1319,8 @@ async function accessGuard(req, res, next) {
 
       // overlay.html은 방송국 token으로 내부 API를 조회해야 화면 데이터가 표시됩니다.
       if (typeof stationTokenAllowed === 'function' && await stationTokenAllowed(req, station)) return next();
+
+      if (pathOnly === '/api/settings' && await managerAllowed(req, station, active)) return next();
 
       if (await viewerAllowed(req, station, active)) return next();
       return res.status(403).json({ error: '시청 권한이 없습니다.' });
@@ -1733,6 +1767,26 @@ app.post('/api/broadcast-login', async (req, res) => {
   }
 });
 
+
+app.post('/api/viewer-login', async (req, res) => {
+  try {
+    if (!requireDb(res)) return;
+    const station = await getStation(req);
+    if (!station) return res.status(404).json({ error: '방송국을 찾을 수 없습니다.' });
+    const active = await ensureActiveBroadcast(station.id);
+    const settings = await readEffectiveSettings(station.slug, active.id);
+    const pw = String(req.body?.password || '');
+    const viewerPassword = String(settings.viewerPassword || '');
+    if (viewerPassword && pw !== viewerPassword) {
+      return res.status(401).json({ error: '시청 비밀번호가 틀렸습니다.' });
+    }
+    setCookie(res, 'viewer_password', pw, 60 * 60 * 12);
+    res.json({ ok: true, station: managerSafeStation(station, false), broadcast: broadcastToClient(active) });
+  } catch (e) {
+    res.status(500).json({ error: e.message || '시청 로그인 실패' });
+  }
+});
+
 app.post('/api/logout', (req, res) => {
   clearCookie(res, 'admin_password');
   clearCookie(res, 'station_slug');
@@ -1854,7 +1908,9 @@ app.get('/api/station-info', async (req, res) => {
       broadcastLiveData: normalizeBroadcastLiveData(activeSettings.broadcastLiveData),
       broadcastTimerData: normalizeBroadcastTimerData(activeSettings.broadcastTimerData)
     };
-    res.json({ station: stationToClient(station), active: activeClient, allowed: await stationAllowed(req, station) });
+    const role = await accessRole(req, station, active);
+    const full = role === 'master' || role === 'station_admin';
+    res.json({ station: managerSafeStation(station, full), active: activeClient, allowed: full, role });
   } catch (e) {
     res.status(500).json({ error: e.message || '방송국 정보 조회 실패' });
   }
@@ -1865,6 +1921,7 @@ app.get('/api/broadcasts', async (req, res) => {
     if (!requireDb(res)) return;
     const station = await getStation(req);
     if (!station) return res.status(404).json({ error: '방송국을 찾을 수 없습니다.' });
+    if (!await stationAllowed(req, station)) return res.status(401).json({ error: '방송국 관리자 권한이 필요합니다.' });
     const active = await ensureActiveBroadcast(station.id);
     const broadcasts = await listBroadcasts(station.id);
 
@@ -1927,8 +1984,8 @@ app.post('/api/broadcasts/:id/activate', async (req, res) => {
     const target = await getStationBroadcastOrNull(station.id, req.params.id);
     if (!target) return res.status(404).json({ error: '방송을 찾을 수 없습니다.' });
 
-    const allowed = await stationAllowed(req, station) || await broadcastPasswordAllowed(req, target);
-    if (!allowed) return res.status(401).json({ error: '방송국 관리자 또는 해당 방송 비밀번호가 필요합니다.' });
+    const allowed = await stationAllowed(req, station);
+    if (!allowed) return res.status(401).json({ error: '방송국 관리자 권한이 필요합니다.' });
 
     const data = await setActiveBroadcast(station.id, req.params.id);
 
@@ -2029,8 +2086,8 @@ app.post('/api/sound-events', async (req, res) => {
     const ctx = await getStationContext(req, res);
     if (!ctx) return;
 
-    if (!await operatorAllowed(req, ctx.station, ctx.active)) {
-      return res.status(401).json({ error: '방송 비밀번호 또는 방송국 관리자 권한이 필요합니다.' });
+    if (!await stationAllowed(req, ctx.station)) {
+      return res.status(401).json({ error: '방송국 관리자 권한이 필요합니다.' });
     }
 
     const soundFile = cleanSoundFile(req.body?.soundFile || '');
@@ -2089,7 +2146,7 @@ app.get('/api/sound-events', async (req, res) => {
     if (!ctx) return;
 
     const tokenOk = typeof stationTokenAllowed === 'function' ? await stationTokenAllowed(req, ctx.station) : false;
-    const canView = tokenOk || await operatorAllowed(req, ctx.station, ctx.active);
+    const canView = tokenOk || await stationAllowed(req, ctx.station);
     if (!canView) return res.status(403).json({ error: '오버레이 토큰이 필요합니다.' });
 
     const all = String(req.query.all || '') === '1';
@@ -2148,7 +2205,7 @@ app.post('/api/sound-events/:id/played', async (req, res) => {
     if (!ctx) return;
 
     const tokenOk = typeof stationTokenAllowed === 'function' ? await stationTokenAllowed(req, ctx.station) : false;
-    const canUpdate = tokenOk || await operatorAllowed(req, ctx.station, ctx.active);
+    const canUpdate = tokenOk || await stationAllowed(req, ctx.station);
     if (!canUpdate) return res.status(403).json({ error: '권한이 없습니다.' });
 
     const { data: current, error: readError } = await supabase
@@ -2204,7 +2261,7 @@ app.delete('/api/sound-events/:id', async (req, res) => {
     if (!requireDb(res)) return;
     const ctx = await getStationContext(req, res);
     if (!ctx) return;
-    if (!await operatorAllowed(req, ctx.station, ctx.active)) return res.status(401).json({ error: '방송 비밀번호 또는 방송국 관리자 권한이 필요합니다.' });
+    if (!await stationAllowed(req, ctx.station)) return res.status(401).json({ error: '방송국 관리자 권한이 필요합니다.' });
     const { error } = await supabase.from('sound_events').delete()
       .eq('station_id', ctx.station.id)
       .eq('broadcast_id', ctx.active.id)
@@ -2224,8 +2281,8 @@ app.post('/api/sound-events/release', async (req, res) => {
     const ctx = await getStationContext(req, res);
     if (!ctx) return;
 
-    if (!await operatorAllowed(req, ctx.station, ctx.active)) {
-      return res.status(401).json({ error: '방송 비밀번호 또는 방송국 관리자 권한이 필요합니다.' });
+    if (!await stationAllowed(req, ctx.station)) {
+      return res.status(401).json({ error: '방송국 관리자 권한이 필요합니다.' });
     }
 
     const { data, error } = await supabase
@@ -2265,8 +2322,8 @@ app.post('/api/media/upload', mediaUpload.array('files', 10), async (req, res) =
   try {
     const ctx = await getStationContext(req, res);
     if (!ctx) return;
-    if (!await operatorAllowed(req, ctx.station, ctx.active)) {
-      return res.status(401).json({ error: '방송국 관리자 또는 방송 비밀번호 권한이 필요합니다.' });
+    if (!await stationAllowed(req, ctx.station)) {
+      return res.status(401).json({ error: '방송국 관리자 권한이 필요합니다.' });
     }
     const uploaded = (req.files || []).map(f => {
       const type = String(f.mimetype || '').startsWith('video/') ? 'video' : 'image';
@@ -2290,8 +2347,8 @@ app.delete('/api/media', async (req, res) => {
   try {
     const ctx = await getStationContext(req, res);
     if (!ctx) return;
-    if (!await operatorAllowed(req, ctx.station, ctx.active)) {
-      return res.status(401).json({ error: '방송국 관리자 또는 방송 비밀번호 권한이 필요합니다.' });
+    if (!await stationAllowed(req, ctx.station)) {
+      return res.status(401).json({ error: '방송국 관리자 권한이 필요합니다.' });
     }
     const url = String(req.query.url || req.body?.url || '').trim();
     if (!url) return res.status(400).json({ error: '삭제할 파일 URL이 없습니다.' });
@@ -2330,8 +2387,8 @@ app.post('/api/allowance/adjust', async (req, res) => {
     if (!requireDb(res)) return;
     const ctx = await getStationContext(req, res);
     if (!ctx) return;
-    if (!await operatorAllowed(req, ctx.station, ctx.active)) {
-      return res.status(401).json({ error: '방송 비밀번호 또는 방송국 관리자 권한이 필요합니다.' });
+    if (!await managerAllowed(req, ctx.station, ctx.active)) {
+      return res.status(401).json({ error: '방송매니저 또는 방송국 관리자 권한이 필요합니다.' });
     }
 
     const current = await readEffectiveSettings(ctx.station.slug, ctx.active.id);
@@ -2350,7 +2407,7 @@ app.post('/api/allowance/adjust', async (req, res) => {
       updatedAt: new Date().toISOString()
     });
 
-    await saveSharedStationSettings(ctx.station.slug, { allowanceData: next });
+    if (await stationAllowed(req, ctx.station)) await saveSharedStationSettings(ctx.station.slug, { allowanceData: next });
     await saveEffectiveSettings(ctx.station.slug, ctx.active.id, { allowanceData: next });
 
     res.json({ ok: true, allowanceData: next });
@@ -2367,7 +2424,7 @@ app.get('/api/roulette', async (req, res) => {
     if (!station) return res.status(404).json({ error: '방송국을 찾을 수 없습니다.' });
     const active = await ensureActiveBroadcast(station.id);
     const roulette = await cleanupExpiredRoulette({ station, active });
-    res.json({ ok: true, roulette, station: stationToClient(station), broadcast: broadcastToClient(active) });
+    res.json({ ok: true, roulette, station: managerSafeStation(station, await stationAllowed(req, station)), broadcast: broadcastToClient(active), role: await accessRole(req, station, active) });
   } catch (e) {
     res.status(500).json({ error: e.message || '룰렛 조회 실패' });
   }
@@ -2378,7 +2435,7 @@ app.post('/api/roulette/save', async (req, res) => {
     if (!requireDb(res)) return;
     const ctx = await getStationContext(req, res);
     if (!ctx) return;
-    if (!await operatorAllowed(req, ctx.station, ctx.active)) return res.status(401).json({ error: '방송 비밀번호 또는 방송국 관리자 권한이 필요합니다.' });
+    if (!await stationAllowed(req, ctx.station)) return res.status(401).json({ error: '방송국 관리자 권한이 필요합니다.' });
     const roulette = normalizeRouletteData(req.body?.roulette || req.body || {});
     const saved = await saveRouletteForContext(ctx, roulette);
     res.json({ ok: true, roulette: saved });
@@ -2392,7 +2449,7 @@ app.post('/api/roulette/start', async (req, res) => {
     if (!requireDb(res)) return;
     const ctx = await getStationContext(req, res);
     if (!ctx) return;
-    if (!await operatorAllowed(req, ctx.station, ctx.active)) return res.status(401).json({ error: '방송 비밀번호 또는 방송국 관리자 권한이 필요합니다.' });
+    if (!await managerAllowed(req, ctx.station, ctx.active)) return res.status(401).json({ error: '방송매니저 또는 방송국 관리자 권한이 필요합니다.' });
     const listId = cleanRouletteId(req.body?.listId || req.body?.rouletteId, '');
     if (!listId) return res.status(400).json({ error: '룰렛을 선택하세요.' });
     const count = Math.max(1, Math.min(50, Math.trunc(Number(req.body?.count || 1))));
@@ -2412,7 +2469,7 @@ app.post('/api/roulette/reset', async (req, res) => {
     if (!requireDb(res)) return;
     const ctx = await getStationContext(req, res);
     if (!ctx) return;
-    if (!await operatorAllowed(req, ctx.station, ctx.active)) return res.status(401).json({ error: '방송 비밀번호 또는 방송국 관리자 권한이 필요합니다.' });
+    if (!await managerAllowed(req, ctx.station, ctx.active)) return res.status(401).json({ error: '방송매니저 또는 방송국 관리자 권한이 필요합니다.' });
     const currentSettings = await readEffectiveSettings(ctx.station.slug, ctx.active.id);
     const roulette = normalizeRouletteData(currentSettings.roulette);
     roulette.current = null;
@@ -2430,6 +2487,7 @@ app.post('/api/roulette/advance', async (req, res) => {
     if (!requireDb(res)) return;
     const ctx = await getStationContext(req, res);
     if (!ctx) return;
+    if (!await managerAllowed(req, ctx.station, ctx.active)) return res.status(401).json({ error: '방송매니저 또는 방송국 관리자 권한이 필요합니다.' });
     const out = await advanceRouletteQueue(ctx, String(req.body?.runId || ''));
     res.json({ ok: true, roulette: out.roulette, run: out.run });
   } catch (e) {
@@ -2442,7 +2500,7 @@ app.post('/api/roulette/history/clear', async (req, res) => {
     if (!requireDb(res)) return;
     const ctx = await getStationContext(req, res);
     if (!ctx) return;
-    if (!await operatorAllowed(req, ctx.station, ctx.active)) return res.status(401).json({ error: '방송 비밀번호 또는 방송국 관리자 권한이 필요합니다.' });
+    if (!await stationAllowed(req, ctx.station)) return res.status(401).json({ error: '방송국 관리자 권한이 필요합니다.' });
     const currentSettings = await readEffectiveSettings(ctx.station.slug, ctx.active.id);
     const roulette = normalizeRouletteData(currentSettings.roulette);
     roulette.history = [];
@@ -2466,7 +2524,9 @@ app.get('/api/settings', async (req, res) => {
       broadcastLiveData: normalizeBroadcastLiveData(settings.broadcastLiveData),
       broadcastTimerData: normalizeBroadcastTimerData(settings.broadcastTimerData)
     };
-    res.json({ ...settings, station: stationToClient(station), broadcast: broadcastClient });
+    const role = await accessRole(req, station, active);
+    const full = role === 'master' || role === 'station_admin';
+    res.json({ ...settings, station: managerSafeStation(station, full), broadcast: broadcastClient, role });
   } catch (e) {
     res.status(500).json({ error: e.message || '설정 조회 실패' });
   }
@@ -2477,7 +2537,9 @@ app.post('/api/settings', async (req, res) => {
     if (!requireDb(res)) return;
     const ctx = await getStationContext(req, res);
     if (!ctx) return;
-    if (!await operatorAllowed(req, ctx.station, ctx.active)) return res.status(401).json({ error: '방송 비밀번호 또는 방송국 관리자 권한이 필요합니다.' });
+    const fullAdmin = await stationAllowed(req, ctx.station);
+    const manager = await broadcastPasswordAllowed(req, ctx.active);
+    if (!fullAdmin && !manager) return res.status(401).json({ error: '방송매니저 또는 방송국 관리자 권한이 필요합니다.' });
 
     const body = req.body || {};
     const has = key => Object.prototype.hasOwnProperty.call(body, key);
@@ -2507,8 +2569,49 @@ app.post('/api/settings', async (req, res) => {
     if (has('soundRules')) updates.soundRules = normalizeSoundRules(body.soundRules, undefined);
     if (has('roulette')) updates.roulette = normalizeRouletteData(body.roulette);
 
-    await saveSharedStationSettings(ctx.station.slug, updates);
-    await saveEffectiveSettings(ctx.station.slug, ctx.active.id, updates);
+    if (!fullAdmin) {
+      // 방송매니저는 방송 생성/삭제/전체 설정/합산 권한은 없고,
+      // 당일 방송 진행에 필요한 입력/노출/공지/펀딩/노래방/타이머 값만 수정합니다.
+      const allowedManagerFields = new Set([
+        'overlaySections',
+        'noticeTitle', 'notice', 'noticeColors',
+        'fundingData', 'karaokeData', 'allowanceData',
+        'broadcastTimerData', 'broadcastLiveData'
+      ]);
+      const denied = Object.keys(body).filter(k => k !== 'broadcastPassword' && k !== 'password' && !allowedManagerFields.has(k));
+      if (denied.length) {
+        return res.status(403).json({ error: '방송매니저는 당일 방송 입력/노출/공지/펀딩/노래방 설정만 변경할 수 있습니다.', denied });
+      }
+
+      // 매니저가 펀딩 항목을 새로 만들거나 삭제하지 못하도록 기존 ID 기준으로 병합합니다.
+      // 당일 변경값인 현재금액/목표금액/표시상태/제목 정도만 반영합니다.
+      if (updates.fundingData) {
+        const currentForManager = await readEffectiveSettings(ctx.station.slug, ctx.active.id);
+        const prevFunding = normalizeFundingData(currentForManager.fundingData);
+        const incomingFunding = normalizeFundingData(updates.fundingData);
+        const incomingById = new Map((incomingFunding.items || []).map(item => [String(item.id || ''), item]));
+        updates.fundingData = {
+          ...prevFunding,
+          ...incomingFunding,
+          items: (prevFunding.items || []).map(item => {
+            const inc = incomingById.get(String(item.id || ''));
+            if (!inc) return item;
+            return {
+              ...item,
+              title: String(inc.title || item.title || ''),
+              current: Number(inc.current || 0),
+              target: Number(inc.target || 0),
+              enabled: inc.enabled !== false
+            };
+          })
+        };
+      }
+
+      await saveEffectiveSettings(ctx.station.slug, ctx.active.id, updates);
+    } else {
+      await saveSharedStationSettings(ctx.station.slug, updates);
+      await saveEffectiveSettings(ctx.station.slug, ctx.active.id, updates);
+    }
     const effective = await readEffectiveSettings(ctx.station.slug, ctx.active.id);
 
     const broadcastClient = {
@@ -2527,8 +2630,8 @@ app.post('/api/karaoke-data', async (req, res) => {
     if (!requireDb(res)) return;
     const ctx = await getStationContext(req, res);
     if (!ctx) return;
-    if (!await operatorAllowed(req, ctx.station, ctx.active)) {
-      return res.status(401).json({ error: '방송 비밀번호 또는 방송국 관리자 권한이 필요합니다.' });
+    if (!await stationAllowed(req, ctx.station)) {
+      return res.status(401).json({ error: '방송국 관리자 권한이 필요합니다.' });
     }
 
     const karaokeData = normalizeKaraokeData(req.body.karaokeData || req.body || {});
@@ -2546,12 +2649,15 @@ app.post('/api/funding-data', async (req, res) => {
     if (!requireDb(res)) return;
     const ctx = await getStationContext(req, res);
     if (!ctx) return;
-    if (!await operatorAllowed(req, ctx.station, ctx.active)) {
-      return res.status(401).json({ error: '방송 비밀번호 또는 방송국 관리자 권한이 필요합니다.' });
+    const fullAdmin = await stationAllowed(req, ctx.station);
+    const manager = await broadcastPasswordAllowed(req, ctx.active);
+    if (!fullAdmin && !manager) {
+      return res.status(401).json({ error: '방송매니저 또는 방송국 관리자 권한이 필요합니다.' });
     }
 
     const fundingData = normalizeFundingData(req.body.fundingData || req.body || {});
-    await saveSharedStationSettings(ctx.station.slug, { fundingData });
+    if (fullAdmin) await saveSharedStationSettings(ctx.station.slug, { fundingData });
+    await saveEffectiveSettings(ctx.station.slug, ctx.active.id, { fundingData });
 
     const effective = await readEffectiveSettings(ctx.station.slug, ctx.active.id);
     res.json({ ok: true, fundingData: effective.fundingData });
@@ -2589,8 +2695,8 @@ app.post('/api/broadcast-timer/start', async (req, res) => {
     const target = await getStationBroadcastOrNull(ctx.station.id, broadcastId);
     if (!target) return res.status(404).json({ error: '방송을 찾을 수 없습니다.' });
 
-    if (!await operatorAllowed(req, ctx.station, target)) {
-      return res.status(401).json({ error: '방송 비밀번호 또는 방송국 관리자 권한이 필요합니다.' });
+    if (!await stationAllowed(req, ctx.station)) {
+      return res.status(401).json({ error: '방송국 관리자 권한이 필요합니다.' });
     }
 
     // 방송시작 버튼은 해당 방송을 현재 방송으로도 선택합니다.
@@ -2621,8 +2727,8 @@ app.post('/api/broadcast-timer/end', async (req, res) => {
     const target = await getStationBroadcastOrNull(ctx.station.id, broadcastId);
     if (!target) return res.status(404).json({ error: '방송을 찾을 수 없습니다.' });
 
-    if (!await operatorAllowed(req, ctx.station, target)) {
-      return res.status(401).json({ error: '방송 비밀번호 또는 방송국 관리자 권한이 필요합니다.' });
+    if (!await stationAllowed(req, ctx.station)) {
+      return res.status(401).json({ error: '방송국 관리자 권한이 필요합니다.' });
     }
 
     const current = await readEffectiveSettings(ctx.station.slug, broadcastId);
@@ -2650,7 +2756,7 @@ app.post('/api/mission-timer/start', async (req, res) => {
     if (!requireDb(res)) return;
     const ctx = await getStationContext(req, res);
     if (!ctx) return;
-    if (!await operatorAllowed(req, ctx.station, ctx.active)) return res.status(401).json({ error: '방송 비밀번호 또는 방송국 관리자 권한이 필요합니다.' });
+    if (!await managerAllowed(req, ctx.station, ctx.active)) return res.status(401).json({ error: '방송매니저 또는 방송국 관리자 권한이 필요합니다.' });
     const mode = ['countdown','until','countup'].includes(String(req.body.mode || '')) ? String(req.body.mode) : 'countdown';
     const durationMin = Math.max(0, Number(req.body.durationMin || 0));
     const durationMs = durationMin > 0 ? Math.round(durationMin * 60 * 1000) : Math.max(0, Number(req.body.durationMs || 0));
@@ -2668,7 +2774,7 @@ app.post('/api/mission-timer/stop', async (req, res) => {
     if (!requireDb(res)) return;
     const ctx = await getStationContext(req, res);
     if (!ctx) return;
-    if (!await operatorAllowed(req, ctx.station, ctx.active)) return res.status(401).json({ error: '방송 비밀번호 또는 방송국 관리자 권한이 필요합니다.' });
+    if (!await managerAllowed(req, ctx.station, ctx.active)) return res.status(401).json({ error: '방송매니저 또는 방송국 관리자 권한이 필요합니다.' });
     const current = await readEffectiveSettings(ctx.station.slug, ctx.active.id);
     const prev = normalizeBroadcastTimerData(current.broadcastTimerData);
     const broadcastTimerData = normalizeBroadcastTimerData({ ...prev, running: false, endedAt: new Date().toISOString() });
@@ -2679,11 +2785,42 @@ app.post('/api/mission-timer/stop', async (req, res) => {
 
 
 /* 후원/합산 */
+
+app.get('/api/manager/recent', async (req, res) => {
+  try {
+    if (!requireDb(res)) return;
+    const ctx = await getStationContext(req, res);
+    if (!ctx) return;
+    if (!await managerAllowed(req, ctx.station, ctx.active)) {
+      return res.status(401).json({ error: '방송매니저 또는 방송국 관리자 권한이 필요합니다.' });
+    }
+    const limit = Math.max(1, Math.min(50, parseInt(req.query.limit || '30', 10) || 30));
+    const { data, error } = await supabase
+      .from('donations')
+      .select('*')
+      .eq('station_id', ctx.station.id)
+      .eq('broadcast_id', ctx.active.id)
+      .order('created_at', { ascending: false })
+      .limit(limit);
+    if (error) throw error;
+    res.json({
+      ok: true,
+      station: managerSafeStation(ctx.station, await stationAllowed(req, ctx.station)),
+      broadcast: broadcastToClient(ctx.active),
+      donations: (data || []).map(dbRowToDonation)
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message || '최근 입력 조회 실패' });
+  }
+});
+
 app.get('/api/donations', async (req, res) => {
   try {
     if (!requireDb(res)) return;
     const ctx = await getStationContext(req, res);
     if (!ctx) return;
+    const role = await accessRole(req, ctx.station, ctx.active);
+    if (role === 'broadcast_manager') return res.status(403).json({ error: '방송매니저는 전체 후원/합산 조회를 볼 수 없습니다. 최근 입력은 /api/manager/recent 를 사용하세요.' });
     const broadcastId = req.query.broadcastId || ctx.active.id;
     const donations = await readDonations(ctx.station.id, broadcastId);
     res.json({ station: stationToClient(ctx.station), broadcast: broadcastToClient(ctx.active), donations });
@@ -2721,6 +2858,8 @@ app.get('/api/summary', async (req, res) => {
     if (!requireDb(res)) return;
     const ctx = await getStationContext(req, res);
     if (!ctx) return;
+    const role = await accessRole(req, ctx.station, ctx.active);
+    if (role === 'broadcast_manager') return res.status(403).json({ error: '방송매니저는 합산 조회를 볼 수 없습니다.' });
     const broadcastId = req.query.broadcastId || ctx.active.id;
 
     const settings = await readEffectiveSettings(ctx.station.slug, broadcastId);
@@ -2797,7 +2936,7 @@ app.post('/api/donations', async (req, res) => {
     if (!requireDb(res)) return;
     const ctx = await getStationContext(req, res);
     if (!ctx) return;
-    if (!await operatorAllowed(req, ctx.station, ctx.active)) return res.status(401).json({ error: '방송 비밀번호 또는 방송국 관리자 권한이 필요합니다.' });
+    if (!await managerAllowed(req, ctx.station, ctx.active)) return res.status(401).json({ error: '방송매니저 또는 방송국 관리자 권한이 필요합니다.' });
     if (!await inputAllowedForActiveBroadcast(ctx)) return res.status(403).json({ error: '방송시작 상태에서만 입력할 수 있습니다.' });
 
     const settings = await readEffectiveSettings(ctx.station.slug, ctx.active.id);
@@ -2817,7 +2956,7 @@ app.post('/api/donations/batch', async (req, res) => {
     if (!requireDb(res)) return;
     const ctx = await getStationContext(req, res);
     if (!ctx) return;
-    if (!await operatorAllowed(req, ctx.station, ctx.active)) return res.status(401).json({ error: '방송 비밀번호 또는 방송국 관리자 권한이 필요합니다.' });
+    if (!await managerAllowed(req, ctx.station, ctx.active)) return res.status(401).json({ error: '방송매니저 또는 방송국 관리자 권한이 필요합니다.' });
     if (!await inputAllowedForActiveBroadcast(ctx)) return res.status(403).json({ error: '방송시작 상태에서만 입력할 수 있습니다.' });
 
     const settings = await readEffectiveSettings(ctx.station.slug, ctx.active.id);
@@ -2892,7 +3031,7 @@ app.post('/api/manual-entry', async (req, res) => {
     if (!requireDb(res)) return;
     const ctx = await getStationContext(req, res);
     if (!ctx) return;
-    if (!await operatorAllowed(req, ctx.station, ctx.active)) return res.status(401).json({ error: '방송 비밀번호 또는 방송국 관리자 권한이 필요합니다.' });
+    if (!await managerAllowed(req, ctx.station, ctx.active)) return res.status(401).json({ error: '방송매니저 또는 방송국 관리자 권한이 필요합니다.' });
     if (!await inputAllowedForActiveBroadcast(ctx)) return res.status(403).json({ error: '방송시작 상태에서만 수동 입력할 수 있습니다.' });
 
     const settings = await readEffectiveSettings(ctx.station.slug, ctx.active.id);
@@ -3010,7 +3149,7 @@ app.put('/api/donations/:id', async (req, res) => {
     if (!requireDb(res)) return;
     const ctx = await getStationContext(req, res);
     if (!ctx) return;
-    if (!await operatorAllowed(req, ctx.station, ctx.active)) return res.status(401).json({ error: '방송 비밀번호 또는 방송국 관리자 권한이 필요합니다.' });
+    if (!await managerAllowed(req, ctx.station, ctx.active)) return res.status(401).json({ error: '방송매니저 또는 방송국 관리자 권한이 필요합니다.' });
 
     const settings = await readEffectiveSettings(ctx.station.slug, ctx.active.id);
     const old = await supabase.from('donations').select('*').eq('station_id', ctx.station.id).eq('id', req.params.id).maybeSingle();
@@ -3068,7 +3207,7 @@ app.delete('/api/donations/:id', async (req, res) => {
     if (!requireDb(res)) return;
     const ctx = await getStationContext(req, res);
     if (!ctx) return;
-    if (!await operatorAllowed(req, ctx.station, ctx.active)) return res.status(401).json({ error: '방송 비밀번호 또는 방송국 관리자 권한이 필요합니다.' });
+    if (!await managerAllowed(req, ctx.station, ctx.active)) return res.status(401).json({ error: '방송매니저 또는 방송국 관리자 권한이 필요합니다.' });
 
     const { error } = await supabase.from('donations').delete().eq('station_id', ctx.station.id).eq('id', req.params.id);
     if (error) throw error;
@@ -3083,7 +3222,7 @@ app.post('/api/reset', async (req, res) => {
     if (!requireDb(res)) return;
     const ctx = await getStationContext(req, res);
     if (!ctx) return;
-    if (!await operatorAllowed(req, ctx.station, ctx.active)) return res.status(401).json({ error: '방송 비밀번호 또는 방송국 관리자 권한이 필요합니다.' });
+    if (!await stationAllowed(req, ctx.station)) return res.status(401).json({ error: '방송국 관리자 권한이 필요합니다.' });
 
     const broadcastId = req.body.broadcastId || ctx.active.id;
     const { error } = await supabase.from('donations').delete().eq('station_id', ctx.station.id).eq('broadcast_id', broadcastId);

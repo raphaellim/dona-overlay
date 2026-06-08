@@ -3,6 +3,8 @@ let selectedListId='';
 let editingListId='';
 let sequenceRunning=false;
 let singleRunLock=false;
+let currentRole='guest';
+function isManagerRole(){return currentRole==='broadcast_manager'}
 const MIN_RESULT_VISIBLE_MS=3100;
 const IS_MOBILE=document.body.classList.contains('mobile');
 function RQ(s){return document.querySelector(s);}
@@ -13,10 +15,11 @@ function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
 function setStatus(msg){const el=RQ('#status'); if(el) el.textContent=msg||'';}
 function showTab(name){document.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('hidden',x.dataset.tab!==name));document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x.dataset.open===name));}
 function setButtonsRunning(on){sequenceRunning=on;document.querySelectorAll('[data-run-btn]').forEach(b=>{b.disabled=on;b.classList.toggle('running',on);});}
-async function load(){try{const d=await api('/api/roulette');roulette=d.roulette||{};if(!selectedListId)selectedListId=roulette.lists?.[0]?.id||'';render();setStatus('룰렛 데이터 로드 완료');}catch(e){alert(e.message)}}
+async function load(){try{const d=await api('/api/roulette');currentRole=d.role||'guest';roulette=d.roulette||{};if(!selectedListId)selectedListId=roulette.lists?.[0]?.id||'';render();setStatus('룰렛 데이터 로드 완료');}catch(e){alert(e.message)}}
 async function save(){try{await api('/api/roulette/save',{method:'POST',body:JSON.stringify({roulette})});setStatus('저장 완료');await load();}catch(e){alert(e.message)}}
 function activeList(){return (roulette.lists||[]).find(x=>x.id===selectedListId)||(roulette.lists||[])[0]}
-function render(){renderManual();renderLists();renderRules();renderResult();}
+function render(){renderManual();renderLists();renderRules();renderResult();applyRoleUI();}
+function applyRoleUI(){if(!isManagerRole())return;document.querySelectorAll('.tab[data-open="auto"],.tab[data-open="lists"],[data-tab="auto"],[data-tab="lists"],#pcLink').forEach(el=>el.classList.add('hidden'));const clear=[...document.querySelectorAll('button')].find(b=>(b.textContent||'').includes('RESULT 초기화'));if(clear)clear.classList.add('hidden');if(document.querySelector('.tab.on.hidden'))showTab('manual');}
 function renderManual(){const box=RQ('#manualList');if(!box)return;const lists=roulette.lists||[];box.innerHTML=lists.length?lists.map(l=>`<label class="pill ${selectedListId===l.id?'on':''}"><input class="checkbox" type="checkbox" ${selectedListId===l.id?'checked':''} onchange="selectList('${l.id}')"><span>${esc(l.title)}</span><span class="muted">${(l.items||[]).filter(i=>i.enabled!==false).length}개</span></label>`).join(''):'<div class="muted">룰렛 리스트를 먼저 추가하세요.</div>';const sel=RQ('#pcSelectList'); if(sel){sel.innerHTML=lists.map(l=>`<option value="${esc(l.id)}" ${selectedListId===l.id?'selected':''}>${esc(l.title)}</option>`).join('');} }
 function selectList(id){selectedListId=id;renderManual();}
 function selectListFromPc(v){selectedListId=v;renderManual();}

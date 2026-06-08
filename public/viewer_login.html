@@ -25,15 +25,16 @@
 <script>
 async function login(){
   const params = new URLSearchParams(location.search);
-  const next = params.get('next') || '/summary.html';
+  const station = params.get('station') || localStorage.getItem('STATION_SLUG') || 'default';
+  const next = params.get('next') || ('/summary.html?station=' + encodeURIComponent(station));
   const pw = document.getElementById('pw').value;
   const err = document.getElementById('err');
   err.textContent = '';
   try{
-    const res = await fetch('/api/viewer-login',{
+    const res = await fetch('/api/viewer-login?station=' + encodeURIComponent(station),{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({password:pw})
+      body:JSON.stringify({station,password:pw})
     });
     const data = await res.json().catch(()=>({}));
     if(!res.ok) throw new Error(data.error || '입장 실패');

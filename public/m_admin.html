@@ -702,6 +702,9 @@ let settings = null;
 let station = null;
 let active = null;
 let mobileAuth = { broadcastId: '', password: '' };
+let currentRole = 'guest';
+function isFullAdminRole(){ return currentRole === 'master' || currentRole === 'station_admin'; }
+function isManagerRole(){ return currentRole === 'broadcast_manager'; }
 
 const $ = s => document.querySelector(s);
 
@@ -857,6 +860,11 @@ function renderHeader() {
   $('#mobileControlLink').href = stationUrl('/m_control.html');
   const mediaLink = $('#mediaMobileLink'); if(mediaLink) mediaLink.href = stationUrl('/m_media_manager.html');
   $('#stationLink').href = '/station_login.html?station=' + encodeURIComponent(STATION) + '&next=' + encodeURIComponent('/station_control.html?station=' + encodeURIComponent(STATION));
+  if (isManagerRole()) {
+    if (mediaLink) mediaLink.style.display = 'none';
+    const stationLink = $('#stationLink'); if (stationLink) stationLink.style.display = 'none';
+    const title = document.querySelector('.page-title'); if (title) title.textContent = '모바일 후원 입력 · 매니저';
+  }
 }
 
 
@@ -1043,7 +1051,7 @@ async function saveBatch() {
     }
 
     const savedPw = mobileAuth.password || getSavedBroadcastPassword();
-    if (!savedPw) {
+    if (!isFullAdminRole() && !savedPw) {
       showLoginGate();
       return alert('방송 로그인이 필요합니다.');
     }
@@ -1063,7 +1071,7 @@ async function saveBatch() {
       fundingUnits: '',
       rouletteRuleId: isRoulette ? selected.replace('roulette:', '') : '',
       broadcastId: active.id,
-      broadcastPassword: savedPw
+      broadcastPassword: isFullAdminRole() ? '' : savedPw
     };
 
     if (getTopTotal() !== getSplitTotal() && !confirm('총액과 분배 합계가 다릅니다. 그대로 저장할까요?')) return;
@@ -1104,6 +1112,7 @@ async function loadSettings(updateAuthInfo = true) {
   await loadStationInfo();
 
   settings = await api('/api/settings');
+  currentRole = settings.role || 'guest';
   settings.station = station;
   settings.broadcast = active;
 
@@ -1122,8 +1131,9 @@ async function loadSettings(updateAuthInfo = true) {
 
 async function loadRecent() {
   try {
-    const d = await api('/api/donations');
-    const arr = (d.donations || []).slice(-8).reverse();
+    const d = await api(isManagerRole() ? '/api/manager/recent?limit=8' : '/api/donations');
+    const baseArr = d.donations || [];
+    const arr = isManagerRole() ? baseArr.slice(0, 8) : baseArr.slice(-8).reverse();
 
     $('#recentList').innerHTML = arr.length
       ? arr.map(r => `<div class="recent"><div><b>${esc(r.donor || '-')} → ${esc(r.creator || '-')}</b><div class="muted">${new Date(r.createdAt || Date.now()).toLocaleString('ko-KR')} · ${fmtWon(r.totalAmount || r.amount || 0)} · ${esc(r.resultLabel || r.processType || '')}</div></div><span class="status">저장완료</span><button class="btn red mini" style="width:54px" onclick="deleteRecent('${esc(r.id)}')">삭제</button></div>`).join('')
@@ -1141,7 +1151,7 @@ async function deleteRecent(id){
     const savedPw = mobileAuth.password || getSavedBroadcastPassword();
     await api('/api/donations/' + encodeURIComponent(id), {
       method:'DELETE',
-      body: JSON.stringify({ broadcastId: active?.id || '', broadcastPassword: savedPw })
+      body: JSON.stringify({ broadcastId: active?.id || '', broadcastPassword: isFullAdminRole() ? '' : savedPw })
     });
     toast('삭제 완료');
     await Promise.all([loadSettings(false), loadRecent()]);
@@ -1166,6 +1176,12 @@ document.addEventListener('keydown', e => {
 async function init(){
   try{
     await loadSettings();
+
+    if (isFullAdminRole()) {
+      hideLoginGate();
+      await loadRecent();
+      return;
+    }
 
     const savedPw = getSavedBroadcastPassword();
     if (active?.id && savedPw) {

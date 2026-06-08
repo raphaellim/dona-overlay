@@ -1,0 +1,24 @@
+권한 구조(v_f01 auth roles)
+
+1) 최고관리자
+- admin_login.html / ADMIN_PASSWORD
+- 전체 방송국, 전체 설정, master.html 접근 가능
+- 모든 방송국 관리 API 가능
+
+2) 방송국관리자 = 크리에이터
+- station_login.html / 방송국 관리자 비밀번호
+- 해당 방송국 전체권한
+- station_control, admin/control, m_admin/m_control, m_creator, media, style, roulette 등 접근 가능
+- 합산/상세/설정/방송 생성·수정 가능
+
+3) 방송매니저
+- m_creator.html 안의 방송 비밀번호 로그인
+- 해당 당일/현재 방송 입력·수정 권한
+- 허용: 후원입력, 프리셋 수동 +/-, 용돈 +/-, 펀딩 금액/후원 추가, 룰렛 실행/다음/초기화, 최근입력 수정/삭제, m_creator 노출 ON/OFF
+- 제한: 합산/요약/도네이터 상세/방송국 설정/방송 생성·삭제/크리에이터 목록/프리셋 설정/룰렛 목록 설정/미디어 관리/오버레이 토큰 확인
+
+중요 변경
+- 기존 operatorAllowed가 방송 비밀번호까지 전체 관리자처럼 허용하던 부분을 분리함.
+- 관리자 페이지(STATION_HTML)는 방송국관리자 권한만 허용.
+- m_creator.html은 페이지 셸은 열리지만, 저장/수정 API는 방송 비밀번호 또는 방송국관리자 권한이 필요함.
+- 방송매니저는 합산 API 대신 /api/manager/recent 로 현재 방송 최근 입력만 확인함.
