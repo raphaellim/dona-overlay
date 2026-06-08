@@ -1,0 +1,11 @@
+v_f01 creator roulette refresh fix
+
+수정 내용:
+- public/m_creator.html 룰렛 실행 후 서버 응답의 roulette 데이터를 즉시 화면에 반영.
+- 연속 룰렛 진행 중 현재 룰렛/대기열/최근 결과가 자동으로 갱신되도록 /api/roulette 폴링 추가.
+- 다음 룰렛 버튼은 서버 응답의 roulette 데이터로 즉시 상단 현재 룰렛과 결과 리스트를 갱신.
+- 초기화도 전체 새로고침 대신 룰렛 영역만 즉시 갱신.
+
+원인:
+- 연속 룰렛은 첫 번째 결과만 history에 먼저 들어가고, 이후 회차는 /api/roulette/advance 때마다 history에 추가되는 구조.
+- m_creator.html은 돌리기 직후 1회만 loadAll을 호출하고 이후 /api/roulette 상태를 계속 갱신하지 않아, 상단 현재 룰렛과 결과 리스트가 첫 번째 상태에 머물렀음.
