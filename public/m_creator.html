@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>크리에이터 모바일 컨트롤</title>
 <style>
-*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#070b12;color:#e5e7eb;font-family:Arial,'Noto Sans KR',sans-serif}body{padding-bottom:92px}.top{position:sticky;top:0;z-index:20;background:linear-gradient(180deg,#07111f,#070b12);border-bottom:1px solid #253247;padding:12px 12px 8px}.topline{display:flex;align-items:center;justify-content:space-between;gap:10px}.title{font-size:19px;font-weight:1000;letter-spacing:-.3px}.sub{font-size:12px;color:#94a3b8;margin-top:4px;line-height:1.35}.tabs{display:flex;gap:8px;overflow:auto;padding:10px 0 2px;scrollbar-width:none}.tabs::-webkit-scrollbar{display:none}.tab{white-space:nowrap;border:1px solid #334155;border-radius:999px;background:#0f172a;color:#dbeafe;padding:10px 12px;font-weight:1000;font-size:13px}.tab.active{background:linear-gradient(90deg,#ff4fa3,#2563eb);border-color:rgba(255,255,255,.2);color:#fff}.tab.off{opacity:.42}.wrap{padding:12px}.panel{display:none}.panel.active{display:block}.card{background:#0b1220;border:1px solid #253247;border-radius:18px;padding:14px;margin-bottom:12px;box-shadow:0 10px 26px rgba(0,0,0,.18)}.card-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}h2{font-size:17px;margin:0;font-weight:1000}.badge{font-size:12px;color:#cbd5e1;border:1px solid #334155;border-radius:999px;padding:4px 8px;background:#101827}.badge.on{color:#bbf7d0;border-color:#166534}.badge.off{color:#fecaca;border-color:#7f1d1d}.row{margin-bottom:11px}label{display:block;margin-bottom:6px;font-size:13px;color:#cbd5e1;font-weight:900}.input,input,select,textarea{width:100%;min-height:50px;background:#070b12;color:#fff;border:1px solid #334155;border-radius:14px;padding:11px 12px;font-size:16px;font-weight:800;outline:none}.input:focus,input:focus,select:focus,textarea:focus{border-color:#60a5fa;box-shadow:0 0 0 3px rgba(96,165,250,.12)}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}.btn{width:100%;min-height:48px;border:0;border-radius:14px;background:#334155;color:#fff;font-weight:1000;font-size:15px}.btn:disabled{opacity:.45}.green{background:#16a34a}.blue{background:#2563eb}.red{background:#dc2626}.pink{background:#ec4899}.gray{background:#334155}.cyan{background:#0891b2}.mini{min-height:38px;font-size:13px;border-radius:12px}.result{background:#101827;border:1px solid #334155;border-radius:15px;padding:12px;margin-bottom:11px;font-weight:1000}.muted{font-size:12px;color:#94a3b8;line-height:1.45}.offbox{border:1px dashed #475569;background:#0f172a;color:#cbd5e1;border-radius:15px;padding:10px;font-size:13px;margin-bottom:10px}.quickrow{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}.quickrow button{min-height:40px;font-size:13px}.bottom{position:fixed;left:0;right:0;bottom:0;z-index:30;background:#07111f;border-top:1px solid #253247;padding:9px 12px calc(9px + env(safe-area-inset-bottom));display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}.toast{position:fixed;left:50%;bottom:92px;transform:translateX(-50%) translateY(20px);background:#111827;border:1px solid #334155;border-radius:999px;padding:10px 14px;color:#fff;font-weight:1000;opacity:0;pointer-events:none;transition:.2s;z-index:50}.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}.login-gate{position:fixed;inset:0;z-index:100;background:rgba(3,7,18,.94);display:none;align-items:center;justify-content:center;padding:18px}.login-box{width:min(420px,100%);background:#0b1220;border:1px solid #334155;border-radius:22px;padding:20px}.login-box h1{margin:0 0 8px;font-size:24px}.recent{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;background:#101827;border:1px solid #334155;border-radius:14px;padding:10px;margin-bottom:8px}.statusline{display:grid;grid-template-columns:1fr 1fr;gap:8px}.statuspill{background:#101827;border:1px solid #334155;border-radius:14px;padding:10px;font-size:12px;color:#94a3b8}.statuspill b{display:block;font-size:17px;color:#fff;margin-top:3px}.danger-note{color:#fecaca}.live-dot{width:8px;height:8px;border-radius:999px;background:#22c55e;display:inline-block;margin-right:6px;box-shadow:0 0 10px rgba(34,197,94,.8)}@media(max-width:380px){.grid2,.grid3,.bottom{grid-template-columns:1fr}.quickrow{grid-template-columns:1fr 1fr}body{padding-bottom:176px}}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#070b12;color:#e5e7eb;font-family:Arial,'Noto Sans KR',sans-serif}body{padding-bottom:92px}.top{position:sticky;top:0;z-index:20;background:linear-gradient(180deg,#07111f,#070b12);border-bottom:1px solid #253247;padding:12px 12px 8px}.topline{display:flex;align-items:center;justify-content:space-between;gap:10px}.title{font-size:19px;font-weight:1000;letter-spacing:-.3px}.sub{font-size:12px;color:#94a3b8;margin-top:4px;line-height:1.35}.tabs{display:flex;gap:8px;overflow:auto;padding:10px 0 2px;scrollbar-width:none}.tabs::-webkit-scrollbar{display:none}.tab{white-space:nowrap;border:1px solid #334155;border-radius:999px;background:#0f172a;color:#dbeafe;padding:10px 12px;font-weight:1000;font-size:13px}.tab.active{background:linear-gradient(90deg,#ff4fa3,#2563eb);border-color:rgba(255,255,255,.2);color:#fff}.tab.off{opacity:.42}.wrap{padding:12px}.panel{display:none}.panel.active{display:block}.card{background:#0b1220;border:1px solid #253247;border-radius:18px;padding:14px;margin-bottom:12px;box-shadow:0 10px 26px rgba(0,0,0,.18)}.card-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}h2{font-size:17px;margin:0;font-weight:1000}.badge{font-size:12px;color:#cbd5e1;border:1px solid #334155;border-radius:999px;padding:4px 8px;background:#101827}.badge.on{color:#bbf7d0;border-color:#166534}.badge.off{color:#fecaca;border-color:#7f1d1d}.row{margin-bottom:11px}label{display:block;margin-bottom:6px;font-size:13px;color:#cbd5e1;font-weight:900}.input,input,select,textarea{width:100%;min-height:50px;background:#070b12;color:#fff;border:1px solid #334155;border-radius:14px;padding:11px 12px;font-size:16px;font-weight:800;outline:none}.input:focus,input:focus,select:focus,textarea:focus{border-color:#60a5fa;box-shadow:0 0 0 3px rgba(96,165,250,.12)}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}.btn{width:100%;min-height:48px;border:0;border-radius:14px;background:#334155;color:#fff;font-weight:1000;font-size:15px}.btn:disabled{opacity:.45}.green{background:#16a34a}.blue{background:#2563eb}.red{background:#dc2626}.pink{background:#ec4899}.gray{background:#334155}.cyan{background:#0891b2}.orange{background:#f97316}.mini{min-height:38px;font-size:13px;border-radius:12px}.result{background:#101827;border:1px solid #334155;border-radius:15px;padding:12px;margin-bottom:11px;font-weight:1000}.muted{font-size:12px;color:#94a3b8;line-height:1.45}.offbox{border:1px dashed #475569;background:#0f172a;color:#cbd5e1;border-radius:15px;padding:10px;font-size:13px;margin-bottom:10px}.quickrow{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:11px}.quickrow button{min-height:40px;font-size:13px}.bottom{position:fixed;left:0;right:0;bottom:0;z-index:30;background:#07111f;border-top:1px solid #253247;padding:9px 12px calc(9px + env(safe-area-inset-bottom));display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}.toast{position:fixed;left:50%;bottom:92px;transform:translateX(-50%) translateY(20px);background:#0f172a;border:1px solid #22c55e;border-radius:999px;padding:10px 14px;color:#fff;font-weight:1000;opacity:0;pointer-events:none;transition:.2s;z-index:60;box-shadow:0 12px 30px rgba(0,0,0,.35)}.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}.login-gate{position:fixed;inset:0;z-index:100;background:rgba(3,7,18,.94);display:none;align-items:center;justify-content:center;padding:18px}.login-box{width:min(420px,100%);background:#0b1220;border:1px solid #334155;border-radius:22px;padding:20px}.login-box h1{margin:0 0 8px;font-size:24px}.recent-wrap,.roulette-history{max-height:246px;overflow:auto;padding-right:2px}.recent{display:grid;grid-template-columns:34px 1fr auto;gap:8px;align-items:center;background:#101827;border:1px solid #334155;border-radius:14px;padding:10px;margin-bottom:8px}.recent .num{width:28px;height:28px;border-radius:999px;background:#1e293b;display:flex;align-items:center;justify-content:center;font-weight:1000;color:#bfdbfe}.statusline{display:grid;grid-template-columns:1fr 1fr;gap:8px}.statuspill{background:#101827;border:1px solid #334155;border-radius:14px;padding:10px;font-size:12px;color:#94a3b8}.statuspill b{display:block;font-size:17px;color:#fff;margin-top:3px}.danger-note{color:#fecaca}.live-dot{width:8px;height:8px;border-radius:999px;background:#22c55e;display:inline-block;margin-right:6px;box-shadow:0 0 10px rgba(34,197,94,.8)}.checkbar{display:flex;gap:8px;margin-bottom:8px}.checklist{display:grid;grid-template-columns:1fr 1fr;gap:8px;max-height:180px;overflow:auto}.checkitem{display:flex;align-items:center;gap:8px;background:#101827;border:1px solid #334155;border-radius:14px;padding:10px;font-size:14px;font-weight:900;min-height:46px}.checkitem input{width:20px;min-height:20px;accent-color:#ec4899}.modal-bg{position:fixed;inset:0;z-index:80;background:rgba(0,0,0,.58);display:none;align-items:center;justify-content:center;padding:16px}.modal{width:min(460px,100%);background:#0b1220;border:1px solid #ef4444;border-radius:20px;padding:16px;box-shadow:0 20px 60px rgba(0,0,0,.5)}.modal h3{margin:0 0 8px;font-size:18px;color:#fecaca}.modal pre{white-space:pre-wrap;word-break:break-word;background:#070b12;border:1px solid #334155;border-radius:12px;padding:10px;max-height:220px;overflow:auto;color:#e5e7eb;font-size:12px}.empty{border:1px dashed #475569;border-radius:14px;padding:12px;color:#94a3b8;text-align:center}.history-row{display:grid;grid-template-columns:34px 1fr;gap:8px;align-items:center;background:#101827;border:1px solid #334155;border-radius:14px;padding:10px;margin-bottom:8px}.history-row .num{width:28px;height:28px;border-radius:999px;background:#1e293b;display:flex;align-items:center;justify-content:center;font-weight:1000;color:#fbcfe8}@media(max-width:380px){.grid2,.grid3,.bottom,.checklist{grid-template-columns:1fr}.quickrow{grid-template-columns:1fr 1fr}body{padding-bottom:176px}}
 </style>
 </head>
 <body>
@@ -44,13 +44,14 @@
         <div class="statuspill">계좌/후원<b id="stAccount">-</b></div>
         <div class="statuspill">크리에이터<b id="stCreators">-</b></div>
         <div class="statuspill">펀딩<b id="stFunding">-</b></div>
-        <div class="statuspill">용돈<b id="stAllowance">-</b></div>
+        <div class="statuspill">현재용돈<b id="stAllowance">-</b></div>
       </div>
-      <p class="muted" style="margin-bottom:0">탭은 방송 화면에 켜진 항목 위주로 활성화됩니다. OFF인 항목은 저장 버튼을 누르기 전에 노출 탭에서 켜면 됩니다.</p>
+      <p class="muted" style="margin-bottom:0">방송 화면에 실제 켜진 항목만 빠르게 수정하는 모바일 페이지입니다.</p>
     </div>
     <div class="card">
       <div class="card-head"><h2>최근 입력</h2><button class="btn mini gray" style="width:82px" onclick="loadRecent()">갱신</button></div>
-      <div id="recentList"><div class="muted">불러오는 중...</div></div>
+      <div id="recentList" class="recent-wrap"><div class="muted">불러오는 중...</div></div>
+      <p class="muted">최근 3칸 높이로 보이고, 나머지는 안에서 스크롤됩니다.</p>
     </div>
   </section>
 
@@ -59,157 +60,163 @@
       <div class="card-head"><h2>오버레이 노출 탭키</h2><span class="badge">ON/OFF</span></div>
       <div class="grid2" id="displayToggles"></div>
       <button class="btn blue" style="margin-top:10px" onclick="saveDisplay()">노출 상태 저장</button>
-      <p class="muted">크리에이터가 방송 중 바로 만질 항목만 넣었습니다. 공지/노래방/미디어 같은 전체 설정은 기존 모바일 설정에서 관리하세요.</p>
+      <p class="muted">용돈 ON/OFF도 여기서 바로 켜고 끌 수 있습니다.</p>
     </div>
   </section>
 
   <section id="donation" class="panel">
     <div class="card">
       <div class="card-head"><h2>후원 입력</h2><span id="donationVisible" class="badge">-</span></div>
-      <div id="donationOff" class="offbox" style="display:none">후원/크리에이터 박스가 OFF 상태입니다. 노출 탭에서 켜야 방송화면 기준 활성 상태가 됩니다.</div>
+      <div id="donationOff" class="offbox" style="display:none">후원/크리에이터 박스가 OFF 상태입니다. 노출 탭에서 켜야 방송 화면에 보입니다.</div>
       <div class="row"><label>도네이터명</label><input id="donor" class="input" placeholder="도네이터"></div>
       <div class="grid2">
         <div class="row"><label>금액</label><input id="donationAmount" class="input" inputmode="decimal" placeholder="6.6 / 6600"></div>
         <div class="row"><label>구분</label><select id="donationSource" class="input"><option value="account">계좌</option><option value="toonie">투네</option></select></div>
       </div>
-      <div class="quickrow" style="margin-bottom:11px"><button class="btn mini gray" onclick="addAmount('donationAmount',10000)">+1만</button><button class="btn mini gray" onclick="addAmount('donationAmount',50000)">+5만</button><button class="btn mini gray" onclick="addAmount('donationAmount',100000)">+10만</button><button class="btn mini red" onclick="clearInput('donationAmount')">초기화</button></div>
-      <div class="row"><label>크리에이터</label><select id="donationCreator" class="input"></select></div>
+      <div class="quickrow"><button class="btn mini gray" onclick="addAmount('donationAmount',1000)">+1천</button><button class="btn mini gray" onclick="addAmount('donationAmount',5000)">+5천</button><button class="btn mini gray" onclick="addAmount('donationAmount',10000)">+1만</button><button class="btn mini red" onclick="clearInput('donationAmount')">초기화</button></div>
+      <div class="row"><label>크리에이터 선택</label><div class="checkbar"><button class="btn mini gray" onclick="setCreatorChecks('donationCreatorChecks',true)">전체선택</button><button class="btn mini gray" onclick="setCreatorChecks('donationCreatorChecks',false)">전체해제</button></div><div id="donationCreatorChecks" class="checklist"></div></div>
       <div class="row"><label>메모</label><input id="donationMemo" class="input" placeholder="선택"></div>
       <button class="btn green" onclick="saveDonation()">후원 저장</button>
-      <p class="muted">일반 후원 저장은 기존 입력처럼 오버레이 ALERT/합산에 반영됩니다.</p>
+      <p class="muted">선택한 크리에이터마다 동일 금액으로 저장됩니다. 일반 후원 저장이라 오버레이 ALERT가 뜹니다.</p>
     </div>
   </section>
 
   <section id="preset" class="panel">
     <div class="card">
       <div class="card-head"><h2>프리셋 수동변경 입력</h2><span id="presetVisible" class="badge">-</span></div>
-      <div id="presetOff" class="offbox" style="display:none">크리에이터/옵션 표시가 OFF 상태입니다. 그래도 저장은 가능하지만 방송 화면 기준으로는 보이지 않을 수 있습니다.</div>
+      <div id="presetOff" class="offbox" style="display:none">크리에이터/옵션 표시가 OFF 상태입니다. 저장은 가능하지만 방송 화면에는 보이지 않을 수 있습니다.</div>
       <div class="row"><label>도네이터명</label><input id="presetDonor" class="input" placeholder="도네이터"></div>
       <div class="grid2">
         <div class="row"><label>금액</label><input id="presetAmount" class="input" inputmode="decimal" placeholder="1.2 / 12000"></div>
         <div class="row"><label>구분</label><select id="presetSource" class="input"><option value="toonie">투네</option><option value="account">계좌</option></select></div>
       </div>
-      <div class="grid2">
-        <div class="row"><label>크리에이터</label><select id="presetCreator" class="input"></select></div>
-        <div class="row"><label>프리셋</label><select id="presetProcess" class="input"></select></div>
-      </div>
+      <div class="row"><label>크리에이터 선택</label><div class="checkbar"><button class="btn mini gray" onclick="setCreatorChecks('presetCreatorChecks',true)">전체선택</button><button class="btn mini gray" onclick="setCreatorChecks('presetCreatorChecks',false)">전체해제</button></div><div id="presetCreatorChecks" class="checklist"></div></div>
+      <div class="row"><label>프리셋</label><select id="presetProcess" class="input"></select></div>
       <div class="row"><label>메모</label><input id="presetMemo" class="input" placeholder="선택"></div>
       <button class="btn pink" onclick="savePresetManual()">프리셋 수동 저장</button>
-      <p class="muted">수동변경 입력은 합산/표시값만 조정하고 ALERT는 띄우지 않습니다.</p>
+      <p class="muted">후원 ALERT와 상관없는 무알림 수동변경입니다.</p>
     </div>
   </section>
 
   <section id="allowance" class="panel">
     <div class="card">
-      <div class="card-head"><h2>용돈 수동변경</h2><span id="allowanceVisible" class="badge">-</span></div>
+      <div class="card-head"><h2>용돈 수동변경</h2><span id="allowanceVisible" class="badge">계좌후원 기준</span></div>
       <div class="result" id="allowanceCurrent">현재용돈 : 0원</div>
       <div class="grid2">
-        <div class="row"><label>금액</label><input id="allowanceAmount" class="input" inputmode="decimal" placeholder="10 = 10,000원"></div>
-        <div class="row"><label>방향</label><select id="allowanceDirection" class="input"><option value="plus">+ 추가</option><option value="minus">- 제외</option></select></div>
+        <div class="row"><label>금액</label><input id="allowanceAmount" class="input" inputmode="decimal" placeholder="1 / 10000"></div>
+        <div class="row"><label>방향</label><select id="allowanceDirection" class="input"><option value="plus">증가 +</option><option value="minus">차감 -</option></select></div>
       </div>
-      <div class="quickrow" style="margin-bottom:11px"><button class="btn mini gray" onclick="addAmount('allowanceAmount',10000)">+1만</button><button class="btn mini gray" onclick="addAmount('allowanceAmount',50000)">+5만</button><button class="btn mini gray" onclick="addAmount('allowanceAmount',100000)">+10만</button><button class="btn mini red" onclick="clearInput('allowanceAmount')">초기화</button></div>
-      <button class="btn blue" onclick="saveAllowance()">용돈 저장</button>
+      <div class="quickrow"><button class="btn mini gray" onclick="addAmount('allowanceAmount',1000)">+1천</button><button class="btn mini gray" onclick="addAmount('allowanceAmount',5000)">+5천</button><button class="btn mini gray" onclick="addAmount('allowanceAmount',10000)">+1만</button><button class="btn mini red" onclick="clearInput('allowanceAmount')">초기화</button></div>
+      <button class="btn cyan" onclick="saveAllowance()">용돈 저장</button>
     </div>
   </section>
 
   <section id="funding" class="panel">
     <div class="card">
       <div class="card-head"><h2>펀딩금액 변경</h2><span id="fundingVisible" class="badge">-</span></div>
-      <div id="fundingOff" class="offbox" style="display:none">펀딩 박스가 OFF 상태입니다. 노출 탭에서 켜면 방송화면에 표시됩니다.</div>
+      <div id="fundingOff" class="offbox" style="display:none">펀딩 노출이 OFF 상태입니다. 노출 탭에서 켜야 방송 화면에 보입니다.</div>
       <div class="row"><label>펀딩 선택</label><select id="fundingSelect" class="input" onchange="renderFundingValues()"></select></div>
       <div class="grid2">
-        <div class="row"><label>현재금액 직접수정</label><input id="fundingCurrent" class="input" inputmode="decimal" placeholder="현재금액"></div>
-        <div class="row"><label>목표금액</label><input id="fundingTarget" class="input" inputmode="decimal" placeholder="목표금액"></div>
+        <div class="row"><label>현재금액</label><input id="fundingCurrent" class="input" inputmode="decimal"></div>
+        <div class="row"><label>목표금액</label><input id="fundingTarget" class="input" inputmode="decimal"></div>
       </div>
       <button class="btn blue" onclick="saveFundingDirect()">펀딩 금액 저장</button>
     </div>
     <div class="card">
       <div class="card-head"><h2>펀딩 후원 추가</h2><span class="badge">무알림</span></div>
-      <div class="row"><label>도네이터명</label><input id="fundDonor" class="input" placeholder="도네이터"></div>
       <div class="grid2">
-        <div class="row"><label>추가금액</label><input id="fundAmount" class="input" inputmode="decimal" placeholder="2.0 / 20000"></div>
-        <div class="row"><label>구분</label><select id="fundSource" class="input"><option value="toonie">투네</option><option value="account">계좌</option></select></div>
+        <div class="row"><label>도네이터</label><input id="fundDonor" class="input" placeholder="도네이터"></div>
+        <div class="row"><label>금액</label><input id="fundAmount" class="input" inputmode="decimal" placeholder="1 / 10000"></div>
       </div>
-      <button class="btn pink" onclick="saveFundingManual()">펀딩 추가 저장</button>
+      <div class="quickrow"><button class="btn mini gray" onclick="addAmount('fundAmount',1000)">+1천</button><button class="btn mini gray" onclick="addAmount('fundAmount',5000)">+5천</button><button class="btn mini gray" onclick="addAmount('fundAmount',10000)">+1만</button><button class="btn mini red" onclick="clearInput('fundAmount')">초기화</button></div>
+      <div class="row"><label>구분</label><select id="fundSource" class="input"><option value="toonie">투네</option><option value="account">계좌</option></select></div>
+      <button class="btn green" onclick="saveFundingManual()">펀딩 후원 추가</button>
     </div>
   </section>
 
   <section id="roulette" class="panel">
     <div class="card">
-      <div class="card-head"><h2>룰렛 선택 / 버튼</h2><span id="rouletteVisible" class="badge">-</span></div>
-      <div class="row"><label>룰렛 리스트</label><select id="rouletteList" class="input"></select></div>
+      <div class="card-head"><h2>룰렛 선택/실행</h2><span id="rouletteVisible" class="badge">-</span></div>
+      <div class="result" id="rouletteCurrent">현재 룰렛 : 없음</div>
+      <div class="row"><label>룰렛 선택</label><div class="checkbar"><button class="btn mini gray" onclick="setRouletteChecks(true)">전체선택</button><button class="btn mini gray" onclick="setRouletteChecks(false)">전체해제</button></div><div id="rouletteChecks" class="checklist"></div></div>
       <div class="grid2">
         <div class="row"><label>횟수</label><input id="rouletteCount" class="input" inputmode="numeric" value="1"></div>
-        <div class="row"><label>연출시간(ms)</label><input id="rouletteDuration" class="input" inputmode="numeric" placeholder="기본값"></div>
+        <div class="row"><label>연출시간(ms)</label><input id="rouletteDuration" class="input" inputmode="numeric" placeholder="기본"></div>
       </div>
-      <div class="grid3"><button class="btn green" onclick="startRoulette()">시작</button><button class="btn blue" onclick="advanceRoulette()">다음</button><button class="btn red" onclick="resetRoulette()">초기화</button></div>
-      <div class="result" id="rouletteCurrent" style="margin-top:11px">현재 룰렛 : 없음</div>
+      <div class="grid3"><button class="btn orange" onclick="startRoulette()">선택 룰렛 시작</button><button class="btn blue" onclick="advanceRoulette()">다음</button><button class="btn red" onclick="resetRoulette()">초기화</button></div>
+      <p class="muted">여러 룰렛을 체크해도 현재 화면에 실행되는 룰렛은 서버 규칙상 한 번에 1개입니다. 시작은 첫 번째 선택 룰렛 기준입니다.</p>
+    </div>
+    <div class="card">
+      <div class="card-head"><h2>선택 룰렛 최근 결과</h2><button class="btn mini gray" style="width:82px" onclick="renderRouletteHistory()">갱신</button></div>
+      <div id="rouletteHistory" class="roulette-history"><div class="muted">선택된 룰렛 기준으로 표시됩니다.</div></div>
+      <p class="muted">최근 5칸 높이로 보이고, 나머지는 안에서 스크롤됩니다.</p>
     </div>
   </section>
 </main>
-<div class="bottom">
-  <button class="btn gray" onclick="openOverlay()">오버레이</button>
-  <button class="btn blue" onclick="setTab('donation')">후원입력</button>
-  <button class="btn pink" onclick="setTab('roulette')">룰렛</button>
-</div>
-<div class="toast" id="toast"></div>
+<div class="bottom"><button class="btn gray" onclick="openOverlay()">오버레이</button><button class="btn blue" onclick="loadAll(true)">갱신</button><button class="btn pink" onclick="switchTab('donation')">후원입력</button></div>
+<div id="toast" class="toast"></div>
+<div id="errorBg" class="modal-bg"><div class="modal"><h3>오류 ALERT</h3><pre id="errorText"></pre><button class="btn red" onclick="closeError()">확인</button></div></div>
 <script>
-const PARAMS = new URLSearchParams(location.search);
-const STATION = PARAMS.get('station') || localStorage.getItem('STATION_SLUG') || 'default';
-localStorage.setItem('STATION_SLUG', STATION);
-let settings=null, station=null, active=null, mobileAuth={broadcastId:'',password:''};
-const $=s=>document.querySelector(s);
-const $$=s=>Array.from(document.querySelectorAll(s));
-function esc(v){return String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch]))}
-function toWon(v){const raw=String(v??'').trim().replace(/,/g,'');if(!raw)return 0;const n=Number(raw.replace(/[^0-9.-]/g,''));if(!Number.isFinite(n))return 0;if(Math.abs(n)>0&&Math.abs(n)<1000)return Math.round(n*1000);return Math.trunc(n)}
-function fromWon(n){const v=Number(n||0);return v?String(v):''}
-function fmt(n){return Math.trunc(Number(n||0)).toLocaleString('ko-KR')}
-function toast(msg){const el=$('#toast');el.textContent=msg;el.classList.add('show');clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('show'),1600)}
-function authBody(){return {broadcastId:active?.id||'',broadcastPassword:mobileAuth.password||getSavedBroadcastPassword()||''}}
-async function api(url,opt={}){const u=new URL(url,location.origin);u.searchParams.set('station',STATION);const options=Object.assign({headers:{}},opt||{});if(options.body&&!options.headers['Content-Type'])options.headers['Content-Type']='application/json';const res=await fetch(u.pathname+u.search,options);const data=await res.json().catch(()=>({}));if(!res.ok)throw new Error(data.error||res.statusText||'API 오류');return data}
-function showLoginGate(){const g=$('#loginGate');if(g)g.style.display='flex'}
-function hideLoginGate(){const g=$('#loginGate');if(g)g.style.display='none'}
-function getSavedBroadcastPassword(){return active?.id?localStorage.getItem('broadcastPassword_'+active.id)||'':''}
-function setSavedBroadcastPassword(pw){if(active?.id)localStorage.setItem('broadcastPassword_'+active.id,pw||'')}
-function clearSavedBroadcastPassword(){if(active?.id)localStorage.removeItem('broadcastPassword_'+active.id)}
-async function mobileBroadcastLogin(){if(!active?.id)return alert('현재 선택된 방송이 없습니다.');const pw=$('#mobileBroadcastPw').value.trim();if(!pw)return alert('방송 비밀번호를 입력하세요.');try{await api('/api/broadcast-login',{method:'POST',body:JSON.stringify({broadcastId:active.id,password:pw})});mobileAuth={broadcastId:active.id,password:pw};setSavedBroadcastPassword(pw);hideLoginGate();toast('로그인 완료');await loadRecent()}catch(e){alert(e.message||'로그인 실패')}}
-function isLive(){const l=settings?.broadcastLiveData||settings?.broadcast?.broadcastLiveData||{};return l.live===true||l.status==='live'}
-function sectionOn(key){return (settings?.overlaySections||{})[key]===true}
-function donationOn(){return sectionOn('account')||sectionOn('creators')||sectionOn('creatorDonations')}
-function allowanceOn(){return sectionOn('account')}
-function badge(el,on){if(!el)return;el.textContent=on?'ON':'OFF';el.classList.toggle('on',!!on);el.classList.toggle('off',!on)}
-function setTab(id){$$('.tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===id));$$('.panel').forEach(p=>p.classList.toggle('active',p.id===id));window.scrollTo({top:0,behavior:'smooth'})}
-$$('.tab').forEach(b=>b.addEventListener('click',()=>setTab(b.dataset.tab)));
+const qs=new URLSearchParams(location.search);const STATION=qs.get('station')||qs.get('slug')||localStorage.getItem('station_slug')||'default';
+let settings={},station=null,active=null,mobileAuth={broadcastId:'',password:''};
+const $=s=>document.querySelector(s);const $$=s=>Array.from(document.querySelectorAll(s));
+const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const fmt=n=>Number(n||0).toLocaleString('ko-KR');
+const norm=s=>String(s||'').trim();
+function toWon(v){let s=String(v??'').replace(/,/g,'').trim();if(!s)return 0;let n=Number(s);if(!Number.isFinite(n))return 0;if(s.includes('.'))return Math.round(n*10000);if(n>0&&n<1000)return Math.round(n*10000);return Math.round(n)}
+function fromWon(v){return String(Math.round(Number(v||0)))}
+function apiPath(path){const u=new URL(path,location.origin);if(!u.searchParams.get('station'))u.searchParams.set('station',STATION);return u.pathname+u.search}
+async function api(path,opt={}){const headers={'Content-Type':'application/json',...(opt.headers||{})};let res;try{res=await fetch(apiPath(path),{credentials:'include',...opt,headers})}catch(err){err.status='NETWORK';err.endpoint=path;throw err}let data={};try{data=await res.json()}catch(e){}if(!res.ok){const err=new Error(data.error||res.statusText||'요청 실패');err.status=res.status;err.endpoint=path;err.payload=data;throw err}return data}
+function authBody(){return mobileAuth?.broadcastId?{broadcastId:mobileAuth.broadcastId,broadcastPassword:mobileAuth.password,password:mobileAuth.password}:{}}
+function getSavedBroadcastPassword(){return localStorage.getItem(`creator_pw_${STATION}_${active?.id||''}`)||''}
+function saveBroadcastPassword(pw){if(active?.id)localStorage.setItem(`creator_pw_${STATION}_${active.id}`,pw)}
+function clearSavedBroadcastPassword(){if(active?.id)localStorage.removeItem(`creator_pw_${STATION}_${active.id}`)}
+function showLoginGate(){$('#loginGate').style.display='flex'}function hideLoginGate(){$('#loginGate').style.display='none'}
+function showSuccess(msg){const t=$('#toast');t.textContent='성공 ALERT · '+msg;t.classList.add('show');clearTimeout(showSuccess._t);showSuccess._t=setTimeout(()=>t.classList.remove('show'),1300)}
+function closeError(){$('#errorBg').style.display='none'}
+function showError(page,e){const code=e?.status||'UNKNOWN';const endpoint=e?.endpoint||'';const msg=e?.message||'처리 실패';$('#errorText').textContent=`페이지명: ${page}\n오류코드: ${code}\nAPI: ${endpoint}\n로그: ${msg}`;$('#errorBg').style.display='flex'}
+function handleError(page,e){if((e.message||'').includes('권한')||(e.message||'').includes('비밀번호')){clearSavedBroadcastPassword();mobileAuth={broadcastId:'',password:''};showLoginGate()}showError(page,e)}
+function isLive(){return !!(active?.broadcastLiveData?.live||settings?.broadcast?.broadcastLiveData?.live)}
+function sectionOn(k){return !!(settings?.overlaySections||{})[k]}function donationOn(){return sectionOn('account')||sectionOn('creators')||sectionOn('creatorDonations')}function allowanceOn(){return sectionOn('allowance')}
+function badge(el,on){if(!el)return;el.className='badge '+(on?'on':'off');el.textContent=on?'ON':'OFF'}
+function clearInput(id){const el=typeof id==='string'?$('#'+id):id;if(el)el.value=''}
 function addAmount(id,won){const el=$('#'+id);el.value=String(toWon(el.value)+won)}
-function clearInput(id){$('#'+id).value=''}
-function creatorOptions(){const arr=Array.isArray(settings?.creators)?settings.creators.filter(Boolean):[];return arr.length?arr.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join(''):'<option value="수동입력">수동입력</option>'}
+function creators(){const arr=Array.isArray(settings?.creators)?settings.creators.map(norm).filter(Boolean):[];return arr.length?arr:['수동입력']}
+function selectedCreators(boxId){return $$(`#${boxId} input[type="checkbox"]:checked`).map(x=>x.value).filter(Boolean)}
+function setCreatorChecks(boxId,on){$$(`#${boxId} input[type="checkbox"]`).forEach(x=>x.checked=!!on)}
+function renderCreatorChecks(boxId){const list=creators();$('#'+boxId).innerHTML=list.map((c,i)=>`<label class="checkitem"><input type="checkbox" value="${esc(c)}" ${i===0?'checked':''}>${esc(c)}</label>`).join('')}
 function presetOptions(){const arr=Array.isArray(settings?.presets)?settings.presets:[];const html=arr.filter(p=>p&&p.enabled!==false).map(p=>{const plus=esc(p.plusName||'플러스'),minus=esc(p.minusName||'마이너스');return `<optgroup label="${esc(p.title||p.id)}"><option value="${plus}">${plus} (${fmt(p.plusPrice||0)})</option><option value="${minus}">${minus} (${fmt(p.minusPrice||0)})</option></optgroup>`}).join('');return html||'<option value="후원">후원</option>'}
 function fundingItems(){return Array.isArray(settings?.fundingData?.items)?settings.fundingData.items:[]}
 function renderFundingSelect(){const items=fundingItems().filter(f=>f.enabled!==false);$('#fundingSelect').innerHTML=items.length?items.map(f=>`<option value="${esc(f.id)}">${esc(f.title||'펀딩')} (${fmt(f.current)}/${fmt(f.target)})</option>`).join(''):'<option value="">펀딩 없음</option>';renderFundingValues()}
 function currentFunding(){const id=$('#fundingSelect')?.value||'';return fundingItems().find(f=>String(f.id)===String(id))}
 function renderFundingValues(){const f=currentFunding();$('#fundingCurrent').value=f?fromWon(f.current):'';$('#fundingTarget').value=f?fromWon(f.target):''}
-function renderRoulette(){const r=settings?.roulette||{};const lists=Array.isArray(r.lists)?r.lists.filter(x=>x&&x.enabled!==false):[];$('#rouletteList').innerHTML=lists.length?lists.map(l=>`<option value="${esc(l.id)}">${esc(l.title||'룰렛')}</option>`).join(''):'<option value="">룰렛 없음</option>';const cur=r.current;$('#rouletteCurrent').textContent=cur?`현재 룰렛 : ${cur.listTitle||''} / 결과 ${cur.result||'-'} / 대기 ${(r.queue||[]).length}개`:'현재 룰렛 : 없음'}
-function renderDisplay(){const ov=settings?.overlaySections||{};const list=[['account','계좌후원'],['creators','크리에이터'],['creatorDonations','크리에이터 후원'],['funding','펀딩'],['media','미디어'],['notice','공지']];$('#displayToggles').innerHTML=list.map(([k,t])=>`<button class="btn ${ov[k]?'green':'gray'}" data-display="${k}" onclick="toggleDisplayBtn(this)">${t} ${ov[k]?'ON':'OFF'}</button>`).join('')}
-function toggleDisplayBtn(btn){const k=btn.dataset.display;const ov=settings.overlaySections=settings.overlaySections||{};ov[k]=!ov[k];renderDisplay();renderState()}
-function renderState(){const onDonation=donationOn(), onFunding=sectionOn('funding'), onAllowance=allowanceOn(), onRoulette=(settings?.roulette?.enabled!==false);badge($('#donationVisible'),onDonation);badge($('#presetVisible'),onDonation);badge($('#allowanceVisible'),onAllowance);badge($('#fundingVisible'),onFunding);badge($('#rouletteVisible'),onRoulette);$('#donationOff').style.display=onDonation?'none':'block';$('#presetOff').style.display=onDonation?'none':'block';$('#fundingOff').style.display=onFunding?'none':'block';$('#stAccount').textContent=sectionOn('account')?'ON':'OFF';$('#stCreators').textContent=sectionOn('creators')||sectionOn('creatorDonations')?'ON':'OFF';$('#stFunding').textContent=onFunding?'ON':'OFF';$('#stAllowance').textContent=`${fmt(settings?.allowanceData?.balance||0)}원`;$('#allowanceCurrent').textContent=`현재용돈 : ${fmt(settings?.allowanceData?.balance||0)}원`;badge($('#liveBadge'),isLive());$('#liveBadge').innerHTML=isLive()?'<span class="live-dot"></span>방송중':'입력잠김';['donation','preset','allowance','funding','roulette'].forEach(id=>{const btn=$(`.tab[data-tab="${id}"]`);let on=true;if(id==='funding')on=onFunding;if(id==='allowance')on=onAllowance;if(id==='donation'||id==='preset')on=onDonation;if(id==='roulette')on=onRoulette;btn?.classList.toggle('off',!on)})}
-function renderForms(){const opts=creatorOptions();['donationCreator','presetCreator'].forEach(id=>{$('#'+id).innerHTML=opts});$('#presetProcess').innerHTML=presetOptions();renderFundingSelect();renderRoulette();renderDisplay();renderState()}
-async function saveDisplay(){try{await api('/api/settings',{method:'POST',body:JSON.stringify({overlaySections:settings.overlaySections,...authBody()})});toast('노출 저장 완료');await loadAll(false)}catch(e){handleAuthError(e)}}
-async function saveDonation(){try{if(!isLive())return alert('방송시작 상태에서만 입력할 수 있습니다.');const donor=$('#donor').value.trim();const amount=$('#donationAmount').value;const source=$('#donationSource').value;const creator=$('#donationCreator').value;const memo=$('#donationMemo').value.trim();if(!donor)return alert('도네이터명을 입력하세요.');if(toWon(amount)<=0)return alert('금액을 입력하세요.');const body={donor,processType:'후원',accountTotal:source==='account'?amount:0,toonieTotal:source==='toonie'?amount:0,rows:[{creator,amount,memo}],...authBody()};await api('/api/donations/batch',{method:'POST',body:JSON.stringify(body)});['donor','donationAmount','donationMemo'].forEach(clearInput);toast('후원 저장 완료');await Promise.all([loadAll(false),loadRecent()])}catch(e){handleAuthError(e)}}
-async function savePresetManual(){try{if(!isLive())return alert('방송시작 상태에서만 수동 입력할 수 있습니다.');const body={kind:'preset',donor:$('#presetDonor').value.trim(),amount:$('#presetAmount').value,sourceType:$('#presetSource').value,creator:$('#presetCreator').value,processType:$('#presetProcess').value,memo:$('#presetMemo').value.trim(),...authBody()};await api('/api/manual-entry',{method:'POST',body:JSON.stringify(body)});['presetDonor','presetAmount','presetMemo'].forEach(clearInput);toast('프리셋 수동 저장 완료');await Promise.all([loadAll(false),loadRecent()])}catch(e){handleAuthError(e)}}
-async function saveAllowance(){try{const body={amount:$('#allowanceAmount').value,direction:$('#allowanceDirection').value,...authBody()};await api('/api/allowance/adjust',{method:'POST',body:JSON.stringify(body)});clearInput('allowanceAmount');toast('용돈 저장 완료');await loadAll(false)}catch(e){handleAuthError(e)}}
-async function saveFundingDirect(){try{const f=currentFunding();if(!f)return alert('펀딩을 선택하세요.');const data=JSON.parse(JSON.stringify(settings.fundingData||{items:[]}));const item=(data.items||[]).find(x=>String(x.id)===String(f.id));if(!item)return alert('펀딩을 찾을 수 없습니다.');item.current=Math.max(0,toWon($('#fundingCurrent').value));item.target=Math.max(0,toWon($('#fundingTarget').value));await api('/api/funding-data',{method:'POST',body:JSON.stringify({fundingData:data,...authBody()})});toast('펀딩 금액 저장 완료');await loadAll(false)}catch(e){handleAuthError(e)}}
-async function saveFundingManual(){try{if(!isLive())return alert('방송시작 상태에서만 수동 입력할 수 있습니다.');const f=currentFunding();if(!f)return alert('펀딩을 선택하세요.');const body={kind:'funding',fundingId:f.id,donor:$('#fundDonor').value.trim(),amount:$('#fundAmount').value,sourceType:$('#fundSource').value,memo:'',...authBody()};await api('/api/manual-entry',{method:'POST',body:JSON.stringify(body)});['fundDonor','fundAmount'].forEach(clearInput);toast('펀딩 추가 저장 완료');await Promise.all([loadAll(false),loadRecent()])}catch(e){handleAuthError(e)}}
-async function startRoulette(){try{const body={listId:$('#rouletteList').value,count:$('#rouletteCount').value||1,duration:$('#rouletteDuration').value||undefined,...authBody()};await api('/api/roulette/start',{method:'POST',body:JSON.stringify(body)});toast('룰렛 시작');await loadAll(false)}catch(e){handleAuthError(e)}}
-async function resetRoulette(){try{await api('/api/roulette/reset',{method:'POST',body:JSON.stringify(authBody())});toast('룰렛 초기화');await loadAll(false)}catch(e){handleAuthError(e)}}
-async function advanceRoulette(){try{await api('/api/roulette/advance',{method:'POST',body:JSON.stringify(authBody())});toast('다음 룰렛');await loadAll(false)}catch(e){handleAuthError(e)}}
-async function loadRecent(){try{const d=await api('/api/donations');const arr=(d.donations||[]).slice(-8).reverse();$('#recentList').innerHTML=arr.length?arr.map(x=>`<div class="recent"><div><b>${esc(x.donor||'-')} → ${esc(x.creator||'-')}</b><div class="muted">${fmt(x.totalAmount||x.amount||0)}원 · ${esc(x.resultLabel||x.processType||'')}</div></div><button class="btn mini red" style="width:56px" onclick="deleteRecent('${esc(x.id)}')">삭제</button></div>`).join(''):'<div class="muted">최근 입력 없음</div>'}catch(e){$('#recentList').innerHTML=`<div class="muted danger-note">${esc(e.message)}</div>`}}
-async function deleteRecent(id){if(!confirm('이 입력을 삭제할까요?'))return;try{await api('/api/donations/'+encodeURIComponent(id),{method:'DELETE',body:JSON.stringify(authBody())});toast('삭제 완료');await Promise.all([loadAll(false),loadRecent()])}catch(e){handleAuthError(e)}}
+function setRouletteChecks(on){$$('#rouletteChecks input[type="checkbox"]').forEach(x=>x.checked=!!on);renderRouletteHistory()}
+function selectedRouletteIds(){return $$('#rouletteChecks input[type="checkbox"]:checked').map(x=>x.value).filter(Boolean)}
+function renderRoulette(){const r=settings?.roulette||{};const lists=Array.isArray(r.lists)?r.lists.filter(x=>x&&x.enabled!==false):[];$('#rouletteChecks').innerHTML=lists.length?lists.map((l,i)=>`<label class="checkitem"><input type="checkbox" value="${esc(l.id)}" ${i===0?'checked':''} onchange="renderRouletteHistory()">${esc(l.title||'룰렛')}</label>`).join(''):'<div class="empty">룰렛 없음</div>';const cur=r.current;$('#rouletteCurrent').textContent=cur?`현재 룰렛 : ${cur.listTitle||''} / 결과 ${cur.result||'-'} / 대기 ${(r.queue||[]).length}개`:'현재 룰렛 : 없음';renderRouletteHistory()}
+function renderRouletteHistory(){const r=settings?.roulette||{};const ids=selectedRouletteIds();let hist=Array.isArray(r.history)?[...r.history].reverse():[];if(ids.length)hist=hist.filter(h=>ids.includes(String(h.listId)));$('#rouletteHistory').innerHTML=hist.length?hist.map((h,i)=>`<div class="history-row"><div class="num">${i+1}</div><div><b>${esc(h.result||'-')}</b><div class="muted">${esc(h.listTitle||'-')} · ${h.donor?esc(h.donor)+' · ':''}${h.createdAt?new Date(Number(h.createdAt)).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'}):''}</div></div></div>`).join(''):'<div class="empty">선택 룰렛 최근 결과 없음</div>'}
+function renderDisplay(){const ov=settings.overlaySections=settings.overlaySections||{};const list=[['account','계좌후원'],['allowance','용돈'],['creators','크리에이터'],['creatorDonations','크리에이터 후원'],['funding','펀딩'],['media','미디어'],['notice','공지']];$('#displayToggles').innerHTML=list.map(([k,t])=>`<button class="btn ${ov[k]?'green':'gray'}" data-display="${k}" onclick="toggleDisplayBtn(this)">${t} ${ov[k]?'ON':'OFF'}</button>`).join('')}
+function toggleDisplayBtn(btn){const k=btn.dataset.display;settings.overlaySections=settings.overlaySections||{};settings.overlaySections[k]=!settings.overlaySections[k];renderDisplay();renderState()}
+function renderState(){const onDonation=donationOn(),onFunding=sectionOn('funding'),onAllowance=allowanceOn(),onRoulette=(settings?.roulette?.enabled!==false);badge($('#donationVisible'),onDonation);badge($('#presetVisible'),onDonation);badge($('#fundingVisible'),onFunding);badge($('#rouletteVisible'),onRoulette);$('#allowanceVisible').textContent=onAllowance?'용돈 ON':'용돈 OFF';$('#allowanceVisible').className='badge '+(onAllowance?'on':'off');$('#donationOff').style.display=onDonation?'none':'block';$('#presetOff').style.display=onDonation?'none':'block';$('#fundingOff').style.display=onFunding?'none':'block';$('#stAccount').textContent=sectionOn('account')?'ON':'OFF';$('#stCreators').textContent=sectionOn('creators')||sectionOn('creatorDonations')?'ON':'OFF';$('#stFunding').textContent=onFunding?'ON':'OFF';$('#stAllowance').textContent=`${fmt(settings?.allowanceData?.balance||0)}원`;$('#allowanceCurrent').textContent=`현재용돈 : ${fmt(settings?.allowanceData?.balance||0)}원`;badge($('#liveBadge'),isLive());$('#liveBadge').innerHTML=isLive()?'<span class="live-dot"></span>방송중':'입력잠김';['donation','preset','allowance','funding','roulette'].forEach(id=>{const btn=$(`.tab[data-tab="${id}"]`);let on=true;if(id==='funding')on=onFunding;if(id==='allowance')on=onAllowance;if(id==='donation'||id==='preset')on=onDonation;if(id==='roulette')on=onRoulette;btn?.classList.toggle('off',!on)})}
+function renderForms(){renderCreatorChecks('donationCreatorChecks');renderCreatorChecks('presetCreatorChecks');$('#presetProcess').innerHTML=presetOptions();renderFundingSelect();renderRoulette();renderDisplay();renderState()}
+async function mobileBroadcastLogin(){try{const pw=$('#mobileBroadcastPw').value.trim();if(!pw)throw new Error('방송 비밀번호를 입력하세요.');const bid=active?.id||settings?.broadcast?.id;if(!bid)throw new Error('현재 방송 정보를 찾을 수 없습니다.');await api('/api/broadcast-login',{method:'POST',body:JSON.stringify({broadcastId:bid,password:pw})});mobileAuth={broadcastId:bid,password:pw};saveBroadcastPassword(pw);hideLoginGate();showSuccess('로그인 완료')}catch(e){showError('크리에이터 로그인',e)}}
+async function saveDisplay(){try{await api('/api/settings',{method:'POST',body:JSON.stringify({overlaySections:settings.overlaySections,...authBody()})});showSuccess('노출 저장 완료');await loadAll(false)}catch(e){handleError('노출',e)}}
+async function saveDonation(){try{if(!isLive())throw new Error('방송시작 상태에서만 입력할 수 있습니다.');const donor=norm($('#donor').value);const amount=toWon($('#donationAmount').value);const source=$('#donationSource').value;const selected=selectedCreators('donationCreatorChecks');const memo=norm($('#donationMemo').value);if(!donor)throw new Error('도네이터명을 입력하세요.');if(amount<=0)throw new Error('금액을 입력하세요.');if(!selected.length)throw new Error('크리에이터를 선택하세요.');for(const creator of selected){const body={donor,creator,processType:'후원',accountAmount:source==='account'?amount:0,toonieAmount:source==='toonie'?amount:0,memo,...authBody()};await api('/api/donations',{method:'POST',body:JSON.stringify(body)})}['donor','donationAmount','donationMemo'].forEach(clearInput);showSuccess(`후원 저장 완료 ${selected.length}건`);await Promise.all([loadAll(false),loadRecent()])}catch(e){handleError('후원입력',e)}}
+async function savePresetManual(){try{if(!isLive())throw new Error('방송시작 상태에서만 수동 입력할 수 있습니다.');const donor=norm($('#presetDonor').value);const amount=toWon($('#presetAmount').value);const selected=selectedCreators('presetCreatorChecks');if(!donor)throw new Error('도네이터명을 입력하세요.');if(amount<=0)throw new Error('금액을 입력하세요.');if(!selected.length)throw new Error('크리에이터를 선택하세요.');for(const creator of selected){const body={kind:'preset',donor,amount,sourceType:$('#presetSource').value,creator,processType:$('#presetProcess').value,memo:norm($('#presetMemo').value),...authBody()};await api('/api/manual-entry',{method:'POST',body:JSON.stringify(body)})}['presetDonor','presetAmount','presetMemo'].forEach(clearInput);showSuccess(`프리셋 수동 저장 완료 ${selected.length}건`);await Promise.all([loadAll(false),loadRecent()])}catch(e){handleError('프리셋 수동입력',e)}}
+async function saveAllowance(){try{const body={amount:toWon($('#allowanceAmount').value),direction:$('#allowanceDirection').value,...authBody()};if(body.amount<=0)throw new Error('용돈 금액을 입력하세요.');await api('/api/allowance/adjust',{method:'POST',body:JSON.stringify(body)});clearInput('allowanceAmount');showSuccess('용돈 저장 완료');await loadAll(false)}catch(e){handleError('용돈 수동변경',e)}}
+async function saveFundingDirect(){try{const f=currentFunding();if(!f)throw new Error('펀딩을 선택하세요.');const data=JSON.parse(JSON.stringify(settings.fundingData||{items:[]}));const item=(data.items||[]).find(x=>String(x.id)===String(f.id));if(!item)throw new Error('펀딩을 찾을 수 없습니다.');item.current=Math.max(0,toWon($('#fundingCurrent').value));item.target=Math.max(0,toWon($('#fundingTarget').value));await api('/api/funding-data',{method:'POST',body:JSON.stringify({fundingData:data,...authBody()})});showSuccess('펀딩 금액 저장 완료');await loadAll(false)}catch(e){handleError('펀딩금액 변경',e)}}
+async function saveFundingManual(){try{if(!isLive())throw new Error('방송시작 상태에서만 수동 입력할 수 있습니다.');const f=currentFunding();if(!f)throw new Error('펀딩을 선택하세요.');const donor=norm($('#fundDonor').value);const amount=toWon($('#fundAmount').value);if(!donor)throw new Error('도네이터명을 입력하세요.');if(amount<=0)throw new Error('금액을 입력하세요.');const body={kind:'funding',fundingId:f.id,donor,amount,sourceType:$('#fundSource').value,memo:'',...authBody()};await api('/api/manual-entry',{method:'POST',body:JSON.stringify(body)});['fundDonor','fundAmount'].forEach(clearInput);showSuccess('펀딩 추가 저장 완료');await Promise.all([loadAll(false),loadRecent()])}catch(e){handleError('펀딩 후원 추가',e)}}
+async function startRoulette(){try{const ids=selectedRouletteIds();if(!ids.length)throw new Error('룰렛을 선택하세요.');const body={listId:ids[0],count:$('#rouletteCount').value||1,duration:$('#rouletteDuration').value||undefined,...authBody()};await api('/api/roulette/start',{method:'POST',body:JSON.stringify(body)});showSuccess('룰렛 시작');await loadAll(false)}catch(e){handleError('룰렛 시작',e)}}
+async function resetRoulette(){try{await api('/api/roulette/reset',{method:'POST',body:JSON.stringify(authBody())});showSuccess('룰렛 초기화');await loadAll(false)}catch(e){handleError('룰렛 초기화',e)}}
+async function advanceRoulette(){try{await api('/api/roulette/advance',{method:'POST',body:JSON.stringify(authBody())});showSuccess('다음 룰렛 실행');await loadAll(false)}catch(e){handleError('룰렛 다음',e)}}
+async function loadRecent(){try{const d=await api('/api/donations');const arr=(d.donations||[]).slice(-30).reverse();$('#recentList').innerHTML=arr.length?arr.map((x,i)=>`<div class="recent"><div class="num">${i+1}</div><div><b>${esc(x.donor||'-')} → ${esc(x.creator||'-')}</b><div class="muted">${fmt(x.totalAmount||x.amount||0)}원 · ${esc(x.resultLabel||x.processType||'')}</div></div><button class="btn mini red" style="width:56px" onclick="deleteRecent('${esc(x.id)}')">삭제</button></div>`).join(''):'<div class="empty">최근 입력 없음</div>'}catch(e){$('#recentList').innerHTML=`<div class="muted danger-note">${esc(e.message)}</div>`}}
+async function deleteRecent(id){if(!confirm('이 입력을 삭제할까요?'))return;try{await api('/api/donations/'+encodeURIComponent(id),{method:'DELETE',body:JSON.stringify(authBody())});showSuccess('삭제 완료');await Promise.all([loadAll(false),loadRecent()])}catch(e){handleError('최근입력 삭제',e)}}
 async function loadStationInfo(){const info=await api('/api/station-info');station=info.station||null;active=info.active||null;return info}
-async function loadAll(showToast){await loadStationInfo();settings=await api('/api/settings');settings.station=station;settings.broadcast=active;$('#info').textContent=`${station?.name||STATION} / ${active?.title||'현재 방송'} / ${isLive()?'방송중':'입력잠김'}`;$('#loginInfo').textContent=`${station?.name||STATION} / 현재 방송: ${active?.title||'없음'}`;renderForms();if(showToast)toast('새로고침 완료')}
-function handleAuthError(e){if((e.message||'').includes('권한')||(e.message||'').includes('비밀번호')){clearSavedBroadcastPassword();mobileAuth={broadcastId:'',password:''};showLoginGate()}alert(e.message||'처리 실패')}
+async function loadAll(showToast){await loadStationInfo();settings=await api('/api/settings');settings.station=station;settings.broadcast=active;$('#info').textContent=`${station?.name||STATION} / ${active?.title||'현재 방송'} / ${isLive()?'방송중':'입력잠김'}`;$('#loginInfo').textContent=`${station?.name||STATION} / 현재 방송: ${active?.title||'없음'}`;renderForms();if(showToast)showSuccess('새로고침 완료')}
+function switchTab(id){$$('.tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===id));$$('.panel').forEach(p=>p.classList.toggle('active',p.id===id))}
+$('#tabs').addEventListener('click',e=>{const b=e.target.closest('.tab');if(b)switchTab(b.dataset.tab)});
 function openOverlay(){const token=settings?.station?.overlayToken||station?.overlayToken||'';window.open(`/overlay.html?station=${encodeURIComponent(STATION)}&token=${encodeURIComponent(token)}&monitor=1&v=${Date.now()}`,'_blank')}
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target?.id==='mobileBroadcastPw')mobileBroadcastLogin()});
-async function init(){try{await loadAll(false);const saved=getSavedBroadcastPassword();if(active?.id&&saved){try{await api('/api/broadcast-login',{method:'POST',body:JSON.stringify({broadcastId:active.id,password:saved})});mobileAuth={broadcastId:active.id,password:saved};hideLoginGate();await loadRecent();return}catch(e){clearSavedBroadcastPassword()}}showLoginGate();await loadRecent()}catch(e){alert(e.message);showLoginGate()}}
+async function init(){try{await loadAll(false);const saved=getSavedBroadcastPassword();if(active?.id&&saved){try{await api('/api/broadcast-login',{method:'POST',body:JSON.stringify({broadcastId:active.id,password:saved})});mobileAuth={broadcastId:active.id,password:saved};hideLoginGate();await loadRecent();return}catch(e){clearSavedBroadcastPassword()}}showLoginGate();await loadRecent()}catch(e){showError('초기 로딩',e);showLoginGate()}}
 init();
 </script>
 </body>
