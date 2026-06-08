@@ -4,6 +4,7 @@
   const token = params.get('token') || '';
   let lastRunId = '';
   let spinTimer = null;
+  let spinRaf = null;
   let hideTimer = null;
   let activeRunId = '';
   let displayLockedUntil = 0;
@@ -72,6 +73,25 @@
       clearInterval(spinTimer);
       spinTimer = null;
     }
+    if(spinRaf){
+      cancelAnimationFrame(spinRaf);
+      spinRaf = null;
+    }
+  }
+  function easeOutCubic(t){
+    t = Math.max(0, Math.min(1, Number(t)||0));
+    return 1 - Math.pow(1 - t, 3);
+  }
+  function pickRollingValue(pool, finalValue, previous){
+    if(!pool.length) return finalValue || '-';
+    if(pool.length === 1) return pool[0] || finalValue || '-';
+    let value = previous;
+    let guard = 0;
+    while(value === previous && guard < 8){
+      value = pool[Math.floor(Math.random() * pool.length)] || finalValue || '-';
+      guard += 1;
+    }
+    return value || finalValue || '-';
   }
   function clearResultPageTimer(){
     if(resultPageTimer){
@@ -238,25 +258,43 @@
     document.getElementById('rouletteOverlayTitle').textContent = titleText(run);
     document.getElementById('rouletteOverlayMeta').textContent = run.mode === 'auto' ? '자동 룰렛' : (Number(run.total||0)>1 ? `연속 룰렛 ${run.sequence}/${run.total}` : '수동 룰렛');
     document.getElementById('rouletteOverlayResultList').innerHTML = '';
-    root.classList.add('show');
+    root.classList.add('show','spinning');
     root.classList.remove('done','stopped');
     activeRunId = run.runId;
     const pool = enabledItems(roulette, run.listId);
-    const started = Date.now();
-    const duration = Math.max(900, Number(run.duration || roulette.duration || 3600));
+    const started = performance.now();
+    const duration = Math.max(1600, Number(run.duration || roulette.duration || 4200));
+    let nextSwapAt = 0;
+    let lastValue = '';
     playSpinSound(duration);
-    clearSpinTimer();
-    function tick(){
-      const elapsed = Date.now() - started;
-      if(elapsed >= duration){ showDone(run, roulette); return; }
-      const progress = Math.max(0, Math.min(1, elapsed / duration));
-      const delay = 38 + Math.pow(progress, 2.35) * 230;
-      const value = pool.length ? pool[Math.floor(Math.random()*pool.length)] : run.result;
+    function applyValue(value){
       nameEl.textContent = value || '-';
-      clearSpinTimer();
-      spinTimer = setInterval(tick, delay);
+      nameEl.classList.remove('roulette-name-tick');
+      // 강제 reflow로 짧은 슬롯 느낌만 주고, 전체 박스 재배치는 하지 않습니다.
+      void nameEl.offsetWidth;
+      nameEl.classList.add('roulette-name-tick');
     }
-    tick();
+    function frame(ts){
+      const elapsed = ts - started;
+      const progress = Math.max(0, Math.min(1, elapsed / duration));
+      if(elapsed >= duration){
+        root.classList.remove('spinning');
+        nameEl.classList.remove('roulette-name-tick');
+        showDone(run, roulette);
+        return;
+      }
+      if(ts >= nextSwapAt){
+        const value = pickRollingValue(pool, run.result, lastValue);
+        lastValue = value;
+        applyValue(value);
+        // 처음에는 빠르게, 마지막에는 부드럽게 감속합니다.
+        const delay = 26 + easeOutCubic(progress) * 285;
+        nextSwapAt = ts + delay;
+      }
+      spinRaf = requestAnimationFrame(frame);
+    }
+    applyValue(pickRollingValue(pool, run.result, ''));
+    spinRaf = requestAnimationFrame(frame);
   }
   async function poll(){
     try{

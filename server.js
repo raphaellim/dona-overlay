@@ -1229,10 +1229,14 @@ const STATION_HTML = new Set([
   '/roulette.html'
 ]);
 
+// 크리에이터 리모컨은 방송국관리자/크리에이터 전용입니다.
+const CREATOR_REMOTE_HTML = new Set([
+  '/m_creator.html'
+]);
+
 // 모바일 운영 페이지는 같은 파일을 권한별 모드로 사용합니다.
 // station_admin/master: 전체 기능, broadcast_manager: 당일 입력/수정 제한모드.
 const MANAGER_HTML = new Set([
-  '/m_creator.html',
   '/m_admin.html',
   '/m_control.html',
   '/m_roulette.html'
@@ -1270,6 +1274,13 @@ async function accessGuard(req, res, next) {
   try {
     const pathOnly = req.path || '/';
 
+    // 모바일에서 주소를 직접 입력할 때 //m_creator.html 처럼 슬래시가 2개 들어가도
+    // 보호 로직을 우회하지 않도록 정상 주소로 정리합니다.
+    if (pathOnly.startsWith('//')) {
+      const normalized = pathOnly.replace(/^\/+/,'/') + (req.url.includes('?') ? '?' + req.url.split('?').slice(1).join('?') : '');
+      return htmlRedirect(res, normalized);
+    }
+
     if (pathOnly.startsWith('/sounds/') || pathOnly === '/favicon.ico' || pathOnly === '/app.css' || pathOnly === '/common.js') {
       return next();
     }
@@ -1293,6 +1304,12 @@ async function accessGuard(req, res, next) {
       if (pathOnly === '/overlay.html' || pathOnly === '/overlay2.html') {
         if (await stationTokenAllowed(req, station)) return next();
         return res.status(403).send('오버레이 토큰이 필요합니다.');
+      }
+
+      if (CREATOR_REMOTE_HTML.has(pathOnly)) {
+        // 크리에이터 리모컨은 당일 방송 비밀번호가 아니라 방송국관리자/크리에이터 로그인만 허용합니다.
+        if (await stationAllowed(req, station)) return next();
+        return htmlRedirect(res, `/station_login.html?station=${encodeURIComponent(station.slug)}&next=${encodeURIComponent(req.originalUrl || pathOnly)}`);
       }
 
       if (MANAGER_HTML.has(pathOnly)) {

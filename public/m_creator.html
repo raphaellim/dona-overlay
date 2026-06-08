@@ -11,11 +11,10 @@
 <body>
 <div id="loginGate" class="login-gate">
   <div class="login-box">
-    <h1>방송 로그인</h1>
-    <p id="loginInfo" class="muted">방송 정보를 불러오는 중...</p>
-    <input id="mobileBroadcastPw" class="input" type="password" placeholder="방송 비밀번호 입력">
-    <button class="btn blue" onclick="mobileBroadcastLogin()">로그인</button>
-    <p class="muted">방송 비밀번호로 크리에이터 페이지 입력/수정 권한을 확인합니다.</p>
+    <h1>크리에이터 로그인 필요</h1>
+    <p id="loginInfo" class="muted">방송국관리자/크리에이터 권한을 확인하는 중...</p>
+    <button class="btn blue" onclick="goStationLogin()">방송국관리자 로그인으로 이동</button>
+    <p class="muted">크리에이터 리모컨은 당일 방송 비밀번호가 아니라 방송국 관리자 비밀번호로 접속합니다.</p>
   </div>
 </div>
 <header class="top">
@@ -29,6 +28,7 @@
   <div class="tabs" id="tabs">
     <button class="tab active" data-tab="status">상태</button>
     <button class="tab" data-tab="display">노출</button>
+    <button class="tab" data-tab="notice">공지</button>
     <button class="tab" data-tab="donation">후원</button>
     <button class="tab" data-tab="preset">프리셋</button>
     <button class="tab" data-tab="allowance">용돈</button>
@@ -61,6 +61,21 @@
       <div class="grid2" id="displayToggles"></div>
       <button class="btn blue" style="margin-top:10px" onclick="saveDisplay()">노출 상태 저장</button>
       <p class="muted">용돈 ON/OFF도 노출 탭에서 바로 켜고 끌 수 있습니다.</p>
+    </div>
+  </section>
+
+  <section id="notice" class="panel">
+    <div class="card">
+      <div class="card-head"><h2>공지 수정</h2><span id="noticeVisible" class="badge">-</span></div>
+      <div id="noticeOff" class="offbox" style="display:none">공지 노출이 OFF 상태입니다. 저장은 가능하지만 방송 화면에는 보이지 않습니다.</div>
+      <div class="row"><label>공지 제목</label><input id="noticeTitle" class="input" placeholder="공지"></div>
+      <div class="row"><label>공지 내용</label><textarea id="noticeText" class="input" rows="5" placeholder="방송 화면에 표시할 공지 내용을 입력하세요"></textarea></div>
+      <div class="grid2">
+        <button class="btn blue" onclick="saveNotice(false)">공지 저장</button>
+        <button class="btn green" onclick="saveNotice(true)">저장 + 공지 ON</button>
+      </div>
+      <button class="btn gray" style="margin-top:8px" onclick="noticeOffAndSave()">공지 OFF 저장</button>
+      <p class="muted">크리에이터 리모컨에서 방송 중 공지 문구를 바로 바꿀 수 있습니다.</p>
     </div>
   </section>
 
@@ -160,25 +175,24 @@
 <div id="toast" class="toast"></div>
 <div id="errorBg" class="modal-bg"><div class="modal"><h3>오류 ALERT</h3><pre id="errorText"></pre><button class="btn red" onclick="closeError()">확인</button></div></div>
 <script>
-const qs=new URLSearchParams(location.search);const STATION=qs.get('station')||qs.get('slug')||localStorage.getItem('station_slug')||'default';
-let settings={},station=null,active=null,currentRole='guest',mobileAuth={broadcastId:'',password:''},rouletteSelectedId=localStorage.getItem(`creator_roulette_${STATION}`)||'';
+const qs=new URLSearchParams(location.search);let STATION=qs.get('station')||qs.get('slug')||localStorage.getItem('station_slug')||'';if(STATION)localStorage.setItem('station_slug',STATION);
+let settings={},station=null,active=null,currentRole='guest',rouletteSelectedId=localStorage.getItem(`creator_roulette_${STATION||'current'}`)||'';
 const $=s=>document.querySelector(s);const $$=s=>Array.from(document.querySelectorAll(s));
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const fmt=n=>Number(n||0).toLocaleString('ko-KR');
 const norm=s=>String(s||'').trim();
 function toWon(v){let s=String(v??'').replace(/,/g,'').trim();if(!s)return 0;let n=Number(s);if(!Number.isFinite(n))return 0;if(s.includes('.'))return Math.round(n*10000);if(n>0&&n<1000)return Math.round(n*10000);return Math.round(n)}
 function fromWon(v){return String(Math.round(Number(v||0)))}
-function apiPath(path){const u=new URL(path,location.origin);if(!u.searchParams.get('station'))u.searchParams.set('station',STATION);return u.pathname+u.search}
+function apiPath(path){const u=new URL(path,location.origin);if(STATION&&!u.searchParams.get('station'))u.searchParams.set('station',STATION);return u.pathname+u.search}
 async function api(path,opt={}){const headers={'Content-Type':'application/json',...(opt.headers||{})};let res;try{res=await fetch(apiPath(path),{credentials:'include',...opt,headers})}catch(err){err.status='NETWORK';err.endpoint=path;throw err}let data={};try{data=await res.json()}catch(e){}if(!res.ok){const err=new Error(data.error||res.statusText||'요청 실패');err.status=res.status;err.endpoint=path;err.payload=data;throw err}return data}
-function authBody(){return mobileAuth?.broadcastId?{broadcastId:mobileAuth.broadcastId,broadcastPassword:mobileAuth.password,password:mobileAuth.password}:{}}
-function getSavedBroadcastPassword(){return localStorage.getItem(`creator_pw_${STATION}_${active?.id||''}`)||''}
-function saveBroadcastPassword(pw){if(active?.id)localStorage.setItem(`creator_pw_${STATION}_${active.id}`,pw)}
-function clearSavedBroadcastPassword(){if(active?.id)localStorage.removeItem(`creator_pw_${STATION}_${active.id}`)}
+function authBody(){return {}}
+function creatorLoginUrl(){const next=encodeURIComponent(location.pathname+location.search);return STATION?`/station_login.html?station=${encodeURIComponent(STATION)}&next=${next}`:`/station_login.html?next=${next}`}
+function goStationLogin(){location.href=creatorLoginUrl()}
 function showLoginGate(){$('#loginGate').style.display='flex'}function hideLoginGate(){$('#loginGate').style.display='none'}
 function showSuccess(msg){const t=$('#toast');t.textContent='성공 ALERT · '+msg;t.classList.add('show');clearTimeout(showSuccess._t);showSuccess._t=setTimeout(()=>t.classList.remove('show'),1300)}
 function closeError(){$('#errorBg').style.display='none'}
 function showError(page,e){const code=e?.status||'UNKNOWN';const endpoint=e?.endpoint||'';const msg=e?.message||'처리 실패';$('#errorText').textContent=`페이지명: ${page}\n오류코드: ${code}\nAPI: ${endpoint}\n로그: ${msg}`;$('#errorBg').style.display='flex'}
-function handleError(page,e){if((e.message||'').includes('권한')||(e.message||'').includes('비밀번호')){clearSavedBroadcastPassword();mobileAuth={broadcastId:'',password:''};showLoginGate()}showError(page,e)}
+function handleError(page,e){if((e.message||'').includes('권한')||(e.message||'').includes('비밀번호')){showLoginGate()}showError(page,e)}
 function isLive(){return !!(active?.broadcastLiveData?.live||settings?.broadcast?.broadcastLiveData?.live)}
 function sectionOn(k){return !!(settings?.overlaySections||{})[k]}function donationOn(){return sectionOn('account')||sectionOn('creators')||sectionOn('creatorDonations')}function allowanceOn(){return sectionOn('allowance')}
 function badge(el,on){if(!el)return;el.className='badge '+(on?'on':'off');el.textContent=on?'ON':'OFF'}
@@ -209,56 +223,34 @@ function fundingItems(){return Array.isArray(settings?.fundingData?.items)?setti
 function renderFundingSelect(){const items=fundingItems().filter(f=>f.enabled!==false);$('#fundingSelect').innerHTML=items.length?items.map(f=>`<option value="${esc(f.id)}">${esc(f.title||'펀딩')} (${fmt(f.current)}/${fmt(f.target)})</option>`).join(''):'<option value="">펀딩 없음</option>';renderFundingValues()}
 function currentFunding(){const id=$('#fundingSelect')?.value||'';return fundingItems().find(f=>String(f.id)===String(id))}
 function renderFundingValues(){const f=currentFunding();$('#fundingCurrent').value=f?fromWon(f.current):'';$('#fundingTarget').value=f?fromWon(f.target):''}
-function setRouletteSelected(id){rouletteSelectedId=String(id||'');localStorage.setItem(`creator_roulette_${STATION}`,rouletteSelectedId);renderRouletteHistory()}
+function setRouletteSelected(id){rouletteSelectedId=String(id||'');localStorage.setItem(`creator_roulette_${STATION||'current'}`,rouletteSelectedId);renderRouletteHistory()}
 function selectedRouletteIds(){return rouletteSelectedId?[rouletteSelectedId]:[]}
-function renderRoulette(){const r=settings?.roulette||{};const lists=Array.isArray(r.lists)?r.lists.filter(x=>x&&x.enabled!==false):[];const ids=lists.map(l=>String(l.id));if(!ids.includes(String(rouletteSelectedId))){rouletteSelectedId=String(r.current?.listId||ids[0]||'');if(rouletteSelectedId)localStorage.setItem(`creator_roulette_${STATION}`,rouletteSelectedId)}$('#rouletteChecks').innerHTML=lists.length?lists.map((l)=>`<label class="checkitem"><input type="radio" name="roulettePick" value="${esc(l.id)}" ${String(l.id)===String(rouletteSelectedId)?'checked':''} onchange="setRouletteSelected(this.value)">${esc(l.title||'룰렛')}</label>`).join(''):'<div class="empty">룰렛 없음</div>';const cur=r.current;$('#rouletteCurrent').textContent=cur?`현재 룰렛 : ${cur.listTitle||''} / 결과 ${cur.result||'-'} / 대기 ${(r.queue||[]).length}개`:'현재 룰렛 : 없음';renderRouletteHistory()}
+function renderRoulette(){const r=settings?.roulette||{};const lists=Array.isArray(r.lists)?r.lists.filter(x=>x&&x.enabled!==false):[];const ids=lists.map(l=>String(l.id));if(!ids.includes(String(rouletteSelectedId))){rouletteSelectedId=String(r.current?.listId||ids[0]||'');if(rouletteSelectedId)localStorage.setItem(`creator_roulette_${STATION||'current'}`,rouletteSelectedId)}$('#rouletteChecks').innerHTML=lists.length?lists.map((l)=>`<label class="checkitem"><input type="radio" name="roulettePick" value="${esc(l.id)}" ${String(l.id)===String(rouletteSelectedId)?'checked':''} onchange="setRouletteSelected(this.value)">${esc(l.title||'룰렛')}</label>`).join(''):'<div class="empty">룰렛 없음</div>';const cur=r.current;$('#rouletteCurrent').textContent=cur?`현재 룰렛 : ${cur.listTitle||''} / 결과 ${cur.result||'-'} / 대기 ${(r.queue||[]).length}개`:'현재 룰렛 : 없음';renderRouletteHistory()}
 function renderRouletteHistory(){const r=settings?.roulette||{};const ids=selectedRouletteIds();let hist=Array.isArray(r.history)?[...r.history].reverse():[];if(ids.length)hist=hist.filter(h=>ids.includes(String(h.listId)));$('#rouletteHistory').innerHTML=hist.length?hist.map((h,i)=>`<div class="history-row"><div class="num">${i+1}</div><div><b>${esc(h.result||'-')}</b><div class="muted">${esc(h.listTitle||'-')} · ${h.donor?esc(h.donor)+' · ':''}${h.createdAt?new Date(Number(h.createdAt)).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'}):''}</div></div></div>`).join(''):'<div class="empty">선택 룰렛 최근 결과 없음</div>'}
+function renderNotice(){const ov=settings.overlaySections=settings.overlaySections||{};const on=!!ov.notice;const titleEl=$('#noticeTitle'),textEl=$('#noticeText');if(titleEl)titleEl.value=settings.noticeTitle||'공지';if(textEl)textEl.value=settings.notice||'';badge($('#noticeVisible'),on);const off=$('#noticeOff');if(off)off.style.display=on?'none':'block'}
 function renderDisplay(){const ov=settings.overlaySections=settings.overlaySections||{};const list=[['account','계좌후원'],['creators','크리에이터'],['creatorDonations','크리에이터 후원'],['allowance','용돈'],['funding','펀딩'],['media','미디어'],['notice','공지']];$('#displayToggles').innerHTML=list.map(([k,t])=>`<button class="btn ${ov[k]?'green':'gray'}" data-display="${k}" onclick="toggleDisplayBtn(this)">${t} ${ov[k]?'ON':'OFF'}</button>`).join('')}
 function toggleDisplayBtn(btn){const k=btn.dataset.display;settings.overlaySections=settings.overlaySections||{};settings.overlaySections[k]=!settings.overlaySections[k];renderDisplay();renderState()}
-function renderState(){const onDonation=donationOn(),onFunding=sectionOn('funding'),onAllowance=allowanceOn(),onRoulette=(settings?.roulette?.enabled!==false);badge($('#donationVisible'),onDonation);badge($('#presetVisible'),onDonation);badge($('#fundingVisible'),onFunding);badge($('#rouletteVisible'),onRoulette);$('#allowanceVisible').textContent=onAllowance?'용돈 ON':'용돈 OFF';$('#allowanceVisible').className='badge '+(onAllowance?'on':'off');$('#donationOff').style.display=onDonation?'none':'block';$('#presetOff').style.display=onDonation?'none':'block';$('#fundingOff').style.display=onFunding?'none':'block';$('#stAccount').textContent=sectionOn('account')?'ON':'OFF';$('#stCreators').textContent=sectionOn('creators')||sectionOn('creatorDonations')?'ON':'OFF';$('#stFunding').textContent=onFunding?'ON':'OFF';$('#stAllowance').textContent=`${fmt(settings?.allowanceData?.balance||0)}원`;$('#allowanceCurrent').textContent=`현재용돈 : ${fmt(settings?.allowanceData?.balance||0)}원`;badge($('#liveBadge'),isLive());$('#liveBadge').innerHTML=isLive()?'<span class="live-dot"></span>방송중':'입력잠김';['donation','preset','allowance','funding','roulette'].forEach(id=>{const btn=$(`.tab[data-tab="${id}"]`);let on=true;if(id==='funding')on=onFunding;if(id==='allowance')on=onAllowance;if(id==='donation'||id==='preset')on=onDonation;if(id==='roulette')on=onRoulette;btn?.classList.toggle('off',!on)})}
-function renderForms(){renderDonationCreatorRows();renderCreatorChecks('presetCreatorChecks');$('#donationProcess').innerHTML=donationProcessOptions();$('#presetProcess').innerHTML=presetOptions();renderFundingSelect();renderRoulette();renderDisplay();renderState();updateDonationPreview()}
-function applyRouletteData(roulette){
-  if(!roulette) return;
-  settings.roulette=roulette;
-  renderRoulette();
-}
-async function refreshRouletteOnly(){
-  try{
-    const d=await api('/api/roulette');
-    if(d.roulette) applyRouletteData(d.roulette);
-  }catch(e){
-    // 룰렛 화면 자동 갱신 실패는 전체 조작을 막지 않도록 조용히 무시합니다.
-  }
-}
-function startRouletteAutoRefresh(){
-  clearInterval(startRouletteAutoRefresh._timer);
-  startRouletteAutoRefresh._timer=setInterval(()=>{
-    const r=settings?.roulette||{};
-    const rouletteTabActive=$('#roulette')?.classList.contains('active');
-    const hasRunning=!!(r.current&&r.current.runId);
-    const hasQueue=Array.isArray(r.queue)&&r.queue.length>0;
-    if(rouletteTabActive||hasRunning||hasQueue) refreshRouletteOnly();
-  },1200);
-}
-async function mobileBroadcastLogin(){try{const pw=$('#mobileBroadcastPw').value.trim();if(!pw)throw new Error('방송 비밀번호를 입력하세요.');const bid=active?.id||settings?.broadcast?.id;if(!bid)throw new Error('현재 방송 정보를 찾을 수 없습니다.');await api('/api/broadcast-login',{method:'POST',body:JSON.stringify({broadcastId:bid,password:pw})});mobileAuth={broadcastId:bid,password:pw};saveBroadcastPassword(pw);await loadAll(false);await loadRecent();hideLoginGate();showSuccess('로그인 완료')}catch(e){showError('크리에이터 로그인',e)}}
+function renderState(){const onDonation=donationOn(),onFunding=sectionOn('funding'),onAllowance=allowanceOn(),onRoulette=(settings?.roulette?.enabled!==false);badge($('#donationVisible'),onDonation);badge($('#presetVisible'),onDonation);badge($('#fundingVisible'),onFunding);badge($('#rouletteVisible'),onRoulette);badge($('#noticeVisible'),sectionOn('notice'));$('#allowanceVisible').textContent=onAllowance?'용돈 ON':'용돈 OFF';$('#allowanceVisible').className='badge '+(onAllowance?'on':'off');$('#donationOff').style.display=onDonation?'none':'block';$('#presetOff').style.display=onDonation?'none':'block';$('#fundingOff').style.display=onFunding?'none':'block';const noticeOff=$('#noticeOff');if(noticeOff)noticeOff.style.display=sectionOn('notice')?'none':'block';$('#stAccount').textContent=sectionOn('account')?'ON':'OFF';$('#stCreators').textContent=sectionOn('creators')||sectionOn('creatorDonations')?'ON':'OFF';$('#stFunding').textContent=onFunding?'ON':'OFF';$('#stAllowance').textContent=`${fmt(settings?.allowanceData?.balance||0)}원`;$('#allowanceCurrent').textContent=`현재용돈 : ${fmt(settings?.allowanceData?.balance||0)}원`;badge($('#liveBadge'),isLive());$('#liveBadge').innerHTML=isLive()?'<span class="live-dot"></span>방송중':'입력잠김';['notice','donation','preset','allowance','funding','roulette'].forEach(id=>{const btn=$(`.tab[data-tab="${id}"]`);let on=true;if(id==='notice')on=sectionOn('notice');if(id==='funding')on=onFunding;if(id==='allowance')on=onAllowance;if(id==='donation'||id==='preset')on=onDonation;if(id==='roulette')on=onRoulette;btn?.classList.toggle('off',!on)})}
+function renderForms(){renderDonationCreatorRows();renderCreatorChecks('presetCreatorChecks');$('#donationProcess').innerHTML=donationProcessOptions();$('#presetProcess').innerHTML=presetOptions();renderFundingSelect();renderRoulette();renderDisplay();renderNotice();renderState();updateDonationPreview()}
+async function saveNotice(turnOn){try{settings.overlaySections=settings.overlaySections||{};if(turnOn)settings.overlaySections.notice=true;const body={noticeTitle:norm($('#noticeTitle').value)||'공지',notice:String($('#noticeText').value||''),overlaySections:settings.overlaySections,...authBody()};await api('/api/settings',{method:'POST',body:JSON.stringify(body)});showSuccess(turnOn?'공지 저장 + ON 완료':'공지 저장 완료');await loadAll(false)}catch(e){handleError('공지',e)}}
+async function noticeOffAndSave(){try{settings.overlaySections=settings.overlaySections||{};settings.overlaySections.notice=false;await api('/api/settings',{method:'POST',body:JSON.stringify({overlaySections:settings.overlaySections,...authBody()})});showSuccess('공지 OFF 저장 완료');await loadAll(false)}catch(e){handleError('공지 OFF',e)}}
 async function saveDisplay(){try{await api('/api/settings',{method:'POST',body:JSON.stringify({overlaySections:settings.overlaySections,...authBody()})});showSuccess('노출 저장 완료');await loadAll(false)}catch(e){handleError('노출',e)}}
 async function saveDonation(){try{if(!isLive())throw new Error('방송시작 상태에서만 입력할 수 있습니다.');const donor=norm($('#donor').value);const amount=donationTopAmount();const source=selectedSource('donationSourceChecks');const rows=collectDonationRows();const selectedProcess=$('#donationProcess').value||'후원';const isRoulette=selectedProcess.startsWith('roulette:');const rr=isRoulette?selectedRouletteRule():null;if(!donor)throw new Error('도네이터명을 입력하세요.');if(amount<=0)throw new Error('총 금액을 입력하세요.');if(!source)throw new Error('계좌/투네 구분을 선택하세요.');if(!rows.length)throw new Error('크리에이터별 금액을 1개 이상 입력하세요.');const split=rows.reduce((s,r)=>s+toWon(r.amount),0);if(split!==amount)throw new Error(`총액과 크리에이터별 금액 합계가 다릅니다. 총액 ${fmt(amount)}원 / 분배 ${fmt(split)}원`);const body={donor,processType:isRoulette&&rr?`룰렛+${rr.listTitle}`:selectedProcess,accountTotal:source==='account'?amount:0,toonieTotal:source==='toonie'?amount:0,rows,rouletteRuleId:isRoulette?selectedProcess.replace('roulette:',''):'',...authBody()};await api('/api/donations/batch',{method:'POST',body:JSON.stringify(body)});['donor','donationAmount','donationMemo'].forEach(clearInput);$$('.donation-creator-amount').forEach(e=>e.value='');updateDonationPreview();showSuccess(`후원 저장 완료 ${rows.length}건`);await Promise.all([loadAll(false),loadRecent()])}catch(e){handleError('후원입력',e)}}
 async function savePresetManual(){try{if(!isLive())throw new Error('방송시작 상태에서만 수동 입력할 수 있습니다.');const donor=norm($('#presetDonor').value);const count=Math.max(0,parseInt($('#presetCount').value||'0',10)||0);const selected=selectedCreators('presetCreatorChecks');const raw=$('#presetProcess').value||'';const [presetId,presetSide]=(raw.split(':'));const direction=$('#presetDirection').value||'plus';if(!raw)throw new Error('프리셋을 선택하세요.');if(!donor)throw new Error('도네이터명을 입력하세요.');if(count<=0)throw new Error('갯수를 입력하세요.');if(!selected.length)throw new Error('크리에이터를 선택하세요.');for(const creator of selected){const body={kind:'presetCount',donor,creator,presetId,presetSide,direction,count,...authBody()};await api('/api/manual-entry',{method:'POST',body:JSON.stringify(body)})}['presetDonor'].forEach(clearInput);$('#presetCount').value='1';showSuccess(`프리셋 ${direction==='minus'?'제외':'추가'} 완료 ${selected.length}건`);await Promise.all([loadAll(false),loadRecent()])}catch(e){handleError('프리셋 수동입력',e)}}
 async function saveAllowance(){try{const body={amount:toWon($('#allowanceAmount').value),direction:$('#allowanceDirection').value,...authBody()};if(body.amount<=0)throw new Error('용돈 금액을 입력하세요.');await api('/api/allowance/adjust',{method:'POST',body:JSON.stringify(body)});clearInput('allowanceAmount');showSuccess('용돈 저장 완료');await loadAll(false)}catch(e){handleError('용돈 수동변경',e)}}
 async function saveFundingDirect(){try{const f=currentFunding();if(!f)throw new Error('펀딩을 선택하세요.');const data=JSON.parse(JSON.stringify(settings.fundingData||{items:[]}));const item=(data.items||[]).find(x=>String(x.id)===String(f.id));if(!item)throw new Error('펀딩을 찾을 수 없습니다.');item.current=Math.max(0,toWon($('#fundingCurrent').value));item.target=Math.max(0,toWon($('#fundingTarget').value));await api('/api/funding-data',{method:'POST',body:JSON.stringify({fundingData:data,...authBody()})});showSuccess('펀딩 금액 저장 완료');await loadAll(false)}catch(e){handleError('펀딩금액 변경',e)}}
 async function saveFundingManual(){try{if(!isLive())throw new Error('방송시작 상태에서만 수동 입력할 수 있습니다.');const f=currentFunding();if(!f)throw new Error('펀딩을 선택하세요.');const donor=norm($('#fundDonor').value);const amount=toWon($('#fundAmount').value);if(!donor)throw new Error('도네이터명을 입력하세요.');if(amount<=0)throw new Error('금액을 입력하세요.');const body={kind:'funding',fundingId:f.id,donor,amount,sourceType:$('#fundSource').value,memo:'',...authBody()};await api('/api/manual-entry',{method:'POST',body:JSON.stringify(body)});['fundDonor','fundAmount'].forEach(clearInput);showSuccess('펀딩 추가 저장 완료');await Promise.all([loadAll(false),loadRecent()])}catch(e){handleError('펀딩 후원 추가',e)}}
-async function startRoulette(){try{const ids=selectedRouletteIds();if(!ids.length)throw new Error('룰렛을 선택하세요.');setRouletteSelected(ids[0]);const body={listId:ids[0],count:$('#rouletteCount').value||1,duration:$('#rouletteDuration').value||undefined,...authBody()};const out=await api('/api/roulette/start',{method:'POST',body:JSON.stringify(body)});applyRouletteData(out.roulette);showSuccess('룰렛 시작');setTimeout(refreshRouletteOnly,350)}catch(e){handleError('룰렛 시작',e)}}
-async function resetRoulette(){try{const out=await api('/api/roulette/reset',{method:'POST',body:JSON.stringify(authBody())});applyRouletteData(out.roulette);showSuccess('룰렛 초기화')}catch(e){handleError('룰렛 초기화',e)}}
-async function advanceRoulette(){try{const out=await api('/api/roulette/advance',{method:'POST',body:JSON.stringify(authBody())});applyRouletteData(out.roulette);showSuccess(out.run?'다음 룰렛 실행':'룰렛 종료');setTimeout(refreshRouletteOnly,350)}catch(e){handleError('룰렛 다음',e)}}
+async function startRoulette(){try{const ids=selectedRouletteIds();if(!ids.length)throw new Error('룰렛을 선택하세요.');setRouletteSelected(ids[0]);const body={listId:ids[0],count:$('#rouletteCount').value||1,duration:$('#rouletteDuration').value||undefined,...authBody()};await api('/api/roulette/start',{method:'POST',body:JSON.stringify(body)});showSuccess('룰렛 시작');await loadAll(false)}catch(e){handleError('룰렛 시작',e)}}
+async function resetRoulette(){try{await api('/api/roulette/reset',{method:'POST',body:JSON.stringify(authBody())});showSuccess('룰렛 초기화');await loadAll(false)}catch(e){handleError('룰렛 초기화',e)}}
+async function advanceRoulette(){try{await api('/api/roulette/advance',{method:'POST',body:JSON.stringify(authBody())});showSuccess('다음 룰렛 실행');await loadAll(false)}catch(e){handleError('룰렛 다음',e)}}
 async function loadRecent(){try{const d=await api('/api/manager/recent?limit=30');const arr=(d.donations||[]);$('#recentList').innerHTML=arr.length?arr.map((x,i)=>`<div class="recent"><div class="num">${i+1}</div><div><b>${esc(x.donor||'-')} → ${esc(x.creator||'-')}</b><div class="muted">${fmt(x.totalAmount||x.amount||0)}원 · ${esc(x.resultLabel||x.processType||'')}</div></div><button class="btn mini red" style="width:56px" onclick="deleteRecent('${esc(x.id)}')">삭제</button></div>`).join(''):'<div class="empty">최근 입력 없음</div>'}catch(e){$('#recentList').innerHTML=`<div class="muted danger-note">방송 로그인 후 최근 입력을 볼 수 있습니다.</div>`}}
 async function deleteRecent(id){if(!confirm('이 입력을 삭제할까요?'))return;try{await api('/api/donations/'+encodeURIComponent(id),{method:'DELETE',body:JSON.stringify(authBody())});showSuccess('삭제 완료');await Promise.all([loadAll(false),loadRecent()])}catch(e){handleError('최근입력 삭제',e)}}
-async function loadStationInfo(){const info=await api('/api/station-info');station=info.station||null;active=info.active||null;return info}
-async function loadAll(showToast){await loadStationInfo();settings=await api('/api/settings');currentRole=settings.role||'guest';settings.station=station;settings.broadcast=active;const roleText=currentRole==='master'?'최고관리자':currentRole==='station_admin'?'방송국관리자/크리에이터':currentRole==='broadcast_manager'?'방송매니저':'로그인 필요';$('#info').textContent=`${station?.name||STATION} / ${active?.title||'현재 방송'} / ${roleText} / ${isLive()?'방송중':'입력잠김'}`;$('#loginInfo').textContent=`${station?.name||STATION} / 현재 방송: ${active?.title||'없음'}`;renderForms();if(showToast)showSuccess('새로고침 완료')}
+async function loadStationInfo(){const info=await api('/api/station-info');station=info.station||null;active=info.active||null;if(station?.slug&&!STATION){STATION=station.slug;localStorage.setItem('station_slug',STATION);rouletteSelectedId=localStorage.getItem(`creator_roulette_${STATION}`)||rouletteSelectedId||''}return info}
+async function loadAll(showToast){await loadStationInfo();settings=await api('/api/settings');currentRole=settings.role||'guest';settings.station=station;settings.broadcast=active;const roleText=currentRole==='master'?'최고관리자':currentRole==='station_admin'?'방송국관리자/크리에이터':currentRole==='broadcast_manager'?'방송매니저':'로그인 필요';$('#info').textContent=`${station?.name||STATION} / ${active?.title||'현재 방송'} / ${roleText} / ${isLive()?'방송중':'입력잠김'}`;$('#loginInfo').textContent=`${station?.name||STATION} / 현재 방송: ${active?.title||'없음'} / 크리에이터 로그인 필요`;if(!['master','station_admin'].includes(currentRole)){showLoginGate();setTimeout(goStationLogin,600);return}renderForms();if(showToast)showSuccess('새로고침 완료')}
 function switchTab(id){$$('.tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===id));$$('.panel').forEach(p=>p.classList.toggle('active',p.id===id))}
 $('#tabs').addEventListener('click',e=>{const b=e.target.closest('.tab');if(b)switchTab(b.dataset.tab)});
 function openOverlay(){const token=settings?.station?.overlayToken||station?.overlayToken||'';if(!token)return showError('오버레이',Object.assign(new Error('방송매니저 권한에서는 오버레이 토큰을 볼 수 없습니다.'),{status:'FORBIDDEN'}));window.open(`/overlay.html?station=${encodeURIComponent(STATION)}&token=${encodeURIComponent(token)}&monitor=1&v=${Date.now()}`,'_blank')}
-document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target?.id==='mobileBroadcastPw')mobileBroadcastLogin()});
-async function init(){try{await loadStationInfo();const saved=getSavedBroadcastPassword();if(active?.id&&saved){try{await api('/api/broadcast-login',{method:'POST',body:JSON.stringify({broadcastId:active.id,password:saved})});mobileAuth={broadcastId:active.id,password:saved}}catch(e){clearSavedBroadcastPassword();mobileAuth={broadcastId:'',password:''}}}await loadAll(false);startRouletteAutoRefresh();if(['master','station_admin','broadcast_manager'].includes(currentRole)){hideLoginGate();await loadRecent()}else{showLoginGate();await loadRecent()}}catch(e){showError('초기 로딩',e);showLoginGate()}}
+async function init(){try{await loadStationInfo();await loadAll(false);if(['master','station_admin'].includes(currentRole)){hideLoginGate();await loadRecent()}else{showLoginGate()}}catch(e){showError('초기 로딩',e);showLoginGate();setTimeout(goStationLogin,900)}}
 init();
 </script>
 </body>

@@ -1,0 +1,24 @@
+v_f01 creator login / notice / roulette smooth fix
+
+1) m_creator.html 권한 정리
+- 크리에이터 리모컨은 방송국관리자/크리에이터 권한 전용으로 변경.
+- 당일 방송 비밀번호 로그인 게이트 제거.
+- 비권한 접속 또는 방송매니저 권한 접속 시 station_login.html 로 이동.
+- //m_creator.html 처럼 슬래시가 2개 들어간 주소도 /m_creator.html 로 정규화.
+
+2) m_creator.html 공지 수정 연결
+- 상단 탭에 공지 추가.
+- 공지 제목/내용 저장 가능.
+- 저장 + 공지 ON, 공지 OFF 저장 버튼 추가.
+- 저장 성공 ALERT 자동 소멸, 오류 ALERT 확인 버튼 방식 유지.
+
+3) 룰렛 오버레이 부드러운 회전
+- roulette-overlay.js의 룰렛 텍스트 변경 루프를 setInterval 중심에서 requestAnimationFrame 기반으로 개선.
+- 빠르게 시작해서 easeOutCubic 감속 후 서버가 정한 최종 결과로 정지.
+- CSS tick 애니메이션과 슬롯 pulse를 추가해 방송화면에서 더 부드럽게 보이도록 조정.
+
+수정 파일:
+- server.js
+- public/m_creator.html
+- public/assets/js/roulette-overlay.js
+- public/assets/css/roulette-overlay.css
