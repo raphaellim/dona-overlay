@@ -1993,6 +1993,31 @@ app.delete('/api/stations/:id', checkMaster, async (req, res) => {
 });
 
 /* 방송국/방송 API */
+
+app.get('/api/creator-auth', async (req, res) => {
+  try {
+    if (!requireDb(res)) return;
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    const station = await getStation(req);
+    if (!station) return res.status(404).json({ error: '방송국을 찾을 수 없습니다.' });
+    const active = await ensureActiveBroadcast(station.id);
+    if (!await stationAllowed(req, station)) {
+      return res.status(401).json({ error: '크리에이터 리모컨은 방송국 관리자 로그인으로만 사용할 수 있습니다.' });
+    }
+    const activeSettings = await readEffectiveSettings(station.slug, active.id);
+    const activeClient = {
+      ...broadcastToClient(active),
+      broadcastLiveData: normalizeBroadcastLiveData(activeSettings.broadcastLiveData),
+      broadcastTimerData: normalizeBroadcastTimerData(activeSettings.broadcastTimerData)
+    };
+    res.json({ ok: true, role: isMasterRequest(req) ? 'master' : 'station_admin', station: managerSafeStation(station, true), active: activeClient });
+  } catch (e) {
+    res.status(500).json({ error: e.message || '크리에이터 권한 확인 실패' });
+  }
+});
+
 app.get('/api/station-info', async (req, res) => {
   try {
     if (!requireDb(res)) return;
