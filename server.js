@@ -524,9 +524,19 @@ async function cleanupExpiredRoulette(ctx) {
   const roulette = normalizeRouletteData(currentSettings.roulette);
   if (!roulette.current || !roulette.current.startedAt) return roulette;
 
+  const expired = Date.now() > rouletteRunExpireAt(roulette.current, roulette);
+
+  // 연속 룰렛은 overlay가 켜져 있지 않아도 컨트롤/크리에이터 페이지 조회만으로
+  // 다음 회차가 자동 진행되게 합니다. 이전에는 /api/roulette/advance 버튼을 눌러야
+  // queue가 다음 current로 넘어가서 크리에이터 페이지가 첫 결과에 멈췄습니다.
+  if ((roulette.queue || []).length && expired) {
+    const out = await advanceRouletteQueue(ctx, String(roulette.current.runId || ''));
+    return out.roulette;
+  }
+
   // 표시 시간이 충분히 지난 마지막 current는 서버에서 자동 정리합니다.
-  // overlay가 꺼져 있거나 새로고침된 경우에도 같은 runId가 반복 재생되지 않습니다.
-  if (!(roulette.queue || []).length && Date.now() > rouletteRunExpireAt(roulette.current, roulette)) {
+  // overlay가 꺼져 있거나 새로고침된 경우에도 같은 runId가 반복 재생되지 않게 합니다.
+  if (!(roulette.queue || []).length && expired) {
     roulette.current = null;
     roulette.queue = [];
     return await saveRouletteForContext(ctx, roulette);

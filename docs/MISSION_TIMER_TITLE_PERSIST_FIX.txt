@@ -1,0 +1,9 @@
+# MISSION_TIMER_TITLE_PERSIST_FIX
+
+- 미션타이머 입력값이 1초 갱신마다 기존 저장값으로 되돌아가는 문제 수정.
+- m_creator.html / m_admin.html 모두 타이머 제목, 방식, 타임아웃, 맞춤시간 입력 중에는 자동 렌더가 입력값을 덮어쓰지 않도록 missionDirty 처리.
+- 미션타이머 설정저장 버튼 추가.
+- POST /api/mission-timer/save 추가.
+- 시작/다시시작 시 비어 있는 설정값은 이전 저장값을 유지하도록 서버 처리 보강.
+- 종료/초기화 시 제목/방식/타임아웃/맞춤시간 설정은 유지하고 시간만 초기화되도록 처리.
+- 오버레이는 broadcastTimerData.label을 timer-label에 계속 반영하므로 설정 저장 후 타이틀이 방송 화면에 반영됨.

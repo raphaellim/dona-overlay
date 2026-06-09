@@ -3282,7 +3282,7 @@ function updateBroadcastTimer() {
 
   const labelEl = document.querySelector(".timer-label");
   if (labelEl) {
-    labelEl.textContent = timerData.label || "미션타이머";
+    labelEl.textContent = Object.prototype.hasOwnProperty.call(timerData, "label") ? String(timerData.label ?? "") : "미션타이머";
   }
 
   const sec = Math.max(0, Math.floor(diff / 1000));
