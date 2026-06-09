@@ -1,202 +1,6 @@
-<!doctype html>
-<html lang="ko">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>크리에이터 모바일 컨트롤</title>
-<style>
-*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#070b12;color:#e5e7eb;font-family:Arial,'Noto Sans KR',sans-serif}body{padding-bottom:92px}.top{position:sticky;top:0;z-index:20;background:linear-gradient(180deg,#07111f,#070b12);border-bottom:1px solid #253247;padding:12px 12px 8px}.topline{display:flex;align-items:center;justify-content:space-between;gap:10px}.title{font-size:19px;font-weight:1000;letter-spacing:-.3px}.sub{font-size:12px;color:#94a3b8;margin-top:4px;line-height:1.35}.tabs{display:flex;gap:8px;overflow:auto;padding:10px 0 2px;scrollbar-width:none}.tabs::-webkit-scrollbar{display:none}.tab{white-space:nowrap;border:1px solid #334155;border-radius:999px;background:#0f172a;color:#dbeafe;padding:10px 12px;font-weight:1000;font-size:13px}.tab.active{background:linear-gradient(90deg,#ff4fa3,#2563eb);border-color:rgba(255,255,255,.2);color:#fff}.tab.off{opacity:.42}.wrap{padding:12px}.panel{display:none}.panel.active{display:block}.card{background:#0b1220;border:1px solid #253247;border-radius:18px;padding:14px;margin-bottom:12px;box-shadow:0 10px 26px rgba(0,0,0,.18)}.card-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}h2{font-size:17px;margin:0;font-weight:1000}.badge{font-size:12px;color:#cbd5e1;border:1px solid #334155;border-radius:999px;padding:4px 8px;background:#101827}.badge.on{color:#bbf7d0;border-color:#166534}.badge.off{color:#fecaca;border-color:#7f1d1d}.row{margin-bottom:11px}label{display:block;margin-bottom:6px;font-size:13px;color:#cbd5e1;font-weight:900}.input,input,select,textarea{width:100%;min-height:50px;background:#070b12;color:#fff;border:1px solid #334155;border-radius:14px;padding:11px 12px;font-size:16px;font-weight:800;outline:none}.input:focus,input:focus,select:focus,textarea:focus{border-color:#60a5fa;box-shadow:0 0 0 3px rgba(96,165,250,.12)}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}.btn{width:100%;min-height:48px;border:0;border-radius:14px;background:#334155;color:#fff;font-weight:1000;font-size:15px}.btn:disabled{opacity:.45}.green{background:#16a34a}.blue{background:#2563eb}.red{background:#dc2626}.pink{background:#ec4899}.gray{background:#334155}.cyan{background:#0891b2}.orange{background:#f97316}.mini{min-height:38px;font-size:13px;border-radius:12px}.result{background:#101827;border:1px solid #334155;border-radius:15px;padding:12px;margin-bottom:11px;font-weight:1000}.muted{font-size:12px;color:#94a3b8;line-height:1.45}.offbox{border:1px dashed #475569;background:#0f172a;color:#cbd5e1;border-radius:15px;padding:10px;font-size:13px;margin-bottom:10px}.quickrow{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:11px}.quickrow button{min-height:40px;font-size:13px}.bottom{position:fixed;left:0;right:0;bottom:0;z-index:30;background:#07111f;border-top:1px solid #253247;padding:9px 12px calc(9px + env(safe-area-inset-bottom));display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px}.toast{position:fixed;left:50%;bottom:92px;transform:translateX(-50%) translateY(20px);background:#0f172a;border:1px solid #22c55e;border-radius:999px;padding:10px 14px;color:#fff;font-weight:1000;opacity:0;pointer-events:none;transition:.2s;z-index:60;box-shadow:0 12px 30px rgba(0,0,0,.35)}.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}.login-gate{position:fixed;inset:0;z-index:100;background:rgba(3,7,18,.94);display:none;align-items:center;justify-content:center;padding:18px}.login-box{width:min(420px,100%);background:#0b1220;border:1px solid #334155;border-radius:22px;padding:20px}.login-box h1{margin:0 0 8px;font-size:24px}.recent-wrap,.roulette-history{max-height:246px;overflow:auto;padding-right:2px}.recent{display:grid;grid-template-columns:34px 1fr auto;gap:8px;align-items:center;background:#101827;border:1px solid #334155;border-radius:14px;padding:10px;margin-bottom:8px}.recent .num{width:28px;height:28px;border-radius:999px;background:#1e293b;display:flex;align-items:center;justify-content:center;font-weight:1000;color:#bfdbfe}.statusline{display:grid;grid-template-columns:1fr 1fr;gap:8px}.statuspill{background:#101827;border:1px solid #334155;border-radius:14px;padding:10px;font-size:12px;color:#94a3b8}.statuspill b{display:block;font-size:17px;color:#fff;margin-top:3px}.danger-note{color:#fecaca}.live-dot{width:8px;height:8px;border-radius:999px;background:#22c55e;display:inline-block;margin-right:6px;box-shadow:0 0 10px rgba(34,197,94,.8)}.checkbar{display:flex;gap:8px;margin-bottom:8px}.checklist{display:grid;grid-template-columns:1fr 1fr;gap:8px;max-height:180px;overflow:auto}.checkitem{display:flex;align-items:center;gap:8px;background:#101827;border:1px solid #334155;border-radius:14px;padding:10px;font-size:14px;font-weight:900;min-height:46px}.checkitem input{width:20px;min-height:20px;accent-color:#ec4899}.source-checks{display:grid;grid-template-columns:1fr 1fr;gap:8px}.source-checks .checkitem{justify-content:center}.source-checks input{width:20px;min-height:20px;accent-color:#ec4899}.modal-bg{position:fixed;inset:0;z-index:80;background:rgba(0,0,0,.58);display:none;align-items:center;justify-content:center;padding:16px}.modal{width:min(460px,100%);background:#0b1220;border:1px solid #ef4444;border-radius:20px;padding:16px;box-shadow:0 20px 60px rgba(0,0,0,.5)}.modal h3{margin:0 0 8px;font-size:18px;color:#fecaca}.modal pre{white-space:pre-wrap;word-break:break-word;background:#070b12;border:1px solid #334155;border-radius:12px;padding:10px;max-height:220px;overflow:auto;color:#e5e7eb;font-size:12px}.empty{border:1px dashed #475569;border-radius:14px;padding:12px;color:#94a3b8;text-align:center}.history-row{display:grid;grid-template-columns:34px 1fr;gap:8px;align-items:center;background:#101827;border:1px solid #334155;border-radius:14px;padding:10px;margin-bottom:8px}.history-row .num{width:28px;height:28px;border-radius:999px;background:#1e293b;display:flex;align-items:center;justify-content:center;font-weight:1000;color:#fbcfe8}.creator-amount-row{background:#101827;border:1px solid #334155;border-radius:14px;padding:10px;margin-bottom:8px}.creator-amount-top{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-weight:1000}.creator-amount-top input{width:20px;min-height:20px;accent-color:#ec4899}.creator-amount-grid{display:grid;grid-template-columns:1fr 74px;gap:8px}.summary-mini{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin:8px 0}.summary-mini div{background:#101827;border:1px solid #334155;border-radius:12px;padding:8px;font-size:11px;color:#94a3b8}.summary-mini b{display:block;font-size:14px;color:#fff;margin-top:3px}.summary-mini .warn b{color:#fecaca}.summary-mini .ok b{color:#bbf7d0}@media(max-width:380px){.grid2,.grid3,.bottom,.checklist{grid-template-columns:1fr}.quickrow{grid-template-columns:1fr 1fr}body{padding-bottom:176px}}
-</style>
-</head>
-<body>
-<div id="loginGate" class="login-gate">
-  <div class="login-box">
-    <h1>크리에이터 로그인 필요</h1>
-    <p id="loginInfo" class="muted">방송국관리자/크리에이터 권한을 확인하는 중...</p>
-    <button class="btn blue" onclick="goStationLogin()">방송국관리자 로그인으로 이동</button>
-    <p class="muted">크리에이터 리모컨은 당일 방송 비밀번호가 아니라 방송국 관리자 비밀번호로 접속합니다.</p>
-  </div>
-</div>
-<header class="top">
-  <div class="topline">
-    <div>
-      <div class="title">크리에이터 컨트롤</div>
-      <div id="info" class="sub">불러오는 중...</div>
-    </div>
-    <button class="btn mini gray" style="width:74px" onclick="loadAll(true)">새로고침</button>
-  </div>
-  <div class="tabs" id="tabs">
-    <button class="tab active" data-tab="status">상태</button>
-    <button class="tab" data-tab="display">노출</button>
-    <button class="tab" data-tab="notice">공지</button>
-    <button class="tab" data-tab="mission">미션타이머</button>
-    <button class="tab" data-tab="donation">후원</button>
-    <button class="tab" data-tab="preset">프리셋</button>
-    <button class="tab" data-tab="allowance">용돈</button>
-    <button class="tab" data-tab="funding">펀딩</button>
-    <button class="tab" data-tab="roulette">룰렛</button>
-  </div>
-</header>
-<main class="wrap">
-  <section id="status" class="panel active">
-    <div class="card">
-      <div class="card-head"><h2>현재 오버레이 상태</h2><span id="liveBadge" class="badge">확인중</span></div>
-      <div class="statusline">
-        <div class="statuspill">계좌/후원<b id="stAccount">-</b></div>
-        <div class="statuspill">크리에이터<b id="stCreators">-</b></div>
-        <div class="statuspill">펀딩<b id="stFunding">-</b></div>
-        <div class="statuspill">현재용돈<b id="stAllowance">-</b></div>
-      </div>
-      <p class="muted" style="margin-bottom:0">방송 화면에 실제 켜진 항목만 빠르게 수정하는 모바일 페이지입니다.</p>
-    </div>
-    <div class="card">
-      <div class="card-head"><h2>최근 입력</h2><button class="btn mini gray" style="width:82px" onclick="loadRecent()">갱신</button></div>
-      <div id="recentList" class="recent-wrap"><div class="muted">불러오는 중...</div></div>
-      <p class="muted">최근 3칸 높이로 보이고, 나머지는 안에서 스크롤됩니다.</p>
-    </div>
-  </section>
 
-  <section id="display" class="panel">
-    <div class="card">
-      <div class="card-head"><h2>오버레이 노출 탭키</h2><span class="badge">ON/OFF</span></div>
-      <div class="grid2" id="displayToggles"></div>
-      <button class="btn blue" style="margin-top:10px" onclick="saveDisplay()">노출 상태 저장</button>
-      <p class="muted">용돈 ON/OFF도 노출 탭에서 바로 켜고 끌 수 있습니다.</p>
-    </div>
-  </section>
-
-  <section id="notice" class="panel">
-    <div class="card">
-      <div class="card-head"><h2>공지 수정</h2><span id="noticeVisible" class="badge">-</span></div>
-      <div id="noticeOff" class="offbox" style="display:none">공지 노출이 OFF 상태입니다. 저장은 가능하지만 방송 화면에는 보이지 않습니다.</div>
-      <div class="row"><label>공지 제목</label><input id="noticeTitle" class="input" placeholder="공지"></div>
-      <div class="row"><label>공지 내용</label><textarea id="noticeText" class="input" rows="5" placeholder="방송 화면에 표시할 공지 내용을 입력하세요"></textarea></div>
-      <div class="grid2">
-        <button class="btn blue" onclick="saveNotice(false)">공지 저장</button>
-        <button class="btn green" onclick="saveNotice(true)">저장 + 공지 ON</button>
-      </div>
-      <button class="btn gray" style="margin-top:8px" onclick="noticeOffAndSave()">공지 OFF 저장</button>
-      <p class="muted">크리에이터 리모컨에서 방송 중 공지 문구를 바로 바꿀 수 있습니다.</p>
-    </div>
-  </section>
-
-  <section id="donation" class="panel">
-    <div class="card">
-      <div class="card-head"><h2>후원 입력</h2><span id="donationVisible" class="badge">-</span></div>
-      <div id="donationOff" class="offbox" style="display:none">후원/크리에이터 박스가 OFF 상태입니다. 노출 탭에서 켜야 방송 화면에 보입니다.</div>
-      <div class="row"><label>도네이터명</label><input id="donor" class="input" placeholder="도네이터"></div>
-      <div class="row"><label>후원 자동연결</label><select id="donationProcess" class="input" onchange="updateDonationPreview()"></select></div>
-      <div class="grid2">
-        <div class="row"><label>총 금액</label><input id="donationAmount" class="input" inputmode="decimal" placeholder="6.6 / 6600" oninput="updateDonationPreview()"></div>
-        <div class="row"><label>계좌/투네 구분</label><div id="donationSourceChecks" class="source-checks"><label class="checkitem"><input type="checkbox" value="account" checked onchange="setSourceCheck('donationSourceChecks','account');updateDonationPreview()">계좌</label><label class="checkitem"><input type="checkbox" value="toonie" onchange="setSourceCheck('donationSourceChecks','toonie');updateDonationPreview()">투네</label></div></div>
-      </div>
-      <div class="quickrow"><button class="btn mini gray" onclick="addAmount('donationAmount',1000);updateDonationPreview()">+1천</button><button class="btn mini gray" onclick="addAmount('donationAmount',5000);updateDonationPreview()">+5천</button><button class="btn mini gray" onclick="addAmount('donationAmount',10000);updateDonationPreview()">+1만</button><button class="btn mini red" onclick="clearInput('donationAmount');updateDonationPreview()">초기화</button></div>
-      <div class="summary-mini"><div>총액<b id="donationTopTotal">0원</b></div><div>분배합계<b id="donationSplitTotal">0원</b></div><div id="donationDiffBox">차이<b id="donationDiff">0원</b></div></div>
-      <div class="row"><label>크리에이터별 금액</label><div id="donationCreatorRows"></div></div>
-      <div class="grid2"><button class="btn mini gray" onclick="applyDonationAmountToChecked()">체크 금액 적용</button><button class="btn mini blue" onclick="distributeDonationAmount()">체크 균등분배</button></div>
-      <div class="row" style="margin-top:11px"><label>메모</label><input id="donationMemo" class="input" placeholder="선택"></div>
-      <button class="btn green" onclick="saveDonation()">후원 저장</button>
-      <p class="muted">프리셋은 처리명으로 자동 계산되고, 룰렛은 자동 룰렛 규칙 기준으로 연결됩니다. 후원 저장은 오버레이 ALERT가 뜹니다.</p>
-    </div>
-  </section>
-
-  <section id="preset" class="panel">
-    <div class="card">
-      <div class="card-head"><h2>프리셋 수동변경 입력</h2><span id="presetVisible" class="badge">-</span></div>
-      <div id="presetOff" class="offbox" style="display:none">크리에이터/옵션 표시가 OFF 상태입니다. 저장은 가능하지만 방송 화면에는 보이지 않을 수 있습니다.</div>
-      <div class="row"><label>프리셋명</label><select id="presetProcess" class="input"></select></div>
-      <div class="row"><label>도네이터</label><input id="presetDonor" class="input" placeholder="도네이터"></div>
-      <div class="row"><label>크리에이터 선택</label><div id="presetCreatorChecks" class="checklist"></div></div>
-      <div class="grid2">
-        <div class="row"><label>갯수</label><input id="presetCount" class="input" inputmode="numeric" placeholder="숫자" value="1"></div>
-        <div class="row"><label>추가/제외</label><select id="presetDirection" class="input"><option value="plus">추가</option><option value="minus">제외</option></select></div>
-      </div>
-      <div class="quickrow"><button class="btn mini gray" onclick="addCount('presetCount',1)">+1</button><button class="btn mini gray" onclick="addCount('presetCount',5)">+5</button><button class="btn mini gray" onclick="addCount('presetCount',10)">+10</button><button class="btn mini red" onclick="clearCount('presetCount')">초기화</button></div>
-      <div class="grid2"><button class="btn pink" onclick="savePresetManual()">확인</button><button class="btn red" onclick="resetPresetManual()">프리셋 수동 0 초기화</button></div>
-      <p class="muted">후원 ALERT와 상관없이 프리셋 갯수만 수동으로 추가/제외합니다. 수동 보정값은 다음 방송에서는 0부터 시작합니다.</p>
-    </div>
-  </section>
-
-  <section id="allowance" class="panel">
-    <div class="card">
-      <div class="card-head"><h2>용돈 수동변경</h2><span id="allowanceVisible" class="badge">계좌후원 기준</span></div>
-      <div class="result" id="allowanceCurrent">현재용돈 : 0원</div>
-      <div class="grid2">
-        <div class="row"><label>금액</label><input id="allowanceAmount" class="input" inputmode="decimal" placeholder="1 / 10000"></div>
-        <div class="row"><label>방향</label><select id="allowanceDirection" class="input"><option value="plus">증가 +</option><option value="minus">차감 -</option></select></div>
-      </div>
-      <div class="quickrow"><button class="btn mini gray" onclick="addAmount('allowanceAmount',1000)">+1천</button><button class="btn mini gray" onclick="addAmount('allowanceAmount',5000)">+5천</button><button class="btn mini gray" onclick="addAmount('allowanceAmount',10000)">+1만</button><button class="btn mini red" onclick="clearInput('allowanceAmount')">초기화</button></div>
-      <div class="grid2"><button class="btn cyan" onclick="saveAllowance()">용돈 저장</button><button class="btn red" onclick="resetAllowance()">용돈 0 초기화</button></div>
-      <p class="muted">용돈 수동값은 당일 방송 기준이며 다음 방송에서는 0으로 시작합니다.</p>
-    </div>
-  </section>
-
-  <section id="funding" class="panel">
-    <div class="card">
-      <div class="card-head"><h2>펀딩금액 변경</h2><span id="fundingVisible" class="badge">-</span></div>
-      <div id="fundingOff" class="offbox" style="display:none">펀딩 노출이 OFF 상태입니다. 노출 탭에서 켜야 방송 화면에 보입니다.</div>
-      <div class="row"><label>펀딩 선택</label><select id="fundingSelect" class="input" onchange="renderFundingValues()"></select></div>
-      <div class="grid2">
-        <div class="row"><label>현재금액</label><input id="fundingCurrent" class="input" inputmode="decimal"></div>
-        <div class="row"><label>목표금액</label><input id="fundingTarget" class="input" inputmode="decimal"></div>
-      </div>
-      <button class="btn blue" onclick="saveFundingDirect()">펀딩 금액 저장</button>
-    </div>
-    <div class="card">
-      <div class="card-head"><h2>펀딩 후원 추가</h2><span class="badge">무알림</span></div>
-      <div class="grid2">
-        <div class="row"><label>도네이터</label><input id="fundDonor" class="input" placeholder="도네이터"></div>
-        <div class="row"><label>금액</label><input id="fundAmount" class="input" inputmode="decimal" placeholder="1 / 10000"></div>
-      </div>
-      <div class="quickrow"><button class="btn mini gray" onclick="addAmount('fundAmount',1000)">+1천</button><button class="btn mini gray" onclick="addAmount('fundAmount',5000)">+5천</button><button class="btn mini gray" onclick="addAmount('fundAmount',10000)">+1만</button><button class="btn mini red" onclick="clearInput('fundAmount')">초기화</button></div>
-      <div class="row"><label>구분</label><select id="fundSource" class="input"><option value="toonie">투네</option><option value="account">계좌</option></select></div>
-      <button class="btn green" onclick="saveFundingManual()">펀딩 후원 추가</button>
-    </div>
-  </section>
-
-  <section id="mission" class="panel">
-    <div class="card">
-      <div class="card-head"><h2>미션타이머 컨트롤</h2><span id="missionVisible" class="badge">-</span></div>
-      <div class="result" id="missionCurrent">미션타이머 : 00:00:00</div>
-      <div class="row"><label>타이머 제목</label><input id="missionLabel" class="input" placeholder="미션타이머"></div>
-      <div class="row"><label>타이머 방식</label><select id="missionMode" class="input" onchange="renderMissionModeHelp()"><option value="countdown">타임아웃</option><option value="countup">진행시간</option><option value="until">맞춤시간</option></select></div>
-      <div class="grid2">
-        <div class="row"><label>타임아웃(분)</label><input id="missionTimeoutMin" class="input" inputmode="decimal" placeholder="30"></div>
-        <div class="row"><label>맞춤시간</label><input id="missionTargetAt" class="input" type="datetime-local"></div>
-      </div>
-      <div class="offbox" id="missionHelp">타임아웃은 지정 분부터 감소, 진행시간은 0부터 증가, 맞춤시간은 지정 시각까지 남은 시간을 표시합니다.</div>
-      <div class="grid2"><button class="btn blue" onclick="saveMissionTimerSettings()">설정저장</button><button class="btn green" onclick="startMissionTimer(false)">시작</button></div><div class="grid2" style="margin-top:8px"><button class="btn blue" onclick="startMissionTimer(true)">다시시작</button><button class="btn gray" onclick="pauseMissionTimer()">멈춤</button></div>
-      <div class="grid2" style="margin-top:8px"><button class="btn red" onclick="endMissionTimer()">종료/초기화</button></div>
-      <p class="muted">종료를 누르면 타이머 시간이 0으로 초기화됩니다. 방송 화면 노출은 노출 탭의 미션타이머 ON/OFF로 제어합니다.</p>
-    </div>
-  </section>
-
-  <section id="roulette" class="panel">
-    <div class="card">
-      <div class="card-head"><h2>룰렛 선택/실행</h2><span id="rouletteVisible" class="badge">-</span></div>
-      <div class="result" id="rouletteCurrent">현재 룰렛 : 없음</div>
-      <div class="row"><label>룰렛 선택</label><div id="rouletteChecks" class="checklist"></div></div>
-      <div class="grid2">
-        <div class="row"><label>횟수</label><input id="rouletteCount" class="input" inputmode="numeric" value="1"></div>
-        <div class="row"><label>연출시간(ms)</label><input id="rouletteDuration" class="input" inputmode="numeric" placeholder="기본"></div>
-      </div>
-      <div class="grid3"><button class="btn orange" onclick="startRoulette()">선택 룰렛 시작</button><button class="btn blue" onclick="advanceRoulette()">다음</button><button class="btn red" onclick="resetRoulette()">초기화</button></div>
-      <p class="muted">룰렛은 한 개만 선택됩니다. 다른 룰렛을 선택하면 그 룰렛 기준으로 시작하고 선택 상태가 유지됩니다.</p>
-    </div>
-    <div class="card">
-      <div class="card-head"><h2>선택 룰렛 최근 결과</h2><button class="btn mini gray" style="width:82px" onclick="renderRouletteHistory()">갱신</button></div>
-      <div id="rouletteHistory" class="roulette-history"><div class="muted">선택된 룰렛 기준으로 표시됩니다.</div></div>
-      <p class="muted">최근 5칸 높이로 보이고, 나머지는 안에서 스크롤됩니다.</p>
-    </div>
-  </section>
-</main>
-<div class="bottom"><button class="btn gray" onclick="openOverlay()">오버레이</button><button class="btn blue" onclick="openSummary()">합산</button><button class="btn cyan" onclick="loadAll(true)">갱신</button><button class="btn pink" onclick="switchTab('donation')">후원입력</button></div>
-<div id="toast" class="toast"></div>
-<div id="errorBg" class="modal-bg"><div class="modal"><h3>오류 ALERT</h3><pre id="errorText"></pre><button class="btn red" onclick="closeError()">확인</button></div></div>
-<script>
 const qs=new URLSearchParams(location.search);let STATION=qs.get('station')||qs.get('slug')||localStorage.getItem('station_slug')||localStorage.getItem('STATION_SLUG')||'';if(STATION){localStorage.setItem('station_slug',STATION);localStorage.setItem('STATION_SLUG',STATION);}
 let settings={},station=null,active=null,currentRole='guest',rouletteSelectedId=localStorage.getItem(`creator_roulette_${STATION||'current'}`)||'';
-let missionDirty=false;
 const $=s=>document.querySelector(s);const $$=s=>Array.from(document.querySelectorAll(s));
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const fmt=n=>Number(n||0).toLocaleString('ko-KR');
@@ -212,7 +16,7 @@ function showLoginGate(){$('#loginGate').style.display='flex'}function hideLogin
 function showSuccess(msg){const t=$('#toast');t.textContent='성공 ALERT · '+msg;t.classList.add('show');clearTimeout(showSuccess._t);showSuccess._t=setTimeout(()=>t.classList.remove('show'),1300)}
 function closeError(){$('#errorBg').style.display='none'}
 function showError(page,e){const code=e?.status||'UNKNOWN';const endpoint=e?.endpoint||'';const msg=e?.message||'처리 실패';$('#errorText').textContent=`페이지명: ${page}\n오류코드: ${code}\nAPI: ${endpoint}\n로그: ${msg}`;$('#errorBg').style.display='flex'}
-function handleError(page,e){showError(page,e)}
+function handleError(page,e){if((e.message||'').includes('권한')||(e.message||'').includes('비밀번호')){showLoginGate()}showError(page,e)}
 function isLive(){return !!(active?.broadcastLiveData?.live||settings?.broadcast?.broadcastLiveData?.live)}
 function sectionOn(k){return !!(settings?.overlaySections||{})[k]}function donationOn(){return sectionOn('account')||sectionOn('creators')||sectionOn('creatorDonations')}function allowanceOn(){return sectionOn('allowance')}
 function badge(el,on){if(!el)return;el.className='badge '+(on?'on':'off');el.textContent=on?'ON':'OFF'}
@@ -336,31 +140,13 @@ async function resetRoulette(){try{const out=await api('/api/roulette/reset',{me
 async function advanceRoulette(){try{const out=await api('/api/roulette/advance',{method:'POST',body:JSON.stringify(authBody())});applyRouletteData(out.roulette);showSuccess(out.run?'다음 룰렛 실행':'룰렛 종료');setTimeout(refreshRouletteOnly,250);setTimeout(refreshRouletteOnly,900)}catch(e){handleError('룰렛 다음',e)}}
 async function loadRecent(){try{const d=await api('/api/manager/recent?limit=30');const arr=(d.donations||[]);$('#recentList').innerHTML=arr.length?arr.map((x,i)=>`<div class="recent"><div class="num">${i+1}</div><div><b>${esc(x.donor||'-')} → ${esc(x.creator||'-')}</b><div class="muted">${fmt(x.totalAmount||x.amount||0)}원 · ${esc(x.resultLabel||x.processType||'')}</div></div><button class="btn mini red" style="width:56px" onclick="deleteRecent('${esc(x.id)}')">삭제</button></div>`).join(''):'<div class="empty">최근 입력 없음</div>'}catch(e){$('#recentList').innerHTML=`<div class="muted danger-note">방송 로그인 후 최근 입력을 볼 수 있습니다.</div>`}}
 async function deleteRecent(id){if(!confirm('이 입력을 삭제할까요?'))return;try{await api('/api/donations/'+encodeURIComponent(id),{method:'DELETE',body:JSON.stringify(authBody())});showSuccess('삭제 완료');await Promise.all([loadAll(false),loadRecent()])}catch(e){handleError('최근입력 삭제',e)}}
-async function loadStationInfo(){const info=await api('/api/station-info');station=info.station||null;active=info.active||null;if(station?.slug){STATION=station.slug;localStorage.setItem('station_slug',STATION);localStorage.setItem('STATION_SLUG',STATION);rouletteSelectedId=localStorage.getItem(`creator_roulette_${STATION}`)||rouletteSelectedId||''}return info}
-async function loadAll(showToast){
-  await loadStationInfo();
-  settings=await api('/api/settings');
-  currentRole=settings.role||'guest';
-  // m_creator.html은 서버 accessGuard에서 방송국관리자/크리에이터만 통과시킵니다.
-  // 일부 모바일 브라우저에서 API role 쿠키 판정이 늦게 따라와 로그인 게이트가 다시 뜨는 문제를 막기 위해,
-  // 페이지가 이미 열린 상태에서는 게이트를 재표시하지 않고 크리에이터 리모컨을 계속 렌더링합니다.
-  if(!['master','station_admin'].includes(currentRole)) currentRole='station_admin';
-  settings.station=station;
-  settings.broadcast=active;
-  const roleText=currentRole==='master'?'최고관리자':currentRole==='station_admin'?'방송국관리자/크리에이터':currentRole==='broadcast_manager'?'방송매니저':'로그인 필요';
-  $('#info').textContent=`${station?.name||STATION} / ${active?.title||'현재 방송'} / ${roleText} / ${isLive()?'방송중':'입력잠김'}`;
-  $('#loginInfo').textContent=`${station?.name||STATION} / 현재 방송: ${active?.title||'없음'} / 크리에이터 로그인 필요`;
-  hideLoginGate();
-  renderForms();
-  if(showToast)showSuccess('새로고침 완료');
-}
+async function loadStationInfo(){const info=await api('/api/station-info');station=info.station||null;active=info.active||null;if(station?.slug&&!STATION){STATION=station.slug;localStorage.setItem('station_slug',STATION);localStorage.setItem('STATION_SLUG',STATION);rouletteSelectedId=localStorage.getItem(`creator_roulette_${STATION}`)||rouletteSelectedId||''}return info}
+async function checkCreatorAuth(){const info=await api('/api/creator-auth');station=info.station||station;active=info.active||active;if(station?.slug){STATION=station.slug;localStorage.setItem('station_slug',STATION);localStorage.setItem('STATION_SLUG',STATION)}return info}
+async function loadAll(showToast){let auth=null;try{auth=await checkCreatorAuth()}catch(e){currentRole='guest';if(e.status===401||e.status===403){$('#loginInfo').textContent=`${STATION||'방송국'} / 크리에이터 로그인 필요`;showLoginGate();return}throw e}settings=await api('/api/settings');currentRole=auth?.role||settings.role||'guest';settings.station=station;settings.broadcast=active;const roleText=currentRole==='master'?'최고관리자':currentRole==='station_admin'?'방송국관리자/크리에이터':currentRole==='broadcast_manager'?'방송매니저':'로그인 필요';$('#info').textContent=`${station?.name||STATION} / ${active?.title||'현재 방송'} / ${roleText} / ${isLive()?'방송중':'입력잠김'}`;$('#loginInfo').textContent=`${station?.name||STATION} / 현재 방송: ${active?.title||'없음'} / 크리에이터 로그인 필요`;if(!['master','station_admin'].includes(currentRole)){showLoginGate();return}hideLoginGate();renderForms();if(showToast)showSuccess('새로고침 완료')}
 function switchTab(id){$$('.tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===id));$$('.panel').forEach(p=>p.classList.toggle('active',p.id===id));if(id==='roulette')refreshRouletteOnly()}
 $('#tabs').addEventListener('click',e=>{const b=e.target.closest('.tab');if(b)switchTab(b.dataset.tab)});
 function openOverlay(){const token=settings?.station?.overlayToken||station?.overlayToken||'';if(!token)return showError('오버레이',Object.assign(new Error('방송매니저 권한에서는 오버레이 토큰을 볼 수 없습니다.'),{status:'FORBIDDEN'}));window.open(`/overlay.html?station=${encodeURIComponent(STATION)}&token=${encodeURIComponent(token)}&monitor=1&v=${Date.now()}`,'_blank')}
 function openSummary(){window.open(`/summary.html?station=${encodeURIComponent(STATION)}&v=${Date.now()}`,'_blank')}
 function bindMissionInputs(){['missionLabel','missionMode','missionTimeoutMin','missionTargetAt'].forEach(id=>{const el=$('#'+id);if(el&&!el.dataset.boundMission){el.dataset.boundMission='1';el.addEventListener('input',()=>setMissionDirty(true));el.addEventListener('change',()=>{setMissionDirty(true);renderMissionModeHelp()});}})}
-async function init(){try{hideLoginGate();await loadAll(false);bindMissionInputs();startRouletteAutoRefresh();startMissionClock();hideLoginGate();await loadRecent()}catch(e){hideLoginGate();showError('초기 로딩',e)}}
+async function init(){try{await loadAll(false);bindMissionInputs();startRouletteAutoRefresh();startMissionClock();if(['master','station_admin'].includes(currentRole)){hideLoginGate();await loadRecent()}else{showLoginGate()}}catch(e){showError('초기 로딩',e);showLoginGate()}}
 init();
-</script>
-</body>
-</html>
