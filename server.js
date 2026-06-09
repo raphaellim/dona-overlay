@@ -563,7 +563,7 @@ function normalizeBroadcastTimerData(raw) {
   return {
     running: value.running === true,
     mode,
-    label: String(value.label || '미션타이머'),
+    label: Object.prototype.hasOwnProperty.call(value, 'label') ? String(value.label ?? '') : '미션타이머',
     startedAt: value.startedAt ? String(value.startedAt) : '',
     endedAt: value.endedAt ? String(value.endedAt) : '',
     elapsedMs: Math.max(0, Number(value.elapsedMs || 0)),
@@ -634,6 +634,34 @@ function normalizeKaraokeData(raw) {
     users,
     songs
   };
+}
+
+
+function karaokeCarryoverData(raw) {
+  const k = normalizeKaraokeData(raw);
+  // 다음 방송으로 넘길 값: 타이틀/알림/남은 코인만 유지, 당일 선곡/예약/진행상태는 제외
+  return {
+    title: k.title,
+    notice: k.notice,
+    users: k.users,
+    songs: []
+  };
+}
+
+function effectiveKaraokeData(globalKaraoke, sharedKaraoke, scopedKaraoke) {
+  const hasShared = sharedKaraoke && typeof sharedKaraoke === 'object';
+  const hasScoped = scopedKaraoke && typeof scopedKaraoke === 'object';
+  const base = normalizeKaraokeData(hasShared ? sharedKaraoke : (globalKaraoke || {}));
+  const scoped = hasScoped ? normalizeKaraokeData(scopedKaraoke) : null;
+
+  return normalizeKaraokeData({
+    title: hasScoped && Object.prototype.hasOwnProperty.call(scopedKaraoke, 'title') ? scoped.title : base.title,
+    notice: hasScoped && (Object.prototype.hasOwnProperty.call(scopedKaraoke, 'notice') || Object.prototype.hasOwnProperty.call(scopedKaraoke, 'ticker')) ? scoped.notice : base.notice,
+    // 코인 잔량은 방송 간 이월되어야 하므로 공유값을 기준으로 사용합니다.
+    users: base.users,
+    // 노래/예약/진행/보류/완료 상태는 당일 방송 데이터만 사용합니다.
+    songs: scoped ? scoped.songs : []
+  });
 }
 
 function normalizeOverlaySections(raw, base) {
@@ -1161,24 +1189,28 @@ async function readEffectiveSettings(stationSlug, broadcastId) {
     ? stationSettings[broadcastId]
     : {};
 
-  return normalizeSettings({
+  const merged = normalizeSettings({
     ...global,
     ...stationShared,
     ...scoped,
 
-    // 공지/펀딩/노래방/스타일은 전체 공통이 아니라 방송국별 공통
+    // 공지/펀딩/스타일은 방송국별 공통값을 우선 사용합니다.
     title: stationShared.title ?? global.title,
     titleImage: stationShared.titleImage ?? global.titleImage,
     noticeTitle: stationShared.noticeTitle ?? global.noticeTitle,
     notice: stationShared.notice ?? global.notice,
     noticeColors: stationShared.noticeColors ?? global.noticeColors,
-    karaokeData: stationShared.karaokeData ?? global.karaokeData,
     fundingData: stationShared.fundingData ?? global.fundingData,
     allowanceData: stationShared.allowanceData ?? global.allowanceData,
     stationStyle: stationShared.stationStyle ?? global.stationStyle,
 
     stationSettings: global.stationSettings || {}
   });
+
+  // 노래방은 새로고침/ON-OFF 때는 현재 방송 선곡을 유지하고,
+  // 다음 방송에서는 코인만 이월되도록 공유값(코인) + 방송별값(선곡)을 병합합니다.
+  merged.karaokeData = effectiveKaraokeData(global.karaokeData, stationShared.karaokeData, scoped.karaokeData);
+  return merged;
 }
 
 async function saveEffectiveSettings(stationSlug, broadcastId, updates) {
@@ -1201,8 +1233,10 @@ async function copySettingsToBroadcast(stationSlug, broadcastId) {
   const current = await readEffectiveSettings(stationSlug, null);
   // 방송별로 새로 시작해야 하는 수동 컨트롤 값은 다음 방송으로 복사하지 않습니다.
   // 프리셋 수동 보정은 donations 방송별 행 기준이라 새 방송에서는 자연히 0부터 시작합니다.
+  // 노래방은 코인 잔량만 이월하고, 선곡/예약/진행/보류/완료 리스트는 새 방송에서 비웁니다.
   await saveEffectiveSettings(stationSlug, broadcastId, {
     ...current,
+    karaokeData: karaokeCarryoverData(current.karaokeData),
     allowanceData: normalizeAllowanceData({}),
     broadcastTimerData: normalizeBroadcastTimerData({})
   });
@@ -2681,8 +2715,13 @@ app.post('/api/settings', async (req, res) => {
       }
 
       await saveEffectiveSettings(ctx.station.slug, ctx.active.id, updates);
+      if (updates.karaokeData) {
+        await saveSharedStationSettings(ctx.station.slug, { karaokeData: karaokeCarryoverData(updates.karaokeData) });
+      }
     } else {
-      await saveSharedStationSettings(ctx.station.slug, updates);
+      const sharedUpdates = { ...updates };
+      if (sharedUpdates.karaokeData) sharedUpdates.karaokeData = karaokeCarryoverData(sharedUpdates.karaokeData);
+      await saveSharedStationSettings(ctx.station.slug, sharedUpdates);
       await saveEffectiveSettings(ctx.station.slug, ctx.active.id, updates);
     }
     const effective = await readEffectiveSettings(ctx.station.slug, ctx.active.id);
@@ -2703,12 +2742,16 @@ app.post('/api/karaoke-data', async (req, res) => {
     if (!requireDb(res)) return;
     const ctx = await getStationContext(req, res);
     if (!ctx) return;
-    if (!await stationAllowed(req, ctx.station)) {
-      return res.status(401).json({ error: '방송국 관리자 권한이 필요합니다.' });
+    const fullAdmin = await stationAllowed(req, ctx.station);
+    const manager = await broadcastPasswordAllowed(req, ctx.active);
+    if (!fullAdmin && !manager) {
+      return res.status(401).json({ error: '방송매니저 또는 방송국 관리자 권한이 필요합니다.' });
     }
 
     const karaokeData = normalizeKaraokeData(req.body.karaokeData || req.body || {});
-    await saveSharedStationSettings(ctx.station.slug, { karaokeData });
+    // 현재 방송에는 선곡/예약/진행상태까지 저장하고, 방송국 공유값에는 코인 잔량만 저장합니다.
+    await saveEffectiveSettings(ctx.station.slug, ctx.active.id, { karaokeData });
+    await saveSharedStationSettings(ctx.station.slug, { karaokeData: karaokeCarryoverData(karaokeData) });
 
     const effective = await readEffectiveSettings(ctx.station.slug, ctx.active.id);
     res.json({ ok: true, karaokeData: effective.karaokeData });
@@ -2824,30 +2867,60 @@ app.post('/api/broadcast-timer/end', async (req, res) => {
   }
 });
 
+function buildMissionTimerUpdate(prevRaw, body = {}, opts = {}) {
+  const prev = normalizeBroadcastTimerData(prevRaw);
+  const has = key => Object.prototype.hasOwnProperty.call(body, key);
+  const requestedMode = String(body.mode || '').trim();
+  const mode = ['countdown','until','countup'].includes(requestedMode) ? requestedMode : (prev.mode || 'countdown');
+  const label = has('label') ? String(body.label ?? '').trim() : (Object.prototype.hasOwnProperty.call(prev, 'label') ? String(prev.label ?? '') : '미션타이머');
+  const durationInput = has('durationMin') ? body.durationMin : (has('timeoutMin') ? body.timeoutMin : '');
+  const durationMin = durationInput === '' || durationInput === null || durationInput === undefined ? NaN : Number(durationInput);
+  const durationMs = Number.isFinite(durationMin) && durationMin > 0
+    ? Math.round(durationMin * 60 * 1000)
+    : (has('durationMs') ? Math.max(0, Number(body.durationMs || 0)) : Math.max(0, Number(prev.durationMs || 0)));
+  const targetAt = has('targetAt') ? String(body.targetAt || '') : (prev.targetAt || '');
+  const nowIso = new Date().toISOString();
+  const running = opts.running === undefined ? prev.running : opts.running === true;
+  let elapsedMs = opts.resetElapsed ? 0 : missionTimerElapsedMs(prev);
+  if (opts.endReset) {
+    elapsedMs = mode === 'countdown' ? Math.max(0, Number(durationMs || 0)) : 0;
+  }
+  return normalizeBroadcastTimerData({
+    running,
+    mode,
+    label,
+    startedAt: running ? nowIso : '',
+    endedAt: running ? '' : (opts.endedAt || prev.endedAt || ''),
+    elapsedMs,
+    durationMs,
+    targetAt
+  });
+}
+
+app.post('/api/mission-timer/save', async (req, res) => {
+  try {
+    if (!requireDb(res)) return;
+    const ctx = await getStationContext(req, res);
+    if (!ctx) return;
+    if (!await managerAllowed(req, ctx.station, ctx.active)) return res.status(401).json({ error: '방송매니저 또는 방송국 관리자 권한이 필요합니다.' });
+    const current = await readEffectiveSettings(ctx.station.slug, ctx.active.id);
+    const prev = normalizeBroadcastTimerData(current.broadcastTimerData);
+    const broadcastTimerData = buildMissionTimerUpdate(prev, req.body || {}, { running: prev.running });
+    await saveEffectiveSettings(ctx.station.slug, ctx.active.id, { ...current, broadcastTimerData });
+    res.json({ ok: true, broadcastTimerData });
+  } catch(e){ res.status(500).json({ error: e.message || '미션타이머 설정 저장 실패' }); }
+});
+
 app.post('/api/mission-timer/start', async (req, res) => {
   try {
     if (!requireDb(res)) return;
     const ctx = await getStationContext(req, res);
     if (!ctx) return;
     if (!await managerAllowed(req, ctx.station, ctx.active)) return res.status(401).json({ error: '방송매니저 또는 방송국 관리자 권한이 필요합니다.' });
-    const mode = ['countdown','until','countup'].includes(String(req.body.mode || '')) ? String(req.body.mode) : 'countdown';
-    const durationMin = Math.max(0, Number(req.body.durationMin || req.body.timeoutMin || 0));
-    const durationMs = durationMin > 0 ? Math.round(durationMin * 60 * 1000) : Math.max(0, Number(req.body.durationMs || 0));
-    const targetAt = req.body.targetAt ? String(req.body.targetAt) : '';
-    const label = String(req.body.label || '미션타이머');
     const current = await readEffectiveSettings(ctx.station.slug, ctx.active.id);
     const prev = normalizeBroadcastTimerData(current.broadcastTimerData);
     const resume = req.body.resume === true || String(req.body.resume || '') === 'true';
-    const broadcastTimerData = normalizeBroadcastTimerData({
-      running: true,
-      mode,
-      label,
-      startedAt: new Date().toISOString(),
-      endedAt: '',
-      elapsedMs: resume ? missionTimerElapsedMs(prev) : 0,
-      durationMs,
-      targetAt
-    });
+    const broadcastTimerData = buildMissionTimerUpdate(prev, req.body || {}, { running: true, resetElapsed: !resume });
     await saveEffectiveSettings(ctx.station.slug, ctx.active.id, { ...current, broadcastTimerData });
     res.json({ ok: true, broadcastTimerData });
   } catch(e){ res.status(500).json({ error: e.message || '미션타이머 시작 실패' }); }
@@ -2884,15 +2957,10 @@ app.post('/api/mission-timer/end', async (req, res) => {
     if (!await managerAllowed(req, ctx.station, ctx.active)) return res.status(401).json({ error: '방송매니저 또는 방송국 관리자 권한이 필요합니다.' });
     const current = await readEffectiveSettings(ctx.station.slug, ctx.active.id);
     const prev = normalizeBroadcastTimerData(current.broadcastTimerData);
-    const broadcastTimerData = normalizeBroadcastTimerData({
+    const broadcastTimerData = buildMissionTimerUpdate(prev, req.body || {}, {
       running: false,
-      mode: prev.mode || 'countdown',
-      label: prev.label || '미션타이머',
-      startedAt: '',
-      endedAt: new Date().toISOString(),
-      elapsedMs: 0,
-      durationMs: 0,
-      targetAt: ''
+      endReset: true,
+      endedAt: new Date().toISOString()
     });
     await saveEffectiveSettings(ctx.station.slug, ctx.active.id, { ...current, broadcastTimerData });
     res.json({ ok: true, broadcastTimerData });
