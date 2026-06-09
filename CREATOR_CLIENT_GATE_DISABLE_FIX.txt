@@ -1,0 +1,29 @@
+AUTH_LOGIN_RECHECK_FIX
+
+수정 기준:
+1. m_creator.html은 크리에이터 리모컨이므로 방송국관리자/크리에이터 로그인만 허용한다.
+   - 미로그인: station_login.html 로 이동
+   - 방송매니저/당일 방송 비밀번호: 접근 불가
+
+2. m_admin.html, m_control.html, m_roulette.html은 모바일 운영 페이지다.
+   - 방송국관리자/크리에이터: 전체 기능
+   - 방송매니저: 제한모드
+   - 미로그인: viewer_login.html 로 이동
+
+3. station_login.html의 쿠키 저장 안정화
+   - fetch credentials를 include로 지정
+   - STATION_SLUG / station_slug localStorage 둘 다 저장
+
+4. m_creator.html 내부 무한 재로그인 방지
+   - 서버에서 이미 로그인 페이지로 보낸다.
+   - 페이지 내부 API가 권한 실패 시에는 로그인 안내창만 표시하고 자동 반복 이동하지 않는다.
+
+5. viewer_login.html은 매니저 페이지 전용 기본 로그인으로 유지
+   - m_creator.html을 방송매니저 next 대상으로 보지 않게 수정
+   - m_admin/m_control/m_roulette만 매니저 next 대상으로 처리
+
+권한별 접근:
+- 최고관리자: admin_login.html -> master.html 및 전체 접근
+- 방송국관리자/크리에이터: station_login.html -> station_control/m_creator/m_admin/m_control/m_roulette 전체
+- 방송매니저: viewer_login.html -> m_admin/m_control/m_roulette 제한모드
+- 오버레이: overlay.html/overlay2.html은 token 필요

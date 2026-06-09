@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>방송국 로그인</title>
+<style>
+:root{
+  --bg:#070b12;
+  --card:#0b1220;
+  --card2:#101827;
+  --line:#263247;
+  --text:#e5e7eb;
+  --muted:#94a3b8;
+  --blue:#2563eb;
+  --green:#16a34a;
+  --red:#dc2626;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:radial-gradient(circle at 20% -10%,rgba(37,99,235,.28),transparent 36%),linear-gradient(180deg,#08111f,#04070d);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',Arial,sans-serif}
+body{display:flex;align-items:center;justify-content:center;padding:22px}
+.login-card{width:100%;max-width:430px;background:linear-gradient(180deg,rgba(15,23,42,.96),rgba(7,12,22,.98));border:1px solid rgba(148,163,184,.2);border-radius:24px;padding:24px;box-shadow:0 24px 90px rgba(0,0,0,.5)}
+.logo{width:58px;height:58px;border-radius:18px;margin:0 auto 14px;background:linear-gradient(135deg,#2563eb,#38bdf8);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:1000;box-shadow:0 0 34px rgba(59,130,246,.45)}
+h1{margin:0;text-align:center;font-size:28px;font-weight:1000;letter-spacing:-.8px}
+.desc{margin:10px 0 22px;text-align:center;color:var(--muted);font-size:14px;font-weight:800;line-height:1.5}
+.row{margin-bottom:13px}
+label{display:block;margin:0 0 7px;color:#cbd5e1;font-size:13px;font-weight:950}
+.input{width:100%;height:48px;border-radius:14px;border:1px solid rgba(148,163,184,.28);background:linear-gradient(180deg,rgba(15,23,42,.92),rgba(5,10,18,.96));color:#fff;padding:0 14px;font-size:16px;font-weight:900;outline:none}
+.input:focus{border-color:rgba(96,165,250,.85);box-shadow:0 0 0 4px rgba(59,130,246,.16)}
+.btn{width:100%;height:52px;border:0;border-radius:15px;background:linear-gradient(135deg,#2563eb,#3b82f6);color:#fff;font-size:16px;font-weight:1000;cursor:pointer;margin-top:4px}
+.btn:disabled{opacity:.55;cursor:not-allowed}
+.links{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
+.links a{height:42px;border-radius:13px;border:1px solid rgba(148,163,184,.18);background:rgba(15,23,42,.72);color:#cfe2ff;text-decoration:none;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:950}
+.msg{display:none;margin-top:14px;padding:11px 12px;border-radius:14px;font-size:13px;font-weight:900;line-height:1.45}
+.msg.show{display:block}.msg.err{background:rgba(127,29,29,.23);border:1px solid rgba(248,113,113,.35);color:#fecaca}.msg.ok{background:rgba(22,101,52,.24);border:1px solid rgba(74,222,128,.35);color:#bbf7d0}.hint{margin-top:16px;color:#94a3b8;font-size:12px;font-weight:800;line-height:1.5;text-align:center}
+@media(max-width:420px){body{padding:14px}.login-card{padding:20px;border-radius:20px}h1{font-size:24px}.links{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+  <main class="login-card">
+    <div class="logo">ON</div>
+    <h1>방송국 로그인</h1>
+    <p class="desc">최고관리자가 아니라<br>방송국 코드와 방송국 관리자 비밀번호로 로그인합니다.</p>
+
+    <form id="loginForm">
+      <div class="row">
+        <label for="station">방송국 코드</label>
+        <input id="station" class="input" autocomplete="username" placeholder="예: default" inputmode="latin" autocapitalize="off">
+      </div>
+      <div class="row">
+        <label for="password">방송국 관리자 비밀번호</label>
+        <input id="password" class="input" type="password" autocomplete="current-password" placeholder="방송국 관리자 비밀번호">
+      </div>
+      <button id="loginBtn" class="btn" type="submit">방송국 로그인</button>
+    </form>
+
+    <div id="msg" class="msg"></div>
+
+    <div class="links">
+      <a id="goAdminLogin" href="/admin_login.html">최고관리자 로그인</a>
+      <a id="goStation" href="/station_control.html">방송국 컨트롤</a>
+    </div>
+
+    <div class="hint">
+      방송별 입력 비밀번호는 이 화면이 아니라<br>방송국 컨트롤에서 방송 생성 후 사용하는 비밀번호입니다.
+    </div>
+  </main>
+
+<script>
+(function(){
+  const params = new URLSearchParams(location.search);
+  const stationInput = document.getElementById('station');
+  const passwordInput = document.getElementById('password');
+  const msg = document.getElementById('msg');
+  const btn = document.getElementById('loginBtn');
+  const form = document.getElementById('loginForm');
+
+  function safeStation(v){
+    return String(v || '').trim().toLowerCase().replace(/[^a-z0-9_-]/g, '') || 'default';
+  }
+
+  function showMsg(text, type){
+    msg.textContent = text;
+    msg.className = 'msg show ' + (type || 'err');
+  }
+
+  function stationUrl(path, station){
+    const u = new URL(path, location.origin);
+    u.searchParams.set('station', station);
+    return u.pathname + u.search;
+  }
+
+  function nextUrl(station){
+  const next = params.get('next');
+
+  if (next) {
+    try {
+      const u = new URL(next, location.origin);
+
+      // 같은 도메인 이동만 허용
+      if (u.origin !== location.origin) {
+        return stationUrl('/station_control.html', station);
+      }
+
+      u.searchParams.set('station', station);
+      return u.pathname + u.search + u.hash;
+    } catch(e) {
+      return stationUrl('/station_control.html', station);
+    }
+  }
+
+  return stationUrl('/station_control.html', station);
+}
+
+  const initialStation = safeStation(params.get('station') || localStorage.getItem('STATION_SLUG') || 'default');
+  stationInput.value = initialStation;
+  document.getElementById('goStation').href = stationUrl('/station_control.html', initialStation);
+
+  stationInput.addEventListener('input', function(){
+    const s = safeStation(stationInput.value);
+    document.getElementById('goStation').href = stationUrl('/station_control.html', s);
+  });
+
+form.addEventListener('submit', async function(e){
+  e.preventDefault();
+
+  const station = safeStation(stationInput.value);
+  const password = passwordInput.value || '';
+
+  if (!station) return showMsg('방송국 코드를 입력하세요.', 'err');
+
+  btn.disabled = true;
+  btn.textContent = '로그인 중...';
+  msg.className = 'msg';
+
+  try {
+    const res = await fetch('/api/station-login?station=' + encodeURIComponent(station), {
+      method: 'POST',
+      credentials: 'include',
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Station-Password': password,
+        'x-station-password': password
+      },
+      body: JSON.stringify({ station, password })
+    });
+
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok || !data.ok) {
+      throw new Error(data.error || '방송국 로그인 실패');
+    }
+
+    localStorage.setItem('STATION_SLUG', station);
+    localStorage.setItem('station_slug', station);
+
+    const target = nextUrl(station);
+
+    // 브라우저별 캐시/히스토리 꼬임 방지
+    window.location.replace(target);
+
+  } catch (err) {
+    showMsg(err.message || '방송국 로그인 실패', 'err');
+    btn.disabled = false;
+    btn.textContent = '방송국 로그인';
+  }
+});
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,24 @@
+# v_f01 크리에이터 룰렛 자동진행 / 합산 버튼 / 프리셋 수동 컨트롤 수정
+
+## 1. 크리에이터 페이지 연속룰렛 자동진행
+- server.js `cleanupExpiredRoulette()` 수정
+- 연속 룰렛 queue가 남아 있고 현재 회차 표시 시간이 끝나면 `/api/roulette` 조회만으로 다음 회차가 자동 current로 넘어가게 수정
+- m_creator.html에도 `maybeAutoAdvanceRoulette()`를 추가해 룰렛 탭이 열려 있을 때 다음 버튼 없이 다음 회차를 자동 진행하도록 보강
+
+## 2. 크리에이터 페이지 합산 연결
+- m_creator.html 하단 고정 버튼에 `합산` 버튼 추가
+- `/summary.html?station=방송국코드` 새 창 연결
+
+## 3. 컨트롤 페이지 프리셋 수동 컨트롤 변경
+- m_control.html의 프리셋 수동 입력을 금액/세부옵션 선택 방식에서 프리셋 타이틀 + 갯수 + +/- 방식으로 변경
+- `/api/manual-entry`의 `kind: presetCount`를 사용해 ALERT 없이 수동 보정
+
+## 4. 일반 입력 페이지 프리셋 수동 컨트롤 추가
+- m_admin.html 후원 입력 영역에 프리셋 수동 컨트롤 추가
+- 도네이터 / 크리에이터 / 프리셋 타이틀 / +/- / 갯수 입력 후 무알림 수동 보정
+
+## 수정 파일
+- server.js
+- public/m_creator.html
+- public/m_control.html
+- public/m_admin.html
