@@ -1265,6 +1265,25 @@ function htmlRedirect(res, url) {
   res.redirect(302, url);
 }
 
+function safeNextUrl(req, fallback) {
+  const raw = String(req.originalUrl || req.url || fallback || '/');
+  if (!raw || !raw.startsWith('/')) return fallback || '/';
+  if (raw.startsWith('//')) return '/' + raw.replace(/^\/+/, '');
+  return raw;
+}
+
+function loginRedirectUrl(loginPath, stationSlug, req, fallbackNext) {
+  const params = new URLSearchParams();
+  const slug = safeSlug(stationSlug || getStationSlug(req) || '');
+  if (slug) params.set('station', slug);
+  const next = safeNextUrl(req, fallbackNext || '/station_control.html');
+  if (next && !next.includes('station_login.html') && !next.includes('viewer_login.html') && !next.includes('admin_login.html')) {
+    params.set('next', next);
+  }
+  const qs = params.toString();
+  return loginPath + (qs ? '?' + qs : '');
+}
+
 function isHtmlPage(pathname) {
   return pathname === '/' || pathname.endsWith('.html');
 }
@@ -1352,11 +1371,11 @@ async function accessGuard(req, res, next) {
 
       if (MASTER_HTML.has(pathOnly)) {
         if (isMasterRequest(req)) return next();
-        return htmlRedirect(res, `/admin_login.html?next=${encodeURIComponent(req.originalUrl || pathOnly)}`);
+        return htmlRedirect(res, loginRedirectUrl('/admin_login.html', getStationSlug(req), req, pathOnly));
       }
 
       const station = await getStation(req);
-      if (!station) return htmlRedirect(res, `/station_login.html?station=${encodeURIComponent(getStationSlug(req))}`);
+      if (!station) return htmlRedirect(res, loginRedirectUrl('/station_login.html', getStationSlug(req), req, pathOnly));
 
       const active = await ensureActiveBroadcast(station.id);
 
@@ -1369,23 +1388,24 @@ async function accessGuard(req, res, next) {
       if (CREATOR_REMOTE_HTML.has(pathOnly)) {
         // 크리에이터 리모컨은 당일 방송 비밀번호가 아니라 방송국관리자/크리에이터 로그인만 허용합니다.
         if (await stationAllowed(req, station)) return next();
-        return htmlRedirect(res, `/station_login.html?station=${encodeURIComponent(station.slug)}&next=${encodeURIComponent(req.originalUrl || pathOnly)}`);
+        return htmlRedirect(res, loginRedirectUrl('/station_login.html', station.slug, req, pathOnly));
       }
 
       if (MANAGER_HTML.has(pathOnly)) {
-        // 모바일 페이지는 셸을 열어두고, 실제 저장/조회 API에서 권한을 분리합니다.
-        // 방송국관리자/크리에이터는 전체 기능, 방송매니저는 당일 입력/수정 제한모드입니다.
-        return next();
+        // 모바일 운영 페이지는 방송국관리자/크리에이터 또는 당일 방송매니저만 접근합니다.
+        // 로그인 없이 셸이 먼저 열리면 페이지 안에서 재로그인 루프가 생길 수 있어 서버에서 먼저 분기합니다.
+        if (await stationAllowed(req, station) || await broadcastPasswordAllowed(req, active)) return next();
+        return htmlRedirect(res, loginRedirectUrl('/viewer_login.html', station.slug, req, pathOnly));
       }
 
       if (STATION_HTML.has(pathOnly)) {
         if (await stationAllowed(req, station)) return next();
-        return htmlRedirect(res, `/station_login.html?station=${encodeURIComponent(station.slug)}&next=${encodeURIComponent(req.originalUrl || pathOnly)}`);
+        return htmlRedirect(res, loginRedirectUrl('/station_login.html', station.slug, req, pathOnly));
       }
 
       if (VIEWER_HTML.has(pathOnly)) {
         if (await viewerAllowed(req, station, active)) return next();
-        return htmlRedirect(res, `/viewer_login.html?station=${encodeURIComponent(station.slug)}&next=${encodeURIComponent(req.originalUrl || pathOnly)}`);
+        return htmlRedirect(res, loginRedirectUrl('/viewer_login.html', station.slug, req, pathOnly));
       }
     }
 

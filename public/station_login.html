@@ -136,7 +136,7 @@ form.addEventListener('submit', async function(e){
   try {
     const res = await fetch('/api/station-login?station=' + encodeURIComponent(station), {
       method: 'POST',
-      credentials: 'same-origin',
+      credentials: 'include',
       cache: 'no-store',
       headers: {
         'Content-Type': 'application/json',
@@ -153,6 +153,7 @@ form.addEventListener('submit', async function(e){
     }
 
     localStorage.setItem('STATION_SLUG', station);
+    localStorage.setItem('station_slug', station);
 
     const target = nextUrl(station);
 
