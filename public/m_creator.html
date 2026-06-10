@@ -196,7 +196,7 @@
 <script>
 const qs=new URLSearchParams(location.search);let STATION=qs.get('station')||qs.get('slug')||localStorage.getItem('station_slug')||localStorage.getItem('STATION_SLUG')||'';if(STATION){localStorage.setItem('station_slug',STATION);localStorage.setItem('STATION_SLUG',STATION);}
 let settings={},station=null,active=null,currentRole='guest',rouletteSelectedId=localStorage.getItem(`creator_roulette_${STATION||'current'}`)||'';
-if (typeof missionDirty !== "undefined" && missionDirty) {await saveMissionTimer();}
+var missionDirty=false;
 const $=s=>document.querySelector(s);const $$=s=>Array.from(document.querySelectorAll(s));
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const fmt=n=>Number(n||0).toLocaleString('ko-KR');

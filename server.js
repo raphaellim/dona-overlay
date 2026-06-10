@@ -828,6 +828,11 @@ function normalizeSettings(settings) {
 const SETTING_FIELDS = [
   'viewerPassword', 'viewerToken', 'overlaySections',
   'columns', 'maxCreators', 'creators', 'presets', 'prices', 'soundRules', 'roulette',
+  // 방송별로 반드시 따로 저장되어야 하는 당일 운영값
+  // - karaokeData: 당일 노래 리스트/예약/진행/보류/완료 유지
+  // - allowanceData: 당일 용돈 수동값 유지
+  // - fundingData: 당일 펀딩 조정값 유지
+  'karaokeData', 'allowanceData', 'fundingData',
   'broadcastTimerData', 'broadcastLiveData'
 ];
 
