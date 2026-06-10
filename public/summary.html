@@ -36,6 +36,7 @@
   tr.clickable{cursor:pointer}
   @media(max-width:980px){.grid,.detail-grid{grid-template-columns:1fr}.top{align-items:flex-start;flex-direction:column}}
 </style>
+<link rel="stylesheet" href="/ux_compact.css">
 </head>
 <body>
 <div class="wrap">
@@ -290,5 +291,16 @@ setInterval(load, 5000);
 })();
 </script>
 
+
+<script>(function(){
+  var path=location.pathname;
+  if(path==='/overlay.html') return;
+  var st=new URLSearchParams(location.search).get('station')||localStorage.getItem('STATION_SLUG')||'default';
+  var a=document.createElement('a');
+  a.className='quick-index-link';
+  a.href='/creator_index.html?station='+encodeURIComponent(st);
+  a.textContent='인덱스';
+  document.body.appendChild(a);
+})();</script>
 </body>
 </html>

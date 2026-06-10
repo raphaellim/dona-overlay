@@ -1,0 +1,24 @@
+Ver_f2 로그인/인덱스/PC UX 정리 패치
+
+1) 배포용 로그인 페이지 2개로 단순화
+- 최고관리자: /admin_login.html
+- 공통로그인: /station_login.html
+
+2) 역할별 로그인 후 이동
+- 최고관리자 로그인 성공 기본 이동: /master_index.html
+- 공통로그인 > 크리에이터: /creator_index.html?station=방송국코드
+- 공통로그인 > 매니저: /manager_index.html?station=방송국코드
+
+3) 신규 인덱스 페이지
+- /master_index.html: 방송국 관리, 공통 로그인 링크, 방송국별 인덱스 바로가기
+- /creator_index.html: 방송 생성/선택, PC 입력, 모바일 리모컨, PC 설정, 합산, 룰렛, 스타일, 미디어, 오버레이 URL 복사
+- /manager_index.html: 모바일 입력, 모바일 설정, 모바일 룰렛, 합산 보기
+
+4) 접근 제어 수정
+- /creator_index.html 은 방송국 관리자/최고관리자 권한
+- /manager_index.html 은 방송국 관리자 또는 당일 방송 비밀번호 권한
+- 기존 /viewer_login.html 은 공통로그인으로 자동 이동
+
+5) PC UI/UX 압축 레이어 추가
+- /public/ux_compact.css 추가
+- 주요 PC 페이지에 적용: 카드/버튼/입력/테이블 간격 축소, 넓은 화면 공간 활용, 인덱스 빠른 이동 버튼 추가

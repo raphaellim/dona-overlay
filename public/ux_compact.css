@@ -1,0 +1,21 @@
+/* Ver_f2 UX compact layer: PC 작업 동선/공간 최적화 */
+@media (min-width: 901px){
+  .wrap{max-width:1440px!important;padding:16px!important}
+  .top{margin-bottom:12px!important;gap:10px!important;align-items:flex-start!important}
+  .title{font-size:26px!important;line-height:1.15!important;letter-spacing:-.05em!important}
+  .card{padding:14px!important;border-radius:16px!important;margin-bottom:12px!important}
+  .card h2{font-size:18px!important;margin-bottom:10px!important}
+  .layout,.grid{gap:12px!important}
+  .row{margin-bottom:8px!important;gap:5px!important}
+  label{font-size:12px!important;margin-bottom:5px!important}
+  .input,select,textarea{font-size:14px!important;padding:9px 10px!important;border-radius:10px!important}
+  textarea{min-height:74px!important}
+  .btn,.nav a{padding:8px 11px!important;border-radius:10px!important;font-size:13px!important;min-height:34px!important}
+  .btn.mini,.mini{font-size:12px!important;padding:6px 8px!important;min-height:28px!important}
+  .nav{gap:6px!important;max-width:760px!important;justify-content:flex-end!important}
+  .sub-card,.preset-card,.toggle-box,.karaoke-panel,.funding-rule,.sound-rule{padding:10px!important;border-radius:12px!important}
+  .resultBox{padding:9px 10px!important;font-size:16px!important;border-radius:11px!important}
+  .table th,.table td{padding:8px!important;font-size:13px!important}
+}
+.quick-index-link{position:fixed;right:14px;bottom:62px;z-index:99998;padding:10px 14px;border-radius:999px;background:linear-gradient(90deg,#2563eb,#ec4899);color:#fff!important;font-weight:1000;text-decoration:none;box-shadow:0 0 18px rgba(37,99,235,.28)}
+@media(max-width:900px){.quick-index-link{right:10px;bottom:58px;font-size:12px;padding:9px 11px}}

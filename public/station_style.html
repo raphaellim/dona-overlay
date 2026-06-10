@@ -10,6 +10,7 @@
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',Arial,sans-serif}.wrap{max-width:1180px;margin:0 auto;padding:22px}.top{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:16px}.title{font-size:30px;font-weight:950}.nav{display:flex;gap:8px;flex-wrap:wrap}.nav a{text-decoration:none;color:#dbeafe;background:#111827;border:1px solid var(--line2);padding:10px 14px;border-radius:12px;font-weight:900}.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:14px}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.row{margin-bottom:10px}label{display:block;font-size:13px;color:#cbd5e1;font-weight:900;margin-bottom:6px}.input{width:100%;background:#070b12;color:#fff;border:1px solid var(--line2);border-radius:12px;padding:10px 11px;font-weight:800}.input:focus{outline:none;border-color:#60a5fa;box-shadow:0 0 0 3px rgba(59,130,246,.14)}.btn{border:0;border-radius:12px;padding:10px 13px;font-weight:900;cursor:pointer;background:#334155;color:#fff}.green{background:var(--green)}.blue{background:var(--blue)}.red{background:var(--red)}.muted{color:var(--muted);font-size:13px}.actions{display:flex;gap:8px;flex-wrap:wrap}.preview{width:285px;margin:0 auto;background:linear-gradient(180deg,var(--p-bg1),var(--p-bg2));border:2px solid var(--p-border);border-radius:16px;padding:12px;text-align:center}.preview-title{display:inline-flex;padding:4px 12px;border-radius:999px;background:rgba(255,255,255,.1);font-weight:1000;color:var(--p-title);font-size:var(--p-title-size)}.preview-content{margin-top:10px;text-align:left;font-weight:900;color:var(--p-content);font-size:var(--p-content-size)}.hint{padding:10px 12px;border-radius:12px;border:1px solid rgba(96,165,250,.25);background:rgba(37,99,235,.12);color:#dbeafe;font-size:13px;font-weight:800;line-height:1.45}.warn{border-color:rgba(248,113,113,.35);background:rgba(127,29,29,.18);color:#fecaca}@media(max-width:900px){.grid{grid-template-columns:1fr}.top{flex-direction:column;align-items:flex-start}.actions .btn{width:100%}}
 .thumb-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px;margin-top:10px}.thumb{border:1px solid var(--line2);background:#07101c;border-radius:12px;overflow:hidden;cursor:pointer;color:#cbd5e1;font-size:11px;font-weight:900;text-align:center}.thumb img,.thumb video{display:block;width:100%;aspect-ratio:16/9;height:auto;object-fit:cover;background:#000}.thumb span{display:block;padding:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 </style>
+<link rel="stylesheet" href="/ux_compact.css">
 </head>
 <body>
 <div class="wrap">
@@ -359,5 +360,16 @@ function resetLocalInputs(){
 }
 load().catch(e=>alert(e.message));
 </script>
+
+<script>(function(){
+  var path=location.pathname;
+  if(path==='/overlay.html') return;
+  var st=new URLSearchParams(location.search).get('station')||localStorage.getItem('STATION_SLUG')||'default';
+  var a=document.createElement('a');
+  a.className='quick-index-link';
+  a.href='/creator_index.html?station='+encodeURIComponent(st);
+  a.textContent='인덱스';
+  document.body.appendChild(a);
+})();</script>
 </body>
 </html>

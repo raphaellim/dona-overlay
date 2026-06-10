@@ -1309,7 +1309,7 @@ function loginRedirectUrl(loginPath, stationSlug, req, fallbackNext) {
     params.set('next', next);
   }
   const qs = params.toString();
-  return loginPath + (qs ? '?' + qs : '');
+  return loginPath + (qs ? (loginPath.includes('?') ? '&' : '?') + qs : '');
 }
 
 function isHtmlPage(pathname) {
@@ -1323,10 +1323,12 @@ const PUBLIC_HTML = new Set([
 ]);
 
 const MASTER_HTML = new Set([
+  '/master_index.html',
   '/master.html'
 ]);
 
 const STATION_HTML = new Set([
+  '/creator_index.html',
   '/admin.html',
   '/control.html',
   '/station_control.html',
@@ -1344,6 +1346,7 @@ const CREATOR_REMOTE_HTML = new Set([
 // 모바일 운영 페이지는 같은 파일을 권한별 모드로 사용합니다.
 // station_admin/master: 전체 기능, broadcast_manager: 당일 입력/수정 제한모드.
 const MANAGER_HTML = new Set([
+  '/manager_index.html',
   '/m_admin.html',
   '/m_control.html',
   '/m_roulette.html'
@@ -1399,7 +1402,7 @@ async function accessGuard(req, res, next) {
 
       if (MASTER_HTML.has(pathOnly)) {
         if (isMasterRequest(req)) return next();
-        return htmlRedirect(res, loginRedirectUrl('/admin_login.html', getStationSlug(req), req, pathOnly));
+        return htmlRedirect(res, loginRedirectUrl('/admin_login.html', getStationSlug(req), req, pathOnly === '/master.html' ? pathOnly : '/master_index.html'));
       }
 
       const station = await getStation(req);
@@ -1423,7 +1426,7 @@ async function accessGuard(req, res, next) {
         // 모바일 운영 페이지는 방송국관리자/크리에이터 또는 당일 방송매니저만 접근합니다.
         // 로그인 없이 셸이 먼저 열리면 페이지 안에서 재로그인 루프가 생길 수 있어 서버에서 먼저 분기합니다.
         if (await stationAllowed(req, station) || await broadcastPasswordAllowed(req, active)) return next();
-        return htmlRedirect(res, loginRedirectUrl('/viewer_login.html', station.slug, req, pathOnly));
+        return htmlRedirect(res, loginRedirectUrl('/station_login.html?role=manager', station.slug, req, pathOnly));
       }
 
       if (STATION_HTML.has(pathOnly)) {
@@ -1433,7 +1436,7 @@ async function accessGuard(req, res, next) {
 
       if (VIEWER_HTML.has(pathOnly)) {
         if (await viewerAllowed(req, station, active)) return next();
-        return htmlRedirect(res, loginRedirectUrl('/viewer_login.html', station.slug, req, pathOnly));
+        return htmlRedirect(res, loginRedirectUrl('/station_login.html?role=manager', station.slug, req, pathOnly));
       }
     }
 

@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>매니저 인덱스</title>
+<link rel="stylesheet" href="/app.css">
+<link rel="stylesheet" href="/ux_compact.css">
+<style>
+body{background:#070b12;color:#e5e7eb}.wrap{max-width:980px}.quick-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.quick{display:flex;flex-direction:column;gap:7px;min-height:126px;text-decoration:none;border:1px solid #334155;background:#0f172a;border-radius:16px;padding:15px}.quick.primary{background:linear-gradient(135deg,rgba(236,72,153,.22),rgba(249,115,22,.14));border-color:#ec4899}.quick b{font-size:19px}.quick span{color:#94a3b8;font-size:13px;line-height:1.35}.muted{color:#94a3b8;font-size:13px}.pill{display:inline-flex;border-radius:999px;background:#831843;color:#fbcfe8;padding:4px 8px;font-size:12px;font-weight:950}@media(max-width:720px){.quick-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top"><div><div class="title" id="title">매니저 인덱스</div><div class="muted" id="info">방송 정보 확인 중...</div></div><div class="nav"><a href="/station_login.html?role=manager">공통 로그인</a></div></div>
+  <section class="card">
+    <h2>빠른 운영 화면 <span class="pill">방송매니저</span></h2>
+    <div class="quick-grid">
+      <a id="mAdmin" class="quick primary" href="/m_admin.html"><b>모바일 입력</b><span>후원/노래방/코인/최근 입력 수정 중심의 빠른 운영 화면</span></a>
+      <a id="mControl" class="quick primary" href="/m_control.html"><b>모바일 설정</b><span>방송 중 필요한 노출 ON/OFF와 간단 설정</span></a>
+      <a id="mRoulette" class="quick" href="/m_roulette.html"><b>모바일 룰렛</b><span>방송 중 룰렛 실행/결과 확인</span></a>
+      <a id="summary" class="quick" href="/summary.html"><b>합산 보기</b><span>현재 방송 합산과 크리에이터별 금액 확인</span></a>
+    </div>
+  </section>
+  <section class="card"><h2>권한 안내</h2><p class="muted">매니저는 당일 방송 비밀번호 기준으로 접속합니다. 방송국 전체 설정/방송 생성/토큰 관리는 크리에이터 인덱스에서 처리합니다.</p></section>
+</div>
+<script src="/common.js"></script>
+<script>
+let station=null,active=null;function qs(){return '?station='+encodeURIComponent(station?.slug||getStation());}function setHref(id,path){const el=document.getElementById(id);if(el)el.href=path+qs();}
+async function load(){try{const data=await api('/api/station-info');station=data.station;active=data.active;document.getElementById('title').textContent=(station?.name||getStation())+' 매니저 인덱스';document.getElementById('info').textContent='현재 방송: '+(active?.title||'없음')+' / 방송국 코드: '+(station?.slug||getStation());setHref('mAdmin','/m_admin.html');setHref('mControl','/m_control.html');setHref('mRoulette','/m_roulette.html');setHref('summary','/summary.html');}catch(e){document.getElementById('info').textContent='로그인이 필요합니다.';}}
+load();
+</script>
+</body>
+</html>

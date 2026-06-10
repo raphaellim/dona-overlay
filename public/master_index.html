@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>최고관리자 인덱스</title>
+<link rel="stylesheet" href="/app.css">
+<link rel="stylesheet" href="/ux_compact.css">
+<style>
+body{background:#070b12;color:#e5e7eb}.wrap{max-width:1180px}.hero{display:grid;grid-template-columns:1.15fr .85fr;gap:14px;margin-bottom:14px}.card h2{display:flex;justify-content:space-between;align-items:center}.quick-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.quick{display:flex;flex-direction:column;gap:7px;min-height:112px;text-decoration:none;border:1px solid #334155;background:#0f172a;border-radius:16px;padding:14px}.quick b{font-size:18px}.quick span{color:#94a3b8;font-size:13px;line-height:1.35}.badge{display:inline-flex;width:max-content;border-radius:999px;padding:4px 8px;background:#14532d;color:#bbf7d0;font-size:12px;font-weight:950}.mono{font-family:ui-monospace,Consolas,monospace}.station-list{display:grid;gap:8px}.station-row{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;border:1px solid #334155;background:#0f172a;border-radius:14px;padding:12px}.actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}.muted{color:#94a3b8;font-size:13px}@media(max-width:900px){.hero,.quick-grid,.station-row{grid-template-columns:1fr}.actions{justify-content:flex-start}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div><div class="title">최고관리자 인덱스</div><div class="muted">배포용 최고관리자 입구: 방송국 생성/관리와 전체 링크만 빠르게 접근합니다.</div></div>
+    <div class="nav"><a href="/station_login.html">공통 로그인</a><a href="/master.html">상세 방송국 관리</a></div>
+  </div>
+  <section class="hero">
+    <div class="card">
+      <h2>빠른 작업</h2>
+      <div class="quick-grid">
+        <a class="quick" href="/master.html"><span class="badge">1순위</span><b>방송국 관리</b><span>방송국 생성, 비밀번호 변경, 삭제, 오버레이 토큰 복사</span></a>
+        <a class="quick" href="/station_login.html?role=creator"><span class="badge">배포</span><b>크리에이터 로그인</b><span>방송국 관리자에게 안내할 공통 로그인 화면</span></a>
+        <a class="quick" href="/station_login.html?role=manager"><span class="badge">배포</span><b>매니저 로그인</b><span>당일 방송 비밀번호로 입력 담당자 접속</span></a>
+      </div>
+    </div>
+    <div class="card">
+      <h2>운영 구조</h2>
+      <p class="muted">외부에 알려줄 페이지는 2개만 쓰면 됩니다.</p>
+      <div class="resultBox">최고관리자: /admin_login.html</div>
+      <div class="resultBox">공통로그인: /station_login.html</div>
+      <p class="muted">로그인 후 역할에 맞는 인덱스에서 필요한 화면으로 이동합니다.</p>
+    </div>
+  </section>
+  <section class="card">
+    <h2>방송국 바로가기 <button class="btn blue" onclick="loadStations()">새로고침</button></h2>
+    <div id="stations" class="station-list"><div class="muted">불러오는 중...</div></div>
+  </section>
+</div>
+<script src="/common.js"></script>
+<script>
+async function masterApi(url,opt={}){opt.headers={...(opt.headers||{}),'Content-Type':'application/json'};const pw=localStorage.getItem('MASTER_PW')||'';if(pw)opt.headers['x-admin-password']=pw;const r=await fetch(url,opt);const j=await r.json().catch(()=>({}));if(!r.ok){if(r.status===401){location.href='/admin_login.html?next='+encodeURIComponent('/master_index.html');return new Promise(()=>{});}throw new Error(j.error||'요청 실패');}return j;}
+async function loadStations(){const box=document.getElementById('stations');box.innerHTML='<div class="muted">불러오는 중...</div>';try{const data=await masterApi('/api/stations');const rows=data.stations||[];box.innerHTML=rows.map(s=>`<div class="station-row"><div><b>${esc(s.name)}</b> <span class="muted mono">/${esc(s.slug)}</span><br><span class="muted">방송국 PW ${s.hasAdminPassword?'설정됨':'없음'}</span></div><div class="actions"><a class="btn blue mini" href="/creator_index.html?station=${encodeURIComponent(s.slug)}">크리에이터 인덱스</a><a class="btn mini" href="/manager_index.html?station=${encodeURIComponent(s.slug)}">매니저 인덱스</a><a class="btn green mini" href="/station_control.html?station=${encodeURIComponent(s.slug)}">방송 관리</a></div></div>`).join('')||'<div class="muted">방송국이 없습니다.</div>';}catch(e){box.innerHTML='<div class="muted">'+esc(e.message||e)+'</div>';}}
+loadStations();
+</script>
+</body>
+</html>

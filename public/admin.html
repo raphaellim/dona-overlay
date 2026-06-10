@@ -286,6 +286,7 @@ textarea{resize:vertical;line-height:1.45}
 }
 
 </style>
+<link rel="stylesheet" href="/ux_compact.css">
 </head>
 <body>
 <div id="toastWrap" class="toast-wrap"></div>
@@ -1279,5 +1280,16 @@ setInterval(loadManualSoundQueue, 2500);
   });
 })();
 </script>
+
+<script>(function(){
+  var path=location.pathname;
+  if(path==='/overlay.html') return;
+  var st=new URLSearchParams(location.search).get('station')||localStorage.getItem('STATION_SLUG')||'default';
+  var a=document.createElement('a');
+  a.className='quick-index-link';
+  a.href='/creator_index.html?station='+encodeURIComponent(st);
+  a.textContent='인덱스';
+  document.body.appendChild(a);
+})();</script>
 </body>
 </html>

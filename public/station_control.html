@@ -8,6 +8,7 @@
 body{background:#070b12;color:#e5e7eb}.wrap{max-width:1220px;margin:0 auto;padding:22px}.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}.title{font-size:30px;font-weight:950}.nav{display:flex;gap:8px;flex-wrap:wrap}.nav a{text-decoration:none;color:#dbeafe;background:#111827;border:1px solid #334155;padding:10px 14px;border-radius:12px;font-weight:900}.card{background:#0b1220;border:1px solid #253247;border-radius:18px;padding:16px;margin-bottom:14px}.grid{display:grid;grid-template-columns:1fr 1.2fr;gap:14px}.row{margin-bottom:10px}label{display:block;font-size:13px;color:#cbd5e1;font-weight:900;margin-bottom:6px}.input{width:100%;background:#070b12;color:#fff;border:1px solid #334155;border-radius:12px;padding:11px 12px}.btn{border:0;border-radius:12px;padding:10px 13px;font-weight:900;cursor:pointer;background:#334155;color:#fff;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}.green{background:#16a34a}.blue{background:#2563eb}.red{background:#dc2626}.mini{font-size:12px;padding:7px 9px}.broadcast{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;border:1px solid #334155;border-radius:14px;padding:12px;margin-bottom:8px;background:#0f172a}.broadcast.active{border-color:#22c55e}.muted{color:#94a3b8;font-size:13px}.mono{font-family:ui-monospace,Consolas,monospace}.actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}.pwrow{display:grid;grid-template-columns:1fr 1fr;gap:8px}@media(max-width:900px){.grid,.broadcast,.pwrow{grid-template-columns:1fr}.top{align-items:flex-start;flex-direction:column}.actions{justify-content:flex-start}}
 </style>
 <style>.roulette-quick-link{position:fixed;right:14px;bottom:14px;z-index:99999;padding:10px 14px;border-radius:999px;background:linear-gradient(90deg,#ff4fa3,#5ee7ff);color:#fff!important;font-weight:1000;text-decoration:none;box-shadow:0 0 18px rgba(255,79,163,.35)}</style>
+<link rel="stylesheet" href="/ux_compact.css">
 </head>
 <body><a class="roulette-quick-link" href="/roulette.html">🎰 룰렛관리</a>
 <script>(function(){var a=document.querySelector('.roulette-quick-link');if(!a)return;var st=new URLSearchParams(location.search).get('station')||localStorage.getItem('STATION_SLUG')||'default';a.href=a.getAttribute('href')+'?station='+encodeURIComponent(st);})();</script>
@@ -322,5 +323,16 @@ async function endBroadcastTimer(id){
 
 load();
 </script>
+
+<script>(function(){
+  var path=location.pathname;
+  if(path==='/overlay.html') return;
+  var st=new URLSearchParams(location.search).get('station')||localStorage.getItem('STATION_SLUG')||'default';
+  var a=document.createElement('a');
+  a.className='quick-index-link';
+  a.href='/creator_index.html?station='+encodeURIComponent(st);
+  a.textContent='인덱스';
+  document.body.appendChild(a);
+})();</script>
 </body>
 </html>

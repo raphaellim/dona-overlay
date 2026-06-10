@@ -20,6 +20,7 @@
   .num{text-align:right!important;font-variant-numeric:tabular-nums}
   .pager{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:12px;color:#cbd5e1;font-weight:900}
 </style>
+<link rel="stylesheet" href="/ux_compact.css">
 </head>
 <body>
 <div class="wrap">
@@ -107,5 +108,16 @@ load();
 })();
 </script>
 
+
+<script>(function(){
+  var path=location.pathname;
+  if(path==='/overlay.html') return;
+  var st=new URLSearchParams(location.search).get('station')||localStorage.getItem('STATION_SLUG')||'default';
+  var a=document.createElement('a');
+  a.className='quick-index-link';
+  a.href='/creator_index.html?station='+encodeURIComponent(st);
+  a.textContent='인덱스';
+  document.body.appendChild(a);
+})();</script>
 </body>
 </html>
