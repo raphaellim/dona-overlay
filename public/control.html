@@ -365,7 +365,9 @@ function defaultKaraokeData(){
     title:'노래방 공지 알림판',
     ticker:'신청곡은 채팅으로 남겨주세요',
     users:[],
-    songs:[]
+    songs:[],
+    carryoverUsers:[],
+    coinLogs:[]
   };
 }
 
@@ -374,6 +376,8 @@ function getKaraokeData(){
   if(!settings.karaokeData) settings.karaokeData = defaultKaraokeData();
   if(!Array.isArray(settings.karaokeData.users)) settings.karaokeData.users = [];
   if(!Array.isArray(settings.karaokeData.songs)) settings.karaokeData.songs = [];
+  if(!Array.isArray(settings.karaokeData.carryoverUsers)) settings.karaokeData.carryoverUsers = [];
+  if(!Array.isArray(settings.karaokeData.coinLogs)) settings.karaokeData.coinLogs = [];
   return settings.karaokeData;
 }
 
@@ -383,6 +387,18 @@ function coinLabel(type){
 
 function coinKeyLabel(type){
   return type === 'full' ? '완곡코인' : type === 'special' ? '스페셜코인' : '1절코인';
+}
+
+function addKaraokeCoinLog(action,nick,type,count,title=''){
+  const data=getKaraokeData();
+  if(!Array.isArray(data.coinLogs)) data.coinLogs=[];
+  const n=Math.max(0, Number(count||0));
+  if(!nick || !n) return;
+  data.coinLogs.push({
+    id:'coin_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),
+    at:new Date().toISOString(),
+    action, nick, type, count:n, title
+  });
 }
 
 function songStatusClass(status){
@@ -464,6 +480,7 @@ function addKaraokeCoin(){
   }
   if(!user.coins) user.coins = {verse:0, full:0, special:0};
   user.coins[type] = Number(user.coins[type] || 0) + count;
+  addKaraokeCoinLog('recharge', nick, type, count, '코인추가');
 
   $('#karaokeCoinNick').value = '';
   $('#karaokeCoinCount').value = 1;
@@ -488,6 +505,7 @@ function addKaraokeSong(){
   }
 
   user.coins[type] = Number(user.coins[type] || 0) - 1;
+  addKaraokeCoinLog('use', nick, type, 1, title);
 
   data.songs.push({
     id:'song_' + Date.now() + '_' + Math.random().toString(36).slice(2,7),

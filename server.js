@@ -613,7 +613,7 @@ function normalizeKaraokeData(raw) {
   const value = raw && typeof raw === 'object' ? raw : {};
   const coinTypes = ['verse', 'full', 'special'];
 
-  const users = Array.isArray(value.users) ? value.users.map(u => {
+  const normalizeUsers = arr => Array.isArray(arr) ? arr.map(u => {
     const coins = u && typeof u.coins === 'object' ? u.coins : {};
     return {
       nick: normName(u.nick || u.name || ''),
@@ -624,6 +624,23 @@ function normalizeKaraokeData(raw) {
       }
     };
   }).filter(u => u.nick) : [];
+
+  const users = normalizeUsers(value.users);
+  const carryoverUsers = normalizeUsers(value.carryoverUsers);
+
+  const coinLogs = Array.isArray(value.coinLogs) ? value.coinLogs.map(log => {
+    const type = coinTypes.includes(String(log.type || '')) ? String(log.type) : 'verse';
+    const action = ['carryover','recharge','use'].includes(String(log.action || '')) ? String(log.action) : 'recharge';
+    return {
+      id: String(log.id || ('coin_' + Date.now() + '_' + Math.random().toString(36).slice(2))),
+      at: log.at ? String(log.at) : new Date().toISOString(),
+      action,
+      nick: normName(log.nick || ''),
+      type,
+      count: Math.max(0, Number(log.count || 0)),
+      title: String(log.title || '').trim()
+    };
+  }).filter(log => log.nick && log.count > 0) : [];
 
   const songs = Array.isArray(value.songs) ? value.songs.map(s => {
     const type = coinTypes.includes(String(s.type || '')) ? String(s.type) : 'verse';
@@ -642,7 +659,9 @@ function normalizeKaraokeData(raw) {
     title: String(value.title || '노래방 공지 알림판'),
     notice: String(value.notice || value.ticker || '노래문의필수'),
     users,
-    songs
+    songs,
+    carryoverUsers,
+    coinLogs
   };
 }
 
@@ -654,7 +673,9 @@ function karaokeCarryoverData(raw) {
     title: k.title,
     notice: k.notice,
     users: k.users,
-    songs: []
+    songs: [],
+    carryoverUsers: [],
+    coinLogs: []
   };
 }
 
@@ -669,8 +690,10 @@ function effectiveKaraokeData(globalKaraoke, sharedKaraoke, scopedKaraoke) {
     notice: hasScoped && (Object.prototype.hasOwnProperty.call(scopedKaraoke, 'notice') || Object.prototype.hasOwnProperty.call(scopedKaraoke, 'ticker')) ? scoped.notice : base.notice,
     // 코인 잔량은 방송 간 이월되어야 하므로 공유값을 기준으로 사용합니다.
     users: base.users,
-    // 노래/예약/진행/보류/완료 상태는 당일 방송 데이터만 사용합니다.
-    songs: scoped ? scoped.songs : []
+    // 노래/예약/진행/보류/완료 상태와 당일 코인 로그는 당일 방송 데이터만 사용합니다.
+    songs: scoped ? scoped.songs : [],
+    carryoverUsers: scoped && scoped.carryoverUsers.length ? scoped.carryoverUsers : base.users,
+    coinLogs: scoped ? scoped.coinLogs : []
   });
 }
 
@@ -2808,7 +2831,13 @@ app.post('/api/karaoke-data', async (req, res) => {
       return res.status(401).json({ error: '방송매니저 또는 방송국 관리자 권한이 필요합니다.' });
     }
 
+    const previousEffective = await readEffectiveSettings(ctx.station.slug, ctx.active.id);
     const karaokeData = normalizeKaraokeData(req.body.karaokeData || req.body || {});
+    // 현재 방송 최초 저장 시점의 이월 코인 스냅샷을 유지합니다. 이후 충전/사용은 coinLogs로만 금일 내역에 표시합니다.
+    if (!karaokeData.carryoverUsers.length) {
+      karaokeData.carryoverUsers = normalizeKaraokeData(previousEffective.karaokeData || {}).carryoverUsers;
+      if (!karaokeData.carryoverUsers.length) karaokeData.carryoverUsers = normalizeKaraokeData(previousEffective.karaokeData || {}).users;
+    }
     // 현재 방송에는 선곡/예약/진행상태까지 저장하고, 방송국 공유값에는 코인 잔량만 저장합니다.
     await saveEffectiveSettings(ctx.station.slug, ctx.active.id, { karaokeData });
     await saveSharedStationSettings(ctx.station.slug, { karaokeData: karaokeCarryoverData(karaokeData) });

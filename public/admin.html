@@ -259,8 +259,30 @@ textarea{resize:vertical;line-height:1.45}
     grid-template-columns:1fr !important;
   }
 }
-  .manual-sound-hidden {
-  display: none !important;
+
+
+/* ===== 노래방 카드 배치 / 금일 코인내역 보정 ===== */
+#karaokeAdminCard > .manage-grid:not(.history-grid){
+  grid-template-columns:minmax(260px,.85fr) minmax(360px,1.15fr) !important;
+  align-items:start !important;
+}
+#karaokeAdminCard .history-grid{
+  grid-template-columns:1fr !important;
+}
+#karaokeAdminCard #karaokeSongList{
+  max-height:340px !important;
+}
+#karaokeAdminCard #karaokeCoinHistoryList{
+  max-height:260px !important;
+}
+.karaoke-log-row .manage-row-top{align-items:flex-start}
+.karaoke-log-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:5px}
+.karaoke-log-badge{display:inline-flex;border-radius:999px;padding:3px 8px;font-size:12px;font-weight:950;border:1px solid #334155;background:#172033}
+.karaoke-log-badge.carryover{color:#c4b5fd;border-color:#8b5cf655;background:#4c1d9522}
+.karaoke-log-badge.recharge{color:#86efac;border-color:#22c55e55;background:#14532d22}
+.karaoke-log-badge.use{color:#fca5a5;border-color:#ef444455;background:#7f1d1d22}
+@media(max-width:1100px){
+  #karaokeAdminCard > .manage-grid:not(.history-grid){grid-template-columns:1fr !important;}
 }
 
 </style>
@@ -378,7 +400,7 @@ textarea{resize:vertical;line-height:1.45}
     </main>
 
     <aside>
-      <section class="card manual-sound-hidden">
+      <section class="card">
         <h2>수동 사운드 재생</h2>
         <p class="muted">수동 사운드는 후원 저장과 별개입니다. 검색 후 오버레이 재생을 누르면 alert와 사운드만 나갑니다.</p>
 
@@ -544,15 +566,50 @@ function findPresetByTitle(title){
 }
 
 
-function defaultKaraokeData(){return {title:'노래방 공지 알림판',ticker:'신청곡은 채팅으로 남겨주세요',users:[],songs:[]};}
+function defaultKaraokeData(){return {title:'노래방 공지 알림판',ticker:'신청곡은 채팅으로 남겨주세요',users:[],songs:[],carryoverUsers:[],coinLogs:[]};}
 function getKaraokeData(){
   if(!settings.karaokeData) settings.karaokeData = defaultKaraokeData();
   if(!Array.isArray(settings.karaokeData.users)) settings.karaokeData.users=[];
   if(!Array.isArray(settings.karaokeData.songs)) settings.karaokeData.songs=[];
+  if(!Array.isArray(settings.karaokeData.carryoverUsers)) settings.karaokeData.carryoverUsers=[];
+  if(!Array.isArray(settings.karaokeData.coinLogs)) settings.karaokeData.coinLogs=[];
   return settings.karaokeData;
 }
 function coinLabel(type){return type==='full'?'완곡':type==='special'?'스페셜':'1절'}
 function coinKeyLabel(type){return type==='full'?'완곡코인':type==='special'?'스페셜코인':'1절코인'}
+function todayKey(){return new Date().toLocaleDateString('sv-SE')}
+function isTodayKaraokeLog(log){
+  if(!log || !log.at) return true;
+  const d = new Date(log.at);
+  if(Number.isNaN(d.getTime())) return true;
+  return d.toLocaleDateString('sv-SE') === todayKey();
+}
+function coinLogActionLabel(action){return action==='use'?'사용':action==='carryover'?'이월':'충전'}
+function coinLogClass(action){return action==='use'?'use':action==='carryover'?'carryover':'recharge'}
+function addKaraokeCoinLog(action,nick,type,count,title=''){
+  const data=getKaraokeData();
+  if(!Array.isArray(data.coinLogs)) data.coinLogs=[];
+  const n=Math.max(0, Number(count||0));
+  if(!nick || !n) return;
+  data.coinLogs.push({
+    id:'coin_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),
+    at:new Date().toISOString(),
+    action, nick, type, count:n, title
+  });
+}
+function buildKaraokeCoinHistory(data){
+  const rows=[];
+  const carry = Array.isArray(data.carryoverUsers) && data.carryoverUsers.length ? data.carryoverUsers : [];
+  carry.forEach(u=>{
+    const c=u.coins||{};
+    ['verse','full','special'].forEach(type=>{
+      const count=Number(c[type]||0);
+      if(count>0) rows.push({action:'carryover',nick:u.nick,type,count,title:'',at:''});
+    });
+  });
+  (data.coinLogs||[]).filter(isTodayKaraokeLog).forEach(log=>rows.push(log));
+  return rows;
+}
 function songStatusClass(status){return status==='진행'?'run':status==='보류'?'hold':status==='완료'?'done':'wait'}
 function renderFundingSelect(){
   const box = $('#fundingSelect');
@@ -614,15 +671,19 @@ function renderKaraokeManager(){
 
   const coinHistory = $('#karaokeCoinHistoryList');
   if(coinHistory){
-    coinHistory.innerHTML = data.users.length ? data.users.map(u => `
-      <div class="manage-row">
-        <div class="manage-row-top"><span>${esc(u.nick)}</span></div>
-        <div class="manage-row-sub">
-          <span class="coin-pill">1절 ${Number(u.coins?.verse||0)}</span>
-          <span class="coin-pill">완곡 ${Number(u.coins?.full||0)}</span>
-          <span class="coin-pill">스페셜 ${Number(u.coins?.special||0)}</span>
+    const rows = buildKaraokeCoinHistory(data);
+    coinHistory.innerHTML = rows.length ? rows.map(log => `
+      <div class="manage-row karaoke-log-row">
+        <div class="manage-row-top">
+          <span>${esc(log.nick)}</span>
+          <span class="karaoke-log-badge ${coinLogClass(log.action)}">${coinLogActionLabel(log.action)}</span>
         </div>
-      </div>`).join('') : `<div class="resultBox">코인 내역 없음</div>`;
+        <div class="karaoke-log-meta">
+          <span class="coin-pill">${coinLabel(log.type)} ${Number(log.count||0)}</span>
+          ${log.title ? `<span class="coin-pill">${esc(log.title)}</span>` : ''}
+          ${log.at ? `<span class="manage-row-sub">${new Date(log.at).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})}</span>` : ''}
+        </div>
+      </div>`).join('') : `<div class="resultBox">금일 코인 내역 없음</div>`;
   }
 
   const doneList = $('#karaokeDoneList');
@@ -651,7 +712,10 @@ async function editKaraokeCoin(nick,type){
   if(next===null) return;
   const n=Math.max(0, Number(next||0));
   if(!Number.isFinite(n)) return alert('숫자로 입력하세요.');
+  const diff = n - now;
   user.coins[type]=n;
+  if(diff>0) addKaraokeCoinLog('recharge', nick, type, diff, '수동수정');
+  if(diff<0) addKaraokeCoinLog('use', nick, type, Math.abs(diff), '수동수정');
   renderKaraokeManager();
   await saveKaraokeData(false);
 }
@@ -666,6 +730,7 @@ async function addKaraokeCoin(){
   if(!user){user={nick,coins:{verse:0,full:0,special:0}};data.users.push(user)}
   if(!user.coins) user.coins={verse:0,full:0,special:0};
   user.coins[type]=Number(user.coins[type]||0)+count;
+  addKaraokeCoinLog('recharge', nick, type, count, '코인추가');
   $('#karaokeCoinNick').value=''; $('#karaokeCoinCount').value=1;
   renderKaraokeManager();
   await saveKaraokeData(false);
@@ -682,6 +747,7 @@ async function addKaraokeSong(){
   if(!user.coins) user.coins={verse:0,full:0,special:0};
   if(Number(user.coins[type]||0)<=0) return alert(`${nick}님은 ${coinKeyLabel(type)}이 없습니다.`);
   user.coins[type]=Number(user.coins[type]||0)-1;
+  addKaraokeCoinLog('use', nick, type, 1, title);
   data.songs.push({id:'song_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),nick,type,title,status:'대기'});
   $('#karaokeSongNick').value=''; $('#karaokeSongTitle').value='';
   renderKaraokeManager();
