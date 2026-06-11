@@ -1,0 +1,30 @@
+Ver_f2 방송국별 미디어 분리 패치
+
+문제
+- 기존 미디어 업로드가 public/uploads/images, public/uploads/videos 전역 폴더를 사용했습니다.
+- 그래서 A 방송국에서 업로드한 GIF/이미지/영상이 B 방송국 미디어 관리 화면에도 같이 보일 수 있었습니다.
+
+수정
+1. 업로드 경로를 방송국별로 분리했습니다.
+   - 이미지: public/uploads/stations/{station}/images
+   - 영상: public/uploads/stations/{station}/videos
+   - URL: /uploads/stations/{station}/images/파일명
+   - URL: /uploads/stations/{station}/videos/파일명
+
+2. /api/media 목록 조회를 station 기준으로 변경했습니다.
+   - /api/media?station=duugi 요청 시 duugi 폴더만 표시
+   - 다른 방송국 미디어는 표시하지 않음
+
+3. /api/media/upload 업로드 결과도 station 기준 URL로 반환하도록 변경했습니다.
+
+4. /api/media 삭제 권한/경로를 현재 방송국 폴더 안으로 제한했습니다.
+   - 현재 방송국의 /uploads/stations/{station}/... 파일만 삭제 가능
+   - 다른 방송국 파일 URL 삭제 방지
+
+5. /api/server-images도 station 기준으로 변경했습니다.
+
+6. PC/모바일 미디어 관리 안내 문구를 방송국별 분리 기준으로 수정했습니다.
+
+참고
+- 기존 전역 public/uploads/images, public/uploads/videos 파일은 더 이상 방송국별 미디어 목록에 섞이지 않습니다.
+- 이미 기존 전역 폴더에 올려둔 파일을 특정 방송국에서 계속 쓰려면 해당 파일을 public/uploads/stations/{station}/images 또는 videos 폴더로 옮기거나 다시 업로드하세요.

@@ -14,10 +14,30 @@ const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 
 const MEDIA_BASE_DIR = path.join(__dirname, 'public', 'uploads');
-const MEDIA_IMAGE_DIR = path.join(MEDIA_BASE_DIR, 'images');
-const MEDIA_VIDEO_DIR = path.join(MEDIA_BASE_DIR, 'videos');
-for (const d of [MEDIA_BASE_DIR, MEDIA_IMAGE_DIR, MEDIA_VIDEO_DIR]) {
+const MEDIA_STATION_DIR = path.join(MEDIA_BASE_DIR, 'stations');
+for (const d of [MEDIA_BASE_DIR, MEDIA_STATION_DIR]) {
   try { fs.mkdirSync(d, { recursive: true }); } catch (_) {}
+}
+
+function stationMediaDirs(slug) {
+  const safe = safeSlug(slug || 'default');
+  const base = path.join(MEDIA_STATION_DIR, safe);
+  return {
+    slug: safe,
+    base,
+    imageDir: path.join(base, 'images'),
+    videoDir: path.join(base, 'videos'),
+    imageUrlBase: `/uploads/stations/${safe}/images`,
+    videoUrlBase: `/uploads/stations/${safe}/videos`
+  };
+}
+
+function ensureStationMediaDirs(slug) {
+  const dirs = stationMediaDirs(slug);
+  for (const d of [dirs.base, dirs.imageDir, dirs.videoDir]) {
+    try { fs.mkdirSync(d, { recursive: true }); } catch (_) {}
+  }
+  return dirs;
 }
 
 function safeMediaName(name) {
@@ -35,8 +55,10 @@ const mediaUpload = multer({
   storage: multer.diskStorage({
     destination(req, file, cb) {
       const mime = String(file.mimetype || '');
-      if (mime.startsWith('video/')) cb(null, MEDIA_VIDEO_DIR);
-      else cb(null, MEDIA_IMAGE_DIR);
+      const slug = getStationSlug(req);
+      const dirs = ensureStationMediaDirs(slug);
+      if (mime.startsWith('video/')) cb(null, dirs.videoDir);
+      else cb(null, dirs.imageDir);
     },
     filename(req, file, cb) { cb(null, safeMediaName(file.originalname)); }
   }),
@@ -51,8 +73,9 @@ const mediaUpload = multer({
   }
 });
 
-function listMediaFiles() {
+function listMediaFiles(slug = 'default', options = {}) {
   const items = [];
+  const dirs = stationMediaDirs(slug);
   const scan = (dir, type, urlBase) => {
     if (!fs.existsSync(dir)) return;
     for (const f of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -64,6 +87,7 @@ function listMediaFiles() {
       const st = fs.statSync(abs);
       items.push({
         id: Buffer.from(`${urlBase}/${f.name}`).toString('base64url'),
+        station: dirs.slug,
         type,
         name: f.name,
         url: `${urlBase}/${encodeURIComponent(f.name)}`,
@@ -73,21 +97,25 @@ function listMediaFiles() {
       });
     }
   };
-  scan(MEDIA_IMAGE_DIR, 'image', '/uploads/images');
-  scan(MEDIA_VIDEO_DIR, 'video', '/uploads/videos');
 
-  // 기존 서버 이미지 폴더도 선택 가능하게 포함하되 삭제 대상은 uploads만 허용합니다.
-  for (const dirName of ['images', 'slides', 'img']) {
-    const dir = path.join(__dirname, 'public', dirName);
-    if (!fs.existsSync(dir)) continue;
-    for (const f of fs.readdirSync(dir, { withFileTypes: true })) {
-      if (!f.isFile()) continue;
-      const ext = path.extname(f.name).toLowerCase();
-      if (!['.png','.jpg','.jpeg','.webp','.gif'].includes(ext)) continue;
-      const abs = path.join(dir, f.name);
-      const st = fs.statSync(abs);
-      const url = `/${dirName}/${encodeURIComponent(f.name)}`;
-      items.push({ id: Buffer.from(url).toString('base64url'), type:'image', name:f.name, url, size:st.size, createdAt:st.birthtime || st.mtime, updatedAt:st.mtime, readonly:true });
+  // 방송국별 업로드만 보여줍니다. 다른 방송국 미디어가 섞이지 않도록 전역 uploads/images, uploads/videos는 목록에서 제외합니다.
+  scan(dirs.imageDir, 'image', dirs.imageUrlBase);
+  scan(dirs.videoDir, 'video', dirs.videoUrlBase);
+
+  // 공용 서버 기본 이미지 폴더는 readonly로만 표시합니다. 삭제/업로드 대상은 방송국별 폴더입니다.
+  if (options.includeShared !== false) {
+    for (const dirName of ['images', 'slides', 'img']) {
+      const dir = path.join(__dirname, 'public', dirName);
+      if (!fs.existsSync(dir)) continue;
+      for (const f of fs.readdirSync(dir, { withFileTypes: true })) {
+        if (!f.isFile()) continue;
+        const ext = path.extname(f.name).toLowerCase();
+        if (!['.png','.jpg','.jpeg','.webp','.gif'].includes(ext)) continue;
+        const abs = path.join(dir, f.name);
+        const st = fs.statSync(abs);
+        const url = `/${dirName}/${encodeURIComponent(f.name)}`;
+        items.push({ id: Buffer.from(url).toString('base64url'), station: 'shared', type:'image', name:f.name, url, size:st.size, createdAt:st.birthtime || st.mtime, updatedAt:st.mtime, readonly:true });
+      }
     }
   }
   return items.sort((a,b)=> new Date(b.updatedAt) - new Date(a.updatedAt));
@@ -2460,7 +2488,9 @@ app.post('/api/sound-events/release', async (req, res) => {
 /* 미디어 업로드/관리: PC/모바일 공통 */
 app.get('/api/media', async (req, res) => {
   try {
-    const media = listMediaFiles();
+    const ctx = await getStationContext(req, res);
+    if (!ctx) return;
+    const media = listMediaFiles(ctx.station.slug);
     res.json({
       media,
       images: media.filter(x => x.type === 'image'),
@@ -2480,9 +2510,11 @@ app.post('/api/media/upload', mediaUpload.array('files', 10), async (req, res) =
     }
     const uploaded = (req.files || []).map(f => {
       const type = String(f.mimetype || '').startsWith('video/') ? 'video' : 'image';
-      const urlBase = type === 'video' ? '/uploads/videos' : '/uploads/images';
+      const dirs = stationMediaDirs(ctx.station.slug);
+      const urlBase = type === 'video' ? dirs.videoUrlBase : dirs.imageUrlBase;
       return {
         id: Buffer.from(`${urlBase}/${f.filename}`).toString('base64url'),
+        station: ctx.station.slug,
         type,
         name: f.filename,
         originalName: f.originalname,
@@ -2490,7 +2522,7 @@ app.post('/api/media/upload', mediaUpload.array('files', 10), async (req, res) =
         size: f.size
       };
     });
-    res.json({ ok: true, uploaded, media: listMediaFiles() });
+    res.json({ ok: true, uploaded, media: listMediaFiles(ctx.station.slug) });
   } catch (e) {
     res.status(500).json({ error: e.message || '업로드 실패' });
   }
@@ -2506,16 +2538,17 @@ app.delete('/api/media', async (req, res) => {
     const url = String(req.query.url || req.body?.url || '').trim();
     if (!url) return res.status(400).json({ error: '삭제할 파일 URL이 없습니다.' });
     const decoded = decodeURIComponent(url);
-    const allowedBases = ['/uploads/images/', '/uploads/videos/'];
+    const dirs = stationMediaDirs(ctx.station.slug);
+    const allowedBases = [dirs.imageUrlBase + '/', dirs.videoUrlBase + '/'];
     if (!allowedBases.some(b => decoded.startsWith(b))) {
-      return res.status(400).json({ error: '업로드 폴더의 파일만 삭제할 수 있습니다.' });
+      return res.status(400).json({ error: '현재 방송국 업로드 폴더의 파일만 삭제할 수 있습니다.' });
     }
     const abs = path.normalize(path.join(__dirname, 'public', decoded));
-    if (!abs.startsWith(path.normalize(MEDIA_BASE_DIR))) {
+    if (!abs.startsWith(path.normalize(dirs.base))) {
       return res.status(400).json({ error: '삭제 경로가 올바르지 않습니다.' });
     }
     if (fs.existsSync(abs)) fs.unlinkSync(abs);
-    res.json({ ok: true, media: listMediaFiles() });
+    res.json({ ok: true, media: listMediaFiles(ctx.station.slug) });
   } catch (e) {
     res.status(500).json({ error: e.message || '삭제 실패' });
   }
@@ -2524,7 +2557,9 @@ app.delete('/api/media', async (req, res) => {
 /* 서버 이미지 목록: station_style.html 썸네일 선택용 */
 app.get('/api/server-images', async (req, res) => {
   try {
-    const images = listMediaFiles().filter(x => x.type === 'image');
+    const ctx = await getStationContext(req, res);
+    if (!ctx) return;
+    const images = listMediaFiles(ctx.station.slug).filter(x => x.type === 'image');
     res.json({ images });
   } catch (e) {
     res.status(500).json({ error: e.message || '이미지 목록 조회 실패' });
