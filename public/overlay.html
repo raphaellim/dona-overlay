@@ -1997,6 +1997,55 @@
       white-space: nowrap !important;
     }
 
+
+
+    /* ===== Ver_f2 APPLY: 계좌후원 배경 반짝임 OFF / 이름·하트·금액 텍스트 애니메이션 ON ===== */
+    .roller-item.vip-account,
+    .roller-item.vip-account:hover,
+    .roller-item.vip-account.active {
+      background: transparent !important;
+      box-shadow: none !important;
+    }
+
+    .roller-item.vip-account::before,
+    .roller-item.vip-account::after {
+      display: none !important;
+      content: none !important;
+      opacity: 0 !important;
+      animation: none !important;
+      background: none !important;
+      box-shadow: none !important;
+    }
+
+    .roller-item.vip-account .account-donor,
+    .roller-item.vip-account .account-heart,
+    .roller-item.vip-account .account-amount {
+      background-image: linear-gradient(90deg, #ffffff 0%, #ffe066 15%, #44f7ff 32%, #ff4fa3 52%, #8b5cff 68%, #ffffff 84%, #ffe066 100%) !important;
+      background-size: 320% 100% !important;
+      background-position: 0% 50% !important;
+      -webkit-background-clip: text !important;
+      background-clip: text !important;
+      color: transparent !important;
+      -webkit-text-fill-color: transparent !important;
+      animation-name: accountTextShineMove !important;
+      animation-duration: .85s !important;
+      animation-timing-function: linear !important;
+      animation-iteration-count: infinite !important;
+      text-shadow: none !important;
+      filter: none !important;
+      opacity: 1 !important;
+    }
+
+    @keyframes accountTextShineMove {
+      0% { background-position: 0% 50%; }
+      100% { background-position: 320% 50%; }
+    }
+
+    /* ===== Ver_f2 APPLY: 공지 줄별 정렬 ===== */
+    .notice-line.notice-align-left { text-align: left !important; }
+    .notice-line.notice-align-center { text-align: center !important; }
+    .notice-line.notice-align-right { text-align: right !important; }
+
 </style>
   <link rel="stylesheet" href="/assets/css/roulette-overlay.css">
 </head>
@@ -2072,12 +2121,12 @@ let missionVideoCacheSrc = "";
 let missionCountdownLastSec = null;
     (() => {
       const API_SUMMARY = "/api/summary";
-const API_SETTINGS = "/api/settings";
-const PARAMS = new URLSearchParams(location.search);
-const ACCESS_TOKEN = PARAMS.get("token") || "";
-const STATION_SLUG = PARAMS.get("station") || "default";
-const IS_MONITOR = PARAMS.get("monitor") === "1";
-const DEBUG_MODE = PARAMS.get("debug") === "1";
+      const API_SETTINGS = "/api/settings";
+      const PARAMS = new URLSearchParams(location.search);
+      const ACCESS_TOKEN = PARAMS.get("token") || "";
+      const STATION_SLUG = PARAMS.get("station") || "default";
+      const IS_MONITOR = PARAMS.get("monitor") === "1";
+      const DEBUG_MODE = PARAMS.get("debug") === "1";
 
       function debugLog(...args) {
         if (!DEBUG_MODE) return;
@@ -2702,10 +2751,23 @@ const DEBUG_MODE = PARAMS.get("debug") === "1";
         }
 
         const lines = text.split(/\r?\n/).filter(line => String(line).trim() !== "");
+        const noticeAligns = Array.isArray(settings?.noticeAligns) ? settings.noticeAligns : [];
         const lineHtml = lines.map((line, idx) => {
+          let text = String(line || "");
+          let align = String(noticeAligns[idx] || "left").toLowerCase();
+
+          const tagMatch = text.match(/^\s*\[(left|center|right|왼쪽|가운데|오른쪽)\]\s*/i);
+          if (tagMatch) {
+            const tag = tagMatch[1].toLowerCase();
+            align = tag === "왼쪽" ? "left" : tag === "가운데" ? "center" : tag === "오른쪽" ? "right" : tag;
+            text = text.replace(tagMatch[0], "");
+          }
+
+          if (!["left", "center", "right"].includes(align)) align = "left";
+
           const color = colors[idx] || "";
           const style = color ? ` style="color:${escapeHtml(color)} !important"` : "";
-          return `<span class="notice-line"${style}>${escapeHtml(line)}</span>`;
+          return `<span class="notice-line notice-align-${align}"${style}>${escapeHtml(text)}</span>`;
         }).join("");
 
         if (lines.length > 3) {
@@ -3474,49 +3536,39 @@ const DEBUG_MODE = PARAMS.get("debug") === "1";
         return res.json();
       }
 
-async function loadData() {
-  const params = new URLSearchParams(location.search);
-  if (params.get("demo") === "1") return demoData;
+      async function loadData() {
+        const params = new URLSearchParams(location.search);
+        if (params.get("demo") === "1") return demoData;
 
-  const summaryUrls = [
-    "/api/summary",
-    "/api/summary?station=" + encodeURIComponent(STATION_SLUG),
-    ACCESS_TOKEN
-      ? "/api/summary?station=" + encodeURIComponent(STATION_SLUG) + "&token=" + encodeURIComponent(ACCESS_TOKEN)
-      : ""
-  ].filter(Boolean);
-
-  let lastError = null;
-
-  for (const url of summaryUrls) {
-    try {
-      const s = await fetchJson(url);
-      const settings = s.settings && Object.keys(s.settings).length ? s.settings : defaultSettings;
-      const accountDonors = (s.accountDonors && s.accountDonors.length)
-        ? s.accountDonors
-        : aggregateAccountDonorsFromDonations(s.donations || []);
-
-      return {
-        settings,
-        accountDonors,
-        creators: normalizeCreatorRows({ ...s, settings }),
-        donations: s.donations || []
-      };
-    } catch (e) {
-      lastError = e;
-      console.warn("[overlay] summary failed:", url, e);
-    }
-  }
-
-  console.warn("[overlay] all summary requests failed", lastError);
-
-  return {
-    settings: defaultSettings,
-    accountDonors: [],
-    creators: [],
-    donations: []
-  };
-}
+        try {
+          const s = await fetchJson(API_SUMMARY);
+          const settings = s.settings && Object.keys(s.settings).length ? s.settings : defaultSettings;
+          const accountDonors = (s.accountDonors && s.accountDonors.length) ? s.accountDonors : aggregateAccountDonorsFromDonations(s.donations || []);
+          return {
+            settings,
+            accountDonors,
+            creators: normalizeCreatorRows({ ...s, settings }),
+            donations: s.donations || []
+          };
+        } catch (e) {
+          try {
+            const settings = await fetchJson(API_SETTINGS);
+            return {
+              settings,
+              accountDonors: [],
+              creators: zeroCreatorsFromSettings(settings),
+              donations: []
+            };
+          } catch (err) {
+            return {
+              settings: defaultSettings,
+              accountDonors: [],
+              creators: [],
+              donations: []
+            };
+          }
+        }
+      }
 
       function ensureAlertIndependent() {
         const root = document.getElementById("overlayAlertRoot");
@@ -3696,18 +3748,10 @@ preloadMissionTimerVideo(
           stationStyle: settings.stationStyle
         });
         const liveData = settings.broadcastLiveData || {};
-const hasLiveStatus =
-  Object.prototype.hasOwnProperty.call(liveData, "live") ||
-  Object.prototype.hasOwnProperty.call(liveData, "status");
-
-const isEnded = liveData.status === "ended";
-const isNotLive =
-  hasLiveStatus && !(liveData.live === true || liveData.status === "live");
-
-document.body.classList.toggle("broadcast-not-live", isNotLive);
-
-const idle = document.getElementById("overlayIdleScreen");
-if (idle) idle.textContent = isEnded ? "방송 종료" : "시스템설정";
+        const isLive = liveData.live === true || liveData.status === "live";
+        document.body.classList.toggle("broadcast-not-live", !isLive);
+        const idle = document.getElementById("overlayIdleScreen");
+        if (idle) idle.textContent = liveData.status === "ended" ? "방송 종료" : "시스템설정";
         applyStationStyle(settings);
         cacheSoundRules(settings);
         enabledPresets = getEnabledPresets(settings);

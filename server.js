@@ -146,6 +146,7 @@ function defaultSettings() {
     noticeTitle: '공지',
     notice: '',
     noticeColors: ['#ffffff', '#ffe066', '#5ecbff', '#ffb4ca', '#ff4d5e'],
+    noticeAligns: ['left', 'left', 'left', 'left', 'left'],
     viewerPassword: '',
     viewerToken: '',
     overlaySections: { account: true, notice: false, creators: true, creatorDonations: true, karaoke: false, funding: false, broadcastTimer: false, media: true },
@@ -894,6 +895,7 @@ function normalizeSettings(settings) {
     noticeTitle: String(raw.noticeTitle ?? base.noticeTitle ?? '공지'),
     notice: String(raw.notice ?? base.notice),
     noticeColors: Array.isArray(raw.noticeColors) ? raw.noticeColors.slice(0, 5) : base.noticeColors,
+    noticeAligns: Array.isArray(raw.noticeAligns) ? raw.noticeAligns.slice(0, 5).map(v => ['left','center','right'].includes(String(v)) ? String(v) : 'left') : base.noticeAligns,
     viewerPassword: String(raw.viewerPassword ?? base.viewerPassword ?? ''),
     viewerToken: String(raw.viewerToken ?? base.viewerToken ?? ''),
     overlaySections: normalizeOverlaySections(raw.overlaySections, base.overlaySections),
@@ -1256,7 +1258,7 @@ function managerSafeStation(row, includeToken = false) {
 
 const STATION_SHARED_SETTING_FIELDS = [
   // 방송국별로 유지하면서, 같은 방송국의 새 방송에는 이어질 항목
-  'title', 'titleImage', 'noticeTitle', 'notice', 'noticeColors',
+  'title', 'titleImage', 'noticeTitle', 'notice', 'noticeColors', 'noticeAligns',
   'karaokeData', 'fundingData', 'allowanceData', 'stationStyle', 'presets', 'roulette'
 ];
 
@@ -1309,6 +1311,7 @@ async function readEffectiveSettings(stationSlug, broadcastId) {
     noticeTitle: stationShared.noticeTitle ?? global.noticeTitle,
     notice: stationShared.notice ?? global.notice,
     noticeColors: stationShared.noticeColors ?? global.noticeColors,
+    noticeAligns: stationShared.noticeAligns ?? global.noticeAligns,
     fundingData: stationShared.fundingData ?? global.fundingData,
     allowanceData: stationShared.allowanceData ?? global.allowanceData,
     stationStyle: stationShared.stationStyle ?? global.stationStyle,
@@ -2822,6 +2825,7 @@ app.post('/api/settings', async (req, res) => {
     if (has('noticeTitle')) updates.noticeTitle = String(body.noticeTitle ?? '공지');
     if (has('notice')) updates.notice = String(body.notice ?? '');
     if (has('noticeColors')) updates.noticeColors = Array.isArray(body.noticeColors) ? body.noticeColors.slice(0, 5) : undefined;
+    if (has('noticeAligns')) updates.noticeAligns = Array.isArray(body.noticeAligns) ? body.noticeAligns.slice(0, 5).map(v => ['left','center','right'].includes(String(v)) ? String(v) : 'left') : undefined;
     if (has('karaokeData')) updates.karaokeData = normalizeKaraokeData(body.karaokeData);
     if (has('fundingData')) updates.fundingData = normalizeFundingData(body.fundingData);
     if (has('allowanceData')) updates.allowanceData = normalizeAllowanceData(body.allowanceData);
@@ -2845,7 +2849,7 @@ app.post('/api/settings', async (req, res) => {
       // 당일 방송 진행에 필요한 입력/노출/공지/펀딩/노래방/타이머 값만 수정합니다.
       const allowedManagerFields = new Set([
         'overlaySections',
-        'noticeTitle', 'notice', 'noticeColors',
+        'noticeTitle', 'notice', 'noticeColors', 'noticeAligns',
         'fundingData', 'karaokeData', 'allowanceData',
         'broadcastTimerData', 'broadcastLiveData'
       ]);
@@ -3214,7 +3218,10 @@ app.get('/api/summary', async (req, res) => {
     const ctx = await getStationContext(req, res);
     if (!ctx) return;
     const role = await accessRole(req, ctx.station, ctx.active);
-    if (role === 'broadcast_manager') return res.status(403).json({ error: '방송매니저는 합산 조회를 볼 수 없습니다.' });
+    const overlayTokenOk = await stationTokenAllowed(req, ctx.station);
+    // 방송매니저가 합산 페이지를 직접 보는 것은 차단하되,
+    // 프리즘/OBS/모바일 오버레이 URL처럼 station overlay token이 맞는 요청은 화면 표시용 summary 조회를 허용합니다.
+    if (role === 'broadcast_manager' && !overlayTokenOk) return res.status(403).json({ error: '방송매니저는 합산 조회를 볼 수 없습니다.' });
     const broadcastId = req.query.broadcastId || ctx.active.id;
 
     const settings = await readEffectiveSettings(ctx.station.slug, broadcastId);

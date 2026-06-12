@@ -37,6 +37,10 @@ textarea{resize:vertical;line-height:1.45}
 .notice-color-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-top:8px}
 .notice-color-item{display:flex;flex-direction:column;gap:5px;padding:8px;border:1px solid #334155;border-radius:12px;background:#070b12}
 .notice-color-item label{font-size:11px}.notice-color-item input[type=color]{width:100%;height:36px;border:0;border-radius:8px;background:transparent;cursor:pointer}
+.notice-align-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-top:8px}
+.notice-align-item{display:flex;flex-direction:column;gap:5px;padding:8px;border:1px solid #334155;border-radius:12px;background:#070b12}
+.notice-align-item label{font-size:11px}
+.notice-align-item select{padding:8px 7px;border-radius:9px;font-size:13px}
 .sound-rule{display:grid;grid-template-columns:1.05fr .7fr .7fr 1fr;gap:8px;align-items:end;margin-bottom:8px;background:#08111f;border:1px solid #26364d;border-radius:12px;padding:9px}
 .preset-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .preset-card{background:var(--card2);border:1px solid var(--line2);border-radius:14px;padding:12px}
@@ -203,6 +207,13 @@ textarea{resize:vertical;line-height:1.45}
             <div class="notice-color-item"><label>3줄 색상</label><input type="color" id="noticeColor2"></div>
             <div class="notice-color-item"><label>4줄 색상</label><input type="color" id="noticeColor3"></div>
             <div class="notice-color-item"><label>5줄 색상</label><input type="color" id="noticeColor4"></div>
+          </div>
+          <div class="notice-align-grid">
+            <div class="notice-align-item"><label>1줄 정렬</label><select id="noticeAlign0" class="input"><option value="left">왼쪽</option><option value="center">가운데</option><option value="right">오른쪽</option></select></div>
+            <div class="notice-align-item"><label>2줄 정렬</label><select id="noticeAlign1" class="input"><option value="left">왼쪽</option><option value="center">가운데</option><option value="right">오른쪽</option></select></div>
+            <div class="notice-align-item"><label>3줄 정렬</label><select id="noticeAlign2" class="input"><option value="left">왼쪽</option><option value="center">가운데</option><option value="right">오른쪽</option></select></div>
+            <div class="notice-align-item"><label>4줄 정렬</label><select id="noticeAlign3" class="input"><option value="left">왼쪽</option><option value="center">가운데</option><option value="right">오른쪽</option></select></div>
+            <div class="notice-align-item"><label>5줄 정렬</label><select id="noticeAlign4" class="input"><option value="left">왼쪽</option><option value="center">가운데</option><option value="right">오른쪽</option></select></div>
           </div>
         </div>
 
@@ -711,6 +722,8 @@ async function loadSettings(){
 
   const noticeColors = settings.noticeColors || defaultColors;
   for(let i=0;i<5;i++) $('#noticeColor'+i).value = noticeColors[i] || defaultColors[i];
+  const noticeAligns = settings.noticeAligns || [];
+  for(let i=0;i<5;i++) if($('#noticeAlign'+i)) $('#noticeAlign'+i).value = noticeAligns[i] || 'left';
 
   const overlaySections = settings.overlaySections || { account:true, notice:false, creators:true };
   $('#overlayAccountBox').checked = overlaySections.account !== false;
@@ -914,6 +927,7 @@ async function saveSettings(){
       noticeTitle: $('#noticeTitle').value,
       notice: $('#notice').value,
       noticeColors: [0,1,2,3,4].map(i => $('#noticeColor'+i).value || defaultColors[i]),
+      noticeAligns: [0,1,2,3,4].map(i => ($('#noticeAlign'+i) ? $('#noticeAlign'+i).value : 'left') || 'left'),
       columns: Number($('#columns').value||4),
       maxCreators: Number($('#maxCreators').value||12),
       creators: $('#creators').value.split(/\n+/).map(v=>v.trim()).filter(Boolean),

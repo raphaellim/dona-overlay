@@ -1,0 +1,22 @@
+Ver_f2 APPLY Overlay/Notice/Account Fix
+
+적용 내용:
+1. /api/summary 방송매니저 차단 예외 보정
+   - 방송매니저가 합산 페이지를 보는 것은 계속 차단
+   - overlay token이 맞는 프리즘/OBS/모바일 오버레이 요청은 summary 데이터 조회 허용
+
+2. 계좌후원 VIP 반짝임 보정
+   - 배경/박스 반짝임 완전 OFF
+   - 이름 / 하트 / 금액 텍스트만 투명 그라데이션 애니메이션 적용
+
+3. 공지사항 줄별 정렬 기능 추가
+   - PC control.html 공지 설정에 1~5줄 정렬 선택 추가
+   - 모바일 m_control.html 공지 설정에 1~5줄 정렬 선택 추가
+   - overlay.html에서 noticeAligns 적용
+   - 공지 내용에 [left], [center], [right] 태그를 직접 써도 적용 가능
+
+수정 파일:
+- server.js
+- public/overlay.html
+- public/control.html
+- public/m_control.html
