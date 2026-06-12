@@ -294,26 +294,57 @@ function cleanRouletteId(v, fallback) {
   return String(v || fallback || '').replace(/[^a-zA-Z0-9_-]/g, '') || fallback || ('id_' + Date.now());
 }
 
+function normalizeRoulettePercentItems(items) {
+  const active = (items || []).filter(item => item.enabled !== false && item.text);
+  if (!active.length) return items || [];
+  const fixed = active.filter(item => Number.isFinite(Number(item.weightPercent)) && Number(item.weightPercent) > 0);
+  const blank = active.filter(item => !(Number.isFinite(Number(item.weightPercent)) && Number(item.weightPercent) > 0));
+  const fixedTotal = fixed.reduce((sum, item) => sum + Number(item.weightPercent || 0), 0);
+
+  let normalized = new Map();
+  if (blank.length && fixedTotal <= 100) {
+    const each = Math.max(0, (100 - fixedTotal) / blank.length);
+    active.forEach(item => normalized.set(item.id, fixed.includes(item) ? Number(item.weightPercent) : each));
+  } else {
+    const total = fixedTotal > 0 ? fixedTotal : active.length;
+    active.forEach(item => {
+      const raw = Number.isFinite(Number(item.weightPercent)) && Number(item.weightPercent) > 0 ? Number(item.weightPercent) : 0;
+      normalized.set(item.id, total > 0 ? (raw / total) * 100 : 0);
+    });
+  }
+
+  return (items || []).map(item => ({
+    ...item,
+    weightPercent: Number((normalized.get(item.id) || 0).toFixed(4))
+  }));
+}
+
 function normalizeRouletteData(raw) {
   const base = defaultRouletteData();
   const value = raw && typeof raw === 'object' ? raw : {};
   const sourceLists = Array.isArray(value.lists) && value.lists.length ? value.lists : base.lists;
   const lists = sourceLists.map((list, idx) => {
     const id = cleanRouletteId(list?.id, `roulette_${idx + 1}`);
+    const type = String(list?.type || list?.mode || '').toLowerCase() === 'probability' ? 'probability' : 'normal';
     const rawItems = Array.isArray(list?.items) ? list.items : [];
-    const items = rawItems.map((item, itemIdx) => {
+    let items = rawItems.map((item, itemIdx) => {
       if (typeof item === 'string') {
-        return { id: `${id}_${itemIdx + 1}`, text: normName(item), enabled: true };
+        return { id: `${id}_${itemIdx + 1}`, text: normName(item), enabled: true, weightPercent: 0 };
       }
+      const rawWeight = item?.weightPercent ?? item?.percent ?? item?.weight ?? '';
+      const weightPercent = String(rawWeight).trim() === '' ? 0 : Math.max(0, Number(String(rawWeight).replace('%', '')) || 0);
       return {
         id: cleanRouletteId(item?.id, `${id}_${itemIdx + 1}`),
         text: normName(item?.text || item?.name || item?.title || ''),
-        enabled: item?.enabled !== false && item?.enabled !== 'false'
+        enabled: item?.enabled !== false && item?.enabled !== 'false',
+        weightPercent
       };
     }).filter(item => item.text).slice(0, 200);
+    if (type === 'probability') items = normalizeRoulettePercentItems(items);
     return {
       id,
       title: normName(list?.title || list?.name || `룰렛${idx + 1}`),
+      type,
       items
     };
   }).filter(list => list.title && list.items.length).slice(0, 50);
@@ -392,6 +423,18 @@ const ROULETTE_MIN_RESULT_VISIBLE_MS = 3100;
 function pickRouletteWinner(list) {
   const activeItems = (list?.items || []).filter(item => item.enabled !== false && item.text);
   if (!activeItems.length) return '';
+  if (String(list?.type || '') === 'probability') {
+    const weighted = activeItems.map(item => ({ item, w: Math.max(0, Number(item.weightPercent || 0)) }));
+    const total = weighted.reduce((sum, row) => sum + row.w, 0);
+    if (total > 0) {
+      let r = Math.random() * total;
+      for (const row of weighted) {
+        r -= row.w;
+        if (r <= 0) return row.item.text;
+      }
+      return weighted[weighted.length - 1].item.text;
+    }
+  }
   const index = crypto.randomInt ? crypto.randomInt(activeItems.length) : Math.floor(Math.random() * activeItems.length);
   return activeItems[index].text;
 }
