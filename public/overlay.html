@@ -3474,39 +3474,49 @@ const DEBUG_MODE = PARAMS.get("debug") === "1";
         return res.json();
       }
 
-      async function loadData() {
-        const params = new URLSearchParams(location.search);
-        if (params.get("demo") === "1") return demoData;
+async function loadData() {
+  const params = new URLSearchParams(location.search);
+  if (params.get("demo") === "1") return demoData;
 
-        try {
-          const s = await fetchJson(API_SUMMARY);
-          const settings = s.settings && Object.keys(s.settings).length ? s.settings : defaultSettings;
-          const accountDonors = (s.accountDonors && s.accountDonors.length) ? s.accountDonors : aggregateAccountDonorsFromDonations(s.donations || []);
-          return {
-            settings,
-            accountDonors,
-            creators: normalizeCreatorRows({ ...s, settings }),
-            donations: s.donations || []
-          };
-        } catch (e) {
-          try {
-            const settings = await fetchJson(API_SETTINGS);
-            return {
-              settings,
-              accountDonors: [],
-              creators: zeroCreatorsFromSettings(settings),
-              donations: []
-            };
-          } catch (err) {
-            return {
-              settings: defaultSettings,
-              accountDonors: [],
-              creators: [],
-              donations: []
-            };
-          }
-        }
-      }
+  const summaryUrls = [
+    "/api/summary",
+    "/api/summary?station=" + encodeURIComponent(STATION_SLUG),
+    ACCESS_TOKEN
+      ? "/api/summary?station=" + encodeURIComponent(STATION_SLUG) + "&token=" + encodeURIComponent(ACCESS_TOKEN)
+      : ""
+  ].filter(Boolean);
+
+  let lastError = null;
+
+  for (const url of summaryUrls) {
+    try {
+      const s = await fetchJson(url);
+      const settings = s.settings && Object.keys(s.settings).length ? s.settings : defaultSettings;
+      const accountDonors = (s.accountDonors && s.accountDonors.length)
+        ? s.accountDonors
+        : aggregateAccountDonorsFromDonations(s.donations || []);
+
+      return {
+        settings,
+        accountDonors,
+        creators: normalizeCreatorRows({ ...s, settings }),
+        donations: s.donations || []
+      };
+    } catch (e) {
+      lastError = e;
+      console.warn("[overlay] summary failed:", url, e);
+    }
+  }
+
+  console.warn("[overlay] all summary requests failed", lastError);
+
+  return {
+    settings: defaultSettings,
+    accountDonors: [],
+    creators: [],
+    donations: []
+  };
+}
 
       function ensureAlertIndependent() {
         const root = document.getElementById("overlayAlertRoot");
