@@ -3696,10 +3696,18 @@ preloadMissionTimerVideo(
           stationStyle: settings.stationStyle
         });
         const liveData = settings.broadcastLiveData || {};
-        const isLive = liveData.live === true || liveData.status === "live";
-        document.body.classList.toggle("broadcast-not-live", !isLive);
-        const idle = document.getElementById("overlayIdleScreen");
-        if (idle) idle.textContent = liveData.status === "ended" ? "방송 종료" : "시스템설정";
+const hasLiveStatus =
+  Object.prototype.hasOwnProperty.call(liveData, "live") ||
+  Object.prototype.hasOwnProperty.call(liveData, "status");
+
+const isEnded = liveData.status === "ended";
+const isNotLive =
+  hasLiveStatus && !(liveData.live === true || liveData.status === "live");
+
+document.body.classList.toggle("broadcast-not-live", isNotLive);
+
+const idle = document.getElementById("overlayIdleScreen");
+if (idle) idle.textContent = isEnded ? "방송 종료" : "시스템설정";
         applyStationStyle(settings);
         cacheSoundRules(settings);
         enabledPresets = getEnabledPresets(settings);
