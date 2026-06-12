@@ -601,34 +601,37 @@
       text-align: center
     }
 
-    .creator-main {
-      display: flex;
-      align-items: center !important;
-      justify-content: center;
-      gap: 5px;
-      width: 100%;
-      min-height: 28px;
-      font-weight: 900;
-      letter-spacing: -.07em;
-      line-height: 1 !important;
-      padding-top: 2px !important;
-      text-align: center;
-      text-shadow: none !important;
-      filter: none !important
-    }
+   .creator-main {
+  display: grid !important;
+  grid-template-columns: 82px 1fr !important;
+  align-items: center !important;
+  column-gap: 8px !important;
+  width: 100%;
+  min-height: 28px;
+  font-weight: 900;
+  letter-spacing: -.07em;
+  line-height: 1 !important;
+  padding-top: 2px !important;
+  text-align: center;
+  text-shadow: none !important;
+  filter: none !important;
+}
 
-    .creator-name {
-      flex: 0 0 78px;
-      width: 78px;
-      color: var(--white);
-      font-size: 25px;
-      line-height: 1 !important;
-      white-space: nowrap;
-      overflow: hidden;
-      text-align: center;
-      text-shadow: none !important;
-      filter: none !important
-    }
+.creator-name {
+  width: 82px !important;
+  color: var(--white);
+  font-size: 25px;
+  line-height: 1 !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-align: right !important;
+  text-shadow: none !important;
+  filter: none !important;
+}
+    .creator-inline-options {
+  justify-self: center !important;
+  text-align: center !important;
+}
 
     .donation-amount {
       flex: 0 0 auto;
