@@ -1937,6 +1937,57 @@
       100% { background-position: 260% 50%; }
     }
 
+
+    /* ===== Ver_f2 FINAL: 계좌후원 VIP 배경 반짝임 OFF / 텍스트만 반짝임 ===== */
+    .roller-item.vip-account::before,
+    .roller-item.vip-account::after {
+      display: none !important;
+      content: none !important;
+      opacity: 0 !important;
+      animation: none !important;
+      background: none !important;
+    }
+
+    .roller-item.vip-account .account-donor,
+    .roller-item.vip-account .account-heart,
+    .roller-item.vip-account .account-amount {
+      background: linear-gradient(90deg, #ffffff 0%, #ffe066 18%, #44f7ff 36%, #ff4fa3 55%, #ffffff 74%, #ffe066 100%) !important;
+      background-size: 260% 100% !important;
+      -webkit-background-clip: text !important;
+      background-clip: text !important;
+      color: transparent !important;
+      -webkit-text-fill-color: transparent !important;
+      animation: vipAccountTextShine .95s linear infinite !important;
+      text-shadow: none !important;
+      filter: none !important;
+    }
+
+    /* ===== Ver_f2 FINAL: 묶음 ALERT 3명 이상 표시 안정화 ===== */
+    #overlayAlertRoot #optionAlert.option-alert {
+      min-height: 205px !important;
+      overflow: visible !important;
+    }
+
+    .alert-creator-line.alert-split-line {
+      display: flex !important;
+      flex-wrap: wrap !important;
+      justify-content: center !important;
+      align-items: center !important;
+      gap: 5px 8px !important;
+      width: 100% !important;
+      max-height: none !important;
+      white-space: normal !important;
+      overflow: visible !important;
+      text-overflow: unset !important;
+      line-height: 1.15 !important;
+    }
+
+    .alert-target.alert-split-chip {
+      font-size: 18px !important;
+      line-height: 1.12 !important;
+      white-space: nowrap !important;
+    }
+
 </style>
   <link rel="stylesheet" href="/assets/css/roulette-overlay.css">
 </head>
@@ -2011,14 +2062,13 @@
 let missionVideoCacheSrc = "";
 let missionCountdownLastSec = null;
     (() => {
+      const API_SUMMARY = "/api/summary";
+      const API_SETTINGS = "/api/settings";
       const PARAMS = new URLSearchParams(location.search);
-const ACCESS_TOKEN = PARAMS.get("token") || "";
-const STATION_SLUG = PARAMS.get("station") || "default";
-const IS_MONITOR = PARAMS.get("monitor") === "1";
-const DEBUG_MODE = PARAMS.get("debug") === "1";
-
-const API_SUMMARY = "/api/summary?station=" + encodeURIComponent(STATION_SLUG);
-const API_SETTINGS = "/api/settings;
+      const ACCESS_TOKEN = PARAMS.get("token") || "";
+      const STATION_SLUG = PARAMS.get("station") || "default";
+      const IS_MONITOR = PARAMS.get("monitor") === "1";
+      const DEBUG_MODE = PARAMS.get("debug") === "1";
 
       function debugLog(...args) {
         if (!DEBUG_MODE) return;
@@ -2947,18 +2997,25 @@ const API_SETTINGS = "/api/settings;
       function donationAlertKey(row) {
         return (row?.id || "") + "_" + (row?.createdAt || row?.created_at || "");
       }
+
       function donationAlertGroupKey(group) {
-  const rows = Array.isArray(group.alertGroupRows) ? group.alertGroupRows : [group];
+        const rows = Array.isArray(group?.alertGroupRows) && group.alertGroupRows.length
+          ? group.alertGroupRows
+          : [group];
 
-  const ids = rows
-    .map(r => r && r.id)
-    .filter(Boolean)
-    .sort();
+        const ids = rows
+          .map(r => r && r.id)
+          .filter(Boolean)
+          .sort();
 
-  if (ids.length) return ids.join("|");
+        if (ids.length) return ids.join("|");
 
-  return rows.map(r => donationAlertKey(r)).sort().join("|");
-}
+        return rows
+          .map(r => donationAlertKey(r))
+          .filter(Boolean)
+          .sort()
+          .join("|");
+      }
 
       function isSilentDonationRow(row) {
         return row?.silentAlert === true
@@ -3238,72 +3295,79 @@ const API_SETTINGS = "/api/settings;
         }
       }
 
- function checkLatestOptionAlert(donations) {
-  const rows = (donations || [])
-    .slice()
-    .sort((a, b) => new Date(a.createdAt || a.created_at || 0) - new Date(b.createdAt || b.created_at || 0));
+      function checkLatestOptionAlert(donations) {
+        const rows = (donations || [])
+          .slice()
+          .sort((a, b) => new Date(a.createdAt || a.created_at || 0) - new Date(b.createdAt || b.created_at || 0));
 
-  if (!rows.length) return;
+        if (!rows.length) return;
 
-  if (!donationAlertBootReady) {
-    const latest = rows[rows.length - 1];
-    const key = donationAlertKey(latest);
-    lastDonationKey = key;
-    localStorage.setItem("overlay_last_alert_key", key);
-    donationAlertBootReady = true;
-    return;
-  }
+        // 첫 조회에서는 기존 후원을 ALERT로 재생하지 않고 기준점만 잡습니다.
+        // 기존 버전의 중복방지 흐름은 유지하고, 도네이터 묶음 ALERT만 id 묶음 기준으로 확장합니다.
+        if (!donationAlertBootReady) {
+          const latest = rows[rows.length - 1];
+          const key = donationAlertKey(latest);
+          lastDonationKey = key;
+          localStorage.setItem("overlay_last_alert_key", key);
+          donationAlertBootReady = true;
+          return;
+        }
 
-  let passedLast = false;
-  const newRows = [];
+        let passedLast = false;
+        const newRows = [];
 
-  for (const row of rows) {
-    const key = donationAlertKey(row);
+        for (const row of rows) {
+          const key = donationAlertKey(row);
 
-    if (key === lastDonationKey) {
-      passedLast = true;
-      continue;
-    }
+          if (key === lastDonationKey) {
+            passedLast = true;
+            continue;
+          }
 
-    if (passedLast) {
-      newRows.push(row);
-    }
-  }
+          if (passedLast) {
+            newRows.push(row);
+          }
+        }
 
-  if (!passedLast) {
-    const latest = rows[rows.length - 1];
-    const key = donationAlertKey(latest);
-    lastDonationKey = key;
-    localStorage.setItem("overlay_last_alert_key", key);
-    return;
-  }
+        // 기준점이 목록에서 사라진 경우에는 과거 ALERT 재생을 막고 최신 건으로 기준만 재설정합니다.
+        if (!passedLast) {
+          const latest = rows[rows.length - 1];
+          const key = donationAlertKey(latest);
+          lastDonationKey = key;
+          localStorage.setItem("overlay_last_alert_key", key);
+          return;
+        }
 
-  if (!newRows.length) return;
+        if (!newRows.length) return;
 
-  const groups = buildDonationAlertGroups(newRows);
+        const groups = buildDonationAlertGroups(newRows);
 
-  groups.forEach(group => {
-    const groupKey = donationAlertGroupKey(group);
-    const storageKey = "overlay_group_alert_done_" + groupKey;
+        groups.forEach(group => {
+          const groupKey = donationAlertGroupKey(group);
+          if (!groupKey) return;
 
-    if (localStorage.getItem(storageKey) === "1") {
-      return;
-    }
+          const storageKey = "overlay_group_alert_done_" + groupKey;
 
-    localStorage.setItem(storageKey, "1");
-    alertQueue.push({
-      html: makeDonationAlertHtml(group),
-      row: group
-    });
-  });
+          if (localStorage.getItem(storageKey) === "1") {
+            return;
+          }
 
-  const last = newRows[newRows.length - 1];
-  const lastKey = donationAlertKey(last);
-  lastDonationKey = lastKey;
-  localStorage.setItem("overlay_last_alert_key", lastKey);
+          localStorage.setItem(storageKey, "1");
+          alertQueue.push({
+            html: makeDonationAlertHtml(group),
+            row: group
+          });
+        });
 
-  playAlertQueue();
-}
+        const last = newRows[newRows.length - 1];
+        const lastKey = donationAlertKey(last);
+        lastDonationKey = lastKey;
+        localStorage.setItem("overlay_last_alert_key", lastKey);
+
+        playAlertQueue();
+      }
+
+
 
 
 

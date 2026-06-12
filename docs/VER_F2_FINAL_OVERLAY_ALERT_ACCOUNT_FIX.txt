@@ -1,0 +1,30 @@
+Ver_f2 FINAL overlay/account/alert fix
+
+수정 파일:
+- public/overlay.html
+
+수정 내용:
+1. 프리즘 계좌후원 0 표시 방지
+   - API_SUMMARY / API_SETTINGS 상수는 기존 정상 구조로 유지했습니다.
+   - fetchJson 내부에서 station/token을 자동으로 붙이는 기존 흐름을 유지합니다.
+
+2. 도네이터 묶음 ALERT 중복 재출력 방지
+   - 기존 1개 후원 id 기준 중복 방지 흐름을 유지했습니다.
+   - 묶음 ALERT는 alertGroupRows 안의 donation id 전체를 정렬해서 groupKey로 사용합니다.
+   - 같은 id 묶음은 localStorage 기준으로 1번만 출력됩니다.
+
+3. 묶음 ALERT 표시 보정
+   - 3명 이상 크리에이터도 자동 줄바꿈되도록 보정했습니다.
+   - 크리에이터명/금액 칩 글자 크기를 축소했습니다.
+   - 도네이터명 옆 총액은 원단위 표시 유지.
+   - 크리에이터별 금액은 만원 단위 숫자만 표시 유지.
+
+4. 계좌후원 VIP 반짝임 보정
+   - 배경 pseudo shimmer(::before/::after)를 완전히 끕니다.
+   - 이름/하트/금액 텍스트에만 투명 그라데이션 반짝임을 적용합니다.
+
+확인 포인트:
+- 프리즘에서 계좌후원 리스트가 0으로 고정되지 않는지
+- 같은 후원 ALERT가 반복 출력되지 않는지
+- 3명 분배 후원 ALERT가 3명 모두 보이는지
+- 계좌후원 반짝임이 배경이 아니라 텍스트에서만 보이는지
