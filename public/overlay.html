@@ -2820,46 +2820,128 @@ let missionCountdownLastSec = null;
         }).join("");
       }
 
+      function donationWon(row) {
+        const accountAmount = num(row?.accountAmount ?? row?.account_amount);
+        const toonieAmount = num(row?.toonieAmount ?? row?.toonie_amount);
+        return num(row?.totalAmount ?? row?.total_amount ?? accountAmount + toonieAmount);
+      }
+
+      function donationAccountWon(row) {
+        return num(row?.accountAmount ?? row?.account_amount);
+      }
+
+      function donationToonieWon(row) {
+        return num(row?.toonieAmount ?? row?.toonie_amount);
+      }
+
+      function donationCreatedTime(row) {
+        const raw = row?.createdAt || row?.created_at || 0;
+        const t = new Date(raw).getTime();
+        return Number.isFinite(t) ? t : 0;
+      }
+
+      function donationAlertKey(row) {
+        return (row?.id || "") + "_" + (row?.createdAt || row?.created_at || "");
+      }
+
+      function isSilentDonationRow(row) {
+        return row?.silentAlert === true
+          || String(row?.memo || '').includes('[무알림]')
+          || (Array.isArray(row?.checks) && row.checks.some(c => c && c.meta === true && c.silentAlert === true));
+      }
+
+      function formatCreatorManAmount(won) {
+        return displayManAmount(won) + "만";
+      }
+
+      function buildDonationAlertGroups(rows) {
+        const cleanRows = (rows || [])
+          .filter(row => !isSilentDonationRow(row))
+          .slice()
+          .sort((a, b) => donationCreatedTime(a) - donationCreatedTime(b));
+
+        const map = new Map();
+        const groups = [];
+
+        cleanRows.forEach(row => {
+          const donor = normalizeName(row.donor || "익명") || "익명";
+          // 같은 저장 묶음 안에서 동일 도네이터는 ALERT 1번으로 합칩니다.
+          // 크리에이터 여러 명에게 나눠 입력된 경우 행은 여러 개지만, 화면 알림은 도네이터 기준 1회만 표시합니다.
+          const key = donor;
+          let group = map.get(key);
+          if (!group) {
+            group = {
+              ...row,
+              donor,
+              alertGroupRows: [],
+              accountAmount: 0,
+              toonieAmount: 0,
+              totalAmount: 0,
+              createdAt: row.createdAt || row.created_at || "",
+              id: row.id || ""
+            };
+            map.set(key, group);
+            groups.push(group);
+          }
+          group.alertGroupRows.push(row);
+          group.accountAmount += donationAccountWon(row);
+          group.toonieAmount += donationToonieWon(row);
+          group.totalAmount += donationWon(row);
+          if (donationCreatedTime(row) >= donationCreatedTime(group)) {
+            group.createdAt = row.createdAt || row.created_at || group.createdAt;
+            group.id = row.id || group.id;
+            group.checks = Array.isArray(row.checks) ? row.checks : group.checks;
+            group.processType = row.processType || row.process_type || group.processType;
+            group.process_type = row.process_type || row.processType || group.process_type;
+            group.manualSoundFile = row.manualSoundFile || row.manual_sound_file || group.manualSoundFile;
+            group.manual_sound_file = row.manual_sound_file || row.manualSoundFile || group.manual_sound_file;
+          }
+        });
+
+        return groups;
+      }
+
       function makeDonationAlertHtml(row) {
-        const donor = escapeHtml(row.donor || "익명");
-        const creator = escapeHtml(row.creator || "익명");
+        const groupRows = Array.isArray(row.alertGroupRows) && row.alertGroupRows.length ? row.alertGroupRows : [row];
+        const isGrouped = groupRows.length > 1;
+        const donor = escapeHtml(row.donor || groupRows[0]?.donor || "익명");
 
         const accountAmount = num(row.accountAmount ?? row.account_amount);
         const toonieAmount = num(row.toonieAmount ?? row.toonie_amount);
         const totalAmount = num(row.totalAmount ?? row.total_amount ?? accountAmount + toonieAmount);
 
-       const baseSource =
-  accountAmount > 0 && toonieAmount > 0 ? "계좌/투네" :
-    accountAmount > 0 ? "계좌" :
-      toonieAmount > 0 ? "투네" :
-        (row.sourceType || row.source_type || "계좌");
+        const baseSource =
+          accountAmount > 0 && toonieAmount > 0 ? "계좌/투네" :
+            accountAmount > 0 ? "계좌" :
+              toonieAmount > 0 ? "투네" :
+                (row.sourceType || row.source_type || "계좌");
 
-let processLabel = String(row.processType || row.process_type || "").trim();
+        let processLabel = String(row.processType || row.process_type || "").trim();
 
-// 룰렛 제목이 없는 값은 후원으로 처리
-if (
-  !processLabel ||
-  processLabel === "룰렛" ||
-  processLabel === "룰렛+" ||
-  processLabel === "룰렛-" ||
-  processLabel === "roulette"
-) {
-  processLabel = "후원";
-}
+        // 룰렛 제목이 없는 값은 후원으로 처리
+        if (
+          !processLabel ||
+          processLabel === "룰렛" ||
+          processLabel === "룰렛+" ||
+          processLabel === "룰렛-" ||
+          processLabel === "roulette"
+        ) {
+          processLabel = "후원";
+        }
 
-// 룰렛+룰렛, 룰렛+룰렛+시그 같은 중복 정리
-processLabel = processLabel.replace(/^룰렛\+룰렛\+?/, "룰렛+");
-processLabel = processLabel.replace(/^룰렛\+룰렛$/, "룰렛");
+        // 룰렛+룰렛, 룰렛+룰렛+시그 같은 중복 정리
+        processLabel = processLabel.replace(/^룰렛\+룰렛\+?/, "룰렛+");
+        processLabel = processLabel.replace(/^룰렛\+룰렛$/, "룰렛");
 
-// 그래도 룰렛 제목이 없으면 후원 처리
-if (processLabel === "룰렛" || processLabel === "룰렛+" || processLabel === "룰렛-") {
-  processLabel = "후원";
-}
+        // 그래도 룰렛 제목이 없으면 후원 처리
+        if (processLabel === "룰렛" || processLabel === "룰렛+" || processLabel === "룰렛-") {
+          processLabel = "후원";
+        }
 
-// 표시용 변환: 룰렛+시그 → 룰렛-시그
-processLabel = processLabel.replace(/^룰렛\+/, "룰렛-");
+        // 표시용 변환: 룰렛+시그 → 룰렛-시그
+        processLabel = processLabel.replace(/^룰렛\+/, "룰렛-");
 
-const sourceLabel = escapeHtml(`(${baseSource})${processLabel}`);
+        const sourceLabel = escapeHtml(`(${baseSource})${processLabel}`);
 
         let optionText = "";
         const checks = Array.isArray(row.checks) ? row.checks : [];
@@ -2873,6 +2955,29 @@ const sourceLabel = escapeHtml(`(${baseSource})${processLabel}`);
           optionText = `<span class="${cls}">${name}${sign}${count}</span>`;
         }
 
+        if (isGrouped) {
+          const creatorLines = groupRows.map(r => {
+            const creator = escapeHtml(r.creator || "익명");
+            const amount = escapeHtml(formatCreatorManAmount(donationWon(r)));
+            return `<span class="alert-target">${creator} ${amount}</span>`;
+          }).join(`<span class="alert-source"> / </span>`);
+
+          return `
+    <div class="alert-up-line">
+      <span class="alert-donor blink-donor">${donor}</span>
+      <span class="alert-amount">${displayAmount(totalAmount)}원</span>
+    </div>
+    <div class="alert-creator-line">
+      ${creatorLines}
+    </div>
+    <div class="alert-line2">
+      <span class="alert-source">${sourceLabel}</span>
+      ${optionText}
+    </div>
+  `;
+        }
+
+        const creator = escapeHtml(groupRows[0]?.creator || row.creator || "익명");
         return `
     <div class="alert-up-line">
       <span class="alert-donor blink-donor">${donor}</span>
@@ -2880,7 +2985,7 @@ const sourceLabel = escapeHtml(`(${baseSource})${processLabel}`);
     </div>
     <div class="alert-line2">
       <span class="alert-source">${sourceLabel}</span>
-      <span class="alert-amount">${displayAmount(totalAmount)}</span>
+      <span class="alert-amount">${displayAmount(totalAmount)}원</span>
       ${optionText}
     </div>
   `;
@@ -3019,7 +3124,7 @@ const sourceLabel = escapeHtml(`(${baseSource})${processLabel}`);
         // 첫 조회에서는 항상 최신 건까지만 기준점으로 잡고 재생하지 않음
         if (!donationAlertBootReady) {
           const latest = rows[rows.length - 1];
-          const key = (latest.id || "") + "_" + (latest.createdAt || latest.created_at || "");
+          const key = donationAlertKey(latest);
           lastDonationKey = key;
           localStorage.setItem("overlay_last_alert_key", key);
           donationAlertBootReady = true;
@@ -3030,7 +3135,7 @@ const sourceLabel = escapeHtml(`(${baseSource})${processLabel}`);
         const newRows = [];
 
         for (const row of rows) {
-          const key = (row.id || "") + "_" + (row.createdAt || row.created_at || "");
+          const key = donationAlertKey(row);
           if (key === lastDonationKey) {
             passedLast = true;
             continue;
@@ -3040,7 +3145,7 @@ const sourceLabel = escapeHtml(`(${baseSource})${processLabel}`);
 
         if (!passedLast) {
           const latest = rows[rows.length - 1];
-          const key = (latest.id || "") + "_" + (latest.createdAt || latest.created_at || "");
+          const key = donationAlertKey(latest);
           lastDonationKey = key;
           localStorage.setItem("overlay_last_alert_key", key);
           return;
@@ -3049,15 +3154,15 @@ const sourceLabel = escapeHtml(`(${baseSource})${processLabel}`);
         if (!newRows.length) return;
 
         const last = newRows[newRows.length - 1];
-        const lastKey = (last.id || "") + "_" + (last.createdAt || last.created_at || "");
+        const lastKey = donationAlertKey(last);
         lastDonationKey = lastKey;
         localStorage.setItem("overlay_last_alert_key", lastKey);
 
-        newRows
-          .filter(row => !(row.silentAlert === true || String(row.memo || '').includes('[무알림]') || (Array.isArray(row.checks) && row.checks.some(c => c && c.meta === true && c.silentAlert === true))))
-          .forEach(row => alertQueue.push({ html: makeDonationAlertHtml(row), row }));
+        buildDonationAlertGroups(newRows)
+          .forEach(group => alertQueue.push({ html: makeDonationAlertHtml(group), row: group }));
         playAlertQueue();
       }
+
 
 
 
