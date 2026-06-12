@@ -1,0 +1,16 @@
+Ver_f2 FINAL2 Prism Account / Creator Alignment Fix
+
+수정 범위:
+- public/overlay.html
+
+수정 내용:
+1. 프리즘에서 계좌후원/프리셋 데이터가 0으로 보이는 문제 방지를 위해 API_SUMMARY/API_SETTINGS는 기존 정상 구조(/api/summary, /api/settings)로 유지.
+2. fetchJson에서 station/token을 한 번만 자동으로 붙이고, API 캐시 방지를 위해 no-cache 파라미터를 추가.
+3. 크리에이터박스 이름 정렬을 grid 40% / 60% 구조로 재적용.
+   - 이름칸 40%, 옵션/후원 표시칸 60%
+   - 이름과 뒤 내용 모두 각 칸 중앙 정렬.
+4. 계좌후원 VIP 반짝임은 배경 반짝임을 완전히 끄고 텍스트(이름/하트/금액)만 투명 그라데이션 반짝임으로 유지.
+
+체크:
+- Prism 브라우저 소스 URL은 overlay.html?station=방송국코드&token=토큰 형식 유지.
+- 적용 후 Prism 브라우저 소스 캐시 새로고침 또는 URL 끝에 &v=final2 추가 권장.

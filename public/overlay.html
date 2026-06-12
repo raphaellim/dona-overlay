@@ -602,10 +602,12 @@
     }
 
     .creator-main {
-      display: flex;
+      display: grid !important;
+      grid-template-columns: 40% 60% !important;
       align-items: center !important;
-      justify-content: center;
-      gap: 5px;
+      justify-content: stretch !important;
+      column-gap: 0 !important;
+      gap: 0 !important;
       width: 100%;
       min-height: 28px;
       font-weight: 900;
@@ -618,14 +620,15 @@
     }
 
     .creator-name {
-      flex: 0 0 78px;
-      width: 78px;
+      width: 100% !important;
+      min-width: 0 !important;
       color: var(--white);
       font-size: 25px;
       line-height: 1 !important;
       white-space: nowrap;
       overflow: hidden;
-      text-align: center;
+      text-overflow: ellipsis;
+      text-align: center !important;
       text-shadow: none !important;
       filter: none !important
     }
@@ -660,21 +663,17 @@
     }
 
     .creator-item.options-only .creator-main {
-      justify-content: center !important
+      display: grid !important;
+      grid-template-columns: 40% 60% !important;
+      justify-content: stretch !important;
+      gap: 0 !important;
+      min-width: 0 !important;
     }
 
     .creator-item.options-only .creator-name {
-      flex: 0 1 auto !important;
-      width: auto !important;
+      width: 100% !important;
       max-width: 100% !important;
       text-align: center !important
-    }
-
-    .creator-item.options-only .creator-main {
-      flex-wrap: nowrap !important;
-      justify-content: center !important;
-      gap: 8px !important;
-      min-width: 0 !important;
     }
 
     .creator-inline-options {
@@ -688,6 +687,8 @@
       white-space: nowrap !important;
       line-height: 1 !important;
       font-size: calc(var(--style-creator-content-size) * .92) !important;
+      justify-self: center !important;
+      text-align: center !important;
       font-weight: 900 !important;
     }
 
@@ -1937,6 +1938,14 @@
       100% { background-position: 260% 50%; }
     }
 
+
+    /* ===== Ver_f2 FINAL2: 프리즘/OBS 계좌후원 VIP 배경 반짝임 완전 OFF ===== */
+    .roller-item.vip-account,
+    .roller-item.vip-account:hover,
+    .roller-item.vip-account.active {
+      background: transparent !important;
+      box-shadow: none !important;
+    }
 
     /* ===== Ver_f2 FINAL: 계좌후원 VIP 배경 반짝임 OFF / 텍스트만 반짝임 ===== */
     .roller-item.vip-account::before,
@@ -3454,6 +3463,8 @@ let missionCountdownLastSec = null;
           const sep = finalUrl.includes("?") ? "&" : "?";
           finalUrl = finalUrl + sep + "token=" + encodeURIComponent(ACCESS_TOKEN);
         }
+        const sepNoCache = finalUrl.includes("?") ? "&" : "?";
+        finalUrl = finalUrl + sepNoCache + "_=" + Date.now();
         const fetchOptions = Object.assign({ cache: "no-store" }, options || {});
         if (fetchOptions.method && fetchOptions.method !== "GET") {
           fetchOptions.headers = Object.assign({ "Content-Type": "application/json" }, fetchOptions.headers || {});
