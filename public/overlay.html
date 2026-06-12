@@ -2071,13 +2071,18 @@
 let missionVideoCacheSrc = "";
 let missionCountdownLastSec = null;
     (() => {
-      const API_SUMMARY = "/api/summary";
-      const API_SETTINGS = "/api/settings";
       const PARAMS = new URLSearchParams(location.search);
-      const ACCESS_TOKEN = PARAMS.get("token") || "";
-      const STATION_SLUG = PARAMS.get("station") || "default";
-      const IS_MONITOR = PARAMS.get("monitor") === "1";
-      const DEBUG_MODE = PARAMS.get("debug") === "1";
+const ACCESS_TOKEN = PARAMS.get("token") || "";
+const STATION_SLUG = PARAMS.get("station") || "default";
+const IS_MONITOR = PARAMS.get("monitor") === "1";
+const DEBUG_MODE = PARAMS.get("debug") === "1";
+
+const API_QUERY =
+  "?station=" + encodeURIComponent(STATION_SLUG) +
+  "&token=" + encodeURIComponent(ACCESS_TOKEN);
+
+const API_SUMMARY = "/api/summary" + API_QUERY;
+const API_SETTINGS = "/api/settings" + API_QUERY;
 
       function debugLog(...args) {
         if (!DEBUG_MODE) return;
