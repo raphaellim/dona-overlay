@@ -601,38 +601,35 @@
       text-align: center
     }
 
-  .creator-main {
-  display: grid !important;
-  grid-template-columns: 40% 60% !important;
-  align-items: center !important;
-  column-gap: 0 !important;
-  width: 100%;
-  min-height: 28px;
-  font-weight: 900;
-  letter-spacing: -.07em;
-  line-height: 1 !important;
-  padding-top: 2px !important;
-  text-align: center;
-  text-shadow: none !important;
-  filter: none !important;
-}
+    .creator-main {
+      display: flex;
+      align-items: center !important;
+      justify-content: center;
+      gap: 5px;
+      width: 100%;
+      min-height: 28px;
+      font-weight: 900;
+      letter-spacing: -.07em;
+      line-height: 1 !important;
+      padding-top: 2px !important;
+      text-align: center;
+      text-shadow: none !important;
+      filter: none !important
+    }
 
-.creator-name {
-  width: 100% !important;
-  color: var(--white);
-  font-size: 25px;
-  line-height: 1 !important;
-  white-space: nowrap;
-  overflow: hidden;
-  text-align: center !important;
-  text-shadow: none !important;
-  filter: none !important;
-}
+    .creator-name {
+      flex: 0 0 78px;
+      width: 78px;
+      color: var(--white);
+      font-size: 25px;
+      line-height: 1 !important;
+      white-space: nowrap;
+      overflow: hidden;
+      text-align: center;
+      text-shadow: none !important;
+      filter: none !important
+    }
 
-.creator-inline-options {
-  justify-self: center !important;
-  text-align: center !important;
-}
     .donation-amount {
       flex: 0 0 auto;
       color: #ffc2d6;
@@ -749,7 +746,7 @@
       bottom: auto !important;
       width: 100% !important;
       max-width: 100% !important;
-      min-height: 175px !important;
+      min-height: 150px !important;
       margin: 0 !important;
       padding: 13px 12px 14px !important;
       border-radius: 18px !important;
@@ -832,21 +829,20 @@
       letter-spacing: .02em
     }
 
-   .alert-creator-line {
-  margin-top: 4px;
-  width: 100%;
-  text-align: center;
-  font-size: 23px !important;
-  line-height: 1.25 !important;
-  font-weight: 900 !important;
-  color: #ffe9a8 !important;
-  white-space: normal !important;
-  overflow: visible !important;
-  text-overflow: unset !important;
-  word-break: keep-all !important;
-  overflow-wrap: anywhere !important;
-  text-shadow: none !important;
-}
+    .alert-creator-line {
+      margin-top: 4px;
+      width: 100%;
+      text-align: center;
+      font-size: 23px !important;
+      line-height: 1.15 !important;
+      font-weight: 900 !important;
+      color: #ffe9a8 !important;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      text-shadow: none !important
+    }
+
     .alert-line2 {
       display: flex !important;
       align-items: center !important;
@@ -1198,14 +1194,13 @@
     }
 
     .alert-target {
-  display: inline-block;
-  font-size: 24px !important;
-  line-height: 1.15 !important;
-  font-weight: 1000 !important;
-  color: #ffe9a8 !important;
-  white-space: nowrap !important;
-  margin: 2px 3px !important;
-}
+      display: inline-block;
+      font-size: 28px !important;
+      line-height: 1.05 !important;
+      font-weight: 1000 !important;
+      color: #ffe9a8 !important;
+      white-space: nowrap;
+    }
 
     .alert-up-line {
       font-size: 0 !important;
@@ -1839,6 +1834,109 @@
   font-weight: 1000 !important;
 }
     
+
+    /* ===== Ver_f2 ALERT 묶음 표시 보정 ===== */
+    :root {
+      --alert-height: 220px;
+    }
+
+    #overlayAlertRoot #optionAlert.option-alert {
+      min-height: 190px !important;
+      padding: 12px 10px 13px !important;
+      overflow: visible !important;
+    }
+
+    .alert-donor-total-line {
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      gap: 8px !important;
+      width: 100% !important;
+      white-space: nowrap !important;
+      flex-wrap: nowrap !important;
+    }
+
+    .alert-donor-total-line .alert-donor {
+      font-size: 28px !important;
+      max-width: 58% !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+      white-space: nowrap !important;
+    }
+
+    .alert-total-amount {
+      font-size: 24px !important;
+      line-height: 1.05 !important;
+      white-space: nowrap !important;
+      color: #ffe066 !important;
+      font-weight: 1000 !important;
+    }
+
+    .alert-creator-line.alert-split-line {
+      margin-top: 7px !important;
+      width: 100% !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      flex-wrap: wrap !important;
+      gap: 5px 8px !important;
+      white-space: normal !important;
+      overflow: visible !important;
+      text-overflow: unset !important;
+      word-break: keep-all !important;
+      overflow-wrap: anywhere !important;
+      line-height: 1.15 !important;
+      max-height: none !important;
+    }
+
+    .alert-target.alert-split-chip {
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      font-size: 20px !important;
+      line-height: 1.1 !important;
+      font-weight: 950 !important;
+      color: #ffe9a8 !important;
+      white-space: nowrap !important;
+      padding: 0 2px !important;
+      margin: 0 !important;
+    }
+
+    .alert-line2 {
+      margin-top: 7px !important;
+      gap: 6px !important;
+    }
+
+    .alert-source {
+      font-size: .72em !important;
+      padding: 3px 7px !important;
+    }
+
+    /* 계좌후원 VIP: 박스 배경보다 텍스트 자체만 반짝이도록 보정 */
+    .roller-item.vip-account::before,
+    .roller-item.vip-account::after {
+      opacity: .18 !important;
+    }
+
+    .roller-item.vip-account .account-donor,
+    .roller-item.vip-account .account-heart,
+    .roller-item.vip-account .account-amount {
+      background: linear-gradient(90deg, #ffffff 0%, #ffe066 18%, #44f7ff 36%, #ff4fa3 55%, #ffffff 74%, #ffe066 100%) !important;
+      background-size: 260% 100% !important;
+      -webkit-background-clip: text !important;
+      background-clip: text !important;
+      color: transparent !important;
+      -webkit-text-fill-color: transparent !important;
+      animation: vipAccountTextShine .95s linear infinite !important;
+      text-shadow: none !important;
+      filter: none !important;
+    }
+
+    @keyframes vipAccountTextShine {
+      0% { background-position: 0% 50%; }
+      100% { background-position: 260% 50%; }
+    }
+
 </style>
   <link rel="stylesheet" href="/assets/css/roulette-overlay.css">
 </head>
@@ -2856,7 +2954,9 @@ let missionCountdownLastSec = null;
       }
 
       function formatCreatorManAmount(won) {
-        return displayManAmount(won) + "만";
+        // ALERT 크리에이터별 금액은 만원 단위 숫자만 표시합니다.
+        // 예: 30000 -> 3, 33000 -> 3.3, 100000 -> 10
+        return displayManAmount(won);
       }
 
       function buildDonationAlertGroups(rows) {
@@ -2964,15 +3064,15 @@ let missionCountdownLastSec = null;
           const creatorLines = groupRows.map(r => {
             const creator = escapeHtml(r.creator || "익명");
             const amount = escapeHtml(formatCreatorManAmount(donationWon(r)));
-            return `<span class="alert-target">${creator} ${amount}</span>`;
-          }).join(`<span class="alert-source"> / </span>`);
+            return `<span class="alert-target alert-split-chip">${creator} ${amount}</span>`;
+          }).join("");
 
           return `
-    <div class="alert-up-line">
+    <div class="alert-up-line alert-donor-total-line">
       <span class="alert-donor blink-donor">${donor}</span>
-      <span class="alert-amount">${displayAmount(totalAmount)}원</span>
+      <span class="alert-amount alert-total-amount">${displayAmount(totalAmount)}원</span>
     </div>
-    <div class="alert-creator-line">
+    <div class="alert-creator-line alert-split-line">
       ${creatorLines}
     </div>
     <div class="alert-line2">
@@ -2983,14 +3083,17 @@ let missionCountdownLastSec = null;
         }
 
         const creator = escapeHtml(groupRows[0]?.creator || row.creator || "익명");
+        const creatorAmount = escapeHtml(formatCreatorManAmount(donationWon(groupRows[0] || row)));
         return `
-    <div class="alert-up-line">
+    <div class="alert-up-line alert-donor-total-line">
       <span class="alert-donor blink-donor">${donor}</span>
-      <span class="alert-target">→ ${creator}</span>
+      <span class="alert-amount alert-total-amount">${displayAmount(totalAmount)}원</span>
+    </div>
+    <div class="alert-creator-line alert-split-line">
+      <span class="alert-target alert-split-chip">${creator} ${creatorAmount}</span>
     </div>
     <div class="alert-line2">
       <span class="alert-source">${sourceLabel}</span>
-      <span class="alert-amount">${displayAmount(totalAmount)}원</span>
       ${optionText}
     </div>
   `;
@@ -3114,8 +3217,9 @@ let missionCountdownLastSec = null;
           audio.addEventListener("ended", onEnded);
           audio.addEventListener("error", onError);
 
-          // 긴 음악은 최대 1분까지 Alert 유지
-          fallbackTimer = setTimeout(closeAlert, 60000);
+          // 후원 ALERT는 사운드가 길어도 화면을 오래 잡아먹지 않게 고정 시간으로 종료합니다.
+          // 수동 사운드 이벤트만 기존처럼 최대 1분 유지합니다.
+          fallbackTimer = setTimeout(closeAlert, eventId ? 60000 : 6200);
         } else {
           fallbackTimer = setTimeout(closeAlert, (row && num(row.accountAmount ?? row.account_amount) >= (Number(getComputedStyle(document.documentElement).getPropertyValue('--style-vip-threshold')) || 500000)) ? 4600 : 3400);
         }
