@@ -145,6 +145,89 @@
     overflow: visible !important;
   }
 }
+  /* ===== 노래방 관리 실제 구조 강제 FIX ===== */
+#karaokePanel .grid2,
+#karaokePanel .grid3,
+#karaokeTab .grid2,
+#karaokeTab .grid3,
+#karaoke .grid2,
+#karaoke .grid3,
+.panel#karaokePanel .grid2,
+.panel#karaokePanel .grid3 {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 10px !important;
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+/* 노래방 안의 2칸/3칸 입력줄 전부 세로로 */
+#karaokePanel .grid2 > *,
+#karaokePanel .grid3 > *,
+#karaokeTab .grid2 > *,
+#karaokeTab .grid3 > *,
+#karaoke .grid2 > *,
+#karaoke .grid3 > *,
+.panel#karaokePanel .grid2 > *,
+.panel#karaokePanel .grid3 > * {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  width: 100% !important;
+}
+
+/* 노래방 카드 내부 스크롤/잘림 방지 */
+#karaokePanel .card,
+#karaokeTab .card,
+#karaoke .card,
+.panel#karaokePanel .card {
+  overflow: visible !important;
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+/* 노래방 입력/버튼/셀렉트 강제 100% */
+#karaokePanel input,
+#karaokePanel select,
+#karaokePanel button,
+#karaokePanel textarea,
+#karaokeTab input,
+#karaokeTab select,
+#karaokeTab button,
+#karaokeTab textarea,
+#karaoke input,
+#karaoke select,
+#karaoke button,
+#karaoke textarea,
+.panel#karaokePanel input,
+.panel#karaokePanel select,
+.panel#karaokePanel button,
+.panel#karaokePanel textarea {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+}
+
+/* 리스트업 버튼이 오른쪽으로 튀어나가는 것 방지 */
+#karaokePanel .green,
+#karaokeTab .green,
+#karaoke .green,
+.panel#karaokePanel .green {
+  justify-self: stretch !important;
+}
+
+/* 모바일/좁은 화면에서는 노래방 전체 세로 고정 */
+@media (max-width: 1100px) {
+  #karaokePanel .grid2,
+  #karaokePanel .grid3,
+  #karaokeTab .grid2,
+  #karaokeTab .grid3,
+  #karaoke .grid2,
+  #karaoke .grid3,
+  .panel#karaokePanel .grid2,
+  .panel#karaokePanel .grid3 {
+    grid-template-columns: 1fr !important;
+  }
+}
 </style>
 <style>.roulette-quick-link{position:fixed;right:14px;bottom:14px;z-index:99999;padding:10px 14px;border-radius:999px;background:linear-gradient(90deg,#ff4fa3,#5ee7ff);color:#fff!important;font-weight:1000;text-decoration:none;box-shadow:0 0 18px rgba(255,79,163,.35)}</style>
 </head>
