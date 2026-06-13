@@ -170,7 +170,145 @@ textarea{resize:vertical;line-height:1.45}
 @media(max-width:900px){
   .funding-rule{grid-template-columns:1fr}
 }
+/* ===== 노래방 관리 반응형 깨짐 방지 FIX ===== */
+.karaoke-grid,
+.karaoke-manager-grid,
+.karaoke-control-grid,
+.karaoke-wrap,
+.karaoke-layout,
+.karaoke-main,
+.karaoke-manager,
+#karaokeManager,
+#karaokeSection,
+#karaokeControl {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
 
+.karaoke-grid,
+.karaoke-manager-grid,
+.karaoke-control-grid,
+.karaoke-wrap,
+.karaoke-layout {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+  gap: 12px !important;
+}
+
+.karaoke-grid > *,
+.karaoke-manager-grid > *,
+.karaoke-control-grid > *,
+.karaoke-wrap > *,
+.karaoke-layout > * {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.karaoke-panel,
+.karaoke-card,
+.karaoke-section,
+.karaoke-box,
+.karaoke-form,
+.karaoke-list,
+.karaoke-users,
+.karaoke-songs,
+.karaoke-history,
+.card {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+}
+
+.karaoke-panel input,
+.karaoke-panel select,
+.karaoke-panel button,
+.karaoke-card input,
+.karaoke-card select,
+.karaoke-card button,
+.karaoke-section input,
+.karaoke-section select,
+.karaoke-section button,
+.karaoke-form input,
+.karaoke-form select,
+.karaoke-form button {
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+/* 선곡 입력 줄 잘림 방지 */
+.karaoke-song-form,
+.song-add-row,
+.song-form-row,
+.karaoke-add-song-row,
+.karaoke-input-row {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 110px 90px !important;
+  gap: 8px !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.karaoke-song-form > *,
+.song-add-row > *,
+.song-form-row > *,
+.karaoke-add-song-row > *,
+.karaoke-input-row > * {
+  min-width: 0 !important;
+  max-width: 100% !important;
+}
+
+/* 공지 정렬 버튼이 노래방 위를 덮지 않게 */
+.notice-align-tools,
+.notice-line-align-tools,
+.notice-tools,
+.notice-controls {
+  position: static !important;
+  z-index: auto !important;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 6px !important;
+  margin: 8px 0 12px !important;
+  max-width: 100% !important;
+}
+
+/* 좁은 화면에서는 무조건 1열 */
+@media (max-width: 900px) {
+  .karaoke-grid,
+  .karaoke-manager-grid,
+  .karaoke-control-grid,
+  .karaoke-wrap,
+  .karaoke-layout {
+    grid-template-columns: 1fr !important;
+  }
+
+  .karaoke-song-form,
+  .song-add-row,
+  .song-form-row,
+  .karaoke-add-song-row,
+  .karaoke-input-row {
+    grid-template-columns: 1fr !important;
+  }
+
+  .karaoke-panel,
+  .karaoke-card,
+  .karaoke-section,
+  .karaoke-box,
+  .karaoke-form,
+  .karaoke-list,
+  .karaoke-users,
+  .karaoke-songs,
+  .karaoke-history,
+  .card {
+    overflow: visible !important;
+  }
+}
 </style>
 <style>.roulette-quick-link{position:fixed;right:14%;bottom:1.4%;z-index:99999;padding:10px 14px;border-radius:999px;background:linear-gradient(90deg,#ff4fa3,#5ee7ff);color:#fff!important;font-weight:1000;text-decoration:none;box-shadow:0 0 18px rgba(255,79,163,.35)}</style>
 <link rel="stylesheet" href="/ux_compact.css">
