@@ -6,6 +6,145 @@
 <title>모바일 방송 설정</title>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#070b12;color:#e5e7eb;font-family:Arial,'Noto Sans KR',sans-serif;padding-bottom:78px}.top{position:sticky;top:0;z-index:20;background:#07111f;border-bottom:1px solid #253247;padding:12px}.title{font-size:18px;font-weight:1000}.sub{font-size:12px;color:#94a3b8;margin-top:4px}.nav,.tabs{display:flex;gap:8px;overflow:auto}.nav{margin-top:9px}.nav a{white-space:nowrap;color:#dbeafe;text-decoration:none;border:1px solid #334155;border-radius:999px;padding:8px 11px;background:#111827;font-weight:900;font-size:13px}.tabs{position:sticky;top:74px;z-index:15;background:#070b12;border-bottom:1px solid #253247;padding:9px 12px}.tab{white-space:nowrap;border:1px solid #334155;border-radius:999px;background:#0f172a;color:#fff;padding:9px 12px;font-weight:1000}.tab.active{background:#2563eb}.wrap{padding:12px}.panel{display:none}.panel.active{display:block}.card{background:#0b1220;border:1px solid #253247;border-radius:18px;padding:14px;margin-bottom:12px}h2{font-size:17px;margin:0 0 12px}.row{margin-bottom:11px}label{display:block;margin-bottom:6px;font-size:13px;color:#cbd5e1;font-weight:900}.input,input,select,textarea{width:100%;min-height:48px;background:#070b12;color:#fff;border:1px solid #334155;border-radius:13px;padding:11px 12px;font-size:16px;font-weight:800}textarea{min-height:100px}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}.btn{width:100%;min-height:46px;border:0;border-radius:13px;background:#334155;color:#fff;font-weight:1000;font-size:15px}.green{background:#16a34a}.blue{background:#2563eb}.red{background:#dc2626}.pink{background:#ec4899}.mini{min-height:38px;font-size:13px}.toggle{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#101827;border:1px solid #334155;border-radius:15px;padding:12px;margin-bottom:8px;font-weight:1000}.toggle input{width:22px;height:22px;min-height:22px;accent-color:#38bdf8}.item{background:#101827;border:1px solid #334155;border-radius:15px;padding:11px;margin-bottom:9px;display:grid;gap:8px}.creator-item{grid-template-columns:1fr;gap:8px}.creator-actions,.preset-actions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}.colors{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}.colors input{padding:3px;min-height:44px}.notice-aligns{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}.notice-aligns select{min-height:44px;padding:6px;font-size:12px}.muted{font-size:12px;color:#94a3b8}.bottom{position:fixed;left:0;right:0;bottom:0;background:#07111f;border-top:1px solid #253247;padding:10px 12px calc(10px + env(safe-area-inset-bottom))}.list-row{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}.pill{font-size:12px;border:1px solid #334155;border-radius:999px;padding:3px 7px;color:#cbd5e1}.section-title{display:flex;align-items:center;justify-content:space-between;gap:8px}.manual-list{max-height:360px;overflow:auto}.role-hide{display:none!important}.manager-note{display:none;margin:8px 0;padding:10px;border:1px solid #334155;border-radius:12px;background:#101827;color:#fde68a;font-size:12px;font-weight:900}.manager-mode .manager-note{display:block}@media(max-width:380px){.grid2,.grid3,.creator-actions{grid-template-columns:1fr}.tabs{top:86px}}
+/* ===== 노래방 관리 반응형 깨짐 방지 FIX ===== */
+.karaoke-grid,
+.karaoke-manager-grid,
+.karaoke-control-grid,
+.karaoke-wrap,
+.karaoke-layout,
+.karaoke-main,
+.karaoke-manager,
+#karaokeManager,
+#karaokeSection,
+#karaokeControl {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.karaoke-grid,
+.karaoke-manager-grid,
+.karaoke-control-grid,
+.karaoke-wrap,
+.karaoke-layout {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+  gap: 12px !important;
+}
+
+.karaoke-grid > *,
+.karaoke-manager-grid > *,
+.karaoke-control-grid > *,
+.karaoke-wrap > *,
+.karaoke-layout > * {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.karaoke-panel,
+.karaoke-card,
+.karaoke-section,
+.karaoke-box,
+.karaoke-form,
+.karaoke-list,
+.karaoke-users,
+.karaoke-songs,
+.karaoke-history,
+.card {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+}
+
+.karaoke-panel input,
+.karaoke-panel select,
+.karaoke-panel button,
+.karaoke-card input,
+.karaoke-card select,
+.karaoke-card button,
+.karaoke-section input,
+.karaoke-section select,
+.karaoke-section button,
+.karaoke-form input,
+.karaoke-form select,
+.karaoke-form button {
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+/* 선곡 입력 줄 잘림 방지 */
+.karaoke-song-form,
+.song-add-row,
+.song-form-row,
+.karaoke-add-song-row,
+.karaoke-input-row {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 110px 90px !important;
+  gap: 8px !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.karaoke-song-form > *,
+.song-add-row > *,
+.song-form-row > *,
+.karaoke-add-song-row > *,
+.karaoke-input-row > * {
+  min-width: 0 !important;
+  max-width: 100% !important;
+}
+
+/* 공지 정렬 버튼이 노래방 위를 덮지 않게 */
+.notice-align-tools,
+.notice-line-align-tools,
+.notice-tools,
+.notice-controls {
+  position: static !important;
+  z-index: auto !important;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 6px !important;
+  margin: 8px 0 12px !important;
+  max-width: 100% !important;
+}
+
+/* 좁은 화면에서는 무조건 1열 */
+@media (max-width: 900px) {
+  .karaoke-grid,
+  .karaoke-manager-grid,
+  .karaoke-control-grid,
+  .karaoke-wrap,
+  .karaoke-layout {
+    grid-template-columns: 1fr !important;
+  }
+
+  .karaoke-song-form,
+  .song-add-row,
+  .song-form-row,
+  .karaoke-add-song-row,
+  .karaoke-input-row {
+    grid-template-columns: 1fr !important;
+  }
+
+  .karaoke-panel,
+  .karaoke-card,
+  .karaoke-section,
+  .karaoke-box,
+  .karaoke-form,
+  .karaoke-list,
+  .karaoke-users,
+  .karaoke-songs,
+  .karaoke-history,
+  .card {
+    overflow: visible !important;
+  }
+}
 </style>
 <style>.roulette-quick-link{position:fixed;right:14px;bottom:14px;z-index:99999;padding:10px 14px;border-radius:999px;background:linear-gradient(90deg,#ff4fa3,#5ee7ff);color:#fff!important;font-weight:1000;text-decoration:none;box-shadow:0 0 18px rgba(255,79,163,.35)}</style>
 </head>
