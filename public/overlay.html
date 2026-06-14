@@ -2936,7 +2936,12 @@ let missionCountdownLastSec = null;
 
   el.classList.remove("hidden");
 
-  const balance = Number(settings?.allowanceData?.balance || 0);
+  const balance = Number(
+  settings?.allowanceData?.balance ??
+  settings?.allowance?.balance ??
+  settings?.stationSettings?._shared?.allowanceData?.balance ??
+  0
+);
 
   let colorClass = "";
   if (balance > 0) colorClass = "allowance-positive";
