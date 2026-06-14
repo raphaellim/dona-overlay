@@ -1313,7 +1313,7 @@ async function readEffectiveSettings(stationSlug, broadcastId) {
     noticeColors: stationShared.noticeColors ?? global.noticeColors,
     noticeAligns: stationShared.noticeAligns ?? global.noticeAligns,
     fundingData: stationShared.fundingData ?? global.fundingData,
-    allowanceData: stationShared.allowanceData ?? global.allowanceData,
+    allowanceData: scoped.allowanceData ?? stationShared.allowanceData ?? global.allowanceData,
     stationStyle: stationShared.stationStyle ?? global.stationStyle,
 
     stationSettings: global.stationSettings || {}
