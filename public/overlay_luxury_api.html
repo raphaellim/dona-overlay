@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>후원현황 Overlay Luxury</title>
+  <title>후원현황 Overlay</title>
   <!-- overlay-debug-enabled-v2 -->
   <link rel="icon" href="data:,">
   <style>
@@ -2047,393 +2047,429 @@
     .notice-line.notice-align-right { text-align: right !important; }
 
 
-/* ===== LUXURY COMPACT OVERLAY THEME v1 - API 기능 유지 / UI만 교체 ===== */
+/* =========================================================
+   LUXURY MOBILE VERTICAL COMPACT v2
+   - 세로방송 우측상단용
+   - 박스 폭 최대 활용
+   - 여백 축소 / 텍스트 확대 / 가독성 강화
+   - 기존 API/JS 기능 유지
+========================================================= */
 :root{
-  --lux-panel-bg-top:rgba(5,7,14,.88);
-  --lux-panel-bg-bottom:rgba(2,3,8,.84);
-  --lux-line:rgba(255,214,107,.72);
-  --lux-line-soft:rgba(255,214,107,.24);
-  --lux-gold:#ffd66b;
-  --lux-gold2:#ffb93f;
-  --lux-pink:#ff5db8;
-  --lux-blue:#64d9ff;
-  --lux-white:#ffffff;
-  --lux-shadow:rgba(0,0,0,.92);
-  --alert-height:96px;
+  --overlay-w: 330px;
+  --top: 48px;
+  --right: 24px;
+
+  --lux-bg-top: rgba(4,6,12,.92);
+  --lux-bg-bottom: rgba(2,3,8,.88);
+  --lux-line: rgba(255,214,107,.78);
+  --lux-line-soft: rgba(255,214,107,.34);
+  --lux-gold: #ffd66b;
+  --lux-pink: #ff62b7;
+  --lux-blue: #66dcff;
+  --lux-text-shadow:
+    0 2px 3px rgba(0,0,0,.95),
+    0 0 7px rgba(0,0,0,.95);
 }
 
-/* 프리즘 우측상단용: 박스는 작게, 배경은 진하게 */
+/* 전체 스택: 세로 방송에서 우측 잘림 방지 */
 .overlay-stack{
-  width:var(--overlay-w) !important;
-  gap:6px !important;
-  filter:drop-shadow(0 6px 16px rgba(0,0,0,.78)) !important;
+  width: var(--overlay-w) !important;
+  max-width: calc(100vw - 46px) !important;
+  top: var(--top) !important;
+  right: max(var(--right), 24px) !important;
+  gap: 5px !important;
 }
 
-/* 메인 통합 패널 */
+/* 통합 패널: 고급감은 살리되 내부 공간 최대화 */
 .overlay-panel{
-  padding:8px 9px !important;
-  border:1px solid var(--lux-line) !important;
-  border-radius:20px !important;
+  padding: 6px 7px !important;
+  border: 1.5px solid var(--lux-line) !important;
+  border-radius: 18px !important;
   background:
-    linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.015)),
-    linear-gradient(180deg,var(--lux-panel-bg-top),var(--lux-panel-bg-bottom)) !important;
+    linear-gradient(180deg, rgba(255,255,255,.055), rgba(255,255,255,.012)),
+    linear-gradient(180deg, var(--lux-bg-top), var(--lux-bg-bottom)) !important;
   box-shadow:
-    0 10px 26px rgba(0,0,0,.72),
-    0 0 18px rgba(255,214,107,.20),
-    inset 0 0 18px rgba(255,255,255,.045) !important;
-  backdrop-filter:blur(10px) !important;
-  -webkit-backdrop-filter:blur(10px) !important;
-  overflow:visible !important;
-  position:relative !important;
-}
-.overlay-panel::before{
-  content:"";
-  position:absolute;
-  inset:0;
-  pointer-events:none;
-  border-radius:20px;
-  background:linear-gradient(120deg,transparent 0%,rgba(255,255,255,.12) 42%,transparent 66%);
-  opacity:.18;
+    0 8px 24px rgba(0,0,0,.78),
+    0 0 15px rgba(255,214,107,.22),
+    inset 0 0 14px rgba(255,255,255,.035) !important;
+  backdrop-filter: blur(9px) !important;
+  -webkit-backdrop-filter: blur(9px) !important;
 }
 
-/* 내부 섹션 */
-.overlay-panel>.overlay-box{
-  padding-left:4px !important;
-  padding-right:4px !important;
-  color:#fff !important;
-  text-shadow:
-    0 2px 3px var(--lux-shadow),
-    0 0 7px rgba(0,0,0,.9) !important;
-}
-.overlay-panel>#broadcastTimerBox:not(.hidden)+#accountBox,
-.overlay-panel>#fundingBox:not(.hidden),
-.overlay-panel>#noticeBox:not(.hidden),
-.overlay-panel>#karaokeBox:not(.hidden),
-.overlay-panel>#creatorBox:not(.hidden){
-  border-top:1px solid rgba(255,214,107,.30) !important;
+/* 내부 섹션: 여백 최소화 */
+.overlay-panel > .overlay-box{
+  padding-left: 2px !important;
+  padding-right: 2px !important;
 }
 
-/* 상단 미디어 */
-.overlay-stack>.top-slide-box,
-.top-slide-img,
-.top-slide-video{
-  border-radius:18px !important;
-}
-.overlay-stack>.top-slide-box{
-  box-shadow:
-    0 8px 20px rgba(0,0,0,.54),
-    0 0 12px rgba(255,214,107,.14) !important;
+.account-box{ padding: 4px 2px 5px !important; }
+.notice-box{ padding: 5px 2px 6px !important; }
+.funding-box{ padding: 5px 2px !important; }
+.karaoke-box{ padding: 6px 2px !important; }
+.creator-box{ padding: 5px 1px 6px !important; }
+
+.overlay-panel > #fundingBox:not(.hidden),
+.overlay-panel > #noticeBox:not(.hidden),
+.overlay-panel > #karaokeBox:not(.hidden),
+.overlay-panel > #creatorBox:not(.hidden){
+  border-top: 1px solid rgba(255,214,107,.36) !important;
 }
 
-/* 타이틀/라벨 */
-.timer-label,
+/* 공통 텍스트 그림자 */
 .account-title,
 .notice-title,
 .funding-title,
-.karaoke-title{
-  color:var(--lux-gold) !important;
-  font-weight:1000 !important;
-  text-shadow:
-    0 2px 3px #000,
-    0 0 10px rgba(255,214,107,.70) !important;
-}
-.notice-title,
-.karaoke-title{
-  background:rgba(255,214,107,.10) !important;
-  border:1px solid rgba(255,214,107,.24) !important;
-  color:var(--lux-gold) !important;
-}
-.funding-title{
-  background:rgba(100,217,255,.10) !important;
-  border:1px solid rgba(100,217,255,.22) !important;
-  color:var(--lux-blue) !important;
+.karaoke-title,
+.notice-text,
+.notice-line,
+.creator-name,
+.donation-amount,
+.creator-sub,
+.roller,
+.roller-item,
+.allowance-row,
+.karaoke-notice,
+.karaoke-current,
+.karaoke-song-row{
+  text-shadow: var(--lux-text-shadow) !important;
 }
 
-/* 계좌후원 롤링 */
-.account-box{
-  padding:5px 2px 6px !important;
-}
+/* 계좌후원: 제목 줄이고 롤링 크게 */
 .account-row{
-  height:31px !important;
-  gap:6px !important;
-}
-.account-title{
-  font-size:18px !important;
-}
-.roller{
-  height:31px !important;
-  font-size:23px !important;
-  color:#fff !important;
-}
-.roller-item{
-  height:31px !important;
-  min-height:31px !important;
-}
-.account-donor{
-  color:#fff !important;
-  font-weight:1000 !important;
-  text-shadow:0 2px 4px #000,0 0 7px #000 !important;
-}
-.account-amount{
-  color:var(--lux-gold) !important;
-  font-weight:1000 !important;
-  text-shadow:0 2px 4px #000,0 0 12px rgba(255,214,107,.75) !important;
-}
-.account-heart{
-  text-shadow:0 2px 4px #000,0 0 8px rgba(255,93,184,.75) !important;
+  height: 36px !important;
+  gap: 4px !important;
+  justify-content: stretch !important;
 }
 
-/* 공지/용돈 */
-.notice-box{
-  padding:7px 4px !important;
+.account-title{
+  flex: 0 0 74px !important;
+  width: 74px !important;
+  min-width: 74px !important;
+  padding: 0 !important;
+  font-size: 18px !important;
+  text-align: left !important;
+  color: var(--lux-gold) !important;
+  letter-spacing: -.07em !important;
 }
+
+.roller{
+  height: 36px !important;
+  font-size: 29px !important;
+  line-height: 36px !important;
+  color: #fff !important;
+  letter-spacing: -.075em !important;
+}
+
+.roller-item{
+  height: 36px !important;
+  min-height: 36px !important;
+  justify-content: flex-start !important;
+  gap: 3px !important;
+  padding: 0 !important;
+}
+
+.account-donor{
+  max-width: 118px !important;
+  color:#fff !important;
+}
+
+.account-heart{
+  font-size:.72em !important;
+}
+
+.account-amount{
+  color: #ffd66b !important;
+  font-size: .94em !important;
+  font-weight: 1000 !important;
+}
+
+/* 공지: 제목보다 내용 우선 */
+.notice-title{
+  margin: 0 0 3px !important;
+  padding: 2px 8px !important;
+  max-width: 100% !important;
+  font-size: 16px !important;
+  color: var(--lux-blue) !important;
+  background: rgba(102,220,255,.10) !important;
+  border: 1px solid rgba(102,220,255,.22) !important;
+}
+
 .notice-text,
 .notice-line{
-  font-weight:950 !important;
-  color:#fff !important;
-  text-shadow:0 2px 4px #000,0 0 8px #000 !important;
+  font-size: 24px !important;
+  line-height: 1.12 !important;
+  font-weight: 1000 !important;
+  letter-spacing: -.075em !important;
+  word-break: keep-all !important;
 }
+
+.notice-roll-window{
+  height: calc(24px * 1.12 * 3) !important;
+}
+
+.notice-roll-track .notice-line{
+  min-height: calc(24px * 1.12) !important;
+}
+
+/* 용돈: 공지 아래 한 줄, 크게 */
 .allowance-row{
-  margin-top:6px !important;
-  border-top:1px solid rgba(255,214,107,.28) !important;
-  color:#fff0a8 !important;
-  text-shadow:0 2px 4px #000,0 0 8px rgba(255,214,107,.30) !important;
+  margin-top: 5px !important;
+  padding: 5px 0 0 !important;
+  border-top: 1px solid rgba(255,255,255,.18) !important;
+  font-size: 22px !important;
+  line-height: 1.1 !important;
+  font-weight: 1000 !important;
+  color: #fff3a6 !important;
+  letter-spacing: -.065em !important;
+}
+
+/* 크리에이터: 박스 폭 대부분을 텍스트로 사용 */
+.creator-list{
+  gap: 5px !important;
+}
+
+.creator-item{
+  width: 100% !important;
+}
+
+.creator-main{
+  grid-template-columns: 38% 62% !important;
+  min-height: 33px !important;
+  padding-top: 0 !important;
+}
+
+.creator-name{
+  font-size: 30px !important;
+  line-height: 1 !important;
+  font-weight: 1000 !important;
+  letter-spacing: -.085em !important;
+  text-align: left !important;
+  padding-left: 2px !important;
+  color:#fff !important;
+}
+
+.donation-amount{
+  font-size: 30px !important;
+  line-height: 1 !important;
+  font-weight: 1000 !important;
+  letter-spacing: -.085em !important;
+  text-align: left !important;
+  color:#ffd1e0 !important;
+}
+
+.creator-sub{
+  margin-top: 2px !important;
+  padding-top: 0 !important;
+  gap: 8px !important;
+  font-size: 25px !important;
+  line-height: 1 !important;
+  font-weight: 1000 !important;
+  letter-spacing: -.08em !important;
+  justify-content: flex-start !important;
+  padding-left: 3px !important;
+}
+
+.creator-inline-options{
+  width: 100% !important;
+  justify-content: flex-start !important;
+  font-size: 25px !important;
+  gap: 8px !important;
 }
 
 /* 펀딩 */
 .funding-line{
-  background:rgba(0,0,0,.36) !important;
-  border:1px solid rgba(255,214,107,.22) !important;
-  box-shadow:inset 0 0 10px rgba(255,255,255,.035) !important;
+  height: 38px !important;
+  min-height: 38px !important;
+  padding: 5px 8px !important;
+  font-size: 23px !important;
+  font-weight: 1000 !important;
+  letter-spacing: -.07em !important;
 }
-.funding-line b{
-  color:var(--lux-gold) !important;
-  text-shadow:0 2px 4px #000,0 0 8px rgba(255,214,107,.55) !important;
+
+.funding-roller{
+  height: 38px !important;
+}
+
+.funding-track .funding-line{
+  height: 38px !important;
 }
 
 /* 노래방 */
-.karaoke-box{
-  padding:7px 4px !important;
+.karaoke-title{
+  margin-bottom: 3px !important;
+  font-size: 16px !important;
 }
-.karaoke-notice,
-.karaoke-current,
-.karaoke-song-row,
-.karaoke-coin-ticker span{
-  text-shadow:0 2px 4px #000,0 0 8px #000 !important;
+
+.karaoke-notice{
+  font-size: 22px !important;
+  line-height: 1.1 !important;
+  font-weight: 1000 !important;
 }
+
+.karaoke-current{
+  grid-template-columns: auto auto minmax(0,1fr) !important;
+  font-size: 22px !important;
+  gap: 5px !important;
+}
+
+.karaoke-reserve-title{
+  font-size: 19px !important;
+  margin-top: 5px !important;
+}
+
+.karaoke-song-row{
+  grid-template-columns: 38px auto minmax(0,1fr) !important;
+  font-size: 18px !important;
+  gap: 5px !important;
+}
+
 .karaoke-coin-ticker{
-  background:rgba(0,0,0,.34) !important;
-  border:1px solid rgba(255,214,107,.22) !important;
+  margin-top: 6px !important;
 }
 
-/* 크리에이터 */
-.creator-box{
-  padding:7px 3px 6px !important;
-}
-.creator-list{
-  gap:6px !important;
-}
-.creator-item{
-  border-radius:11px !important;
-  padding:3px 4px !important;
-  background:rgba(255,255,255,.028) !important;
-}
-.creator-name{
-  color:#fff !important;
-  font-weight:1000 !important;
-  text-shadow:0 2px 4px #000,0 0 7px #000 !important;
-}
-.donation-amount{
-  color:#ffd0e5 !important;
-  font-weight:1000 !important;
-  text-shadow:0 2px 4px #000,0 0 8px rgba(255,93,184,.50) !important;
-}
-.creator-sub,
-.creator-inline-options{
-  text-shadow:0 2px 4px #000,0 0 7px #000 !important;
-}
-.plus{
-  color:var(--lux-blue) !important;
-  text-shadow:0 2px 4px #000,0 0 10px rgba(100,217,255,.78) !important;
-}
-.red,
-.blue{
-  color:#ff5c73 !important;
-  text-shadow:0 2px 4px #000,0 0 10px rgba(255,92,115,.78) !important;
-}
-.muted{
-  color:var(--lux-gold) !important;
+.karaoke-coin-ticker span{
+  font-size: 17px !important;
+  line-height: 27px !important;
 }
 
-/* ALERT: 방송 방해 없는 우측상단 고급 토스트 */
-#overlayAlertRoot{
-  width:100% !important;
-  height:0 !important;
-  flex:0 0 0 !important;
-  overflow:visible !important;
+/* 방송/미션 타이머 */
+.broadcast-timer-box{
+  padding: 5px 8px !important;
+  gap: 7px !important;
 }
-#overlayAlertRoot:has(#optionAlert.show){
-  height:var(--alert-height) !important;
-  flex:0 0 var(--alert-height) !important;
+
+.timer-label{
+  font-size: 17px !important;
+  color: var(--lux-gold) !important;
 }
+
+.timer-value{
+  font-size: 34px !important;
+  text-shadow: var(--lux-text-shadow) !important;
+}
+
+/* ALERT: 우측 박스 안 토스트, 작지만 고급스럽고 텍스트 큼 */
+:root{
+  --alert-height: 112px;
+}
+
 #overlayAlertRoot #optionAlert.option-alert{
-  min-height:82px !important;
-  height:88px !important;
-  padding:9px 11px 10px 14px !important;
-  border-radius:17px !important;
-  border:1px solid rgba(255,214,107,.78) !important;
+  min-height: 104px !important;
+  padding: 9px 9px 10px !important;
+  border-radius: 16px !important;
+  border: 1.5px solid rgba(255,214,107,.82) !important;
   background:
-    radial-gradient(circle at 18% 0%,rgba(255,214,107,.20),transparent 42%),
-    linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.02)),
-    rgba(3,5,12,.88) !important;
+    radial-gradient(circle at 16% 0%, rgba(255,214,107,.24), transparent 38%),
+    linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.016)),
+    rgba(3,5,12,.92) !important;
   box-shadow:
-    0 10px 24px rgba(0,0,0,.76),
-    0 0 18px rgba(255,214,107,.28),
-    inset 0 0 16px rgba(255,255,255,.055) !important;
-  backdrop-filter:blur(12px) !important;
-  -webkit-backdrop-filter:blur(12px) !important;
-  overflow:hidden !important;
-  opacity:0 !important;
-  transform:translateX(18px) scale(.98) !important;
-  transition:none !important;
-  justify-content:center !important;
+    0 10px 24px rgba(0,0,0,.72),
+    0 0 18px rgba(255,214,107,.30),
+    inset 0 0 16px rgba(255,255,255,.045) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
 }
+
 #overlayAlertRoot #optionAlert.option-alert::before{
-  content:"" !important;
-  position:absolute !important;
-  left:0 !important;
-  top:10px !important;
-  bottom:10px !important;
-  width:4px !important;
-  border-radius:10px !important;
-  background:linear-gradient(var(--lux-gold),var(--lux-pink)) !important;
-  box-shadow:0 0 14px rgba(255,214,107,.9) !important;
-  transform:none !important;
-  animation:none !important;
-}
-#overlayAlertRoot #optionAlert.option-alert::after{
-  content:"" !important;
-  position:absolute !important;
-  inset:0 !important;
-  pointer-events:none !important;
-  background:linear-gradient(110deg,transparent 0%,rgba(255,255,255,.16) 45%,transparent 68%) !important;
-  transform:translateX(-120%) !important;
-  animation:luxAlertShine 1.65s ease .16s 1 !important;
-}
-#overlayAlertRoot #optionAlert.option-alert.show{
-  opacity:1 !important;
-  visibility:visible !important;
-  transform:translateX(0) scale(1) !important;
-  animation:luxToastIn .34s ease forwards !important;
+  opacity: .45 !important;
+  animation-duration: 1.45s !important;
 }
 
-/* 기존 ALERT HTML을 토스트 레이아웃으로 압축 */
 .alert-donor-total-line{
-  justify-content:space-between !important;
-  gap:6px !important;
-  line-height:1 !important;
+  justify-content: space-between !important;
+  gap: 6px !important;
 }
+
 .alert-donor-total-line .alert-donor{
-  max-width:142px !important;
-  font-size:22px !important;
-  line-height:1 !important;
-  color:#fff !important;
-  text-align:left !important;
-  text-shadow:0 2px 4px #000,0 0 8px #000 !important;
+  max-width: 54% !important;
+  font-size: 28px !important;
+  line-height: 1 !important;
+  text-align: left !important;
 }
+
 .alert-total-amount{
-  font-size:23px !important;
-  color:var(--lux-gold) !important;
-  text-shadow:0 2px 4px #000,0 0 13px rgba(255,214,107,.85) !important;
+  font-size: 27px !important;
+  line-height: 1 !important;
+  color: var(--lux-gold) !important;
 }
+
 .alert-creator-line.alert-split-line{
-  margin-top:6px !important;
-  justify-content:flex-end !important;
-  gap:4px 6px !important;
-  max-height:22px !important;
-  overflow:hidden !important;
+  margin-top: 6px !important;
+  justify-content: flex-start !important;
+  gap: 4px 7px !important;
+  line-height: 1.08 !important;
 }
+
 .alert-target.alert-split-chip{
-  font-size:15px !important;
-  color:#fff3b0 !important;
-  text-shadow:0 2px 4px #000,0 0 8px rgba(255,214,107,.55) !important;
+  font-size: 20px !important;
+  line-height: 1.08 !important;
+  color: #fff2a6 !important;
+  padding: 0 !important;
 }
+
 .alert-line2{
-  margin-top:4px !important;
-  justify-content:flex-end !important;
-  gap:5px !important;
-  font-size:13px !important;
+  margin-top: 6px !important;
+  justify-content: flex-start !important;
+  gap: 5px !important;
 }
+
 .alert-source{
-  color:#111 !important;
-  background:linear-gradient(135deg,#fff1a6,#ffbf3d) !important;
-  border:0 !important;
-  padding:2px 7px !important;
-  font-size:11px !important;
-  line-height:1.2 !important;
-  text-shadow:none !important;
-  box-shadow:0 0 9px rgba(255,214,107,.34) !important;
+  font-size: 15px !important;
+  padding: 3px 7px !important;
 }
-.option-alert .alert-plus{
-  color:var(--lux-blue) !important;
-}
+
+.option-alert .alert-plus,
 .option-alert .alert-minus{
-  color:#ff5c73 !important;
-}
-.blink-donor{
-  background:none !important;
-  color:#fff !important;
-  -webkit-text-fill-color:#fff !important;
-  animation:none !important;
-  text-shadow:0 2px 4px #000,0 0 8px #000 !important;
+  font-size: 18px !important;
+  font-weight: 1000 !important;
 }
 
-/* 수동 사운드 ALERT도 작게 */
-.alert-donor:not(.blink-donor){
-  font-size:22px !important;
-  text-shadow:0 2px 4px #000,0 0 8px #000 !important;
-}
-.alert-target:not(.alert-split-chip){
-  font-size:18px !important;
-  color:var(--lux-gold) !important;
-}
-
-/* 미션 10초 카운트다운은 유지하되 과도한 방해 줄임 */
-.mission-countdown-big{
-  font-size:132px !important;
-  color:#fff !important;
-  text-shadow:
-    0 4px 10px #000,
-    0 0 18px rgba(255,214,107,.75),
-    0 0 35px rgba(255,93,184,.45) !important;
-}
-
-@keyframes luxToastIn{
-  from{opacity:0;transform:translateX(18px) scale(.98)}
-  to{opacity:1;transform:translateX(0) scale(1)}
-}
-@keyframes luxAlertShine{
-  from{transform:translateX(-120%)}
-  to{transform:translateX(120%)}
-}
-
-/* 720 이하에서도 가독성 유지 */
+/* 모바일 프리즘 안전값 */
 @media(max-width:720px){
-  :root{--alert-height:94px}
-  #overlayAlertRoot #optionAlert.option-alert{
-    min-height:80px !important;
-    height:86px !important;
+  :root{
+    --overlay-w: 320px;
+    --top: 44px;
+    --right: 24px;
   }
-  .alert-donor-total-line .alert-donor{
-    font-size:21px !important;
-    max-width:132px !important;
+
+  .account-title{
+    flex-basis: 70px !important;
+    width: 70px !important;
+    min-width: 70px !important;
+    font-size: 17px !important;
   }
-  .alert-total-amount{
-    font-size:22px !important;
+
+  .roller{
+    font-size: 28px !important;
   }
-  .alert-target.alert-split-chip{
-    font-size:14px !important;
+
+  .creator-name,
+  .donation-amount{
+    font-size: 29px !important;
   }
+
+  .creator-sub,
+  .creator-inline-options{
+    font-size: 24px !important;
+  }
+
+  .notice-text,
+  .notice-line{
+    font-size: 23px !important;
+  }
+}
+
+/* 테스트용: URL에 bg=1 붙이면 임시 배경 */
+body::after{
+  content:"";
+  display:none;
+}
+
+body.test-bg{
+  background:
+    linear-gradient(rgba(0,0,0,.08),rgba(0,0,0,.12)),
+    radial-gradient(circle at 35% 25%, rgba(255,255,255,.35), transparent 22%),
+    linear-gradient(135deg,#d7e8ff,#756b64 45%,#1a1d25) !important;
 }
 
 </style>
@@ -4214,6 +4250,15 @@ preloadMissionTimerVideo(
   </script>
   <!-- notice box visible when ON even without text -->
   <script src="/assets/js/roulette-overlay.js"></script>
+
+<script>
+  try{
+    if(new URLSearchParams(location.search).get("bg")==="1"){
+      document.body.classList.add("test-bg");
+    }
+  }catch(e){}
+</script>
+
 </body>
 
 </html>
