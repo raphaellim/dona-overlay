@@ -2048,307 +2048,349 @@
 
 
 /* =========================================================
-   LUXURY MOBILE VERTICAL COMPACT v2
-   - 세로방송 우측상단용
-   - 박스 폭 최대 활용
-   - 여백 축소 / 텍스트 확대 / 가독성 강화
+   TRANSPARENT READABLE OVERLAY v3
+   - 전체 박스 배경 투명도 낮춤
+   - 방송 방해 최소화
+   - 글자 외곽선/그림자 중심 가독성
+   - 텍스트 크기 과대 문제 보정
    - 기존 API/JS 기능 유지
 ========================================================= */
 :root{
-  --overlay-w: 330px;
-  --top: 48px;
-  --right: 24px;
+  --overlay-w: 285px;
+  --top: 54px;
+  --right: 28px;
 
-  --lux-bg-top: rgba(4,6,12,.92);
-  --lux-bg-bottom: rgba(2,3,8,.88);
-  --lux-line: rgba(255,214,107,.78);
-  --lux-line-soft: rgba(255,214,107,.34);
-  --lux-gold: #ffd66b;
-  --lux-pink: #ff62b7;
-  --lux-blue: #66dcff;
-  --lux-text-shadow:
-    0 2px 3px rgba(0,0,0,.95),
-    0 0 7px rgba(0,0,0,.95);
+  --glass-bg: rgba(0,0,0,.18);
+  --glass-bg-soft: rgba(0,0,0,.08);
+  --glass-line: rgba(255,215,106,.55);
+  --glass-line-soft: rgba(255,215,106,.28);
+
+  --read-shadow:
+    0 2px 2px rgba(0,0,0,1),
+    0 0 4px rgba(0,0,0,1),
+    0 0 8px rgba(0,0,0,.95);
+
+  --gold-glow:
+    0 2px 2px rgba(0,0,0,1),
+    0 0 4px rgba(0,0,0,1),
+    0 0 9px rgba(255,215,106,.48);
 }
 
-/* 전체 스택: 세로 방송에서 우측 잘림 방지 */
+/* 우측상단 안전 영역 */
 .overlay-stack{
   width: var(--overlay-w) !important;
-  max-width: calc(100vw - 46px) !important;
+  max-width: calc(100vw - 44px) !important;
   top: var(--top) !important;
-  right: max(var(--right), 24px) !important;
+  right: max(var(--right), 26px) !important;
   gap: 5px !important;
 }
 
-/* 통합 패널: 고급감은 살리되 내부 공간 최대화 */
+/* 전체 패널: 검은 면적 최소화 */
 .overlay-panel{
   padding: 6px 7px !important;
-  border: 1.5px solid var(--lux-line) !important;
-  border-radius: 18px !important;
+  border: 1.5px solid var(--glass-line) !important;
+  border-radius: 15px !important;
   background:
-    linear-gradient(180deg, rgba(255,255,255,.055), rgba(255,255,255,.012)),
-    linear-gradient(180deg, var(--lux-bg-top), var(--lux-bg-bottom)) !important;
+    linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,.008)),
+    var(--glass-bg) !important;
   box-shadow:
-    0 8px 24px rgba(0,0,0,.78),
-    0 0 15px rgba(255,214,107,.22),
-    inset 0 0 14px rgba(255,255,255,.035) !important;
-  backdrop-filter: blur(9px) !important;
-  -webkit-backdrop-filter: blur(9px) !important;
+    0 4px 14px rgba(0,0,0,.32),
+    0 0 8px rgba(255,215,106,.20) !important;
+  backdrop-filter: blur(2.5px) !important;
+  -webkit-backdrop-filter: blur(2.5px) !important;
+  overflow:hidden !important;
 }
 
-/* 내부 섹션: 여백 최소화 */
+/* 내부 박스는 투명 */
 .overlay-panel > .overlay-box{
-  padding-left: 2px !important;
-  padding-right: 2px !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
 }
 
-.account-box{ padding: 4px 2px 5px !important; }
-.notice-box{ padding: 5px 2px 6px !important; }
-.funding-box{ padding: 5px 2px !important; }
-.karaoke-box{ padding: 6px 2px !important; }
-.creator-box{ padding: 5px 1px 6px !important; }
-
+/* 구분선도 얇게 */
 .overlay-panel > #fundingBox:not(.hidden),
 .overlay-panel > #noticeBox:not(.hidden),
 .overlay-panel > #karaokeBox:not(.hidden),
 .overlay-panel > #creatorBox:not(.hidden){
-  border-top: 1px solid rgba(255,214,107,.36) !important;
+  border-top: 1px solid var(--glass-line-soft) !important;
 }
 
-/* 공통 텍스트 그림자 */
+/* 공통 글자 보호막 */
 .account-title,
 .notice-title,
 .funding-title,
 .karaoke-title,
 .notice-text,
 .notice-line,
+.allowance-row,
 .creator-name,
 .donation-amount,
 .creator-sub,
+.creator-inline-options,
 .roller,
 .roller-item,
-.allowance-row,
 .karaoke-notice,
 .karaoke-current,
-.karaoke-song-row{
-  text-shadow: var(--lux-text-shadow) !important;
+.karaoke-song-row,
+.timer-label,
+.timer-value{
+  text-shadow: var(--read-shadow) !important;
+  -webkit-text-stroke: .45px rgba(0,0,0,.88);
 }
 
-/* 계좌후원: 제목 줄이고 롤링 크게 */
+/* 계좌후원: 한 줄 유지 우선 */
+.account-box{
+  padding: 3px 1px 5px !important;
+}
+
 .account-row{
-  height: 36px !important;
+  height: 30px !important;
   gap: 4px !important;
   justify-content: stretch !important;
 }
 
 .account-title{
-  flex: 0 0 74px !important;
-  width: 74px !important;
-  min-width: 74px !important;
-  padding: 0 !important;
-  font-size: 18px !important;
-  text-align: left !important;
-  color: var(--lux-gold) !important;
-  letter-spacing: -.07em !important;
+  flex: 0 0 68px !important;
+  min-width: 68px !important;
+  width: 68px !important;
+  font-size: 17px !important;
+  line-height: 1 !important;
+  font-weight: 1000 !important;
+  color: #ffd66b !important;
+  letter-spacing: -.075em !important;
+  text-align:left !important;
+  text-shadow: var(--gold-glow) !important;
 }
 
 .roller{
-  height: 36px !important;
-  font-size: 29px !important;
-  line-height: 36px !important;
-  color: #fff !important;
+  height: 30px !important;
+  line-height: 30px !important;
+  font-size: 22px !important;
+  font-weight: 1000 !important;
   letter-spacing: -.075em !important;
 }
 
 .roller-item{
-  height: 36px !important;
-  min-height: 36px !important;
-  justify-content: flex-start !important;
-  gap: 3px !important;
-  padding: 0 !important;
+  height: 30px !important;
+  min-height: 30px !important;
+  justify-content:flex-start !important;
+  gap: 2px !important;
+  padding:0 !important;
 }
 
 .account-donor{
-  max-width: 118px !important;
+  max-width: 75px !important;
   color:#fff !important;
+  text-shadow: var(--read-shadow) !important;
 }
 
 .account-heart{
-  font-size:.72em !important;
+  font-size:.68em !important;
 }
 
 .account-amount{
-  color: #ffd66b !important;
-  font-size: .94em !important;
-  font-weight: 1000 !important;
+  color:#d8ffb0 !important;
+  font-size:.96em !important;
+  font-weight:1000 !important;
+  text-shadow: var(--read-shadow) !important;
 }
 
-/* 공지: 제목보다 내용 우선 */
+/* 공지: 제목 작게, 내용은 2~3줄 안정 */
+.notice-box{
+  padding: 5px 1px 6px !important;
+}
+
 .notice-title{
-  margin: 0 0 3px !important;
+  margin: 0 auto 4px !important;
   padding: 2px 8px !important;
-  max-width: 100% !important;
-  font-size: 16px !important;
-  color: var(--lux-blue) !important;
-  background: rgba(102,220,255,.10) !important;
-  border: 1px solid rgba(102,220,255,.22) !important;
+  max-width: 88% !important;
+  font-size: 15px !important;
+  line-height: 1.05 !important;
+  font-weight: 1000 !important;
+  color:#8ee7ff !important;
+  background: rgba(0,0,0,.20) !important;
+  border: 1px solid rgba(142,231,255,.36) !important;
+  text-shadow: var(--read-shadow) !important;
 }
 
 .notice-text,
 .notice-line{
-  font-size: 24px !important;
+  font-size: 20px !important;
   line-height: 1.12 !important;
   font-weight: 1000 !important;
-  letter-spacing: -.075em !important;
+  letter-spacing: -.07em !important;
   word-break: keep-all !important;
+  overflow-wrap: anywhere !important;
 }
 
 .notice-roll-window{
-  height: calc(24px * 1.12 * 3) !important;
+  height: calc(20px * 1.12 * 3) !important;
 }
 
 .notice-roll-track .notice-line{
-  min-height: calc(24px * 1.12) !important;
+  min-height: calc(20px * 1.12) !important;
 }
 
-/* 용돈: 공지 아래 한 줄, 크게 */
+/* 용돈 */
 .allowance-row{
-  margin-top: 5px !important;
-  padding: 5px 0 0 !important;
+  margin-top: 4px !important;
+  padding: 4px 0 0 !important;
   border-top: 1px solid rgba(255,255,255,.18) !important;
-  font-size: 22px !important;
-  line-height: 1.1 !important;
+  font-size: 18px !important;
+  line-height: 1.08 !important;
   font-weight: 1000 !important;
-  color: #fff3a6 !important;
-  letter-spacing: -.065em !important;
+  color:#fff3a6 !important;
+  letter-spacing: -.06em !important;
 }
 
-/* 크리에이터: 박스 폭 대부분을 텍스트로 사용 */
+/* 크리에이터: 너무 크지 않게, 3줄 이상도 안정 */
+.creator-box{
+  padding: 5px 0 4px !important;
+}
+
 .creator-list{
   gap: 5px !important;
 }
 
-.creator-item{
-  width: 100% !important;
-}
-
 .creator-main{
-  grid-template-columns: 38% 62% !important;
-  min-height: 33px !important;
-  padding-top: 0 !important;
+  grid-template-columns: 42% 58% !important;
+  min-height: 25px !important;
+  padding-top:0 !important;
 }
 
 .creator-name{
-  font-size: 30px !important;
+  font-size: 23px !important;
   line-height: 1 !important;
   font-weight: 1000 !important;
-  letter-spacing: -.085em !important;
-  text-align: left !important;
+  letter-spacing: -.08em !important;
+  text-align:left !important;
   padding-left: 2px !important;
   color:#fff !important;
 }
 
 .donation-amount{
-  font-size: 30px !important;
-  line-height: 1 !important;
-  font-weight: 1000 !important;
-  letter-spacing: -.085em !important;
-  text-align: left !important;
-  color:#ffd1e0 !important;
-}
-
-.creator-sub{
-  margin-top: 2px !important;
-  padding-top: 0 !important;
-  gap: 8px !important;
-  font-size: 25px !important;
+  font-size: 23px !important;
   line-height: 1 !important;
   font-weight: 1000 !important;
   letter-spacing: -.08em !important;
-  justify-content: flex-start !important;
-  padding-left: 3px !important;
+  text-align:left !important;
+  color:#ffc2d6 !important;
+}
+
+.creator-sub{
+  margin-top: 1px !important;
+  padding:0 0 0 2px !important;
+  justify-content:flex-start !important;
+  gap: 7px !important;
+  font-size: 20px !important;
+  line-height: 1 !important;
+  font-weight: 1000 !important;
+  letter-spacing: -.075em !important;
 }
 
 .creator-inline-options{
-  width: 100% !important;
-  justify-content: flex-start !important;
-  font-size: 25px !important;
-  gap: 8px !important;
+  justify-content:flex-start !important;
+  width:100% !important;
+  gap:7px !important;
+  font-size:20px !important;
+}
+
+.plus{
+  color:#55d8ff !important;
+}
+
+.red,
+.blue{
+  color:#ff5c73 !important;
+}
+
+.muted{
+  color:#ffe066 !important;
 }
 
 /* 펀딩 */
+.funding-box{
+  padding: 5px 1px !important;
+}
+
 .funding-line{
-  height: 38px !important;
-  min-height: 38px !important;
-  padding: 5px 8px !important;
-  font-size: 23px !important;
-  font-weight: 1000 !important;
-  letter-spacing: -.07em !important;
+  min-height: 31px !important;
+  height: 31px !important;
+  padding: 4px 7px !important;
+  border-radius: 8px !important;
+  background: rgba(0,0,0,.16) !important;
+  border: 1px solid rgba(255,255,255,.14) !important;
+  font-size: 19px !important;
+  font-weight:1000 !important;
+  letter-spacing:-.07em !important;
 }
 
 .funding-roller{
-  height: 38px !important;
+  height:31px !important;
 }
 
 .funding-track .funding-line{
-  height: 38px !important;
+  height:31px !important;
 }
 
 /* 노래방 */
+.karaoke-box{
+  padding: 6px 1px !important;
+}
+
 .karaoke-title{
   margin-bottom: 3px !important;
-  font-size: 16px !important;
+  padding: 2px 8px !important;
+  font-size: 15px !important;
 }
 
 .karaoke-notice{
-  font-size: 22px !important;
+  font-size: 19px !important;
   line-height: 1.1 !important;
-  font-weight: 1000 !important;
+  font-weight:1000 !important;
 }
 
 .karaoke-current{
-  grid-template-columns: auto auto minmax(0,1fr) !important;
-  font-size: 22px !important;
-  gap: 5px !important;
+  font-size: 19px !important;
+  line-height:1.1 !important;
+  gap:4px !important;
 }
 
 .karaoke-reserve-title{
-  font-size: 19px !important;
+  font-size: 17px !important;
   margin-top: 5px !important;
 }
 
 .karaoke-song-row{
-  grid-template-columns: 38px auto minmax(0,1fr) !important;
-  font-size: 18px !important;
-  gap: 5px !important;
-}
-
-.karaoke-coin-ticker{
-  margin-top: 6px !important;
+  grid-template-columns: 34px auto minmax(0,1fr) !important;
+  font-size: 16px !important;
+  gap:4px !important;
 }
 
 .karaoke-coin-ticker span{
-  font-size: 17px !important;
-  line-height: 27px !important;
+  font-size: 15px !important;
+  line-height: 25px !important;
 }
 
-/* 방송/미션 타이머 */
+/* 타이머 */
 .broadcast-timer-box{
-  padding: 5px 8px !important;
+  padding: 5px 6px !important;
   gap: 7px !important;
 }
 
 .timer-label{
-  font-size: 17px !important;
-  color: var(--lux-gold) !important;
+  font-size: 16px !important;
+  color:#ffd66b !important;
 }
 
 .timer-value{
-  font-size: 34px !important;
-  text-shadow: var(--lux-text-shadow) !important;
+  font-size: 28px !important;
+  color:#fff !important;
 }
 
-/* ALERT: 우측 박스 안 토스트, 작지만 고급스럽고 텍스트 큼 */
+/* ALERT는 기존 위치 유지하되 투명형 */
 :root{
   --alert-height: 112px;
 }
@@ -2356,120 +2398,60 @@
 #overlayAlertRoot #optionAlert.option-alert{
   min-height: 104px !important;
   padding: 9px 9px 10px !important;
-  border-radius: 16px !important;
-  border: 1.5px solid rgba(255,214,107,.82) !important;
+  border-radius: 14px !important;
+  border: 1.5px solid rgba(255,215,106,.72) !important;
   background:
-    radial-gradient(circle at 16% 0%, rgba(255,214,107,.24), transparent 38%),
-    linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.016)),
-    rgba(3,5,12,.92) !important;
+    radial-gradient(circle at 16% 0%, rgba(255,214,107,.22), transparent 38%),
+    rgba(0,0,0,.34) !important;
   box-shadow:
-    0 10px 24px rgba(0,0,0,.72),
-    0 0 18px rgba(255,214,107,.30),
-    inset 0 0 16px rgba(255,255,255,.045) !important;
-  backdrop-filter: blur(12px) !important;
-  -webkit-backdrop-filter: blur(12px) !important;
-}
-
-#overlayAlertRoot #optionAlert.option-alert::before{
-  opacity: .45 !important;
-  animation-duration: 1.45s !important;
+    0 6px 18px rgba(0,0,0,.45),
+    0 0 13px rgba(255,215,106,.22) !important;
+  backdrop-filter: blur(4px) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
 }
 
 .alert-donor-total-line{
-  justify-content: space-between !important;
-  gap: 6px !important;
+  justify-content:space-between !important;
 }
 
 .alert-donor-total-line .alert-donor{
-  max-width: 54% !important;
-  font-size: 28px !important;
-  line-height: 1 !important;
-  text-align: left !important;
+  max-width:54% !important;
+  font-size:26px !important;
+  line-height:1 !important;
 }
 
 .alert-total-amount{
-  font-size: 27px !important;
-  line-height: 1 !important;
-  color: var(--lux-gold) !important;
+  font-size:25px !important;
+  line-height:1 !important;
+  color:#ffd66b !important;
 }
 
 .alert-creator-line.alert-split-line{
-  margin-top: 6px !important;
-  justify-content: flex-start !important;
-  gap: 4px 7px !important;
-  line-height: 1.08 !important;
+  margin-top:6px !important;
+  justify-content:flex-start !important;
 }
 
 .alert-target.alert-split-chip{
-  font-size: 20px !important;
-  line-height: 1.08 !important;
-  color: #fff2a6 !important;
-  padding: 0 !important;
-}
-
-.alert-line2{
-  margin-top: 6px !important;
-  justify-content: flex-start !important;
-  gap: 5px !important;
+  font-size:18px !important;
+  line-height:1.08 !important;
 }
 
 .alert-source{
-  font-size: 15px !important;
-  padding: 3px 7px !important;
+  font-size:14px !important;
 }
 
-.option-alert .alert-plus,
-.option-alert .alert-minus{
-  font-size: 18px !important;
-  font-weight: 1000 !important;
+/* 이미지 슬라이드는 기존 비율 유지 */
+.overlay-stack > .top-slide-box{
+  margin-bottom: 5px !important;
+  border-radius: 14px !important;
 }
 
-/* 모바일 프리즘 안전값 */
-@media(max-width:720px){
-  :root{
-    --overlay-w: 320px;
-    --top: 44px;
-    --right: 24px;
-  }
-
-  .account-title{
-    flex-basis: 70px !important;
-    width: 70px !important;
-    min-width: 70px !important;
-    font-size: 17px !important;
-  }
-
-  .roller{
-    font-size: 28px !important;
-  }
-
-  .creator-name,
-  .donation-amount{
-    font-size: 29px !important;
-  }
-
-  .creator-sub,
-  .creator-inline-options{
-    font-size: 24px !important;
-  }
-
-  .notice-text,
-  .notice-line{
-    font-size: 23px !important;
-  }
-}
-
-/* 테스트용: URL에 bg=1 붙이면 임시 배경 */
-body::after{
-  content:"";
-  display:none;
-}
-
+/* 테스트용 bg=1 */
 body.test-bg{
   background:
-    linear-gradient(rgba(0,0,0,.08),rgba(0,0,0,.12)),
-    radial-gradient(circle at 35% 25%, rgba(255,255,255,.35), transparent 22%),
-    linear-gradient(135deg,#d7e8ff,#756b64 45%,#1a1d25) !important;
+    linear-gradient(rgba(0,0,0,.08),rgba(0,0,0,.10)),
+    radial-gradient(circle at 50% 28%, rgba(255,255,255,.55), transparent 18%),
+    linear-gradient(135deg,#d9e8ff,#8c8178 45%,#1a1d25) !important;
 }
 
 </style>
