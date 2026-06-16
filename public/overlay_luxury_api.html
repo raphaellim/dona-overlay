@@ -2048,76 +2048,124 @@
 
 
 /* =========================================================
-   TRANSPARENT READABLE OVERLAY v3
-   - 전체 박스 배경 투명도 낮춤
-   - 방송 방해 최소화
-   - 글자 외곽선/그림자 중심 가독성
-   - 텍스트 크기 과대 문제 보정
+   UNIFIED GLASS PANEL + ALERT-LIKE CAPSULE TITLES v6
+   - 통합박스 유지
+   - 각 섹션 타이틀만 ALERT 캡슐 스타일로 구분
+   - 배경 투명도 높임
+   - 글자 외곽선/그림자로 가독성 강화
    - 기존 API/JS 기능 유지
 ========================================================= */
 :root{
-  --overlay-w: 285px;
+  --overlay-w: 292px;
   --top: 54px;
   --right: 28px;
 
-  --glass-bg: rgba(0,0,0,.18);
-  --glass-bg-soft: rgba(0,0,0,.08);
-  --glass-line: rgba(255,215,106,.55);
-  --glass-line-soft: rgba(255,215,106,.28);
+  --lux-gold:#ffd66b;
+  --lux-blue:#68dcff;
+  --lux-pink:#ff64b7;
+  --lux-green:#a8ff8a;
 
-  --read-shadow:
-    0 2px 2px rgba(0,0,0,1),
-    0 0 4px rgba(0,0,0,1),
-    0 0 8px rgba(0,0,0,.95);
+  --panel-bg:
+    radial-gradient(circle at 18% 0%, rgba(255,214,107,.16), transparent 34%),
+    linear-gradient(180deg, rgba(255,255,255,.055), rgba(255,255,255,.010)),
+    rgba(0,0,0,.22);
 
-  --gold-glow:
+  --title-bg:
+    linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.025)),
+    rgba(0,0,0,.20);
+
+  --line-gold:rgba(255,214,107,.58);
+  --line-soft:rgba(255,214,107,.24);
+
+  --text-shadow:
     0 2px 2px rgba(0,0,0,1),
-    0 0 4px rgba(0,0,0,1),
-    0 0 9px rgba(255,215,106,.48);
+    0 0 5px rgba(0,0,0,1),
+    0 0 9px rgba(0,0,0,.92);
+
+  --gold-shadow:
+    0 2px 2px rgba(0,0,0,1),
+    0 0 5px rgba(0,0,0,1),
+    0 0 10px rgba(255,214,107,.54);
 }
 
-/* 우측상단 안전 영역 */
+/* 위치/크기 */
 .overlay-stack{
-  width: var(--overlay-w) !important;
-  max-width: calc(100vw - 44px) !important;
-  top: var(--top) !important;
-  right: max(var(--right), 26px) !important;
-  gap: 5px !important;
+  width:var(--overlay-w)!important;
+  max-width:calc(100vw - 46px)!important;
+  top:var(--top)!important;
+  right:max(var(--right),26px)!important;
+  gap:5px!important;
+  padding:0!important;
+  border:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
 }
 
-/* 전체 패널: 검은 면적 최소화 */
+/* 통합박스 */
 .overlay-panel{
-  padding: 6px 7px !important;
-  border: 1.5px solid var(--glass-line) !important;
-  border-radius: 15px !important;
-  background:
-    linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,.008)),
-    var(--glass-bg) !important;
+  position:relative!important;
+  display:flex!important;
+  flex-direction:column!important;
+  gap:0!important;
+  width:100%!important;
+  padding:7px 8px!important;
+  border:1.5px solid var(--line-gold)!important;
+  border-radius:17px!important;
+  background:var(--panel-bg)!important;
   box-shadow:
-    0 4px 14px rgba(0,0,0,.32),
-    0 0 8px rgba(255,215,106,.20) !important;
-  backdrop-filter: blur(2.5px) !important;
-  -webkit-backdrop-filter: blur(2.5px) !important;
-  overflow:hidden !important;
+    0 7px 20px rgba(0,0,0,.38),
+    0 0 14px rgba(255,214,107,.20),
+    inset 0 0 15px rgba(255,255,255,.035)!important;
+  backdrop-filter:blur(3px)!important;
+  -webkit-backdrop-filter:blur(3px)!important;
+  overflow:hidden!important;
 }
 
-/* 내부 박스는 투명 */
+/* ALERT 느낌의 은은한 빛 */
+.overlay-panel::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background:linear-gradient(115deg, transparent 0%, rgba(255,255,255,.13) 44%, transparent 66%);
+  transform:translateX(-130%);
+  animation:panelShineV6 4.8s ease-in-out infinite;
+  opacity:.42;
+}
+
+@keyframes panelShineV6{
+  0%,48%{transform:translateX(-130%)}
+  78%,100%{transform:translateX(130%)}
+}
+
+/* 내부 섹션은 투명 */
 .overlay-panel > .overlay-box{
-  background: transparent !important;
-  border: 0 !important;
-  box-shadow: none !important;
-  border-radius: 0 !important;
+  position:relative!important;
+  z-index:1!important;
+  background:transparent!important;
+  border:0!important;
+  box-shadow:none!important;
+  border-radius:0!important;
+  width:100%!important;
 }
 
-/* 구분선도 얇게 */
+/* 구분선 */
 .overlay-panel > #fundingBox:not(.hidden),
 .overlay-panel > #noticeBox:not(.hidden),
 .overlay-panel > #karaokeBox:not(.hidden),
 .overlay-panel > #creatorBox:not(.hidden){
-  border-top: 1px solid var(--glass-line-soft) !important;
+  border-top:1px solid var(--line-soft)!important;
 }
 
-/* 공통 글자 보호막 */
+/* 여백 조정 */
+.account-box{padding:3px 0 6px!important}
+.funding-box{padding:6px 0!important}
+.notice-box{padding:6px 0!important}
+.karaoke-box{padding:6px 0!important}
+.creator-box{padding:7px 0 3px!important}
+.broadcast-timer-box{padding:5px 0 6px!important}
+
+/* 공통 텍스트 보호 */
 .account-title,
 .notice-title,
 .funding-title,
@@ -2136,322 +2184,312 @@
 .karaoke-song-row,
 .timer-label,
 .timer-value{
-  text-shadow: var(--read-shadow) !important;
-  -webkit-text-stroke: .45px rgba(0,0,0,.88);
+  text-shadow:var(--text-shadow)!important;
+  -webkit-text-stroke:.42px rgba(0,0,0,.88);
 }
 
-/* 계좌후원: 한 줄 유지 우선 */
-.account-box{
-  padding: 3px 1px 5px !important;
+/* =========================
+   ALERT 캡슐형 타이틀
+========================= */
+.notice-title,
+.funding-title,
+.karaoke-title{
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  width:auto!important;
+  max-width:92%!important;
+  margin:0 auto 5px!important;
+  padding:2px 11px!important;
+  border-radius:999px!important;
+  background:var(--title-bg)!important;
+  border:1px solid rgba(255,214,107,.54)!important;
+  box-shadow:
+    0 0 10px rgba(255,214,107,.15),
+    inset 0 0 8px rgba(255,255,255,.045)!important;
+  color:var(--lux-gold)!important;
+  font-size:14px!important;
+  line-height:1.08!important;
+  font-weight:1000!important;
+  letter-spacing:-.045em!important;
+  text-shadow:var(--gold-shadow)!important;
 }
 
-.account-row{
-  height: 30px !important;
-  gap: 4px !important;
-  justify-content: stretch !important;
-}
-
+/* 계좌후원 타이틀도 왼쪽 라벨형으로 */
 .account-title{
-  flex: 0 0 68px !important;
-  min-width: 68px !important;
-  width: 68px !important;
-  font-size: 17px !important;
-  line-height: 1 !important;
-  font-weight: 1000 !important;
-  color: #ffd66b !important;
-  letter-spacing: -.075em !important;
-  text-align:left !important;
-  text-shadow: var(--gold-glow) !important;
+  position:relative!important;
+  flex:0 0 67px!important;
+  width:67px!important;
+  min-width:67px!important;
+  height:24px!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  padding:0 6px!important;
+  border-radius:999px!important;
+  background:var(--title-bg)!important;
+  border:1px solid rgba(255,214,107,.50)!important;
+  color:var(--lux-gold)!important;
+  font-size:14px!important;
+  line-height:1!important;
+  font-weight:1000!important;
+  letter-spacing:-.07em!important;
+  text-shadow:var(--gold-shadow)!important;
+  box-shadow:0 0 10px rgba(255,214,107,.12)!important;
+}
+
+/* 크리에이터 섹션은 기존에 타이틀 DOM이 없어서 CSS로 캡슐 타이틀 생성 */
+.creator-box::before{
+  content:"크리에이터";
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  width:max-content!important;
+  max-width:92%!important;
+  margin:0 auto 6px!important;
+  padding:2px 11px!important;
+  border-radius:999px!important;
+  background:var(--title-bg)!important;
+  border:1px solid rgba(255,214,107,.54)!important;
+  box-shadow:
+    0 0 10px rgba(255,214,107,.15),
+    inset 0 0 8px rgba(255,255,255,.045)!important;
+  color:var(--lux-gold)!important;
+  font-size:14px!important;
+  line-height:1.08!important;
+  font-weight:1000!important;
+  letter-spacing:-.045em!important;
+  text-shadow:var(--gold-shadow)!important;
+  -webkit-text-stroke:.42px rgba(0,0,0,.88);
+}
+
+/* 계좌 롤링 */
+.account-row{
+  height:30px!important;
+  gap:5px!important;
+  justify-content:stretch!important;
 }
 
 .roller{
-  height: 30px !important;
-  line-height: 30px !important;
-  font-size: 22px !important;
-  font-weight: 1000 !important;
-  letter-spacing: -.075em !important;
+  height:30px!important;
+  line-height:30px!important;
+  font-size:22px!important;
+  font-weight:1000!important;
+  letter-spacing:-.075em!important;
 }
 
 .roller-item{
-  height: 30px !important;
-  min-height: 30px !important;
-  justify-content:flex-start !important;
-  gap: 2px !important;
-  padding:0 !important;
+  height:30px!important;
+  min-height:30px!important;
+  justify-content:flex-start!important;
+  gap:2px!important;
+  padding:0!important;
 }
 
 .account-donor{
-  max-width: 75px !important;
-  color:#fff !important;
-  text-shadow: var(--read-shadow) !important;
+  max-width:73px!important;
+  color:#fff!important;
+  text-shadow:var(--text-shadow)!important;
 }
 
-.account-heart{
-  font-size:.68em !important;
-}
+.account-heart{font-size:.68em!important}
 
 .account-amount{
-  color:#d8ffb0 !important;
-  font-size:.96em !important;
-  font-weight:1000 !important;
-  text-shadow: var(--read-shadow) !important;
+  color:#d9ffb0!important;
+  font-size:.96em!important;
+  font-weight:1000!important;
+  text-shadow:var(--text-shadow)!important;
 }
 
-/* 공지: 제목 작게, 내용은 2~3줄 안정 */
-.notice-box{
-  padding: 5px 1px 6px !important;
-}
-
-.notice-title{
-  margin: 0 auto 4px !important;
-  padding: 2px 8px !important;
-  max-width: 88% !important;
-  font-size: 15px !important;
-  line-height: 1.05 !important;
-  font-weight: 1000 !important;
-  color:#8ee7ff !important;
-  background: rgba(0,0,0,.20) !important;
-  border: 1px solid rgba(142,231,255,.36) !important;
-  text-shadow: var(--read-shadow) !important;
-}
-
+/* 공지 */
 .notice-text,
 .notice-line{
-  font-size: 20px !important;
-  line-height: 1.12 !important;
-  font-weight: 1000 !important;
-  letter-spacing: -.07em !important;
-  word-break: keep-all !important;
-  overflow-wrap: anywhere !important;
+  font-size:20px!important;
+  line-height:1.12!important;
+  font-weight:1000!important;
+  letter-spacing:-.07em!important;
+  word-break:keep-all!important;
+  overflow-wrap:anywhere!important;
 }
 
 .notice-roll-window{
-  height: calc(20px * 1.12 * 3) !important;
+  height:calc(20px * 1.12 * 3)!important;
 }
-
 .notice-roll-track .notice-line{
-  min-height: calc(20px * 1.12) !important;
+  min-height:calc(20px * 1.12)!important;
 }
 
 /* 용돈 */
 .allowance-row{
-  margin-top: 4px !important;
-  padding: 4px 0 0 !important;
-  border-top: 1px solid rgba(255,255,255,.18) !important;
-  font-size: 18px !important;
-  line-height: 1.08 !important;
-  font-weight: 1000 !important;
-  color:#fff3a6 !important;
-  letter-spacing: -.06em !important;
+  margin-top:5px!important;
+  padding:5px 0 0!important;
+  border-top:1px solid rgba(255,255,255,.17)!important;
+  font-size:18px!important;
+  line-height:1.08!important;
+  font-weight:1000!important;
+  color:#fff3a6!important;
+  letter-spacing:-.06em!important;
 }
 
-/* 크리에이터: 너무 크지 않게, 3줄 이상도 안정 */
-.creator-box{
-  padding: 5px 0 4px !important;
-}
-
-.creator-list{
-  gap: 5px !important;
-}
+/* 크리에이터 */
+.creator-list{gap:5px!important}
 
 .creator-main{
-  grid-template-columns: 42% 58% !important;
-  min-height: 25px !important;
-  padding-top:0 !important;
+  grid-template-columns:42% 58%!important;
+  min-height:25px!important;
+  padding-top:0!important;
 }
 
 .creator-name{
-  font-size: 23px !important;
-  line-height: 1 !important;
-  font-weight: 1000 !important;
-  letter-spacing: -.08em !important;
-  text-align:left !important;
-  padding-left: 2px !important;
-  color:#fff !important;
+  font-size:23px!important;
+  line-height:1!important;
+  font-weight:1000!important;
+  letter-spacing:-.08em!important;
+  text-align:left!important;
+  padding-left:2px!important;
+  color:#fff!important;
 }
 
 .donation-amount{
-  font-size: 23px !important;
-  line-height: 1 !important;
-  font-weight: 1000 !important;
-  letter-spacing: -.08em !important;
-  text-align:left !important;
-  color:#ffc2d6 !important;
+  font-size:23px!important;
+  line-height:1!important;
+  font-weight:1000!important;
+  letter-spacing:-.08em!important;
+  text-align:left!important;
+  color:#ffc2d6!important;
 }
 
 .creator-sub{
-  margin-top: 1px !important;
-  padding:0 0 0 2px !important;
-  justify-content:flex-start !important;
-  gap: 7px !important;
-  font-size: 20px !important;
-  line-height: 1 !important;
-  font-weight: 1000 !important;
-  letter-spacing: -.075em !important;
+  margin-top:1px!important;
+  padding:0 0 0 2px!important;
+  justify-content:flex-start!important;
+  gap:7px!important;
+  font-size:20px!important;
+  line-height:1!important;
+  font-weight:1000!important;
+  letter-spacing:-.075em!important;
 }
 
 .creator-inline-options{
-  justify-content:flex-start !important;
-  width:100% !important;
-  gap:7px !important;
-  font-size:20px !important;
+  justify-content:flex-start!important;
+  width:100%!important;
+  gap:7px!important;
+  font-size:20px!important;
 }
 
-.plus{
-  color:#55d8ff !important;
-}
-
-.red,
-.blue{
-  color:#ff5c73 !important;
-}
-
-.muted{
-  color:#ffe066 !important;
-}
+.plus{color:#55d8ff!important}
+.red,.blue{color:#ff5c73!important}
+.muted{color:#ffe066!important}
 
 /* 펀딩 */
-.funding-box{
-  padding: 5px 1px !important;
-}
-
 .funding-line{
-  min-height: 31px !important;
-  height: 31px !important;
-  padding: 4px 7px !important;
-  border-radius: 8px !important;
-  background: rgba(0,0,0,.16) !important;
-  border: 1px solid rgba(255,255,255,.14) !important;
-  font-size: 19px !important;
-  font-weight:1000 !important;
-  letter-spacing:-.07em !important;
+  min-height:31px!important;
+  height:31px!important;
+  padding:4px 7px!important;
+  border-radius:9px!important;
+  background:rgba(0,0,0,.14)!important;
+  border:1px solid rgba(255,255,255,.13)!important;
+  font-size:19px!important;
+  font-weight:1000!important;
+  letter-spacing:-.07em!important;
 }
-
-.funding-roller{
-  height:31px !important;
-}
-
-.funding-track .funding-line{
-  height:31px !important;
-}
+.funding-roller{height:31px!important}
+.funding-track .funding-line{height:31px!important}
 
 /* 노래방 */
-.karaoke-box{
-  padding: 6px 1px !important;
-}
-
-.karaoke-title{
-  margin-bottom: 3px !important;
-  padding: 2px 8px !important;
-  font-size: 15px !important;
-}
-
 .karaoke-notice{
-  font-size: 19px !important;
-  line-height: 1.1 !important;
-  font-weight:1000 !important;
+  font-size:19px!important;
+  line-height:1.1!important;
+  font-weight:1000!important;
 }
-
 .karaoke-current{
-  font-size: 19px !important;
-  line-height:1.1 !important;
-  gap:4px !important;
+  font-size:19px!important;
+  line-height:1.1!important;
+  gap:4px!important;
 }
-
 .karaoke-reserve-title{
-  font-size: 17px !important;
-  margin-top: 5px !important;
+  font-size:17px!important;
+  margin-top:5px!important;
 }
-
 .karaoke-song-row{
-  grid-template-columns: 34px auto minmax(0,1fr) !important;
-  font-size: 16px !important;
-  gap:4px !important;
+  grid-template-columns:34px auto minmax(0,1fr)!important;
+  font-size:16px!important;
+  gap:4px!important;
 }
-
 .karaoke-coin-ticker span{
-  font-size: 15px !important;
-  line-height: 25px !important;
+  font-size:15px!important;
+  line-height:25px!important;
 }
 
 /* 타이머 */
-.broadcast-timer-box{
-  padding: 5px 6px !important;
-  gap: 7px !important;
-}
-
 .timer-label{
-  font-size: 16px !important;
-  color:#ffd66b !important;
+  font-size:16px!important;
+  color:var(--lux-gold)!important;
 }
-
 .timer-value{
-  font-size: 28px !important;
-  color:#fff !important;
+  font-size:28px!important;
+  color:#fff!important;
 }
 
-/* ALERT는 기존 위치 유지하되 투명형 */
-:root{
-  --alert-height: 112px;
-}
-
+/* ALERT도 톤 맞춤 */
+:root{--alert-height:112px}
 #overlayAlertRoot #optionAlert.option-alert{
-  min-height: 104px !important;
-  padding: 9px 9px 10px !important;
-  border-radius: 14px !important;
-  border: 1.5px solid rgba(255,215,106,.72) !important;
+  min-height:104px!important;
+  padding:9px 9px 10px!important;
+  border-radius:14px!important;
+  border:1.5px solid rgba(255,214,107,.72)!important;
   background:
     radial-gradient(circle at 16% 0%, rgba(255,214,107,.22), transparent 38%),
-    rgba(0,0,0,.34) !important;
+    linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.012)),
+    rgba(0,0,0,.34)!important;
   box-shadow:
     0 6px 18px rgba(0,0,0,.45),
-    0 0 13px rgba(255,215,106,.22) !important;
-  backdrop-filter: blur(4px) !important;
-  -webkit-backdrop-filter: blur(4px) !important;
+    0 0 13px rgba(255,214,107,.22)!important;
+  backdrop-filter:blur(4px)!important;
+  -webkit-backdrop-filter:blur(4px)!important;
 }
-
-.alert-donor-total-line{
-  justify-content:space-between !important;
-}
-
+.alert-donor-total-line{justify-content:space-between!important}
 .alert-donor-total-line .alert-donor{
-  max-width:54% !important;
-  font-size:26px !important;
-  line-height:1 !important;
+  max-width:54%!important;
+  font-size:26px!important;
+  line-height:1!important;
 }
-
 .alert-total-amount{
-  font-size:25px !important;
-  line-height:1 !important;
-  color:#ffd66b !important;
+  font-size:25px!important;
+  line-height:1!important;
+  color:var(--lux-gold)!important;
 }
-
 .alert-creator-line.alert-split-line{
-  margin-top:6px !important;
-  justify-content:flex-start !important;
+  margin-top:6px!important;
+  justify-content:flex-start!important;
 }
-
 .alert-target.alert-split-chip{
-  font-size:18px !important;
-  line-height:1.08 !important;
+  font-size:18px!important;
+  line-height:1.08!important;
 }
+.alert-source{font-size:14px!important}
 
-.alert-source{
-  font-size:14px !important;
-}
-
-/* 이미지 슬라이드는 기존 비율 유지 */
+/* 이미지 슬라이드 */
 .overlay-stack > .top-slide-box{
-  margin-bottom: 5px !important;
-  border-radius: 14px !important;
+  margin-bottom:5px!important;
+  border-radius:14px!important;
 }
 
-/* 테스트용 bg=1 */
+/* 테스트 배경 */
 body.test-bg{
   background:
     linear-gradient(rgba(0,0,0,.08),rgba(0,0,0,.10)),
     radial-gradient(circle at 50% 28%, rgba(255,255,255,.55), transparent 18%),
-    linear-gradient(135deg,#d9e8ff,#8c8178 45%,#1a1d25) !important;
+    linear-gradient(135deg,#d9e8ff,#8c8178 45%,#1a1d25)!important;
+}
+
+/* 모바일 보정 */
+@media(max-width:720px){
+  :root{
+    --overlay-w:288px;
+    --top:52px;
+    --right:28px;
+  }
 }
 
 </style>
