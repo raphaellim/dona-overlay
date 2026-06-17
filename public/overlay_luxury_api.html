@@ -2048,27 +2048,28 @@
 
 
 /* =========================================================
-   DIAMOND RIGHT GRID OVERLAY v12
+   DIAMOND LEFT INLINE OVERLAY v13
+   - 폭 340px
+   - 섹션 타이틀 좌측정렬
    - 계좌후원 한 줄
-   - 크리에이터 고정칸: 이름 (금액) 흡+0 먹+0
-   - +01 표시 안함: +1 / -1
-   - 우측상단 배치에 맞게 정렬
-   - 기존 API/JS 기능 유지
+   - 크리에이터: 이름(183.6) 흡+1 먹+0 한 줄
+   - 프리셋 간격 축소
+   - 기존 API/JS 유지
 ========================================================= */
 :root{
-  --overlay-w: 310px;
+  --overlay-w: 340px;
   --top: 54px;
   --right: 30px;
-  --dg-gold:#ffd86a;
-  --dg-blue:#64d9ff;
-  --dg-pink:#ff79bd;
-  --dg-green:#a8ff8a;
-  --dg-red:#ff6178;
-  --dg-panel-bg:linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.010)),rgba(0,0,0,.50);
-  --dg-line:rgba(255,216,106,.52);
-  --dg-soft-line:rgba(255,255,255,.16);
-  --dg-shadow:0 1px 2px rgba(0,0,0,.76);
-  --dg-title-shadow:0 1px 2px rgba(0,0,0,.78), 0 0 5px rgba(255,216,106,.20);
+  --dl-gold:#ffd86a;
+  --dl-blue:#64d9ff;
+  --dl-pink:#ff79bd;
+  --dl-green:#a8ff8a;
+  --dl-red:#ff6178;
+  --dl-panel-bg:linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.010)),rgba(0,0,0,.50);
+  --dl-line:rgba(255,216,106,.52);
+  --dl-soft-line:rgba(255,255,255,.16);
+  --dl-shadow:0 1px 2px rgba(0,0,0,.76);
+  --dl-title-shadow:0 1px 2px rgba(0,0,0,.78), 0 0 5px rgba(255,216,106,.18);
 }
 
 .overlay-stack{
@@ -2089,10 +2090,10 @@
   flex-direction:column!important;
   gap:0!important;
   width:100%!important;
-  padding:8px 10px!important;
-  border:1.5px solid var(--dg-line)!important;
+  padding:8px 11px!important;
+  border:1.5px solid var(--dl-line)!important;
   border-radius:16px!important;
-  background:var(--dg-panel-bg)!important;
+  background:var(--dl-panel-bg)!important;
   box-shadow:0 6px 18px rgba(0,0,0,.42), inset 0 0 12px rgba(255,255,255,.025)!important;
   backdrop-filter:blur(2px)!important;
   -webkit-backdrop-filter:blur(2px)!important;
@@ -2113,7 +2114,7 @@
 .overlay-panel>#noticeBox:not(.hidden),
 .overlay-panel>#karaokeBox:not(.hidden),
 .overlay-panel>#creatorBox:not(.hidden){
-  border-top:1px solid var(--dg-soft-line)!important;
+  border-top:1px solid var(--dl-soft-line)!important;
 }
 
 .account-box{padding:3px 0 6px!important}
@@ -2124,8 +2125,8 @@
 .broadcast-timer-box{padding:4px 0 6px!important}
 
 .account-title,.notice-title,.funding-title,.karaoke-title,.notice-text,.notice-line,.allowance-row,
-.creator-grid-line,.roller,.roller-item,.karaoke-notice,.karaoke-current,.karaoke-song-row,.timer-label,.timer-value{
-  text-shadow:var(--dg-shadow)!important;
+.creator-inline-line,.roller,.roller-item,.karaoke-notice,.karaoke-current,.karaoke-song-row,.timer-label,.timer-value{
+  text-shadow:var(--dl-shadow)!important;
   -webkit-text-stroke:0!important;
   filter:none!important;
 }
@@ -2135,60 +2136,60 @@
   display:flex!important;
   align-items:center!important;
   justify-content:stretch!important;
-  height:31px!important;
-  gap:6px!important;
+  height:32px!important;
+  gap:7px!important;
 }
 
 .account-title{
-  flex:0 0 92px!important;
-  width:92px!important;
-  min-width:92px!important;
+  flex:0 0 94px!important;
+  width:94px!important;
+  min-width:94px!important;
   padding:0!important;
   background:transparent!important;
   border:0!important;
-  color:var(--dg-gold)!important;
+  color:var(--dl-gold)!important;
   font-size:18px!important;
   line-height:1!important;
   font-weight:1000!important;
-  letter-spacing:-.06em!important;
+  letter-spacing:-.055em!important;
   text-align:left!important;
-  text-shadow:var(--dg-title-shadow)!important;
+  text-shadow:var(--dl-title-shadow)!important;
 }
 .account-title::before{content:"💎 ";}
 
 .roller{
   flex:1 1 auto!important;
   min-width:0!important;
-  height:31px!important;
-  line-height:31px!important;
+  height:32px!important;
+  line-height:32px!important;
   font-size:22px!important;
   font-weight:1000!important;
-  letter-spacing:-.065em!important;
+  letter-spacing:-.055em!important;
   color:#fff!important;
 }
 
 .roller-item{
-  height:31px!important;
-  min-height:31px!important;
+  height:32px!important;
+  min-height:32px!important;
   justify-content:flex-end!important;
   gap:3px!important;
   padding:0!important;
 }
 
 .account-donor{
-  max-width:72px!important;
+  max-width:100px!important;
   color:#fff!important;
-  text-shadow:var(--dg-shadow)!important;
+  text-shadow:var(--dl-shadow)!important;
 }
 .account-heart{font-size:.70em!important}
 .account-amount{
-  color:var(--dg-gold)!important;
+  color:var(--dl-gold)!important;
   font-size:.98em!important;
   font-weight:1000!important;
-  text-shadow:var(--dg-shadow)!important;
+  text-shadow:var(--dl-shadow)!important;
 }
 
-/* 섹션 타이틀 */
+/* 섹션 타이틀 좌측정렬 */
 .notice-title,.funding-title,.karaoke-title{
   display:block!important;
   width:100%!important;
@@ -2203,11 +2204,11 @@
   line-height:1.05!important;
   font-weight:1000!important;
   letter-spacing:-.055em!important;
-  text-align:right!important;
+  text-align:left!important;
 }
-.notice-title{color:var(--dg-blue)!important}.notice-title::before{content:"💎 ";}
-.funding-title{color:var(--dg-green)!important}.funding-title::before{content:"💎 ";}
-.karaoke-title{color:var(--dg-green)!important}.karaoke-title::before{content:"💎 ";}
+.notice-title{color:var(--dl-blue)!important}.notice-title::before{content:"💎 ";}
+.funding-title{color:var(--dl-green)!important}.funding-title::before{content:"💎 ";}
+.karaoke-title{color:var(--dl-green)!important}.karaoke-title::before{content:"💎 ";}
 
 .creator-box::before{
   content:"💎 크리에이터";
@@ -2215,12 +2216,12 @@
   width:100%!important;
   margin:0 0 5px!important;
   padding:0!important;
-  color:var(--dg-pink)!important;
+  color:var(--dl-pink)!important;
   font-size:18px!important;
   line-height:1.05!important;
   font-weight:1000!important;
   letter-spacing:-.055em!important;
-  text-align:right!important;
+  text-align:left!important;
   text-shadow:0 1px 2px rgba(0,0,0,.72)!important;
 }
 
@@ -2229,7 +2230,7 @@
   font-size:21px!important;
   line-height:1.14!important;
   font-weight:1000!important;
-  letter-spacing:-.065em!important;
+  letter-spacing:-.06em!important;
   word-break:keep-all!important;
   overflow-wrap:anywhere!important;
   color:#fff!important;
@@ -2246,54 +2247,57 @@
   font-weight:1000!important;
   color:#fff3a6!important;
   letter-spacing:-.055em!important;
-  text-align:right!important;
+  text-align:left!important;
 }
 
-/* 크리에이터 고정칸 */
+/* 크리에이터: 이름(183.6) 흡+1 먹+0 */
 .creator-list{gap:4px!important}
-.creator-grid-item{width:100%!important;padding:0!important;margin:0!important}
+.creator-inline-item{width:100%!important;padding:0!important;margin:0!important}
 
-.creator-grid-line{
-  display:grid!important;
-  grid-template-columns: 4.2em 4.5em 3.6em 3.6em;
+.creator-inline-line{
+  display:flex!important;
   align-items:baseline!important;
-  justify-content:end!important;
-  column-gap:4px!important;
+  justify-content:flex-start!important;
+  gap:3px!important;
   width:100%!important;
   min-width:0!important;
   white-space:nowrap!important;
   overflow:hidden!important;
+  text-overflow:ellipsis!important;
   font-size:22px!important;
   line-height:1.08!important;
   font-weight:1000!important;
-  letter-spacing:-.065em!important;
+  letter-spacing:-.06em!important;
   color:#fff!important;
 }
 
-.creator-grid-name{
+.creator-inline-name{
+  flex:0 1 auto!important;
   min-width:0!important;
+  max-width:86px!important;
   overflow:hidden!important;
   text-overflow:ellipsis!important;
   white-space:nowrap!important;
   color:#fff!important;
-  text-align:left!important;
 }
 
-.creator-grid-total{
+.creator-inline-total{
+  flex:0 0 auto!important;
   color:#ffc2d6!important;
-  text-align:right!important;
+  margin-right:4px!important;
 }
 
-.creator-grid-opt{
-  text-align:right!important;
+.creator-inline-opt{
+  flex:0 0 auto!important;
   font-variant-numeric:tabular-nums!important;
+  margin-left:2px!important;
 }
 
 .creator-main,.creator-sub{display:none!important}
 
-.plus{color:var(--dg-blue)!important}
-.red,.blue{color:var(--dg-red)!important}
-.muted{color:var(--dg-gold)!important}
+.plus{color:var(--dl-blue)!important}
+.red,.blue{color:var(--dl-red)!important}
+.muted{color:var(--dl-gold)!important}
 
 /* 펀딩 */
 .funding-line{
@@ -2313,14 +2317,14 @@
 /* 노래방 */
 .karaoke-notice{font-size:20px!important;line-height:1.1!important;font-weight:1000!important}
 .karaoke-current{font-size:20px!important;line-height:1.1!important;gap:4px!important}
-.karaoke-reserve-title{font-size:18px!important;margin-top:5px!important;color:var(--dg-green)!important;text-shadow:var(--dg-shadow)!important}
+.karaoke-reserve-title{font-size:18px!important;margin-top:5px!important;color:var(--dl-green)!important;text-shadow:var(--dl-shadow)!important}
 .karaoke-song-row{grid-template-columns:36px auto minmax(0,1fr)!important;font-size:17px!important;gap:4px!important}
 .karaoke-coin-ticker{background:rgba(0,0,0,.20)!important;border:1px solid rgba(255,255,255,.14)!important}
 .karaoke-coin-ticker span{font-size:16px!important;line-height:26px!important}
 
 /* 타이머 */
 .broadcast-timer-box{justify-content:space-between!important;gap:8px!important}
-.timer-label{font-size:17px!important;color:var(--dg-gold)!important}
+.timer-label{font-size:17px!important;color:var(--dl-gold)!important}
 .timer-value{font-size:29px!important;color:#fff!important}
 
 /* ALERT */
@@ -2335,10 +2339,10 @@
   backdrop-filter:blur(3px)!important;
   -webkit-backdrop-filter:blur(3px)!important;
 }
-.alert-donor,.alert-total-amount,.alert-target,.alert-source{text-shadow:var(--dg-shadow)!important;-webkit-text-stroke:0!important}
+.alert-donor,.alert-total-amount,.alert-target,.alert-source{text-shadow:var(--dl-shadow)!important;-webkit-text-stroke:0!important}
 .alert-donor-total-line{justify-content:space-between!important}
 .alert-donor-total-line .alert-donor{max-width:54%!important;font-size:26px!important;line-height:1!important}
-.alert-total-amount{font-size:25px!important;line-height:1!important;color:var(--dg-gold)!important}
+.alert-total-amount{font-size:25px!important;line-height:1!important;color:var(--dl-gold)!important}
 .alert-creator-line.alert-split-line{margin-top:6px!important;justify-content:flex-start!important}
 .alert-target.alert-split-chip{font-size:18px!important;line-height:1.08!important}
 .alert-source{font-size:14px!important}
@@ -2350,8 +2354,8 @@ body.test-bg{
 }
 
 @media(max-width:720px){
-  :root{--overlay-w:306px;--top:52px;--right:30px;}
-  .creator-grid-line{font-size:21px!important;grid-template-columns:4.1em 4.4em 3.5em 3.5em;}
+  :root{--overlay-w:336px;--top:52px;--right:30px;}
+  .creator-inline-line{font-size:21px!important;}
 }
 
 </style>
@@ -3386,12 +3390,11 @@ let missionCountdownLastSec = null;
           });
 
           return `
-        <article class="creator-item creator-grid-item">
-          <div class="creator-grid-line">
-            <span class="creator-grid-name">${escapeHtml(shortName)}</span>
-            <span class="creator-grid-total">(${escapeHtml(total)})</span>
-            <span class="creator-grid-opt ${signClass(smokeValue)}">${escapeHtml(signedText("흡", smokeValue))}</span>
-            <span class="creator-grid-opt ${signClass(foodValue)}">${escapeHtml(signedText("먹", foodValue))}</span>
+        <article class="creator-item creator-inline-item">
+          <div class="creator-inline-line">
+            <span class="creator-inline-name">${escapeHtml(shortName)}</span><span class="creator-inline-total">(${escapeHtml(total)})</span>
+            <span class="creator-inline-opt ${signClass(smokeValue)}">${escapeHtml(signedText("흡", smokeValue))}</span>
+            <span class="creator-inline-opt ${signClass(foodValue)}">${escapeHtml(signedText("먹", foodValue))}</span>
           </div>
         </article>
       `;
