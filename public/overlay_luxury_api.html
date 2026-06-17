@@ -2048,45 +2048,42 @@
 
 
 /* =========================================================
-   BRAND CARD LUXURY OVERLAY v8
-   - 샘플 이미지 같은 브랜드 카드형 통합 오버레이
-   - 상단 브랜드 타이틀 + 내부 정보 박스
+   DIAMOND SECTION UNIFIED OVERLAY v10
+   - 상단 브랜드 없음
+   - 통합박스 1개
+   - 섹션 타이틀: 💎 계좌후원 / 💎 공지 / 💎 크리에이터 / 💎 노래방
+   - 방송 가독성 우선
    - 기존 API/JS 기능 유지
 ========================================================= */
 :root{
-  --overlay-w: 330px;
+  --overlay-w: 300px;
   --top: 54px;
   --right: 30px;
 
-  --brand-gold:#ffd96b;
-  --brand-gold2:#ffbd3e;
-  --brand-blue:#53cfff;
-  --brand-pink:#ff76bd;
-  --brand-green:#baff9b;
-  --brand-white:#ffffff;
+  --dia-gold:#ffd86a;
+  --dia-blue:#62dcff;
+  --dia-pink:#ff73bd;
+  --dia-green:#aaff8a;
+  --dia-red:#ff6076;
 
-  --brand-panel-bg:
-    radial-gradient(circle at 14% 0%, rgba(83,207,255,.16), transparent 28%),
-    radial-gradient(circle at 86% 0%, rgba(255,217,107,.12), transparent 30%),
-    linear-gradient(180deg, rgba(255,255,255,.055), rgba(255,255,255,.018)),
-    rgba(29,31,38,.72);
+  --dia-panel-bg:
+    radial-gradient(circle at 16% 0%, rgba(255,216,106,.14), transparent 32%),
+    linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.010)),
+    rgba(0,0,0,.42);
 
-  --brand-inner-bg:
-    linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,.012)),
-    rgba(0,0,0,.48);
+  --dia-line:rgba(255,216,106,.62);
+  --dia-soft-line:rgba(255,255,255,.18);
 
-  --brand-line:rgba(255,217,107,.62);
-  --brand-soft-line:rgba(255,255,255,.13);
-
-  --brand-shadow:
+  --dia-shadow:
     0 2px 2px rgba(0,0,0,1),
-    0 0 5px rgba(0,0,0,.98),
-    0 0 9px rgba(0,0,0,.90);
+    0 0 5px rgba(0,0,0,1),
+    0 0 10px rgba(0,0,0,.98),
+    0 0 15px rgba(0,0,0,.82);
 
-  --brand-gold-shadow:
+  --dia-gold-shadow:
     0 2px 2px rgba(0,0,0,1),
-    0 0 5px rgba(0,0,0,.95),
-    0 0 10px rgba(255,217,107,.55);
+    0 0 5px rgba(0,0,0,1),
+    0 0 10px rgba(255,216,106,.55);
 }
 
 /* 위치 */
@@ -2095,73 +2092,58 @@
   max-width:calc(100vw - 54px)!important;
   top:var(--top)!important;
   right:max(var(--right),30px)!important;
-  gap:6px!important;
+  gap:5px!important;
   padding:0!important;
   border:0!important;
   background:transparent!important;
   box-shadow:none!important;
 }
 
-/* 통합 브랜드 카드 */
+/* 통합박스 */
 .overlay-panel{
   position:relative!important;
   display:flex!important;
   flex-direction:column!important;
-  gap:6px!important;
+  gap:0!important;
   width:100%!important;
-  padding:13px 14px 14px!important;
-  border:1.5px solid var(--brand-line)!important;
+  padding:9px 10px!important;
+  border:2px solid var(--dia-line)!important;
   border-radius:18px!important;
-  background:var(--brand-panel-bg)!important;
+  background:var(--dia-panel-bg)!important;
   box-shadow:
-    0 10px 25px rgba(0,0,0,.45),
-    0 0 15px rgba(255,217,107,.22),
+    0 8px 22px rgba(0,0,0,.52),
+    0 0 15px rgba(255,216,106,.22),
     inset 0 0 14px rgba(255,255,255,.035)!important;
-  backdrop-filter:blur(4px)!important;
-  -webkit-backdrop-filter:blur(4px)!important;
+  backdrop-filter:blur(3px)!important;
+  -webkit-backdrop-filter:blur(3px)!important;
   overflow:hidden!important;
 }
 
-/* 브랜드 헤더 생성 */
+/* 은은한 ALERT 느낌 광택 */
 .overlay-panel::before{
-  content:"💎 사랑해 빵떠기\A LUXURY OVERLAY";
-  white-space:pre;
-  display:block;
-  color:var(--brand-gold);
-  font-size:20px;
-  line-height:1.08;
-  font-weight:1000;
-  letter-spacing:-.045em;
-  text-shadow:var(--brand-gold-shadow);
-  -webkit-text-stroke:.35px rgba(0,0,0,.85);
-  margin:0 0 6px 0;
-  padding-left:1px;
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background:linear-gradient(115deg, transparent 0%, rgba(255,255,255,.12) 44%, transparent 66%);
+  transform:translateX(-130%);
+  animation:diamondPanelShine 5s ease-in-out infinite;
+  opacity:.32;
+}
+@keyframes diamondPanelShine{
+  0%,50%{transform:translateX(-130%)}
+  80%,100%{transform:translateX(130%)}
 }
 
-/* 헤더 하단 영문만 작게 보이도록 완벽 분리는 CSS 한계라 전체 line-height로 처리 */
-
-/* 내부 섹션을 하나의 검정 정보박스 느낌으로 */
+/* 내부 섹션은 통합박스 안에서 투명 */
 .overlay-panel > .overlay-box{
   position:relative!important;
   z-index:1!important;
-  background:var(--brand-inner-bg)!important;
+  width:100%!important;
+  background:transparent!important;
   border:0!important;
   box-shadow:none!important;
   border-radius:0!important;
-  width:100%!important;
-}
-
-/* 첫 섹션은 정보박스 상단 둥글게 */
-.overlay-panel > #broadcastTimerBox:not(.hidden),
-.overlay-panel > #accountBox{
-  border-top-left-radius:12px!important;
-  border-top-right-radius:12px!important;
-}
-
-/* 마지막 섹션 둥글게 */
-.overlay-panel > #creatorBox:not(.hidden){
-  border-bottom-left-radius:12px!important;
-  border-bottom-right-radius:12px!important;
 }
 
 /* 섹션 구분선 */
@@ -2169,18 +2151,18 @@
 .overlay-panel > #noticeBox:not(.hidden),
 .overlay-panel > #karaokeBox:not(.hidden),
 .overlay-panel > #creatorBox:not(.hidden){
-  border-top:1px solid var(--brand-soft-line)!important;
+  border-top:1px solid var(--dia-soft-line)!important;
 }
 
-/* 여백 */
-.account-box{padding:10px 12px 7px!important}
-.funding-box{padding:7px 12px!important}
-.notice-box{padding:8px 12px!important}
-.karaoke-box{padding:8px 12px!important}
-.creator-box{padding:8px 12px 10px!important}
-.broadcast-timer-box{padding:8px 12px!important}
+/* 섹션 여백 */
+.account-box{padding:3px 0 7px!important}
+.funding-box{padding:7px 0!important}
+.notice-box{padding:7px 0!important}
+.karaoke-box{padding:7px 0!important}
+.creator-box{padding:8px 0 3px!important}
+.broadcast-timer-box{padding:5px 0 7px!important}
 
-/* 전체 글자 */
+/* 전체 텍스트 가독성 */
 .account-title,
 .notice-title,
 .funding-title,
@@ -2199,141 +2181,186 @@
 .karaoke-song-row,
 .timer-label,
 .timer-value{
-  text-shadow:var(--brand-shadow)!important;
-  -webkit-text-stroke:.45px rgba(0,0,0,.82);
+  text-shadow:var(--dia-shadow)!important;
+  -webkit-text-stroke:.8px rgba(0,0,0,.95);
+  text-rendering:geometricPrecision;
 }
 
-/* 계좌후원 2열 정보 */
+/* =========================================================
+   다이아 섹션 타이틀
+========================================================= */
+
+/* 계좌후원 */
 .account-row{
-  height:31px!important;
-  gap:8px!important;
-  justify-content:stretch!important;
+  display:grid!important;
+  grid-template-columns:1fr!important;
+  height:auto!important;
+  gap:3px!important;
+  align-items:stretch!important;
 }
 
 .account-title{
-  flex:0 0 82px!important;
-  width:82px!important;
-  min-width:82px!important;
+  display:block!important;
+  width:100%!important;
+  min-width:0!important;
+  flex:none!important;
   padding:0!important;
   background:transparent!important;
   border:0!important;
-  color:#fff!important;
+  color:var(--dia-gold)!important;
   font-size:18px!important;
-  line-height:1!important;
+  line-height:1.05!important;
   font-weight:1000!important;
-  letter-spacing:-.075em!important;
+  letter-spacing:-.06em!important;
   text-align:left!important;
+  text-shadow:var(--dia-gold-shadow)!important;
+  -webkit-text-stroke:.65px rgba(0,0,0,.95);
+}
+.account-title::before{
+  content:"💎 ";
 }
 
+/* 공지/펀딩/노래방 */
+.notice-title,
+.funding-title,
+.karaoke-title{
+  display:block!important;
+  width:100%!important;
+  max-width:100%!important;
+  margin:0 0 5px!important;
+  padding:0!important;
+  background:transparent!important;
+  border:0!important;
+  box-shadow:none!important;
+  border-radius:0!important;
+  font-size:18px!important;
+  line-height:1.05!important;
+  font-weight:1000!important;
+  letter-spacing:-.06em!important;
+  text-align:left!important;
+  -webkit-text-stroke:.65px rgba(0,0,0,.95);
+}
+
+.notice-title{
+  color:var(--dia-blue)!important;
+  text-shadow:
+    0 2px 2px #000,
+    0 0 5px #000,
+    0 0 10px rgba(98,220,255,.55)!important;
+}
+.notice-title::before{content:"💎 ";}
+
+.funding-title{
+  color:var(--dia-green)!important;
+  text-shadow:
+    0 2px 2px #000,
+    0 0 5px #000,
+    0 0 10px rgba(170,255,138,.48)!important;
+}
+.funding-title::before{content:"💎 ";}
+
+.karaoke-title{
+  color:var(--dia-green)!important;
+  text-shadow:
+    0 2px 2px #000,
+    0 0 5px #000,
+    0 0 10px rgba(170,255,138,.48)!important;
+}
+.karaoke-title::before{content:"💎 ";}
+
+/* 크리에이터는 DOM 타이틀이 없어서 생성 */
+.creator-box::before{
+  content:"💎 크리에이터";
+  display:block!important;
+  width:100%!important;
+  margin:0 0 6px!important;
+  padding:0!important;
+  color:var(--dia-pink)!important;
+  font-size:18px!important;
+  line-height:1.05!important;
+  font-weight:1000!important;
+  letter-spacing:-.06em!important;
+  text-align:left!important;
+  text-shadow:
+    0 2px 2px #000,
+    0 0 5px #000,
+    0 0 10px rgba(255,115,189,.55)!important;
+  -webkit-text-stroke:.65px rgba(0,0,0,.95);
+}
+
+/* 계좌후원 내용 */
 .roller{
+  width:100%!important;
   height:31px!important;
   line-height:31px!important;
-  font-size:22px!important;
+  font-size:24px!important;
   font-weight:1000!important;
-  letter-spacing:-.065em!important;
+  letter-spacing:-.075em!important;
+  color:#fff!important;
 }
 
 .roller-item{
   height:31px!important;
   min-height:31px!important;
-  justify-content:flex-end!important;
+  justify-content:flex-start!important;
   gap:3px!important;
   padding:0!important;
 }
 
 .account-donor{
-  max-width:68px!important;
+  max-width:110px!important;
   color:#fff!important;
-  text-shadow:var(--brand-shadow)!important;
+  text-shadow:var(--dia-shadow)!important;
+  -webkit-text-stroke:.8px rgba(0,0,0,.95);
 }
 
-.account-heart{font-size:.68em!important}
+.account-heart{
+  font-size:.72em!important;
+}
 
 .account-amount{
-  color:var(--brand-gold)!important;
+  color:var(--dia-gold)!important;
   font-size:.98em!important;
   font-weight:1000!important;
-  text-shadow:var(--brand-gold-shadow)!important;
-}
-
-/* 공지/펀딩/노래방 타이틀: 작은 라벨 */
-.notice-title,
-.funding-title,
-.karaoke-title{
-  display:inline-flex!important;
-  align-items:center!important;
-  justify-content:center!important;
-  width:auto!important;
-  max-width:100%!important;
-  margin:0 auto 5px!important;
-  padding:2px 9px!important;
-  border-radius:999px!important;
-  background:rgba(83,207,255,.13)!important;
-  border:1px solid rgba(83,207,255,.38)!important;
-  color:var(--brand-blue)!important;
-  font-size:14px!important;
-  line-height:1.05!important;
-  font-weight:1000!important;
-  letter-spacing:-.04em!important;
-  text-shadow:var(--brand-shadow)!important;
+  text-shadow:var(--dia-gold-shadow)!important;
+  -webkit-text-stroke:.8px rgba(0,0,0,.95);
 }
 
 /* 공지 */
 .notice-text,
 .notice-line{
-  font-size:20px!important;
-  line-height:1.13!important;
+  font-size:22px!important;
+  line-height:1.14!important;
   font-weight:1000!important;
-  letter-spacing:-.07em!important;
+  letter-spacing:-.075em!important;
   word-break:keep-all!important;
   overflow-wrap:anywhere!important;
   color:#fff!important;
 }
-
 .notice-roll-window{
-  height:calc(20px * 1.13 * 3)!important;
+  height:calc(22px * 1.14 * 3)!important;
 }
 .notice-roll-track .notice-line{
-  min-height:calc(20px * 1.13)!important;
+  min-height:calc(22px * 1.14)!important;
 }
 
 /* 용돈 */
 .allowance-row{
   margin-top:6px!important;
   padding:5px 0 0!important;
-  border-top:1px solid rgba(255,255,255,.14)!important;
-  font-size:18px!important;
+  border-top:1px solid rgba(255,255,255,.20)!important;
+  font-size:20px!important;
   line-height:1.1!important;
   font-weight:1000!important;
   color:#fff3a6!important;
-  letter-spacing:-.06em!important;
+  letter-spacing:-.065em!important;
   text-align:left!important;
 }
 
-/* 크리에이터 타이틀을 내부 라벨로 생성 */
-.creator-box::before{
-  content:"크리에이터";
-  display:inline-flex!important;
-  align-items:center!important;
-  justify-content:center!important;
-  width:auto!important;
-  max-width:100%!important;
-  margin:0 auto 7px!important;
-  padding:2px 9px!important;
-  border-radius:999px!important;
-  background:rgba(255,217,107,.13)!important;
-  border:1px solid rgba(255,217,107,.42)!important;
-  color:var(--brand-gold)!important;
-  font-size:14px!important;
-  line-height:1.05!important;
-  font-weight:1000!important;
-  letter-spacing:-.04em!important;
-  text-shadow:var(--brand-gold-shadow)!important;
-  -webkit-text-stroke:.35px rgba(0,0,0,.85);
-}
-
 /* 크리에이터 */
-.creator-list{gap:6px!important}
+.creator-list{
+  gap:6px!important;
+}
 
 .creator-main{
   grid-template-columns:42% 58%!important;
@@ -2342,7 +2369,7 @@
 }
 
 .creator-name{
-  font-size:23px!important;
+  font-size:25px!important;
   line-height:1!important;
   font-weight:1000!important;
   letter-spacing:-.08em!important;
@@ -2352,7 +2379,7 @@
 }
 
 .donation-amount{
-  font-size:23px!important;
+  font-size:25px!important;
   line-height:1!important;
   font-weight:1000!important;
   letter-spacing:-.08em!important;
@@ -2365,7 +2392,7 @@
   padding:0!important;
   justify-content:flex-start!important;
   gap:7px!important;
-  font-size:20px!important;
+  font-size:22px!important;
   line-height:1!important;
   font-weight:1000!important;
   letter-spacing:-.075em!important;
@@ -2375,87 +2402,102 @@
   justify-content:flex-start!important;
   width:100%!important;
   gap:7px!important;
-  font-size:20px!important;
+  font-size:22px!important;
 }
 
-.plus{color:var(--brand-blue)!important}
-.red,.blue{color:#ff6076!important}
-.muted{color:#ffe066!important}
+.plus{
+  color:var(--dia-blue)!important;
+  text-shadow:
+    0 2px 2px #000,
+    0 0 5px #000,
+    0 0 10px rgba(98,220,255,.55)!important;
+}
+.red,.blue{
+  color:var(--dia-red)!important;
+  text-shadow:
+    0 2px 2px #000,
+    0 0 5px #000,
+    0 0 10px rgba(255,96,118,.55)!important;
+}
+.muted{
+  color:var(--dia-gold)!important;
+}
 
 /* 펀딩 */
 .funding-line{
-  min-height:32px!important;
-  height:32px!important;
-  padding:4px 7px!important;
+  min-height:34px!important;
+  height:34px!important;
+  padding:5px 8px!important;
   border-radius:9px!important;
-  background:rgba(255,255,255,.05)!important;
-  border:1px solid rgba(255,255,255,.10)!important;
-  font-size:19px!important;
+  background:rgba(0,0,0,.20)!important;
+  border:1px solid rgba(255,255,255,.16)!important;
+  font-size:21px!important;
   font-weight:1000!important;
   letter-spacing:-.07em!important;
 }
-.funding-roller{height:32px!important}
-.funding-track .funding-line{height:32px!important}
+.funding-roller{height:34px!important}
+.funding-track .funding-line{height:34px!important}
 
 /* 노래방 */
 .karaoke-notice{
-  font-size:19px!important;
+  font-size:21px!important;
   line-height:1.1!important;
   font-weight:1000!important;
 }
 .karaoke-current{
-  font-size:19px!important;
+  font-size:21px!important;
   line-height:1.1!important;
   gap:4px!important;
 }
 .karaoke-reserve-title{
-  font-size:17px!important;
+  font-size:18px!important;
   margin-top:5px!important;
+  color:var(--dia-green)!important;
+  text-shadow:var(--dia-shadow)!important;
+  -webkit-text-stroke:.75px rgba(0,0,0,.95);
 }
 .karaoke-song-row{
-  grid-template-columns:34px auto minmax(0,1fr)!important;
-  font-size:16px!important;
+  grid-template-columns:36px auto minmax(0,1fr)!important;
+  font-size:17px!important;
   gap:4px!important;
 }
 .karaoke-coin-ticker{
-  background:rgba(255,255,255,.06)!important;
-  border:1px solid rgba(255,255,255,.10)!important;
+  background:rgba(0,0,0,.22)!important;
+  border:1px solid rgba(255,255,255,.16)!important;
 }
 .karaoke-coin-ticker span{
-  font-size:15px!important;
-  line-height:25px!important;
+  font-size:16px!important;
+  line-height:26px!important;
 }
 
-/* 미션/방송 타이머도 안쪽 박스 행 */
+/* 타이머 */
 .broadcast-timer-box{
   justify-content:space-between!important;
   gap:8px!important;
 }
-
 .timer-label{
-  font-size:18px!important;
-  color:#fff!important;
+  font-size:17px!important;
+  color:var(--dia-gold)!important;
 }
 .timer-value{
-  font-size:25px!important;
-  color:var(--brand-gold)!important;
-  text-shadow:var(--brand-gold-shadow)!important;
+  font-size:30px!important;
+  color:#fff!important;
 }
 
-/* ALERT도 같은 브랜드 카드 톤 */
+/* ALERT 톤 유지 */
 :root{--alert-height:118px}
 #overlayAlertRoot #optionAlert.option-alert{
   min-height:110px!important;
   padding:10px 10px 11px!important;
-  border-radius:12px!important;
-  border:1.5px solid rgba(255,217,107,.72)!important;
+  border-radius:15px!important;
+  border:1.5px solid rgba(255,216,106,.75)!important;
   background:
-    radial-gradient(circle at 16% 0%, rgba(255,217,107,.22), transparent 38%),
+    radial-gradient(circle at 16% 0%, rgba(255,216,106,.22), transparent 38%),
     linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.012)),
-    rgba(0,0,0,.52)!important;
+    rgba(0,0,0,.45)!important;
   box-shadow:
     0 7px 20px rgba(0,0,0,.52),
-    0 0 14px rgba(255,217,107,.24)!important;
+    0 0 14px rgba(255,216,106,.24)!important;
   backdrop-filter:blur(4px)!important;
   -webkit-backdrop-filter:blur(4px)!important;
 }
@@ -2464,11 +2506,15 @@
   max-width:54%!important;
   font-size:27px!important;
   line-height:1!important;
+  text-shadow:var(--dia-shadow)!important;
+  -webkit-text-stroke:.8px rgba(0,0,0,.95);
 }
 .alert-total-amount{
   font-size:26px!important;
   line-height:1!important;
-  color:var(--brand-gold)!important;
+  color:var(--dia-gold)!important;
+  text-shadow:var(--dia-gold-shadow)!important;
+  -webkit-text-stroke:.8px rgba(0,0,0,.95);
 }
 .alert-creator-line.alert-split-line{
   margin-top:6px!important;
@@ -2477,12 +2523,14 @@
 .alert-target.alert-split-chip{
   font-size:19px!important;
   line-height:1.08!important;
+  text-shadow:var(--dia-shadow)!important;
+  -webkit-text-stroke:.7px rgba(0,0,0,.95);
 }
 .alert-source{font-size:14px!important}
 
 /* 이미지 슬라이드 */
 .overlay-stack > .top-slide-box{
-  margin-bottom:6px!important;
+  margin-bottom:5px!important;
   border-radius:14px!important;
 }
 
@@ -2494,9 +2542,10 @@ body.test-bg{
     linear-gradient(135deg,#d9e8ff,#8c8178 45%,#1a1d25)!important;
 }
 
+/* 모바일 보정 */
 @media(max-width:720px){
   :root{
-    --overlay-w:322px;
+    --overlay-w:296px;
     --top:52px;
     --right:30px;
   }
