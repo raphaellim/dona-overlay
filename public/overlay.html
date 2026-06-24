@@ -2426,6 +2426,116 @@ body.test-bg{
   :root{--overlay-w:336px;--top:52px;--right:30px;}
 }
 
+
+
+/* =========================================================
+   ALERT READABILITY COMPACT FIX v0625
+   - 후원 ALERT 후원자명 색상 확실히 표시
+   - 빈공간 축소 / 글자 크기 확대
+   - 기존 ALERT 기능 유지
+========================================================= */
+:root{--alert-height:118px;}
+#overlayAlertRoot #optionAlert.option-alert{
+  min-height:108px!important;
+  padding:10px 11px 11px!important;
+  border-radius:15px!important;
+  border:1.5px solid var(--oc-line, rgba(255,216,106,.70))!important;
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.065),rgba(255,255,255,.015)),
+    rgba(0,0,0,.58)!important;
+  box-shadow:
+    0 7px 20px rgba(0,0,0,.52),
+    inset 0 0 10px rgba(255,255,255,.035)!important;
+  backdrop-filter:blur(3px)!important;
+  -webkit-backdrop-filter:blur(3px)!important;
+  overflow:hidden!important;
+}
+#overlayAlertRoot #optionAlert.option-alert::before{
+  display:none!important;
+  content:none!important;
+}
+#overlayAlertRoot .blink-donor,
+#overlayAlertRoot .alert-donor{
+  background:none!important;
+  -webkit-background-clip:initial!important;
+  background-clip:initial!important;
+  color:#ffffff!important;
+  -webkit-text-fill-color:#ffffff!important;
+  animation:none!important;
+  opacity:1!important;
+  filter:none!important;
+  text-shadow:
+    0 1px 2px rgba(0,0,0,.88),
+    0 0 6px rgba(0,0,0,.55)!important;
+}
+#overlayAlertRoot .alert-donor-total-line{
+  justify-content:space-between!important;
+  align-items:baseline!important;
+  gap:8px!important;
+  flex-wrap:nowrap!important;
+  width:100%!important;
+}
+#overlayAlertRoot .alert-donor-total-line .alert-donor{
+  flex:1 1 auto!important;
+  max-width:none!important;
+  min-width:0!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+  text-align:left!important;
+  font-size:calc(var(--style-alert-size, 30px) * .98)!important;
+  line-height:1!important;
+  font-weight:1000!important;
+  letter-spacing:-.055em!important;
+}
+#overlayAlertRoot .alert-total-amount{
+  flex:0 0 auto!important;
+  color:var(--oc-title-account,#ffd86a)!important;
+  -webkit-text-fill-color:var(--oc-title-account,#ffd86a)!important;
+  font-size:calc(var(--style-alert-size, 30px) * .92)!important;
+  line-height:1!important;
+  font-weight:1000!important;
+  letter-spacing:-.06em!important;
+  text-shadow:0 1px 2px rgba(0,0,0,.85)!important;
+}
+#overlayAlertRoot .alert-creator-line.alert-split-line{
+  margin-top:7px!important;
+  display:flex!important;
+  justify-content:flex-start!important;
+  align-items:center!important;
+  gap:4px 8px!important;
+  line-height:1.08!important;
+  max-height:44px!important;
+  overflow:hidden!important;
+}
+#overlayAlertRoot .alert-target.alert-split-chip{
+  font-size:calc(var(--style-alert-size, 30px) * .68)!important;
+  line-height:1.08!important;
+  color:#fff3b0!important;
+  font-weight:1000!important;
+  text-shadow:0 1px 2px rgba(0,0,0,.82)!important;
+}
+#overlayAlertRoot .alert-line2{
+  margin-top:7px!important;
+  justify-content:flex-start!important;
+  align-items:center!important;
+  gap:6px!important;
+  font-size:calc(var(--style-alert-size, 30px) * .52)!important;
+  line-height:1!important;
+}
+#overlayAlertRoot .alert-source{
+  font-size:calc(var(--style-alert-size, 30px) * .48)!important;
+  padding:3px 7px!important;
+  color:#9ee7ff!important;
+  background:rgba(80,200,255,.12)!important;
+  border:1px solid rgba(120,220,255,.28)!important;
+}
+#overlayAlertRoot .option-alert .alert-plus,
+#overlayAlertRoot .option-alert .alert-minus{
+  font-size:calc(var(--style-alert-size, 30px) * .58)!important;
+  font-weight:1000!important;
+}
+
 </style>
   <link rel="stylesheet" href="/assets/css/roulette-overlay.css">
 </head>

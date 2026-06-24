@@ -14,6 +14,8 @@
   let resultPageTimer = null;
   let resultSoundRunId = '';
   let doneRunId = '';
+  let flowToken = 0;
+  let advancing = false;
   const completedRunKey = `roulette_completed_${station}`;
   const MIN_RESULT_VISIBLE_MS = 3100;
   const RESULT_POP_DELAY_MS = 750;
@@ -67,6 +69,9 @@
     return (roulette.history||[])
       .filter(h=>h.batchId===run.batchId)
       .sort((a,b)=>Number(a.sequence||0)-Number(b.sequence||0));
+  }
+  function clearHideTimer(){
+    if(hideTimer){ clearTimeout(hideTimer); hideTimer = null; }
   }
   function clearSpinTimer(){
     if(spinTimer){
@@ -182,8 +187,10 @@
     if(!run || !run.runId) return;
     if(doneRunId === run.runId) return;
     doneRunId = run.runId;
+    const myToken = flowToken;
     clearSpinTimer();
     clearResultPageTimer();
+    clearHideTimer();
     stopSpinSound();
 
     const root = ensureRoot();
@@ -199,46 +206,55 @@
     const resultVisibleMs = perPageResultVisibleMs * resultPageCount;
 
     root.classList.remove('done');
-    root.classList.add('stopped');
+    root.classList.add('show','stopped');
     document.getElementById('rouletteOverlayTitle').textContent = titleText(run);
     document.getElementById('rouletteOverlayName').textContent = run.result || '-';
     const meta = isBatch ? `연속 룰렛 ${sequence}/${total}` : (run.mode === 'auto' ? '자동 룰렛' : '수동 룰렛');
     document.getElementById('rouletteOverlayMeta').textContent = meta;
     activeRunId = run.runId;
 
-    // 멈춘 이름을 먼저 보여주고 0.5~1초 뒤 RESULT가 덮어 나오게 합니다.
     displayLockedUntil = Date.now() + RESULT_POP_DELAY_MS + resultVisibleMs;
-    clearTimeout(hideTimer);
     hideTimer = setTimeout(()=>{
+      if(myToken !== flowToken) return;
       root.classList.remove('stopped');
       root.classList.add('done');
       startResultPaging(run, roulette, perPageResultVisibleMs);
       playResultSound(run.runId);
 
-      clearTimeout(hideTimer);
+      clearHideTimer();
       hideTimer = setTimeout(async ()=>{
+        if(myToken !== flowToken) return;
+        if(advancing) return;
+        advancing = true;
         try{
+          markCompletedRun(run.runId);
           const out = await postJson('/api/roulette/advance', {runId: run.runId});
-          if(out.run){
-            markCompletedRun(run.runId);
+          advancing = false;
+          if(out.run && out.run.runId && out.run.runId !== run.runId){
+            lastRunId = out.run.runId;
             root.classList.remove('done','stopped');
             startSpin(out.run, out.roulette || roulette);
             return;
           }
-        }catch(e){}
-        markCompletedRun(run.runId);
-        root.classList.remove('show','done','stopped');
+        }catch(e){ advancing = false; }
+        root.classList.remove('show','done','stopped','spinning');
         activeRunId = '';
         doneRunId = '';
         stopSpinSound();
+        clearResultPageTimer();
         if(resultAudio){ try{ resultAudio.pause(); resultAudio.currentTime = 0; }catch(e){} }
         if(pending){
-          const next=pending; pending=null; startSpin(next.run,next.roulette);
+          const next=pending; pending=null; lastRunId = next.run?.runId || lastRunId; startSpin(next.run,next.roulette);
         }
       }, resultVisibleMs);
     }, RESULT_POP_DELAY_MS);
   }
   function startSpin(run, roulette){
+    if(!run || !run.runId) return;
+    if(activeRunId === run.runId && (document.getElementById('rouletteOverlayRoot')?.classList.contains('show'))) return;
+    flowToken += 1;
+    clearHideTimer();
+    advancing = false;
     if(run?.runId && isCompletedRun(run.runId)){
       // 새로고침 후 서버에 마지막 current가 잠깐 남아 있어도 다시 돌리지 않습니다.
       postJson('/api/roulette/advance', {runId: run.runId}).catch(()=>{});
@@ -307,6 +323,7 @@
           postJson('/api/roulette/advance', {runId: run.runId}).catch(()=>{});
           return;
         }
+        if(advancing || activeRunId === run.runId) return;
         if(run.runId !== lastRunId){
           lastRunId = run.runId;
           startSpin(run, roulette);
@@ -314,6 +331,6 @@
       }
     }catch(e){/* keep overlay quiet */}
   }
-  window.addEventListener('beforeunload', ()=>{ clearSpinTimer(); clearResultPageTimer(); stopSpinSound(); if(resultAudio){ try{ resultAudio.pause(); resultAudio.currentTime=0; }catch(e){} } });
+  window.addEventListener('beforeunload', ()=>{ clearSpinTimer(); clearResultPageTimer(); clearHideTimer(); stopSpinSound(); if(resultAudio){ try{ resultAudio.pause(); resultAudio.currentTime=0; }catch(e){} } });
   window.addEventListener('DOMContentLoaded', ()=>{ ensureRoot(); poll(); setInterval(poll, 500); });
 })();
