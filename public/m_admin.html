@@ -1221,6 +1221,7 @@ async function loadSettings(updateAuthInfo = true) {
   renderSplitRows();
   updatePreview();
   applyBroadcastLock();
+  if(window.refreshMobileInputTabs) window.refreshMobileInputTabs();
 
   if (updateAuthInfo && active?.id) {
     mobileAuth.broadcastId = active.id;
@@ -1318,24 +1319,34 @@ async function init(){
 init();
 </script>
 
-<style id="MOBILE_UX_POLISH_V3">
-:root{--lux1:#111827;--lux2:#0b1220;--luxLine:rgba(148,163,184,.22)}
-.card{border-radius:20px!important;border:1px solid var(--luxLine)!important;box-shadow:0 14px 40px rgba(0,0,0,.28)!important}.card h2,.card-head h2{letter-spacing:-.04em}.input,input,select,textarea{border-radius:15px!important;min-height:48px}.btn{border-radius:15px!important}.quick-links,.tabs{scroll-snap-type:x proximity}.quick-links a,.tab{scroll-snap-align:start}.topbar,.top{box-shadow:0 8px 28px rgba(0,0,0,.24)}
-.mobile-quick-jump{position:sticky;top:0;z-index:35;display:flex;gap:7px;overflow:auto;padding:8px 12px;background:rgba(7,16,28,.86);backdrop-filter:blur(10px);border-bottom:1px solid rgba(148,163,184,.14)}
-.mobile-quick-jump button{white-space:nowrap;border:1px solid #334155;border-radius:999px;background:#0f172a;color:#dbeafe;padding:8px 11px;font-size:12px;font-weight:1000}
+
+<style id="M_ADMIN_PAGE_TABS_FINAL_CSS">
+.mtabbar{position:sticky;top:0;z-index:45;display:flex;gap:8px;overflow:auto;padding:9px 12px;background:rgba(7,16,28,.90);backdrop-filter:blur(12px);border-bottom:1px solid rgba(148,163,184,.16);scrollbar-width:none}.mtabbar::-webkit-scrollbar{display:none}.mtabbar button{white-space:nowrap;border:1px solid #334155;border-radius:999px;background:#0f172a;color:#dbeafe;padding:10px 12px;font-size:13px;font-weight:1000}.mtabbar button.active{background:linear-gradient(135deg,#2563eb,#ec4899);color:#fff;border-color:rgba(255,255,255,.25)}.mtabbar button.disabled{opacity:.35;filter:grayscale(.35)}.madmin-hide{display:none!important}.madmin-card-shell{display:contents}.madmin-active-card{display:block!important}.sub-card.madmin-focus{margin-top:0!important}.wrap.tab-mode{padding-top:10px}.wrap.tab-mode>.card{margin-bottom:12px}
 </style>
-<script id="MOBILE_UX_POLISH_V3_JS">
+<script id="M_ADMIN_PAGE_TABS_FINAL_JS">
 (function(){
+  const TABS=[['donation','후원입력'],['split','분배'],['allowance','용돈'],['preset','프리셋'],['mission','미션타이머'],['recent','최근입력']];
   function init(){
-    if(document.querySelector('.mobile-quick-jump')||document.querySelector('.tabs'))return;
-    const heads=[...document.querySelectorAll('.card h2,.card-head h2')].slice(0,8); if(heads.length<3)return;
-    const bar=document.createElement('div'); bar.className='mobile-quick-jump';
-    heads.forEach((h,i)=>{const id='ux_m_'+i; h.closest('.card').id=id; const b=document.createElement('button'); b.textContent=h.textContent.trim().slice(0,8); b.onclick=()=>document.getElementById(id).scrollIntoView({behavior:'smooth',block:'start'}); bar.appendChild(b);});
-    const top=document.querySelector('.topbar,.top'); (top&&top.parentNode?top.parentNode:document.body).insertBefore(bar, top?top.nextSibling:document.body.firstChild);
+    const main=document.querySelector('main.wrap'); if(!main||document.querySelector('.mtabbar'))return;
+    main.classList.add('tab-mode');
+    const bar=document.createElement('div');bar.className='mtabbar';bar.innerHTML=TABS.map((t,i)=>`<button data-mtab="${t[0]}" class="${i===0?'active':''}">${t[1]}</button>`).join('');
+    const top=document.querySelector('.topbar,.top'); (top&&top.parentNode?top.parentNode:document.body).insertBefore(bar, top?top.nextSibling:main);
+    const cards=[...main.querySelectorAll(':scope > .card')]; const first=cards[0], split=cards[1], recent=cards[2];
+    if(first){[...first.children].forEach(ch=>{let t='donation'; const text=ch.textContent||''; if(ch.classList&&ch.classList.contains('sub-card')){ if(/용돈/.test(text))t='allowance'; else if(/미션타이머/.test(text))t='mission'; else if(/프리셋/.test(text))t='preset'; } ch.dataset.mtabPart=t;});}
+    if(split)split.dataset.mtabCard='split'; if(recent)recent.dataset.mtabCard='recent';
+    function updateDisabled(){const sec=(window.settings&&settings.overlaySections)||{}; const map={allowance:sec.allowance===false, mission:sec.broadcastTimer===false}; bar.querySelectorAll('button').forEach(b=>b.classList.toggle('disabled',!!map[b.dataset.mtab]));}
+    function show(tab){updateDisabled(); const btn=bar.querySelector(`[data-mtab="${tab}"]`); if(btn&&btn.classList.contains('disabled'))tab='donation'; bar.querySelectorAll('button').forEach(b=>b.classList.toggle('active',b.dataset.mtab===tab));
+      if(first){first.classList.toggle('madmin-hide',!['donation','allowance','preset','mission'].includes(tab)); [...first.children].forEach(ch=>ch.classList.toggle('madmin-hide',ch.dataset.mtabPart&&ch.dataset.mtabPart!==tab));}
+      if(split)split.classList.toggle('madmin-hide',tab!=='split'); if(recent)recent.classList.toggle('madmin-hide',tab!=='recent');
+    }
+    bar.addEventListener('click',e=>{const b=e.target.closest('button'); if(!b||b.classList.contains('disabled'))return; show(b.dataset.mtab); window.scrollTo({top:0,behavior:'smooth'});});
+    window.refreshMobileInputTabs=()=>show(bar.querySelector('button.active')?.dataset.mtab||'donation');
+    show('donation'); setTimeout(()=>show('donation'),600);
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init); else init();
 })();
 </script>
+
 </body>
 
 </html>

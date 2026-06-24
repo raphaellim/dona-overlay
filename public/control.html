@@ -497,6 +497,27 @@ textarea{resize:vertical;line-height:1.45}
       </section>
 
 
+
+      <section class="card" id="pcMissionTimerCard" data-ux-tab="mission">
+        <h2>미션타이머 컨트롤</h2>
+        <p class="muted">입력 페이지와 같은 미션타이머를 PC 컨트롤에서도 제어합니다. 시작 시 오버레이 노출도 자동 ON 됩니다.</p>
+        <div class="resultBox" id="pcMissionCurrent">미션타이머 : 00:00:00</div>
+        <div class="grid-2">
+          <div class="row"><label>타이머 제목</label><input id="pcMissionLabel" class="input" placeholder="미션타이머"></div>
+          <div class="row"><label>타이머 방식</label><select id="pcMissionMode" class="input"><option value="countdown">타임아웃</option><option value="countup">진행시간</option><option value="until">맞춤시간</option></select></div>
+        </div>
+        <div class="grid-2">
+          <div class="row"><label>타임아웃(분)</label><input id="pcMissionMinutes" class="input" inputmode="decimal" placeholder="30"></div>
+          <div class="row"><label>맞춤시간</label><input id="pcMissionTarget" class="input" type="datetime-local"></div>
+        </div>
+        <div class="grid-4" style="margin-top:10px">
+          <button class="btn blue" type="button" onclick="pcMissionSave()">설정저장</button>
+          <button class="btn green" type="button" onclick="pcMissionStart(false)">시작</button>
+          <button class="btn gray" type="button" onclick="pcMissionPause()">멈춤</button>
+          <button class="btn red" type="button" onclick="pcMissionEnd()">종료</button>
+        </div>
+      </section>
+
       <section class="card">
         <h2>사운드 설정</h2>
         <p class="muted">파일은 <b>public/sounds/</b>에 업로드하고, 여기에는 파일명만 입력합니다. 입력페이지 수동 선택은 업로드된 파일 목록을 검색해서 사용합니다.</p>
@@ -976,6 +997,7 @@ async function loadSettings(){
 
   renderPresets();
   renderManualSelectsPc();
+  renderPcMissionTimer();
   loadManualListPc().catch(()=>{});
   $('#saveHint').textContent = settings.broadcast ? `현재 방송 "${settings.broadcast.title}" 설정 저장` : '현재 방송 설정 저장';
 }
@@ -1206,27 +1228,63 @@ load();
   document.body.appendChild(a);
 })();</script>
 
-<style id="CONTROL_TOP_TABS_UX_V3">
-.ux-top-tabs{position:sticky;top:0;z-index:50;display:flex;gap:8px;overflow:auto;padding:10px 0 12px;margin:-4px 0 12px;background:linear-gradient(180deg,rgba(7,11,18,.98),rgba(7,11,18,.88));backdrop-filter:blur(8px)}
-.ux-top-tabs button{white-space:nowrap;border:1px solid #334155;border-radius:999px;background:#0f172a;color:#dbeafe;padding:10px 14px;font-weight:1000;cursor:pointer}
-.ux-top-tabs button.active{background:linear-gradient(135deg,#f59e0b,#ec4899);border-color:rgba(255,255,255,.24);color:#fff}.card.ux-hide{display:none!important}.ux-section-label{font-size:12px;color:#94a3b8;font-weight:900;margin:0 0 8px}
+
+<style id="CONTROL_TAB_PAGE_FINAL_CSS">
+.ux-top-tabs{position:sticky;top:0;z-index:60;display:flex;gap:8px;overflow:auto;padding:10px 0 12px;margin:-4px 0 12px;background:linear-gradient(180deg,rgba(7,11,18,.98),rgba(7,11,18,.90));backdrop-filter:blur(10px);scrollbar-width:none}.ux-top-tabs::-webkit-scrollbar{display:none}.ux-top-tabs button{white-space:nowrap;border:1px solid #334155;border-radius:999px;background:#0f172a;color:#dbeafe;padding:10px 14px;font-weight:1000;cursor:pointer}.ux-top-tabs button.active{background:linear-gradient(135deg,#f59e0b,#ec4899);border-color:rgba(255,255,255,.24);color:#fff}.ux-top-tabs button.disabled{opacity:.38;filter:grayscale(.35);cursor:not-allowed}.card.ux-hide{display:none!important}.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}@media(max-width:860px){.grid-4{grid-template-columns:1fr 1fr}}
 </style>
-<script id="CONTROL_TOP_TABS_UX_V3_JS">
+<script id="CONTROL_TAB_PAGE_FINAL_JS">
 (function(){
-  function tabFor(txt){txt=(txt||''); if(/노래|코인|선곡/.test(txt))return 'karaoke'; if(/공지/.test(txt))return 'notice'; if(/크리에이터|프리셋|분배/.test(txt))return 'creator'; if(/룰렛/.test(txt))return 'roulette'; if(/사운드|ALERT|알림/.test(txt))return 'alert'; if(/미션|타이머|용돈|펀딩/.test(txt))return 'ops'; return 'basic';}
-  function init(){
-    const wrap=document.querySelector('.wrap'); if(!wrap||document.querySelector('.ux-top-tabs'))return;
-    const tabs=[['basic','기본/노출'],['notice','공지'],['creator','크리에이터/프리셋'],['ops','펀딩/용돈/미션'],['karaoke','노래방'],['roulette','룰렛'],['alert','ALERT/사운드'],['all','전체']];
-    const nav=document.createElement('div'); nav.className='ux-top-tabs'; nav.innerHTML=tabs.map((t,i)=>`<button class="${i===0?'active':''}" data-tab="${t[0]}">${t[1]}</button>`).join('');
-    const top=document.querySelector('.top'); (top&&top.parentNode?top.parentNode:wrap).insertBefore(nav, top?top.nextSibling:wrap.firstChild);
-    const cards=[...document.querySelectorAll('.card')].filter(c=>!c.closest('.savebar')&&!c.querySelector('#saveHint'));
-    cards.forEach(c=>{const h=c.querySelector('h2'); c.dataset.uxTab=tabFor(h?h.textContent:'');});
-    function show(tab){nav.querySelectorAll('button').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab)); cards.forEach(c=>c.classList.toggle('ux-hide',tab!=='all'&&c.dataset.uxTab!==tab));}
-    nav.addEventListener('click',e=>{const b=e.target.closest('button'); if(!b)return; show(b.dataset.tab);});
-    show('basic');
+  const TAB_LIST=[['basic','기본/노출'],['notice','공지'],['creator','크리에이터'],['preset','프리셋'],['funding','펀딩/용돈'],['mission','미션타이머'],['karaoke','노래방'],['alert','ALERT/사운드'],['all','전체']];
+  function textOf(card){return (card.querySelector('h2')?.textContent||'')+' '+(card.textContent||'').slice(0,160);}
+  function classify(card){
+    if(card.id==='pcMissionTimerCard')return 'mission';
+    const t=textOf(card);
+    if(/노래|코인|선곡/.test(t))return 'karaoke';
+    if(/공지/.test(t))return 'notice';
+    if(/펀딩|용돈/.test(t))return 'funding';
+    if(/미션|타이머/.test(t))return 'mission';
+    if(/프리셋/.test(t))return 'preset';
+    if(/크리에이터|분배/.test(t))return 'creator';
+    if(/사운드|ALERT|알림/.test(t))return 'alert';
+    return 'basic';
   }
+  function disabledMap(){
+    return {
+      notice: document.querySelector('#overlayNoticeBox') && !document.querySelector('#overlayNoticeBox').checked,
+      creator: document.querySelector('#overlayCreatorBox') && !document.querySelector('#overlayCreatorBox').checked,
+      funding: document.querySelector('#overlayFundingBox') && !document.querySelector('#overlayFundingBox').checked,
+      mission: document.querySelector('#overlayBroadcastTimer') && !document.querySelector('#overlayBroadcastTimer').checked,
+      karaoke: document.querySelector('#overlayKaraokeBox') && !document.querySelector('#overlayKaraokeBox').checked
+    };
+  }
+  function init(){
+    const wrap=document.querySelector('.wrap'); if(!wrap)return;
+    document.querySelectorAll('.ux-top-tabs').forEach((e,i)=>{if(i>0)e.remove();});
+    let nav=document.querySelector('.ux-top-tabs');
+    if(!nav){nav=document.createElement('div');nav.className='ux-top-tabs';nav.innerHTML=TAB_LIST.map((t,i)=>`<button class="${i===0?'active':''}" data-tab="${t[0]}">${t[1]}</button>`).join(''); const top=document.querySelector('.top'); (top&&top.parentNode?top.parentNode:wrap).insertBefore(nav, top?top.nextSibling:wrap.firstChild);}
+    const cards=[...document.querySelectorAll('.layout > .card')];
+    cards.forEach(c=>{if(!c.dataset.uxTab)c.dataset.uxTab=classify(c);});
+    function refreshDisabled(){const d=disabledMap(); nav.querySelectorAll('button').forEach(b=>b.classList.toggle('disabled',!!d[b.dataset.tab]));}
+    function show(tab){refreshDisabled(); const btn=nav.querySelector(`[data-tab="${tab}"]`); if(btn&&btn.classList.contains('disabled'))tab='basic'; nav.querySelectorAll('button').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab)); cards.forEach(c=>c.classList.toggle('ux-hide',tab!=='all'&&c.dataset.uxTab!==tab));}
+    nav.onclick=e=>{const b=e.target.closest('button'); if(!b||b.classList.contains('disabled'))return; show(b.dataset.tab);};
+    ['overlayNoticeBox','overlayCreatorBox','overlayFundingBox','overlayBroadcastTimer','overlayKaraokeBox'].forEach(id=>{const el=document.getElementById(id); if(el&&!el.dataset.uxTabBound){el.dataset.uxTabBound='1';el.addEventListener('change',()=>show(nav.querySelector('button.active')?.dataset.tab||'basic'));}});
+    show(nav.querySelector('button.active')?.dataset.tab||'basic');
+  }
+  window.refreshControlTopTabs=init;
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init); else init();
+  setTimeout(init,800);
 })();
+
+function pcMissionMs(){const t=settings?.broadcastTimerData||{};const now=Date.now();let elapsed=Math.max(0,Number(t.elapsedMs||0));if(t.running&&t.startedAt){const s=new Date(t.startedAt).getTime();if(s)elapsed+=Math.max(0,now-s);}if(t.mode==='until'&&t.targetAt){const target=new Date(t.targetAt).getTime();return Math.max(0,target-now);}if(t.mode==='countdown'){const dur=Math.max(0,Number(t.durationMs||0));return Math.max(0,dur-elapsed);}return elapsed;}
+function pcHms(ms){const sec=Math.max(0,Math.floor(Number(ms||0)/1000));return [Math.floor(sec/3600),Math.floor((sec%3600)/60),sec%60].map(v=>String(v).padStart(2,'0')).join(':')}
+function renderPcMissionTimer(){const t=settings?.broadcastTimerData||{};const lab=document.getElementById('pcMissionLabel');if(!lab)return;lab.value=Object.prototype.hasOwnProperty.call(t,'label')?String(t.label??''):'미션타이머';document.getElementById('pcMissionMode').value=t.mode||'countdown';document.getElementById('pcMissionMinutes').value=t.durationMs?String(Math.round(Number(t.durationMs||0)/60000)):'';document.getElementById('pcMissionTarget').value=t.targetAt?String(t.targetAt).slice(0,16):'';const box=document.getElementById('pcMissionCurrent'); if(box)box.textContent=`${lab.value||'미션타이머'} : ${pcHms(pcMissionMs())} / ${t.running?'진행중':'멈춤'}`;}
+function pcMissionBody(){return {label:document.getElementById('pcMissionLabel')?.value?.trim()||'미션타이머',mode:document.getElementById('pcMissionMode')?.value||'countdown',durationMin:document.getElementById('pcMissionMinutes')?.value||'',targetAt:document.getElementById('pcMissionTarget')?.value||''};}
+async function pcMissionSave(){try{const d=await api('/api/mission-timer/save',{method:'POST',body:JSON.stringify(pcMissionBody())});settings.broadcastTimerData=d.broadcastTimerData;renderPcMissionTimer();alert('미션타이머 설정 저장 완료')}catch(e){alert(e.message)}}
+async function pcMissionStart(resume){try{const d=await api('/api/mission-timer/start',{method:'POST',body:JSON.stringify({...pcMissionBody(),resume:!!resume})});settings.broadcastTimerData=d.broadcastTimerData; if(document.getElementById('overlayBroadcastTimer'))document.getElementById('overlayBroadcastTimer').checked=true; await api('/api/settings',{method:'POST',body:JSON.stringify({overlaySections:{...(settings.overlaySections||{}),broadcastTimer:true}})}); renderPcMissionTimer(); if(window.refreshControlTopTabs)refreshControlTopTabs(); alert('미션타이머 시작')}catch(e){alert(e.message)}}
+async function pcMissionPause(){try{const d=await api('/api/mission-timer/pause',{method:'POST',body:'{}'});settings.broadcastTimerData=d.broadcastTimerData;renderPcMissionTimer();alert('미션타이머 멈춤')}catch(e){alert(e.message)}}
+async function pcMissionEnd(){try{const d=await api('/api/mission-timer/end',{method:'POST',body:JSON.stringify(pcMissionBody())});settings.broadcastTimerData=d.broadcastTimerData;renderPcMissionTimer();alert('미션타이머 종료')}catch(e){alert(e.message)}}
+setInterval(()=>{try{renderPcMissionTimer()}catch(e){}},1000);
 </script>
+
 </body>
 </html>
