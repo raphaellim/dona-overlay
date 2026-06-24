@@ -26,7 +26,7 @@
       <a id="mControlLink" href="/m_control.html">모바일설정</a>
       <a id="mediaLink" href="/media_manager.html">미디어</a>
       <a id="mMediaLink" href="/m_media_manager.html">모바일미디어</a>
-      <a id="overlayLink" target="_blank" href="/overlay.html">오버레이 TEST</a>
+      <a id="overlayLink" target="_blank" href="/overlay.html">오버레이 TEST</a><a id="shortsOverlayLink" target="_blank" href="/overlay_shorts.html">숏츠 TEST</a>
     </div>
   </div>
 
@@ -37,7 +37,9 @@
 
   <section class="card">
     <h2>컬러 팔레트 빠른 적용</h2>
+    <div class="grid" style="margin-bottom:12px"><div class="row"><label>럭셔리 텍스트 컬러셋</label><select id="luxuryTheme" class="input" onchange="applyLuxuryThemePreset(this.value)"><option value="gold">Gold / 골드</option><option value="pink">Pink / 핑크</option><option value="blue">Blue / 블루</option><option value="green">Green / 그린</option></select></div></div>
     <div class="actions">
+      <button class="btn" onclick="applyPalette('luxuryGold')">럭셔리 골드</button><button class="btn" onclick="applyPalette('luxuryPink')">럭셔리 핑크</button><button class="btn" onclick="applyPalette('luxuryBlue')">럭셔리 블루</button><button class="btn" onclick="applyPalette('luxuryGreen')">럭셔리 그린</button>
       <button class="btn" onclick="applyPalette('lovelyPink')">러블리 핑크</button>
       <button class="btn" onclick="applyPalette('neonBlue')">네온 블루핑크</button>
       <button class="btn" onclick="applyPalette('gold')">럭셔리 골드</button>
@@ -150,6 +152,7 @@
 <script src="/common.js"></script>
 <script>
 const fields = [
+  'luxuryTheme',
   'boxBorderColor','boxBgTop','boxBgBottom',
   'accountTitleColor','noticeTitleColor','fundingTitleColor','karaokeTitleColor','timerTitleColor',
   'contentColor','noticeContentColor','fundingContentColor','karaokeContentColor','karaokeNoticeColor','karaokeCurrentColor','karaokeQueueColor','karaokeCoinColor','karaokeDonorColor','karaokeHeartColor',
@@ -157,6 +160,7 @@ const fields = [
   'vipAccountThreshold','vipAccountBg1','vipAccountBg2'
 ];
 const defaults = {
+  luxuryTheme:'gold',
   boxBorderColor:'rgba(255,138,185,.95)',
   boxBgTop:'rgba(18,22,32,.88)',
   boxBgBottom:'rgba(10,12,20,.82)',
@@ -218,6 +222,18 @@ function setLinks(token=''){
 async function apiNoCache(url,opt={}){
   const join=url.includes('?')?'&':'?';
   return await api(url+join+'_ts='+Date.now(), opt);
+}
+
+function applyLuxuryThemePreset(name){
+  const map={
+    gold:{luxuryTheme:'gold',boxBorderColor:'rgba(255,216,106,.52)',boxBgTop:'rgba(255,255,255,.045)',boxBgBottom:'rgba(0,0,0,.50)',accountTitleColor:'#ffd86a',noticeTitleColor:'#64d9ff',fundingTitleColor:'#a8ff8a',karaokeTitleColor:'#a8ff8a',contentColor:'#ffffff'},
+    pink:{luxuryTheme:'pink',boxBorderColor:'rgba(255,121,189,.54)',boxBgTop:'rgba(255,255,255,.045)',boxBgBottom:'rgba(0,0,0,.50)',accountTitleColor:'#ffd86a',noticeTitleColor:'#85e8ff',fundingTitleColor:'#baffb0',karaokeTitleColor:'#baffb0',contentColor:'#ffffff'},
+    blue:{luxuryTheme:'blue',boxBorderColor:'rgba(100,217,255,.54)',boxBgTop:'rgba(255,255,255,.045)',boxBgBottom:'rgba(0,0,0,.50)',accountTitleColor:'#ffe38a',noticeTitleColor:'#64d9ff',fundingTitleColor:'#9dffdd',karaokeTitleColor:'#9dffdd',contentColor:'#ffffff'},
+    green:{luxuryTheme:'green',boxBorderColor:'rgba(168,255,138,.50)',boxBgTop:'rgba(255,255,255,.045)',boxBgBottom:'rgba(0,0,0,.50)',accountTitleColor:'#ffe38a',noticeTitleColor:'#9ee7ff',fundingTitleColor:'#a8ff8a',karaokeTitleColor:'#a8ff8a',contentColor:'#ffffff'}
+  };
+  const p=map[name]||map.gold;
+  Object.entries(p).forEach(([k,v])=>{const el=document.getElementById(k); if(el) el.value=v;});
+  updatePreview();
 }
 
 function applyPalette(name){

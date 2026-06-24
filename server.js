@@ -810,6 +810,7 @@ function normalizeStationStyle(raw) {
 
   return {
     topSlideEnabled: value.topSlideEnabled !== false && String(value.topSlideEnabled || 'true') !== 'false',
+    luxuryTheme: ['gold','pink','blue','green'].includes(String(value.luxuryTheme || '').trim()) ? String(value.luxuryTheme).trim() : 'gold',
     boxBorderColor: pick('boxBorderColor', 'rgba(255,138,185,.95)'),
     boxBgTop: pick('boxBgTop', 'rgba(18,22,32,.88)'),
     boxBgBottom: pick('boxBgBottom', 'rgba(10,12,20,.82)'),

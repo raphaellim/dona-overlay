@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>후원현황 Overlay</title>
+  <title>숏츠형 Overlay</title>
   <!-- overlay-debug-enabled-v2 -->
   <link rel="icon" href="data:,">
   <style>
@@ -2048,26 +2048,75 @@
 
 
 /* =========================================================
-   DIAMOND CREATOR ALIGN FINAL v14
-   - 현재 시안 유지
-   - 크리에이터만 정렬 보정
-   - 이름(금액) / 흡+0 / 먹+0 3컬럼
-   - 기존 API/JS 유지
+   OVERLAY PRESET DYNAMIC FINAL v18
+   - 흡/먹 고정 제거
+   - 기존 프리셋 설정값을 따라 표시
+   - +0도 표시, +01/-01 아님
+   - 후원금액 ON/OFF 기존 설정 반영
+   - 폰트크기 컨트롤 스타일 변수 사용
+   - 타이틀 기호: •
+   - theme=gold|pink|blue|green
 ========================================================= */
 :root{
   --overlay-w: 340px;
   --top: 54px;
   --right: 30px;
-  --da-gold:#ffd86a;
-  --da-blue:#64d9ff;
-  --da-pink:#ff79bd;
-  --da-green:#a8ff8a;
-  --da-red:#ff6178;
-  --da-panel-bg:linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.010)),rgba(0,0,0,.50);
-  --da-line:rgba(255,216,106,.52);
-  --da-soft-line:rgba(255,255,255,.16);
-  --da-shadow:0 1px 2px rgba(0,0,0,.76);
-  --da-title-shadow:0 1px 2px rgba(0,0,0,.78), 0 0 5px rgba(255,216,106,.18);
+
+  --oc-accent:#ffd86a;
+  --oc-title-account:#ffd86a;
+  --oc-title-notice:#64d9ff;
+  --oc-title-creator:#ff79bd;
+  --oc-title-karaoke:#a8ff8a;
+  --oc-title-funding:#a8ff8a;
+  --oc-plus:#64d9ff;
+  --oc-minus:#ff6178;
+  --oc-zero:#ffd86a;
+
+  --oc-panel-bg:
+    linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.010)),
+    rgba(0,0,0,.50);
+
+  --oc-line:rgba(255,216,106,.52);
+  --oc-soft-line:rgba(255,255,255,.16);
+  --oc-shadow:0 1px 2px rgba(0,0,0,.76);
+  --oc-title-shadow:0 1px 2px rgba(0,0,0,.78);
+}
+
+body.theme-gold{
+  --oc-accent:#ffd86a;
+  --oc-title-account:#ffd86a;
+  --oc-title-notice:#64d9ff;
+  --oc-title-creator:#ff79bd;
+  --oc-title-karaoke:#a8ff8a;
+  --oc-title-funding:#a8ff8a;
+  --oc-line:rgba(255,216,106,.52);
+}
+body.theme-pink{
+  --oc-accent:#ff79bd;
+  --oc-title-account:#ffd86a;
+  --oc-title-notice:#85e8ff;
+  --oc-title-creator:#ff79bd;
+  --oc-title-karaoke:#baffb0;
+  --oc-title-funding:#baffb0;
+  --oc-line:rgba(255,121,189,.54);
+}
+body.theme-blue{
+  --oc-accent:#64d9ff;
+  --oc-title-account:#ffe38a;
+  --oc-title-notice:#64d9ff;
+  --oc-title-creator:#c59cff;
+  --oc-title-karaoke:#9dffdd;
+  --oc-title-funding:#9dffdd;
+  --oc-line:rgba(100,217,255,.54);
+}
+body.theme-green{
+  --oc-accent:#a8ff8a;
+  --oc-title-account:#ffe38a;
+  --oc-title-notice:#9ee7ff;
+  --oc-title-creator:#ff9ccc;
+  --oc-title-karaoke:#a8ff8a;
+  --oc-title-funding:#a8ff8a;
+  --oc-line:rgba(168,255,138,.50);
 }
 
 .overlay-stack{
@@ -2089,9 +2138,9 @@
   gap:0!important;
   width:100%!important;
   padding:8px 11px!important;
-  border:1.5px solid var(--da-line)!important;
+  border:1.5px solid var(--oc-line)!important;
   border-radius:16px!important;
-  background:var(--da-panel-bg)!important;
+  background:var(--oc-panel-bg)!important;
   box-shadow:0 6px 18px rgba(0,0,0,.42), inset 0 0 12px rgba(255,255,255,.025)!important;
   backdrop-filter:blur(2px)!important;
   -webkit-backdrop-filter:blur(2px)!important;
@@ -2112,7 +2161,7 @@
 .overlay-panel>#noticeBox:not(.hidden),
 .overlay-panel>#karaokeBox:not(.hidden),
 .overlay-panel>#creatorBox:not(.hidden){
-  border-top:1px solid var(--da-soft-line)!important;
+  border-top:1px solid var(--oc-soft-line)!important;
 }
 
 .account-box{padding:3px 0 6px!important}
@@ -2124,67 +2173,78 @@
 
 .account-title,.notice-title,.funding-title,.karaoke-title,.notice-text,.notice-line,.allowance-row,
 .creator-align-line,.roller,.roller-item,.karaoke-notice,.karaoke-current,.karaoke-song-row,.timer-label,.timer-value{
-  text-shadow:var(--da-shadow)!important;
+  text-shadow:var(--oc-shadow)!important;
   -webkit-text-stroke:0!important;
   filter:none!important;
 }
 
-/* 계좌후원 한 줄 */
+/* 계좌 한 줄 */
 .account-row{
   display:flex!important;
   align-items:center!important;
   justify-content:stretch!important;
-  height:32px!important;
+  height:calc(var(--style-account-roll-size, 25px) + 10px)!important;
   gap:7px!important;
 }
 
 .account-title{
-  flex:0 0 94px!important;
-  width:94px!important;
-  min-width:94px!important;
+  flex:0 0 64px!important;
+  width:64px!important;
+  min-width:64px!important;
   padding:0!important;
   background:transparent!important;
   border:0!important;
-  color:var(--da-gold)!important;
-  font-size:18px!important;
+  color:transparent!important;
+  font-size:0!important;
+  line-height:1!important;
+  letter-spacing:0!important;
+  text-align:left!important;
+  text-shadow:none!important;
+  overflow:visible!important;
+}
+
+.account-title::before{
+  content:"• 계좌";
+  display:inline-block!important;
+  color:var(--oc-title-account)!important;
+  font-size:calc(var(--style-account-title-size, 20px) * .9)!important;
   line-height:1!important;
   font-weight:1000!important;
   letter-spacing:-.055em!important;
-  text-align:left!important;
-  text-shadow:var(--da-title-shadow)!important;
+  text-shadow:var(--oc-title-shadow)!important;
+  white-space:nowrap!important;
 }
-.account-title::before{content:"💎 ";}
 
 .roller{
   flex:1 1 auto!important;
   min-width:0!important;
-  height:32px!important;
-  line-height:32px!important;
-  font-size:22px!important;
+  height:calc(var(--style-account-roll-size, 25px) + 8px)!important;
+  line-height:calc(var(--style-account-roll-size, 25px) + 8px)!important;
+  font-size:var(--style-account-roll-size, 25px)!important;
   font-weight:1000!important;
   letter-spacing:-.055em!important;
   color:#fff!important;
 }
 
 .roller-item{
-  height:32px!important;
-  min-height:32px!important;
+  height:calc(var(--style-account-roll-size, 25px) + 8px)!important;
+  min-height:calc(var(--style-account-roll-size, 25px) + 8px)!important;
   justify-content:flex-end!important;
   gap:3px!important;
   padding:0!important;
 }
 
 .account-donor{
-  max-width:100px!important;
+  max-width:120px!important;
   color:#fff!important;
-  text-shadow:var(--da-shadow)!important;
+  text-shadow:var(--oc-shadow)!important;
 }
 .account-heart{font-size:.70em!important}
 .account-amount{
-  color:var(--da-gold)!important;
+  color:var(--oc-title-account)!important;
   font-size:.98em!important;
   font-weight:1000!important;
-  text-shadow:var(--da-shadow)!important;
+  text-shadow:var(--oc-shadow)!important;
 }
 
 /* 섹션 타이틀 */
@@ -2198,24 +2258,33 @@
   border:0!important;
   box-shadow:none!important;
   border-radius:0!important;
-  font-size:18px!important;
+  font-size:calc(var(--style-notice-title-size, 20px) * .9)!important;
   line-height:1.05!important;
   font-weight:1000!important;
   letter-spacing:-.055em!important;
   text-align:left!important;
 }
-.notice-title{color:var(--da-blue)!important}.notice-title::before{content:"💎 ";}
-.funding-title{color:var(--da-green)!important}.funding-title::before{content:"💎 ";}
-.karaoke-title{color:var(--da-green)!important}.karaoke-title::before{content:"💎 ";}
+.notice-title{color:var(--oc-title-notice)!important}
+.notice-title::before{content:"• ";}
+.funding-title{
+  color:var(--oc-title-funding)!important;
+  font-size:calc(var(--style-funding-title-size, 20px) * .9)!important;
+}
+.funding-title::before{content:"• ";}
+.karaoke-title{
+  color:var(--oc-title-karaoke)!important;
+  font-size:calc(var(--style-karaoke-title-size, 20px) * .9)!important;
+}
+.karaoke-title::before{content:"• ";}
 
 .creator-box::before{
-  content:"💎 크리에이터";
+  content:"• 크리에이터";
   display:block!important;
   width:100%!important;
   margin:0 0 5px!important;
   padding:0!important;
-  color:var(--da-pink)!important;
-  font-size:18px!important;
+  color:var(--oc-title-creator)!important;
+  font-size:calc(var(--style-creator-content-size, 24px) * .75)!important;
   line-height:1.05!important;
   font-weight:1000!important;
   letter-spacing:-.055em!important;
@@ -2223,24 +2292,23 @@
   text-shadow:0 1px 2px rgba(0,0,0,.72)!important;
 }
 
-/* 공지 */
 .notice-text,.notice-line{
-  font-size:21px!important;
+  font-size:var(--style-content-size, 20px)!important;
   line-height:1.14!important;
   font-weight:1000!important;
   letter-spacing:-.06em!important;
   word-break:keep-all!important;
   overflow-wrap:anywhere!important;
-  color:#fff!important;
+  color:var(--style-notice-content-color, #fff)!important;
 }
-.notice-roll-window{height:calc(21px * 1.14 * 3)!important}
-.notice-roll-track .notice-line{min-height:calc(21px * 1.14)!important}
+.notice-roll-window{height:calc(var(--style-content-size, 20px) * 1.14 * 3)!important}
+.notice-roll-track .notice-line{min-height:calc(var(--style-content-size, 20px) * 1.14)!important}
 
 .allowance-row{
   margin-top:5px!important;
   padding:5px 0 0!important;
   border-top:1px solid rgba(255,255,255,.18)!important;
-  font-size:19px!important;
+  font-size:calc(var(--style-content-size, 20px) * .95)!important;
   line-height:1.1!important;
   font-weight:1000!important;
   color:#fff3a6!important;
@@ -2248,32 +2316,28 @@
   text-align:left!important;
 }
 
-/* 크리에이터 정렬 최종 */
-.creator-list{
-  gap:4px!important;
-}
-
-.creator-align-item{
-  width:100%!important;
-  padding:0!important;
-  margin:0!important;
-}
+/* 크리에이터 정렬 + 후원금액 ON/OFF + 동적 프리셋 */
+.creator-list{gap:4px!important}
+.creator-align-item{width:100%!important;padding:0!important;margin:0!important}
 
 .creator-align-line{
-  display:grid!important;
-  grid-template-columns:minmax(0, 1fr) 48px 48px!important;
-  column-gap:5px!important;
+  display:flex!important;
   align-items:baseline!important;
+  justify-content:flex-start!important;
+  gap:5px!important;
   width:100%!important;
   min-width:0!important;
-  font-size:22px!important;
+  font-size:var(--style-creator-content-size, 24px)!important;
   line-height:1.08!important;
   font-weight:1000!important;
   letter-spacing:-.06em!important;
   color:#fff!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
 }
 
 .creator-align-main{
+  flex:1 1 auto!important;
   min-width:0!important;
   overflow:hidden!important;
   text-overflow:ellipsis!important;
@@ -2287,66 +2351,69 @@
   margin-left:1px!important;
 }
 
+.creator-align-options{
+  flex:0 0 auto!important;
+  display:inline-flex!important;
+  align-items:baseline!important;
+  justify-content:flex-end!important;
+  gap:6px!important;
+  white-space:nowrap!important;
+}
+
 .creator-align-opt{
   text-align:right!important;
   font-variant-numeric:tabular-nums!important;
   white-space:nowrap!important;
 }
 
-.creator-main,.creator-sub{
-  display:none!important;
-}
+.creator-main,.creator-sub{display:none!important}
 
-.plus{color:var(--da-blue)!important}
-.red,.blue{color:var(--da-red)!important}
-.muted{color:var(--da-gold)!important}
+.plus{color:var(--oc-plus)!important}
+.red,.blue{color:var(--oc-minus)!important}
+.muted{color:var(--oc-zero)!important}
 
-/* 펀딩 */
 .funding-line{
-  min-height:33px!important;
-  height:33px!important;
+  min-height:calc(var(--style-content-size, 20px) + 13px)!important;
+  height:calc(var(--style-content-size, 20px) + 13px)!important;
   padding:5px 8px!important;
   border-radius:8px!important;
   background:rgba(0,0,0,.18)!important;
   border:1px solid rgba(255,255,255,.14)!important;
-  font-size:20px!important;
+  font-size:var(--style-content-size, 20px)!important;
   font-weight:1000!important;
   letter-spacing:-.06em!important;
 }
-.funding-roller{height:33px!important}
-.funding-track .funding-line{height:33px!important}
+.funding-roller{height:calc(var(--style-content-size, 20px) + 13px)!important}
+.funding-track .funding-line{height:calc(var(--style-content-size, 20px) + 13px)!important}
 
-/* 노래방 */
-.karaoke-notice{font-size:20px!important;line-height:1.1!important;font-weight:1000!important}
-.karaoke-current{font-size:20px!important;line-height:1.1!important;gap:4px!important}
-.karaoke-reserve-title{font-size:18px!important;margin-top:5px!important;color:var(--da-green)!important;text-shadow:var(--da-shadow)!important}
-.karaoke-song-row{grid-template-columns:36px auto minmax(0,1fr)!important;font-size:17px!important;gap:4px!important}
+.karaoke-notice{font-size:var(--style-karaoke-notice-size, 17px)!important;line-height:1.1!important;font-weight:1000!important}
+.karaoke-current{font-size:var(--style-karaoke-current-size, 18px)!important;line-height:1.1!important;gap:4px!important}
+.karaoke-reserve-title{font-size:calc(var(--style-karaoke-queue-size, 15px) * 1.12)!important;margin-top:5px!important;color:var(--oc-title-karaoke)!important;text-shadow:var(--oc-shadow)!important}
+.karaoke-song-row{grid-template-columns:36px auto minmax(0,1fr)!important;font-size:var(--style-karaoke-queue-size, 15px)!important;gap:4px!important}
 .karaoke-coin-ticker{background:rgba(0,0,0,.20)!important;border:1px solid rgba(255,255,255,.14)!important}
-.karaoke-coin-ticker span{font-size:16px!important;line-height:26px!important}
+.karaoke-coin-ticker span{font-size:var(--style-karaoke-coin-size, 15px)!important;line-height:26px!important}
 
-/* 타이머 */
 .broadcast-timer-box{justify-content:space-between!important;gap:8px!important}
-.timer-label{font-size:17px!important;color:var(--da-gold)!important}
-.timer-value{font-size:29px!important;color:#fff!important}
+.timer-label{font-size:calc(var(--style-content-size, 20px) * .85)!important;color:var(--oc-title-account)!important}
+.timer-value{font-size:calc(var(--style-content-size, 20px) * 1.45)!important;color:#fff!important}
 
-/* ALERT */
 :root{--alert-height:112px}
 #overlayAlertRoot #optionAlert.option-alert{
   min-height:104px!important;
   padding:9px 10px 10px!important;
   border-radius:14px!important;
-  border:1.5px solid rgba(255,216,106,.70)!important;
-  background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.012)), rgba(0,0,0,.50)!important;
+  border:1.5px solid var(--oc-line)!important;
+  background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.012)),rgba(0,0,0,.50)!important;
   box-shadow:0 6px 18px rgba(0,0,0,.45), inset 0 0 10px rgba(255,255,255,.025)!important;
   backdrop-filter:blur(3px)!important;
   -webkit-backdrop-filter:blur(3px)!important;
 }
-.alert-donor,.alert-total-amount,.alert-target,.alert-source{text-shadow:var(--da-shadow)!important;-webkit-text-stroke:0!important}
+.alert-donor,.alert-total-amount,.alert-target,.alert-source{text-shadow:var(--oc-shadow)!important;-webkit-text-stroke:0!important}
 .alert-donor-total-line{justify-content:space-between!important}
-.alert-donor-total-line .alert-donor{max-width:54%!important;font-size:26px!important;line-height:1!important}
-.alert-total-amount{font-size:25px!important;line-height:1!important;color:var(--da-gold)!important}
+.alert-donor-total-line .alert-donor{max-width:54%!important;font-size:calc(var(--style-alert-size, 30px) * .87)!important;line-height:1!important}
+.alert-total-amount{font-size:calc(var(--style-alert-size, 30px) * .83)!important;line-height:1!important;color:var(--oc-title-account)!important}
 .alert-creator-line.alert-split-line{margin-top:6px!important;justify-content:flex-start!important}
-.alert-target.alert-split-chip{font-size:18px!important;line-height:1.08!important}
+.alert-target.alert-split-chip{font-size:calc(var(--style-alert-size, 30px) * .6)!important;line-height:1.08!important}
 .alert-source{font-size:14px!important}
 
 .overlay-stack>.top-slide-box{margin-bottom:5px!important;border-radius:14px!important}
@@ -2357,14 +2424,78 @@ body.test-bg{
 
 @media(max-width:720px){
   :root{--overlay-w:336px;--top:52px;--right:30px;}
-  .creator-align-line{font-size:21px!important;grid-template-columns:minmax(0,1fr) 46px 46px!important;}
+}
+
+
+/* =========================================================
+   SHORTS TOP HUD OVERLAY
+   - 1080x220 상단 숏츠 친화형
+   - 기존 API/컨트롤 스타일 사용
+========================================================= */
+body.shorts-mode .overlay-stack{
+  position:fixed!important;
+  top:0!important;
+  left:50%!important;
+  right:auto!important;
+  transform:translateX(-50%)!important;
+  width:min(1080px,100vw)!important;
+  max-width:100vw!important;
+  padding:8px 18px!important;
+}
+body.shorts-mode .overlay-panel{
+  width:100%!important;
+  max-height:240px!important;
+  padding:10px 18px!important;
+  border-radius:0 0 22px 22px!important;
+  display:grid!important;
+  grid-template-columns:1fr!important;
+  gap:0!important;
+  overflow:hidden!important;
+}
+body.shorts-mode .top-slide-box,
+body.shorts-mode #broadcastTimerBox,
+body.shorts-mode #fundingBox,
+body.shorts-mode #karaokeBox{
+  display:none!important;
+}
+body.shorts-mode #accountBox{padding:0 0 6px!important;}
+body.shorts-mode #noticeBox{padding:6px 0!important;}
+body.shorts-mode #creatorBox{padding:6px 0 0!important;}
+body.shorts-mode .account-row{height:38px!important;}
+body.shorts-mode .account-title{flex:0 0 78px!important;min-width:78px!important;width:78px!important;}
+body.shorts-mode .account-title::before{content:'• 계좌'!important;font-size:22px!important;}
+body.shorts-mode .roller{font-size:28px!important;height:38px!important;line-height:38px!important;}
+body.shorts-mode .roller-item{height:38px!important;min-height:38px!important;justify-content:flex-start!important;}
+body.shorts-mode .account-donor{max-width:180px!important;}
+body.shorts-mode .notice-title{font-size:22px!important;margin-bottom:3px!important;}
+body.shorts-mode .notice-text,
+body.shorts-mode .notice-line{font-size:25px!important;line-height:1.12!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;}
+body.shorts-mode .notice-roll-window{height:30px!important;}
+body.shorts-mode .notice-roll-track .notice-line{min-height:30px!important;}
+body.shorts-mode .allowance-row{display:none!important;}
+body.shorts-mode .creator-box::before{font-size:22px!important;margin-bottom:4px!important;}
+body.shorts-mode .creator-list{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  column-gap:18px!important;
+  row-gap:3px!important;
+}
+body.shorts-mode .creator-align-line{
+  font-size:23px!important;
+  min-width:0!important;
+}
+body.shorts-mode #overlayAlertRoot{display:none!important;}
+@media(max-width:720px){
+  body.shorts-mode .overlay-stack{padding:6px 10px!important;}
+  body.shorts-mode .overlay-panel{max-height:230px!important;padding:9px 12px!important;}
+  body.shorts-mode .creator-list{grid-template-columns:1fr!important;}
 }
 
 </style>
   <link rel="stylesheet" href="/assets/css/roulette-overlay.css">
 </head>
 
-<body>
+<body class="theme-gold shorts-mode">
   <div id="overlayIdleScreen" class="overlay-idle-screen">시스템설정</div>
   <div class="overlay-root">
     <div class="overlay-stack">
@@ -2617,6 +2748,13 @@ let missionCountdownLastSec = null;
         return presets.filter(p => p && p.enabled !== false);
       }
 
+
+      function applyLuxuryTheme(settings) {
+        const st = settings?.stationStyle || {};
+        const theme = String(st.luxuryTheme || new URLSearchParams(location.search).get("theme") || "gold").trim().toLowerCase();
+        document.body.classList.remove("theme-gold", "theme-pink", "theme-blue", "theme-green");
+        document.body.classList.add("theme-" + (["gold","pink","blue","green"].includes(theme) ? theme : "gold"));
+      }
 
       function applyStationStyle(settings) {
         const st = settings?.stationStyle || {};
@@ -3329,37 +3467,35 @@ let missionCountdownLastSec = null;
       function renderCreators(creators) {
         const rows = (Array.isArray(creators) ? creators : []).slice(0, 5);
         const visiblePresets = (enabledPresets || []).filter(p => p.enabled !== false);
+        const showDonation = (typeof showCreatorDonations === "undefined") ? true : showCreatorDonations;
 
         if (!rows.length) {
           $list.innerHTML = "";
           return;
         }
 
-        function extractPresetValue(labelHtml, kind) {
-          const tmp = document.createElement("div");
-          tmp.innerHTML = labelHtml;
-          const text = (tmp.textContent || "").trim();
+        function presetShortName(preset) {
+          const plus = String(preset?.plusName || preset?.title || "옵션").trim();
+          if (plus === "흡연") return "흡";
+          if (plus === "먹어") return "먹";
+          return plus.length > 2 ? plus.slice(0, 2) : plus;
+        }
 
-          if (kind === "smoke") {
-            if (text.includes("흡연")) {
-              const m = text.match(/\+(-?\d+)/);
-              return m ? Number(m[1]) : 0;
-            }
-            if (text.includes("금연")) {
-              const m = text.match(/-(-?\d+)/);
-              return m ? -Math.abs(Number(m[1])) : 0;
-            }
+        function presetNetValue(row, preset) {
+          const nets = Array.isArray(row.presetNets) ? row.presetNets : [];
+          const n = nets.find(x =>
+            (preset.id && x.presetId === preset.id) ||
+            (preset.title && x.presetTitle === preset.title)
+          );
+
+          if (n) return num(n.plus) - num(n.minus);
+
+          if (preset.id === "smoke") {
+            return num(row.smokeNet ?? row.smoke_net ?? 0);
           }
 
-          if (kind === "food") {
-            if (text.includes("먹어")) {
-              const m = text.match(/\+(-?\d+)/);
-              return m ? Number(m[1]) : 0;
-            }
-            if (text.includes("먹지마")) {
-              const m = text.match(/-(-?\d+)/);
-              return m ? -Math.abs(Number(m[1])) : 0;
-            }
+          if (preset.id === "food") {
+            return num(row.eatNet ?? row.foodNet ?? row.food_net ?? 0);
           }
 
           return 0;
@@ -3381,22 +3517,22 @@ let missionCountdownLastSec = null;
           const rawName = normalizeName(row.creator || row.name || "익명");
           const shortName = Array.from(rawName).slice(0, 4).join("") || "익명";
           const total = displayManAmount(row.total ?? row.totalAmount ?? row.total_amount ?? row.amount ?? 0);
-          const labels = visiblePresets.length ? statusLabelsFromPresetNets(visiblePresets, row) : [];
 
-          let smokeValue = 0;
-          let foodValue = 0;
+          const totalHtml = showDonation
+            ? `<span class="creator-align-total">(${escapeHtml(total)})</span>`
+            : "";
 
-          labels.forEach(label => {
-            smokeValue += extractPresetValue(label, "smoke");
-            foodValue += extractPresetValue(label, "food");
-          });
+          const optionHtml = visiblePresets.map(preset => {
+            const value = presetNetValue(row, preset);
+            const label = signedText(presetShortName(preset), value);
+            return `<span class="creator-align-opt ${signClass(value)}">${escapeHtml(label)}</span>`;
+          }).join("");
 
           return `
-        <article class="creator-item creator-align-item">
-          <div class="creator-align-line">
-            <span class="creator-align-main">${escapeHtml(shortName)}<span class="creator-align-total">(${escapeHtml(total)})</span></span>
-            <span class="creator-align-opt ${signClass(smokeValue)}">${escapeHtml(signedText("흡", smokeValue))}</span>
-            <span class="creator-align-opt ${signClass(foodValue)}">${escapeHtml(signedText("먹", foodValue))}</span>
+        <article class="creator-item creator-align-item ${showDonation ? "with-total" : "no-total"}">
+          <div class="creator-align-line" style="--preset-count:${visiblePresets.length || 1}">
+            <span class="creator-align-main">${escapeHtml(shortName)}${totalHtml}</span>
+            <span class="creator-align-options">${optionHtml}</span>
           </div>
         </article>
       `;
@@ -4111,6 +4247,7 @@ preloadMissionTimerVideo(
         const idle = document.getElementById("overlayIdleScreen");
         if (idle) idle.textContent = liveData.status === "ended" ? "방송 종료" : "시스템설정";
         applyStationStyle(settings);
+        applyLuxuryTheme(settings);
         cacheSoundRules(settings);
         enabledPresets = getEnabledPresets(settings);
         const creators = data.creators && data.creators.length ? data.creators : zeroCreatorsFromSettings(settings);
@@ -4177,9 +4314,9 @@ preloadMissionTimerVideo(
   </script>
   <!-- notice box visible when ON even without text -->
   <script src="/assets/js/roulette-overlay.js"></script>
-<script>
-try{if(new URLSearchParams(location.search).get("bg")==="1"){document.body.classList.add("test-bg");}}catch(e){}
-</script>
+
+<script>try{if(new URLSearchParams(location.search).get("bg")==="1") document.body.classList.add("test-bg");}catch(e){}</script>
+
 </body>
 
 </html>

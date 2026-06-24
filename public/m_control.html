@@ -301,4 +301,23 @@ async function saveAll(){try{const ov={};document.querySelectorAll('.sec').forEa
 function startTimer(){location.href=stationUrl('/station_control.html')}function endTimer(){location.href=stationUrl('/station_control.html')}async function sendSound(mode){try{const f=$('#manualFile').value.trim();if(!f)return alert('사운드 파일명 입력');await api('/api/sound-events',{method:'POST',body:JSON.stringify({title:$('#manualTitle').value.trim()||f,soundFile:f,repeatCount:Number($('#repeatCount').value||1),mode})});alert('전송 완료')}catch(e){alert(e.message)}}async function releaseQueue(){try{await api('/api/sound-events/release',{method:'POST',body:'{}'});alert('대기열 전송 완료')}catch(e){alert(e.message)}}
 function liveText(){const l=settings.broadcastLiveData||settings.broadcast?.broadcastLiveData||{};return l.status==='live'?'방송중':(l.status==='ended'?'방송종료':'시스템설정')}
 async function load(){settings=await api('/api/settings');currentRole=settings.role||'guest';if(currentRole==='guest'&&settings.broadcast?.id){const saved=localStorage.getItem('broadcastPassword_'+settings.broadcast.id)||'';if(saved){try{await api('/api/broadcast-login',{method:'POST',body:JSON.stringify({broadcastId:settings.broadcast.id,password:saved})});settings=await api('/api/settings');currentRole=settings.role||'guest';}catch(e){localStorage.removeItem('broadcastPassword_'+settings.broadcast.id);}}}if(currentRole==='guest'){alert('방송매니저는 모바일 입력 페이지에서 방송 비밀번호 로그인 후 사용하세요.');location.href='/m_admin.html?station='+encodeURIComponent(STATION);return;}$('#info').textContent=`${settings.station?.name||STATION} / ${settings.broadcast?.title||'현재 방송'} / ${liveText()}${isManagerRole()?' / 매니저 제한모드':''}`;if($('#broadcastStateBox'))$('#broadcastStateBox').innerHTML=`현재 상태: <b>${liveText()}</b><br>방송시작/종료는 station_control에서 관리합니다.`;$('#mAdmin').href=`/m_admin.html?station=${encodeURIComponent(STATION)}`;if($('#mMedia'))$('#mMedia').href=`/m_media_manager.html?station=${encodeURIComponent(STATION)}`;$('#overlay').href=`/overlay.html?station=${encodeURIComponent(STATION)}&token=${encodeURIComponent(settings.station?.overlayToken||'')}&monitor=1&v=${Date.now()}`;renderToggles();renderCreators();renderPresets();renderNotice();renderFunding();renderKaraoke();renderKaraokeStyle();renderMissionTimer();renderManualSelects();applyRoleUI();await loadManualList()}load().catch(e=>alert(e.message));
-</script></body></html>
+</script>
+<style id="MOBILE_UX_POLISH_V3">
+:root{--lux1:#111827;--lux2:#0b1220;--luxLine:rgba(148,163,184,.22)}
+.card{border-radius:20px!important;border:1px solid var(--luxLine)!important;box-shadow:0 14px 40px rgba(0,0,0,.28)!important}.card h2,.card-head h2{letter-spacing:-.04em}.input,input,select,textarea{border-radius:15px!important;min-height:48px}.btn{border-radius:15px!important}.quick-links,.tabs{scroll-snap-type:x proximity}.quick-links a,.tab{scroll-snap-align:start}.topbar,.top{box-shadow:0 8px 28px rgba(0,0,0,.24)}
+.mobile-quick-jump{position:sticky;top:0;z-index:35;display:flex;gap:7px;overflow:auto;padding:8px 12px;background:rgba(7,16,28,.86);backdrop-filter:blur(10px);border-bottom:1px solid rgba(148,163,184,.14)}
+.mobile-quick-jump button{white-space:nowrap;border:1px solid #334155;border-radius:999px;background:#0f172a;color:#dbeafe;padding:8px 11px;font-size:12px;font-weight:1000}
+</style>
+<script id="MOBILE_UX_POLISH_V3_JS">
+(function(){
+  function init(){
+    if(document.querySelector('.mobile-quick-jump')||document.querySelector('.tabs'))return;
+    const heads=[...document.querySelectorAll('.card h2,.card-head h2')].slice(0,8); if(heads.length<3)return;
+    const bar=document.createElement('div'); bar.className='mobile-quick-jump';
+    heads.forEach((h,i)=>{const id='ux_m_'+i; h.closest('.card').id=id; const b=document.createElement('button'); b.textContent=h.textContent.trim().slice(0,8); b.onclick=()=>document.getElementById(id).scrollIntoView({behavior:'smooth',block:'start'}); bar.appendChild(b);});
+    const top=document.querySelector('.topbar,.top'); (top&&top.parentNode?top.parentNode:document.body).insertBefore(bar, top?top.nextSibling:document.body.firstChild);
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init); else init();
+})();
+</script>
+</body></html>

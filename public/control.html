@@ -1205,5 +1205,28 @@ load();
   a.textContent='인덱스';
   document.body.appendChild(a);
 })();</script>
+
+<style id="CONTROL_TOP_TABS_UX_V3">
+.ux-top-tabs{position:sticky;top:0;z-index:50;display:flex;gap:8px;overflow:auto;padding:10px 0 12px;margin:-4px 0 12px;background:linear-gradient(180deg,rgba(7,11,18,.98),rgba(7,11,18,.88));backdrop-filter:blur(8px)}
+.ux-top-tabs button{white-space:nowrap;border:1px solid #334155;border-radius:999px;background:#0f172a;color:#dbeafe;padding:10px 14px;font-weight:1000;cursor:pointer}
+.ux-top-tabs button.active{background:linear-gradient(135deg,#f59e0b,#ec4899);border-color:rgba(255,255,255,.24);color:#fff}.card.ux-hide{display:none!important}.ux-section-label{font-size:12px;color:#94a3b8;font-weight:900;margin:0 0 8px}
+</style>
+<script id="CONTROL_TOP_TABS_UX_V3_JS">
+(function(){
+  function tabFor(txt){txt=(txt||''); if(/노래|코인|선곡/.test(txt))return 'karaoke'; if(/공지/.test(txt))return 'notice'; if(/크리에이터|프리셋|분배/.test(txt))return 'creator'; if(/룰렛/.test(txt))return 'roulette'; if(/사운드|ALERT|알림/.test(txt))return 'alert'; if(/미션|타이머|용돈|펀딩/.test(txt))return 'ops'; return 'basic';}
+  function init(){
+    const wrap=document.querySelector('.wrap'); if(!wrap||document.querySelector('.ux-top-tabs'))return;
+    const tabs=[['basic','기본/노출'],['notice','공지'],['creator','크리에이터/프리셋'],['ops','펀딩/용돈/미션'],['karaoke','노래방'],['roulette','룰렛'],['alert','ALERT/사운드'],['all','전체']];
+    const nav=document.createElement('div'); nav.className='ux-top-tabs'; nav.innerHTML=tabs.map((t,i)=>`<button class="${i===0?'active':''}" data-tab="${t[0]}">${t[1]}</button>`).join('');
+    const top=document.querySelector('.top'); (top&&top.parentNode?top.parentNode:wrap).insertBefore(nav, top?top.nextSibling:wrap.firstChild);
+    const cards=[...document.querySelectorAll('.card')].filter(c=>!c.closest('.savebar')&&!c.querySelector('#saveHint'));
+    cards.forEach(c=>{const h=c.querySelector('h2'); c.dataset.uxTab=tabFor(h?h.textContent:'');});
+    function show(tab){nav.querySelectorAll('button').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab)); cards.forEach(c=>c.classList.toggle('ux-hide',tab!=='all'&&c.dataset.uxTab!==tab));}
+    nav.addEventListener('click',e=>{const b=e.target.closest('button'); if(!b)return; show(b.dataset.tab);});
+    show('basic');
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init); else init();
+})();
+</script>
 </body>
 </html>
