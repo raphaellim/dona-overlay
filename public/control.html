@@ -392,11 +392,14 @@ textarea{resize:vertical;line-height:1.45}
     grid-template-columns: 1fr !important;
   }
 }
+
+.quick-pc-input{position:fixed;right:18px;bottom:18px;z-index:9999;background:#ec4899;color:#fff;padding:12px 16px;border-radius:999px;font-weight:900;text-decoration:none;box-shadow:0 8px 22px rgba(0,0,0,.35)}
 </style>
 <style>.roulette-quick-link{position:fixed;right:14%;bottom:1.4%;z-index:99999;padding:10px 14px;border-radius:999px;background:linear-gradient(90deg,#ff4fa3,#5ee7ff);color:#fff!important;font-weight:1000;text-decoration:none;box-shadow:0 0 18px rgba(255,79,163,.35)}</style>
 <link rel="stylesheet" href="/ux_compact.css">
 </head>
-<body><a class="roulette-quick-link" href="/roulette.html">🎰 룰렛관리</a>
+<body>
+<a class="quick-pc-input" href="/creator_input.html" target="_blank">PC 간소 입력</a><a class="roulette-quick-link" href="/roulette.html">🎰 룰렛관리</a>
 <script>(function(){var a=document.querySelector('.roulette-quick-link');if(!a)return;var st=new URLSearchParams(location.search).get('station')||localStorage.getItem('STATION_SLUG')||'default';a.href=a.getAttribute('href')+'?station='+encodeURIComponent(st);})();</script>
 <div class="wrap">
   <div class="top">
@@ -464,7 +467,7 @@ textarea{resize:vertical;line-height:1.45}
       <section class="card">
         <h2>크리에이터 목록</h2>
         <p class="muted">한 줄에 한 명씩 입력하세요.</p>
-        <textarea id="creators" class="input creator-area" placeholder="크리에이터1&#10;크리에이터2&#10;크리에이터3"></textarea>
+        <textarea id="creators" class="input creator-area" placeholder="빵떠기&#10;또영&#10;수박"></textarea>
       </section>
     </div>
 

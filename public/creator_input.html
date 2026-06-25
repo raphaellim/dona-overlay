@@ -24,9 +24,13 @@
 .creator-card-list .checkitem:has(input:checked){border-color:#ec4899;background:rgba(236,72,153,.18)}
 @media(max-width:700px){.preset-manual-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.manual-input-row{grid-template-columns:1fr 96px}.creator-card-list.checklist{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
+
+/* PC 간소 입력 화면 */
+body.pc-simple{max-width:none}.pc-simple .app{max-width:1180px;margin:0 auto}.pc-simple .panel.active{display:grid;grid-template-columns:1fr;gap:14px}.pc-simple .card{max-width:1100px;margin-left:auto;margin-right:auto}.pc-simple .tabs{position:sticky;top:0;z-index:20;background:rgba(6,10,18,.92);backdrop-filter:blur(10px)}
+@media(min-width:900px){.pc-simple #donation .card,.pc-simple #preset .card{max-width:980px}.pc-simple .preset-manual-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.pc-simple .creator-card-list.checklist{grid-template-columns:repeat(4,minmax(0,1fr))}}
 </style>
 </head>
-<body>
+<body class="pc-simple">
 <div id="loginGate" class="login-gate">
   <div class="login-box">
     <h1>크리에이터 로그인 필요</h1>
