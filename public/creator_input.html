@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>크리에이터 모바일 컨트롤</title>
+<title>PC 간소 입력</title>
 <style>
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#070b12;color:#e5e7eb;font-family:Arial,'Noto Sans KR',sans-serif}body{padding-bottom:92px}.top{position:sticky;top:0;z-index:20;background:linear-gradient(180deg,#07111f,#070b12);border-bottom:1px solid #253247;padding:12px 12px 8px}.topline{display:flex;align-items:center;justify-content:space-between;gap:10px}.title{font-size:19px;font-weight:1000;letter-spacing:-.3px}.sub{font-size:12px;color:#94a3b8;margin-top:4px;line-height:1.35}.tabs{display:flex;gap:8px;overflow:auto;padding:10px 0 2px;scrollbar-width:none}.tabs::-webkit-scrollbar{display:none}.tab{white-space:nowrap;border:1px solid #334155;border-radius:999px;background:#0f172a;color:#dbeafe;padding:10px 12px;font-weight:1000;font-size:13px}.tab.active{background:linear-gradient(90deg,#ff4fa3,#2563eb);border-color:rgba(255,255,255,.2);color:#fff}.tab.off{opacity:.42}.wrap{padding:12px}.panel{display:none}.panel.active{display:block}.card{background:#0b1220;border:1px solid #253247;border-radius:18px;padding:14px;margin-bottom:12px;box-shadow:0 10px 26px rgba(0,0,0,.18)}.card-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}h2{font-size:17px;margin:0;font-weight:1000}.badge{font-size:12px;color:#cbd5e1;border:1px solid #334155;border-radius:999px;padding:4px 8px;background:#101827}.badge.on{color:#bbf7d0;border-color:#166534}.badge.off{color:#fecaca;border-color:#7f1d1d}.row{margin-bottom:11px}label{display:block;margin-bottom:6px;font-size:13px;color:#cbd5e1;font-weight:900}.input,input,select,textarea{width:100%;min-height:50px;background:#070b12;color:#fff;border:1px solid #334155;border-radius:14px;padding:11px 12px;font-size:16px;font-weight:800;outline:none}.input:focus,input:focus,select:focus,textarea:focus{border-color:#60a5fa;box-shadow:0 0 0 3px rgba(96,165,250,.12)}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}.btn{width:100%;min-height:48px;border:0;border-radius:14px;background:#334155;color:#fff;font-weight:1000;font-size:15px}.btn:disabled{opacity:.45}.green{background:#16a34a}.blue{background:#2563eb}.red{background:#dc2626}.pink{background:#ec4899}.gray{background:#334155}.cyan{background:#0891b2}.orange{background:#f97316}.mini{min-height:38px;font-size:13px;border-radius:12px}.result{background:#101827;border:1px solid #334155;border-radius:15px;padding:12px;margin-bottom:11px;font-weight:1000}.muted{font-size:12px;color:#94a3b8;line-height:1.45}.offbox{border:1px dashed #475569;background:#0f172a;color:#cbd5e1;border-radius:15px;padding:10px;font-size:13px;margin-bottom:10px}.quickrow{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:11px}.quickrow button{min-height:40px;font-size:13px}.bottom{position:fixed;left:0;right:0;bottom:0;z-index:30;background:#07111f;border-top:1px solid #253247;padding:9px 12px calc(9px + env(safe-area-inset-bottom));display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px}.toast{position:fixed;left:50%;bottom:92px;transform:translateX(-50%) translateY(20px);background:#0f172a;border:1px solid #22c55e;border-radius:999px;padding:10px 14px;color:#fff;font-weight:1000;opacity:0;pointer-events:none;transition:.2s;z-index:60;box-shadow:0 12px 30px rgba(0,0,0,.35)}.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}.login-gate{position:fixed;inset:0;z-index:100;background:rgba(3,7,18,.94);display:none;align-items:center;justify-content:center;padding:18px}.login-box{width:min(420px,100%);background:#0b1220;border:1px solid #334155;border-radius:22px;padding:20px}.login-box h1{margin:0 0 8px;font-size:24px}.recent-wrap,.roulette-history{max-height:246px;overflow:auto;padding-right:2px}.recent{display:grid;grid-template-columns:34px 1fr auto;gap:8px;align-items:center;background:#101827;border:1px solid #334155;border-radius:14px;padding:10px;margin-bottom:8px}.recent .num{width:28px;height:28px;border-radius:999px;background:#1e293b;display:flex;align-items:center;justify-content:center;font-weight:1000;color:#bfdbfe}.statusline{display:grid;grid-template-columns:1fr 1fr;gap:8px}.statuspill{background:#101827;border:1px solid #334155;border-radius:14px;padding:10px;font-size:12px;color:#94a3b8}.statuspill b{display:block;font-size:17px;color:#fff;margin-top:3px}.danger-note{color:#fecaca}.live-dot{width:8px;height:8px;border-radius:999px;background:#22c55e;display:inline-block;margin-right:6px;box-shadow:0 0 10px rgba(34,197,94,.8)}.checkbar{display:flex;gap:8px;margin-bottom:8px}.checklist{display:grid;grid-template-columns:1fr 1fr;gap:8px;max-height:180px;overflow:auto}.checkitem{display:flex;align-items:center;gap:8px;background:#101827;border:1px solid #334155;border-radius:14px;padding:10px;font-size:14px;font-weight:900;min-height:46px}.checkitem input{width:20px;min-height:20px;accent-color:#ec4899}.source-checks{display:grid;grid-template-columns:1fr 1fr;gap:8px}.source-checks .checkitem{justify-content:center}.source-checks input{width:20px;min-height:20px;accent-color:#ec4899}.modal-bg{position:fixed;inset:0;z-index:80;background:rgba(0,0,0,.58);display:none;align-items:center;justify-content:center;padding:16px}.modal{width:min(460px,100%);background:#0b1220;border:1px solid #ef4444;border-radius:20px;padding:16px;box-shadow:0 20px 60px rgba(0,0,0,.5)}.modal h3{margin:0 0 8px;font-size:18px;color:#fecaca}.modal pre{white-space:pre-wrap;word-break:break-word;background:#070b12;border:1px solid #334155;border-radius:12px;padding:10px;max-height:220px;overflow:auto;color:#e5e7eb;font-size:12px}.empty{border:1px dashed #475569;border-radius:14px;padding:12px;color:#94a3b8;text-align:center}.history-row{display:grid;grid-template-columns:34px 1fr;gap:8px;align-items:center;background:#101827;border:1px solid #334155;border-radius:14px;padding:10px;margin-bottom:8px}.history-row .num{width:28px;height:28px;border-radius:999px;background:#1e293b;display:flex;align-items:center;justify-content:center;font-weight:1000;color:#fbcfe8}.creator-amount-row{background:#101827;border:1px solid #334155;border-radius:14px;padding:10px;margin-bottom:8px}.creator-amount-top{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-weight:1000}.creator-amount-top input{width:20px;min-height:20px;accent-color:#ec4899}.creator-amount-grid{display:grid;grid-template-columns:1fr 74px;gap:8px}.summary-mini{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin:8px 0}.summary-mini div{background:#101827;border:1px solid #334155;border-radius:12px;padding:8px;font-size:11px;color:#94a3b8}.summary-mini b{display:block;font-size:14px;color:#fff;margin-top:3px}.summary-mini .warn b{color:#fecaca}.summary-mini .ok b{color:#bbf7d0}@media(max-width:380px){.grid2,.grid3,.bottom,.checklist{grid-template-columns:1fr}.quickrow{grid-template-columns:1fr 1fr}body{padding-bottom:176px}}
 
@@ -28,6 +28,190 @@
 /* PC 간소 입력 화면 */
 body.pc-simple{max-width:none}.pc-simple .app{max-width:1180px;margin:0 auto}.pc-simple .panel.active{display:grid;grid-template-columns:1fr;gap:14px}.pc-simple .card{max-width:1100px;margin-left:auto;margin-right:auto}.pc-simple .tabs{position:sticky;top:0;z-index:20;background:rgba(6,10,18,.92);backdrop-filter:blur(10px)}
 @media(min-width:900px){.pc-simple #donation .card,.pc-simple #preset .card{max-width:980px}.pc-simple .preset-manual-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.pc-simple .creator-card-list.checklist{grid-template-columns:repeat(4,minmax(0,1fr))}}
+
+/* =========================================================
+   PC SIMPLE INPUT 3-GRID UX PATCH
+   - PC: 한 화면 3그리드 대시보드
+   - Mobile: 기존 탭/하단탭 유지
+   - 기존 API/기능 유지
+========================================================= */
+@media (min-width: 901px){
+  html,body{
+    min-height:100%;
+    overflow:auto;
+  }
+  body{
+    padding-bottom:0 !important;
+    background:
+      radial-gradient(circle at top left,rgba(37,99,235,.14),transparent 34%),
+      radial-gradient(circle at top right,rgba(236,72,153,.10),transparent 30%),
+      #070b12 !important;
+  }
+
+  .top{
+    position:sticky;
+    top:0;
+    padding:14px 22px 12px !important;
+    background:rgba(7,11,18,.94) !important;
+    backdrop-filter:blur(12px);
+    -webkit-backdrop-filter:blur(12px);
+  }
+
+  .topline{
+    max-width:1680px;
+    margin:0 auto;
+  }
+
+  .title{
+    font-size:22px !important;
+  }
+
+  .sub{
+    font-size:13px !important;
+  }
+
+  .tabs{
+    max-width:1680px;
+    margin:10px auto 0;
+    padding:0 !important;
+    display:flex !important;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+
+  .tab{
+    min-width:104px;
+    text-align:center;
+    padding:11px 15px !important;
+  }
+
+  .wrap{
+    max-width:1680px;
+    margin:0 auto;
+    padding:16px 22px 24px !important;
+  }
+
+  .panel.active{
+    display:grid !important;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:14px;
+    align-items:start;
+  }
+
+  .panel.active > .card{
+    margin-bottom:0 !important;
+  }
+
+  .card{
+    border-radius:20px !important;
+    padding:16px !important;
+    min-width:0;
+    background:
+      linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.012)),
+      #0b1220 !important;
+    border-color:#2d3b54 !important;
+  }
+
+  .card-head{
+    margin-bottom:13px !important;
+    padding-bottom:10px;
+    border-bottom:1px solid rgba(148,163,184,.16);
+  }
+
+  h2{
+    font-size:18px !important;
+  }
+
+  .row{
+    margin-bottom:10px !important;
+  }
+
+  label{
+    font-size:12px !important;
+    margin-bottom:5px !important;
+  }
+
+  input,select,textarea,.input{
+    min-height:44px !important;
+    font-size:15px !important;
+    border-radius:13px !important;
+    padding:9px 11px !important;
+  }
+
+  textarea{
+    min-height:96px !important;
+  }
+
+  .btn{
+    min-height:44px !important;
+    border-radius:13px !important;
+    font-size:14px !important;
+  }
+
+  .mini{
+    min-height:36px !important;
+    font-size:13px !important;
+  }
+
+  .grid2{
+    gap:8px !important;
+  }
+
+  .grid3{
+    gap:8px !important;
+  }
+
+  .quickrow{
+    grid-template-columns:repeat(4,1fr) !important;
+    gap:7px !important;
+  }
+
+  .bottom{
+    display:none !important;
+  }
+
+  .recent-wrap,.roulette-history{
+    max-height:340px !important;
+  }
+
+  .checklist{
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+    max-height:260px !important;
+  }
+
+  .preset-cards,
+  .preset-grid,
+  .manual-preset-grid{
+    display:grid !important;
+    grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+    gap:8px !important;
+  }
+
+  .creator-card-grid,
+  .creator-grid,
+  .creator-check-grid{
+    display:grid !important;
+    grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+    gap:8px !important;
+  }
+
+  .toast{
+    bottom:24px !important;
+  }
+}
+
+@media (min-width: 1200px){
+  .panel.active{
+    grid-template-columns:repeat(3,minmax(0,1fr));
+  }
+}
+
+@media (min-width: 1500px){
+  .panel.active{
+    grid-template-columns:repeat(3,minmax(360px,1fr));
+  }
+}
+
 </style>
 </head>
 <body class="pc-simple">
@@ -445,5 +629,29 @@ init();
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init); else init();
 })();
 </script>
+
+<script>
+(function(){
+  function patchPcInputLabels(){
+    try{
+      const title = document.querySelector('.title');
+      if(title && /모바일|크리에이터/.test(title.textContent)){
+        title.textContent = 'PC 간소 입력';
+      }
+      const sub = document.querySelector('.sub');
+      if(sub && !sub.dataset.pcSimplePatched){
+        sub.dataset.pcSimplePatched = '1';
+        sub.textContent = '방송 중 빠르게 입력할 수 있는 PC용 한 화면 간소 입력 페이지입니다.';
+      }
+    }catch(e){}
+  }
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', patchPcInputLabels);
+  }else{
+    patchPcInputLabels();
+  }
+})();
+</script>
+
 </body>
 </html>
