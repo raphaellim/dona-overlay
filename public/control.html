@@ -394,6 +394,21 @@ textarea{resize:vertical;line-height:1.45}
 }
 
 .quick-pc-input{position:fixed;right:18px;bottom:18px;z-index:9999;background:#ec4899;color:#fff;padding:12px 16px;border-radius:999px;font-weight:900;text-decoration:none;box-shadow:0 8px 22px rgba(0,0,0,.35)}
+
+/* page bottom shortcut override */
+.quick-index-link,
+.quick-creator-input-link,
+.creator-input-link{
+  top:auto!important;
+  bottom:18px!important;
+}
+.quick-index-link{right:158px!important}
+.quick-creator-input-link,.creator-input-link{right:18px!important}
+@media(max-width:900px){
+  .quick-index-link{right:140px!important;bottom:calc(18px + env(safe-area-inset-bottom))!important}
+  .quick-creator-input-link,.creator-input-link{right:12px!important;bottom:calc(18px + env(safe-area-inset-bottom))!important}
+}
+
 </style>
 <style>.roulette-quick-link{position:fixed;right:14%;bottom:1.4%;z-index:99999;padding:10px 14px;border-radius:999px;background:linear-gradient(90deg,#ff4fa3,#5ee7ff);color:#fff!important;font-weight:1000;text-decoration:none;box-shadow:0 0 18px rgba(255,79,163,.35)}</style>
 <link rel="stylesheet" href="/ux_compact.css">

@@ -2597,6 +2597,67 @@ body.test-bg{
   gap:8px!important;
 }
 
+
+/* =========================================================
+   FINAL VISIBLE OVERLAY PATCH
+   - 계좌 금액: 후원자명 0.85
+   - 고액(10만원 이상): 글자 내부 그라데이션 애니메이션 + 검정 아웃라인
+   - 크리에이터 후원금액/프리셋: 크리에이터명 0.85
+   - 크리에이터명과 금액/프리셋 간격 확보
+========================================================= */
+.account-donor{
+  color:#fff!important;
+  font-weight:1000!important;
+  text-shadow:0 1px 2px rgba(0,0,0,.82)!important;
+}
+.account-amount{
+  font-size:.85em!important;
+  color:var(--oc-title-account, #ffd86a)!important;
+  font-weight:1000!important;
+  margin-left:2px!important;
+  text-shadow:0 1px 2px rgba(0,0,0,.82)!important;
+}
+.roller-item.vip-account .account-donor{
+  color:transparent!important;
+  background-image:linear-gradient(90deg,rgba(255,255,255,.25) 0%,#ffffff 18%,#ffe27a 38%,#6ff0ff 58%,#ffffff 78%,rgba(255,255,255,.25) 100%)!important;
+  background-size:240% 100%!important;
+  -webkit-background-clip:text!important;
+  background-clip:text!important;
+  -webkit-text-stroke:1.1px rgba(0,0,0,.78)!important;
+  text-shadow:none!important;
+  animation:vipTextShineFinal 2.1s linear infinite!important;
+}
+.roller-item.vip-account .account-amount{
+  color:transparent!important;
+  background-image:linear-gradient(90deg,#ffd86a 0%,#fff6b8 32%,#ff79bd 55%,#ffd86a 100%)!important;
+  background-size:220% 100%!important;
+  -webkit-background-clip:text!important;
+  background-clip:text!important;
+  -webkit-text-stroke:.95px rgba(0,0,0,.80)!important;
+  text-shadow:none!important;
+  animation:vipTextShineFinal 2.3s linear infinite!important;
+}
+@keyframes vipTextShineFinal{
+  0%{background-position:220% 0}
+  100%{background-position:-220% 0}
+}
+.creator-align-line{
+  gap:10px!important;
+}
+.creator-align-main{
+  padding-right:12px!important;
+}
+.creator-align-total{
+  font-size:.85em!important;
+  margin-left:8px!important;
+}
+.creator-align-options{
+  gap:9px!important;
+}
+.creator-align-opt{
+  font-size:.85em!important;
+}
+
 </style>
   <link rel="stylesheet" href="/assets/css/roulette-overlay.css">
 </head>

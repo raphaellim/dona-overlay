@@ -19,3 +19,75 @@
 }
 .quick-index-link{position:fixed;right:14px;bottom:62px;z-index:99998;padding:10px 14px;border-radius:999px;background:linear-gradient(90deg,#2563eb,#ec4899);color:#fff!important;font-weight:1000;text-decoration:none;box-shadow:0 0 18px rgba(37,99,235,.28)}
 @media(max-width:900px){.quick-index-link{right:10px;bottom:58px;font-size:12px;padding:9px 11px}}
+
+
+/* floating shortcuts final: 버튼이 저장/하단 UI를 가리지 않도록 상단 우측으로 이동 */
+@media(min-width:901px){
+  .quick-index-link,
+  .quick-creator-input-link,
+  .creator-input-link{
+    bottom:auto!important;
+    top:86px!important;
+    right:18px!important;
+    z-index:9998!important;
+  }
+  .quick-creator-input-link,
+  .creator-input-link{
+    top:140px!important;
+  }
+}
+@media(max-width:900px){
+  .quick-index-link,
+  .quick-creator-input-link,
+  .creator-input-link{
+    bottom:calc(86px + env(safe-area-inset-bottom))!important;
+  }
+}
+
+
+/* bottom shortcut bar final: 인덱스 / PC 간소 입력 하단 가로 나열 */
+.quick-index-link,
+.quick-creator-input-link,
+.creator-input-link{
+  position:fixed!important;
+  top:auto!important;
+  right:auto!important;
+  left:auto!important;
+  bottom:18px!important;
+  z-index:99998!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  min-width:128px!important;
+  height:48px!important;
+  padding:0 18px!important;
+  border-radius:999px!important;
+  color:#fff!important;
+  font-weight:1000!important;
+  text-decoration:none!important;
+  box-shadow:0 0 18px rgba(37,99,235,.24)!important;
+}
+.quick-index-link{
+  right:158px!important;
+  background:linear-gradient(90deg,#2563eb,#22c55e)!important;
+}
+.quick-creator-input-link,
+.creator-input-link{
+  right:18px!important;
+  background:linear-gradient(90deg,#ec4899,#f97316)!important;
+}
+body{padding-bottom:86px!important}
+@media(max-width:900px){
+  .quick-index-link,
+  .quick-creator-input-link,
+  .creator-input-link{
+    bottom:calc(18px + env(safe-area-inset-bottom))!important;
+    min-width:112px!important;
+    height:44px!important;
+    padding:0 14px!important;
+    font-size:13px!important;
+  }
+  .quick-index-link{right:140px!important}
+  .quick-creator-input-link,.creator-input-link{right:12px!important}
+  body{padding-bottom:calc(96px + env(safe-area-inset-bottom))!important}
+}

@@ -353,6 +353,34 @@ textarea{resize:vertical;line-height:1.45}
 .quick-creator-input-link,.creator-input-link{top:140px!important}
 body{padding-bottom:80px}
 
+
+/* Final quick buttons: admin 저장 버튼 가림 방지 */
+.quick-index-link,
+.quick-creator-input-link,
+.creator-input-link{
+  bottom:auto!important;
+  top:86px!important;
+  right:18px!important;
+  z-index:9998!important;
+}
+.quick-creator-input-link,
+.creator-input-link{top:140px!important}
+
+
+/* page bottom shortcut override */
+.quick-index-link,
+.quick-creator-input-link,
+.creator-input-link{
+  top:auto!important;
+  bottom:18px!important;
+}
+.quick-index-link{right:158px!important}
+.quick-creator-input-link,.creator-input-link{right:18px!important}
+@media(max-width:900px){
+  .quick-index-link{right:140px!important;bottom:calc(18px + env(safe-area-inset-bottom))!important}
+  .quick-creator-input-link,.creator-input-link{right:12px!important;bottom:calc(18px + env(safe-area-inset-bottom))!important}
+}
+
 </style>
 <link rel="stylesheet" href="/ux_compact.css">
 </head>
@@ -1388,11 +1416,18 @@ setInterval(loadManualSoundQueue, 2500);
   var path=location.pathname;
   if(path==='/overlay.html') return;
   var st=new URLSearchParams(location.search).get('station')||localStorage.getItem('STATION_SLUG')||'default';
+
   var a=document.createElement('a');
   a.className='quick-index-link';
   a.href='/creator_index.html?station='+encodeURIComponent(st);
   a.textContent='인덱스';
   document.body.appendChild(a);
+
+  var b=document.createElement('a');
+  b.className='quick-creator-input-link';
+  b.href='/creator_input.html?station='+encodeURIComponent(st);
+  b.textContent='PC 간소 입력';
+  document.body.appendChild(b);
 })();</script>
 </body>
 </html>

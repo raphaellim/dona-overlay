@@ -24,6 +24,21 @@
 .creator-card-list .checkitem:has(input:checked){border-color:#ec4899;background:rgba(236,72,153,.18)}
 @media(max-width:700px){.preset-manual-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.manual-input-row{grid-template-columns:1fr 96px}.creator-card-list.checklist{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
+
+/* page bottom shortcut override */
+.quick-index-link,
+.quick-creator-input-link,
+.creator-input-link{
+  top:auto!important;
+  bottom:18px!important;
+}
+.quick-index-link{right:158px!important}
+.quick-creator-input-link,.creator-input-link{right:18px!important}
+@media(max-width:900px){
+  .quick-index-link{right:140px!important;bottom:calc(18px + env(safe-area-inset-bottom))!important}
+  .quick-creator-input-link,.creator-input-link{right:12px!important;bottom:calc(18px + env(safe-area-inset-bottom))!important}
+}
+
 </style>
 </head>
 <body>

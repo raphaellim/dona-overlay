@@ -614,7 +614,22 @@
 .login-box .input{
   margin:12px 0;
 }
-    </style>
+    
+/* page bottom shortcut override */
+.quick-index-link,
+.quick-creator-input-link,
+.creator-input-link{
+  top:auto!important;
+  bottom:18px!important;
+}
+.quick-index-link{right:158px!important}
+.quick-creator-input-link,.creator-input-link{right:18px!important}
+@media(max-width:900px){
+  .quick-index-link{right:140px!important;bottom:calc(18px + env(safe-area-inset-bottom))!important}
+  .quick-creator-input-link,.creator-input-link{right:12px!important;bottom:calc(18px + env(safe-area-inset-bottom))!important}
+}
+
+</style>
 </head>
 
 <body>
