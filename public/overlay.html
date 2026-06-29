@@ -2824,7 +2824,55 @@ body.test-bg{
 /* ALERT */
 .alert-donor{color:#ffffff!important}
 .alert-total-amount{color:#ffe27a!important}
+/* 고액후원 텍스트 그라데이션 */
+.roller-item.vip-account{
+  background:transparent !important;
+  border:0 !important;
+}
 
+.roller-item.vip-account .account-donor,
+.roller-item.vip-account .account-amount{
+  color:transparent !important;
+  -webkit-text-fill-color:transparent !important;
+  -webkit-background-clip:text !important;
+  background-clip:text !important;
+  font-weight:900 !important;
+  -webkit-text-stroke:1.4px rgba(0,0,0,.72) !important;
+  text-shadow:
+    0 2px 2px rgba(0,0,0,.65),
+    0 0 6px rgba(0,0,0,.45) !important;
+}
+
+/* 10만원 이상 - 골드 */
+.roller-item.vip-10 .account-donor,
+.roller-item.vip-10 .account-amount{
+  background-image:linear-gradient(180deg,#fff6bf 0%,#ffd95a 45%,#f5a900 100%) !important;
+}
+
+/* 30만원 이상 - 핑크골드 */
+.roller-item.vip-30 .account-donor,
+.roller-item.vip-30 .account-amount{
+  background-image:linear-gradient(180deg,#ffe1f0 0%,#ff8fc8 45%,#ff4fa3 100%) !important;
+}
+
+/* 50만원 이상 - 블루 */
+.roller-item.vip-50 .account-donor,
+.roller-item.vip-50 .account-amount{
+  background-image:linear-gradient(180deg,#d8f7ff 0%,#5edcff 45%,#258dff 100%) !important;
+}
+
+/* 100만원 이상 - 레인보우 골드 */
+.roller-item.vip-100 .account-donor,
+.roller-item.vip-100 .account-amount{
+  background-image:linear-gradient(90deg,#fff6bf,#ffd95a,#ff8fc8,#5edcff,#b6ff8a,#fff6bf) !important;
+  background-size:220% 100% !important;
+  animation:vipRainbowText 2.8s linear infinite !important;
+}
+
+@keyframes vipRainbowText{
+  0%{background-position:220% 0}
+  100%{background-position:-220% 0}
+}
 </style>
   <link rel="stylesheet" href="/assets/css/roulette-overlay.css">
 </head>
@@ -3746,8 +3794,13 @@ let missionCountdownLastSec = null;
           const rawAmount = item.amount ?? item.accountAmount ?? item.account_amount ?? item.total ?? 0;
           const amount = displayAmount(rawAmount);
           const heartClass = accountHeartClass(rawAmount);
-          const vipThreshold = Number(String(getComputedStyle(document.documentElement).getPropertyValue("--style-vip-threshold")).trim()) || 500000;
-          const vipClass = Number(rawAmount || 0) >= vipThreshold ? " vip-account" : "";
+          const amountNum = Number(rawAmount || 0);
+
+let vipClass = "";
+if (amountNum >= 1000000) vipClass = " vip-account vip-100";
+else if (amountNum >= 500000) vipClass = " vip-account vip-50";
+else if (amountNum >= 300000) vipClass = " vip-account vip-30";
+else if (amountNum >= 100000) vipClass = " vip-account vip-10";
           return `<div class="roller-item${vipClass}"><span class="account-donor">${escapeHtml(donor)}</span><span class="account-heart ${heartClass}">♥</span><span class="account-amount">${amount}</span></div>`;
         };
 
