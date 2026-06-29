@@ -2018,46 +2018,48 @@
     }
 
     .roller-item.vip-account .account-donor,
-.roller-item.vip-account .account-heart,
-.roller-item.vip-account .account-amount {
+.roller-item.vip-account .account-amount,
+.roller-item.vip-account .account-heart {
   background-image: linear-gradient(
-    90deg,
-    #fffef4 0%,
-    #ffe066 22%,
-    #ffffff 42%,
-    #ffd24a 62%,
-    #fffef4 100%
+    180deg,
+    #ffffff 0%,
+    #ffe680 38%,
+    #ffbf2e 72%,
+    #fff2a8 100%
   ) !important;
-  background-size: 260% 100% !important;
-  background-position: 0% 50% !important;
+  background-size: 100% 180% !important;
+  background-position: 50% 0% !important;
 
   -webkit-background-clip: text !important;
   background-clip: text !important;
 
-  color: #ffe066 !important;
+  color: #ffe680 !important;
   -webkit-text-fill-color: transparent !important;
 
   font-weight: 1000 !important;
 
-  animation: accountTextShineMove 1.8s linear infinite !important;
-
   text-shadow:
-    -1px -1px 0 rgba(0,0,0,.85),
-     1px -1px 0 rgba(0,0,0,.85),
-    -1px  1px 0 rgba(0,0,0,.85),
-     1px  1px 0 rgba(0,0,0,.85),
-     0 2px 3px rgba(0,0,0,.45) !important;
+    -1px -1px 0 rgba(0,0,0,.9),
+     1px -1px 0 rgba(0,0,0,.9),
+    -1px  1px 0 rgba(0,0,0,.9),
+     1px  1px 0 rgba(0,0,0,.9),
+     0 2px 3px rgba(0,0,0,.55) !important;
 
   filter: none !important;
   opacity: 1 !important;
 }
+.roller-item.vip-account .account-donor,
+.roller-item.vip-account .account-amount,
+.roller-item.vip-account .account-heart {
+  animation: vipGoldSoftMove 3.5s ease-in-out infinite !important;
+}
 
-    @keyframes accountTextShineMove {
-  0% {
-    background-position: 260% 50%;
+@keyframes vipGoldSoftMove {
+  0%, 100% {
+    background-position: 50% 0%;
   }
-  100% {
-    background-position: -260% 50%;
+  50% {
+    background-position: 50% 100%;
   }
 }
     .roller-item.vip-account .account-heart {
@@ -2861,16 +2863,34 @@ body.test-bg{
 }
 
 .roller-item.vip-account .account-donor,
+.roller-item.vip-account .account-heart,
 .roller-item.vip-account .account-amount{
-  color:transparent !important;
-  -webkit-text-fill-color:transparent !important;
+  background-image:linear-gradient(
+    180deg,
+    #ffffff 0%,
+    #ffe680 38%,
+    #ffbf2e 72%,
+    #fff2a8 100%
+  ) !important;
+
   -webkit-background-clip:text !important;
   background-clip:text !important;
-  font-weight:900 !important;
- -webkit-text-stroke:.65px rgba(0,0,0,.85) !important;
-text-shadow:
-  0 1px 1px rgba(0,0,0,.85),
-  0 0 2px rgba(0,0,0,.65) !important;
+
+  color:#ffe680 !important;
+  -webkit-text-fill-color:transparent !important;
+
+  font-weight:1000 !important;
+  -webkit-text-stroke:0 !important;
+
+  text-shadow:
+    -1px -1px 0 rgba(0,0,0,.75),
+     1px -1px 0 rgba(0,0,0,.75),
+    -1px  1px 0 rgba(0,0,0,.75),
+     1px  1px 0 rgba(0,0,0,.75),
+     0 2px 2px rgba(0,0,0,.45) !important;
+
+  filter:none !important;
+  opacity:1 !important;
 }
 
 /* 10만원 이상 - 골드 */
