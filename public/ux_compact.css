@@ -91,15 +91,3 @@ body{padding-bottom:86px!important}
   .quick-creator-input-link,.creator-input-link{right:12px!important}
   body{padding-bottom:calc(96px + env(safe-area-inset-bottom))!important}
 }
-
-
-/* VF3 bottom shortcut bar override */
-.quick-index-link,
-.quick-creator-input-link,
-.creator-input-link{
-  position:fixed!important;
-  top:auto!important;
-  bottom:18px!important;
-}
-.quick-index-link{right:158px!important}
-.quick-creator-input-link,.creator-input-link{right:18px!important}

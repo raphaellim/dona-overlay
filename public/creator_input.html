@@ -254,6 +254,16 @@ body.pc-simple{max-width:none}.pc-simple .app{max-width:1180px;margin:0 auto}.pc
   .quick-creator-input-link,.creator-input-link{right:12px!important;bottom:calc(18px + env(safe-area-inset-bottom))!important}
 }
 
+
+/* VF3 PC simple input 3-grid */
+@media (min-width:901px){
+  body.pc-simple{padding-bottom:92px!important}
+  .wrap{max-width:1680px!important;margin:0 auto!important;padding:16px 22px 24px!important}
+  .panel.active{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:14px!important;align-items:start!important}
+  .panel.active > .card{margin-bottom:0!important}
+  .bottom{display:none!important}
+}
+
 </style>
 </head>
 <body class="pc-simple">

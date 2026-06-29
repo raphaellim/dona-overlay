@@ -383,17 +383,14 @@ body{padding-bottom:80px}
 
 
 /* =========================================================
-   VF3 ADMIN INPUT UX
-   - 크리에이터명 옆 체크박스
-   - 체크 해제 시 분배 입력 비활성
-   - 하단 바로가기 가로 나열
+   VF3 ADMIN SELECTED DISTRIBUTION
 ========================================================= */
 .split-check-name{
   display:flex!important;
   align-items:center!important;
   gap:8px!important;
   min-width:0!important;
-  font-weight:1000!important;
+  font-weight:900!important;
   color:#fff!important;
 }
 .split-check-name input{
@@ -403,37 +400,15 @@ body{padding-bottom:80px}
   flex:0 0 auto!important;
 }
 .split-row.split-disabled{
-  opacity:.46!important;
+  opacity:.48!important;
 }
 .split-row.split-disabled .split-amount,
 .split-row.split-disabled .split-memo{
-  pointer-events:none!important;
   opacity:.55!important;
+  pointer-events:none!important;
 }
 .grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 @media(max-width:1000px){.grid-4{grid-template-columns:1fr 1fr}}
-.quick-index-link,
-.quick-creator-input-link,
-.creator-input-link{
-  position:fixed!important;
-  top:auto!important;
-  bottom:18px!important;
-  z-index:99998!important;
-  display:inline-flex!important;
-  align-items:center!important;
-  justify-content:center!important;
-  min-width:128px!important;
-  height:48px!important;
-  padding:0 18px!important;
-  border-radius:999px!important;
-  color:#fff!important;
-  font-weight:1000!important;
-  text-decoration:none!important;
-  box-shadow:0 0 18px rgba(37,99,235,.24)!important;
-}
-.quick-index-link{right:158px!important;background:linear-gradient(90deg,#2563eb,#22c55e)!important}
-.quick-creator-input-link,.creator-input-link{right:18px!important;background:linear-gradient(90deg,#ec4899,#f97316)!important}
-body{padding-bottom:92px!important}
 
 </style>
 <link rel="stylesheet" href="/ux_compact.css">
@@ -1375,13 +1350,6 @@ function fillFirstCreator(){
 function setOnlyCreator(idx){
   const rows = Array.from(document.querySelectorAll('.split-row'));
   document.querySelectorAll('.split-amount').forEach(el => el.value = '');
-  rows.forEach((row, i) => {
-    const chk = row.querySelector('.split-use');
-    if(chk){
-      chk.checked = i === idx;
-      toggleSplitUse(chk);
-    }
-  });
   if(rows[idx]) rows[idx].querySelector('.split-amount').value = inputValueFromWon(getTopTotal());
   updatePreview();
 }
