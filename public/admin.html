@@ -338,6 +338,21 @@ textarea{resize:vertical;line-height:1.45}
   grid-template-columns: 1fr !important;
 }
 
+
+/* Admin UX patch */
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+#allowanceStandaloneCard{order:9}
+.admin-split-actions .btn{min-height:46px}
+@media(max-width:1000px){.grid-4{grid-template-columns:1fr 1fr}}
+.quick-index-link,.quick-creator-input-link,.creator-input-link{
+  bottom:auto!important;
+  top:86px!important;
+  right:18px!important;
+  z-index:9998!important;
+}
+.quick-creator-input-link,.creator-input-link{top:140px!important}
+body{padding-bottom:80px}
+
 </style>
 <link rel="stylesheet" href="/ux_compact.css">
 </head>
@@ -395,27 +410,7 @@ textarea{resize:vertical;line-height:1.45}
             <input id="toonieTotal" class="input" inputmode="decimal" placeholder="예: 2.5 또는 25000">
           </div>
         </div>
-        <div class="sub-card" style="margin-top:10px">
-          <h2 style="font-size:17px">용돈 조정 <span class="muted">계좌후원 아래 표시</span></h2>
-          <div class="resultBox" id="allowanceCurrentBox">현재용돈 : 0원</div>
-          <div class="grid-3">
-            <div class="row">
-              <label>용돈 금액</label>
-              <input id="allowanceAmount" class="input" inputmode="decimal" placeholder="10 = 10,000원">
-            </div>
-            <div class="row">
-              <label>추가/제외</label>
-              <select id="allowanceDirection" class="input">
-                <option value="plus">+ 추가</option>
-                <option value="minus">- 제외</option>
-              </select>
-            </div>
-            <div class="row">
-              <label>&nbsp;</label>
-              <button class="btn blue" type="button" onclick="saveAllowanceAdjust()">용돈 저장</button>
-            </div>
-          </div>
-        </div>
+
         <div id="preview" class="resultBox">자동결과: -</div>
 
         <div class="sub-card">
@@ -444,13 +439,40 @@ textarea{resize:vertical;line-height:1.45}
             </div>
           </div>
 
-          <div class="grid-3" style="margin-top:10px">
+          <div class="grid-4 admin-split-actions" style="margin-top:10px">
             <button class="btn gray" onclick="fillFirstCreator()">첫 크리에이터에 전액</button>
+            <button class="btn gray" onclick="equalDistributeAmounts()">선택 균등분배</button>
             <button class="btn gray" onclick="clearAmounts()">금액 지우기</button>
             <button class="btn green" onclick="saveBatch()">후원 입력 저장</button>
           </div>
         </div>
       </section>
+
+      <section class="card" id="allowanceStandaloneCard">
+        
+        <div class="sub-card">
+          <h2 style="font-size:17px">용돈 조정 <span class="muted">계좌후원 아래 표시</span></h2>
+          <div class="resultBox" id="allowanceCurrentBox">현재용돈 : 0원</div>
+          <div class="grid-3">
+            <div class="row">
+              <label>용돈 금액</label>
+              <input id="allowanceAmount" class="input" inputmode="decimal" placeholder="10 = 10,000원">
+            </div>
+            <div class="row">
+              <label>추가/제외</label>
+              <select id="allowanceDirection" class="input">
+                <option value="plus">+ 추가</option>
+                <option value="minus">- 제외</option>
+              </select>
+            </div>
+            <div class="row">
+              <label>&nbsp;</label>
+              <button class="btn blue" type="button" onclick="saveAllowanceAdjust()">용돈 저장</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
     </main>
 
     <aside>
@@ -1210,6 +1232,34 @@ function clearAmounts(){
   $('#toonieTotal').value = '';
   document.querySelectorAll('.split-amount').forEach(el => el.value = '');
   document.querySelectorAll('.split-memo').forEach(el => el.value = '');
+  updatePreview();
+}
+
+
+function equalDistributeAmounts(){
+  const rows = Array.from(document.querySelectorAll('.split-row'));
+  if(!rows.length) return;
+  const total = getTopTotal();
+  if(!total) return alert('상단 총액을 먼저 입력하세요.');
+
+  const selected = rows.filter(row => {
+    const input = row.querySelector('.split-amount');
+    return input && String(input.value || '').trim();
+  });
+
+  const targets = selected.length ? selected : rows;
+  if(!targets.length) return;
+
+  document.querySelectorAll('.split-amount').forEach(el => el.value = '');
+
+  const base = Math.floor(total / targets.length);
+  let remain = total - (base * targets.length);
+
+  targets.forEach((row, idx) => {
+    const v = base + (idx === 0 ? remain : 0);
+    row.querySelector('.split-amount').value = inputValueFromWon(v);
+  });
+
   updatePreview();
 }
 

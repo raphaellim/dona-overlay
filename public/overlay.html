@@ -2536,6 +2536,67 @@ body.test-bg{
   font-weight:1000!important;
 }
 
+
+/* =========================================================
+   Overlay readability + premium text animation patch
+   - 계좌 금액 = 후원자명 0.85
+   - 10만원 이상: 글자 안쪽만 그라데이션 애니메이션 + 아웃라인
+   - 크리에이터 금액/프리셋 = 이름 0.85, 간격 확보
+========================================================= */
+.account-donor{
+  color:#fff!important;
+  font-weight:1000!important;
+  text-shadow:0 1px 2px rgba(0,0,0,.75)!important;
+}
+.account-amount{
+  font-size:.85em!important;
+  color:var(--oc-title-account, var(--account-amount-color, #ffd86a))!important;
+  font-weight:1000!important;
+  margin-left:1px!important;
+  text-shadow:0 1px 2px rgba(0,0,0,.75)!important;
+}
+.roller-item.vip-account .account-donor{
+  color:transparent!important;
+  background:linear-gradient(90deg, rgba(255,255,255,.15) 0%, #fff 18%, #ffe27a 42%, #8efcff 58%, #fff 74%, rgba(255,255,255,.18) 100%)!important;
+  background-size:240% 100%!important;
+  -webkit-background-clip:text!important;
+  background-clip:text!important;
+  -webkit-text-stroke:1px rgba(0,0,0,.72)!important;
+  text-shadow:none!important;
+  animation:vipTextShine 2.2s linear infinite!important;
+}
+.roller-item.vip-account .account-amount{
+  color:transparent!important;
+  background:linear-gradient(90deg, #ffd86a 0%, #fff4b0 35%, #ff79bd 55%, #ffd86a 100%)!important;
+  background-size:220% 100%!important;
+  -webkit-background-clip:text!important;
+  background-clip:text!important;
+  -webkit-text-stroke:.85px rgba(0,0,0,.76)!important;
+  text-shadow:none!important;
+  animation:vipTextShine 2.4s linear infinite!important;
+}
+@keyframes vipTextShine{
+  0%{background-position:220% 0}
+  100%{background-position:-220% 0}
+}
+.creator-align-line{
+  gap:8px!important;
+}
+.creator-align-main{
+  padding-right:8px!important;
+}
+.creator-align-total,
+.creator-align-options,
+.creator-align-opt{
+  font-size:.85em!important;
+}
+.creator-align-total{
+  margin-left:4px!important;
+}
+.creator-align-options{
+  gap:8px!important;
+}
+
 </style>
   <link rel="stylesheet" href="/assets/css/roulette-overlay.css">
 </head>

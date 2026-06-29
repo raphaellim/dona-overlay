@@ -212,6 +212,33 @@ body.pc-simple{max-width:none}.pc-simple .app{max-width:1180px;margin:0 auto}.pc
   }
 }
 
+
+/* PC floating shortcut fix: 우측 하단 버튼이 저장/작업버튼을 가리지 않도록 상단 고정 */
+@media (min-width:901px){
+  .quick-index-link,
+  .quick-creator-input-link,
+  .creator-input-link,
+  a[href*="creator_index"],
+  a[href*="creator_input"]{
+    position:fixed!important;
+    right:22px!important;
+    bottom:auto!important;
+    top:86px!important;
+    z-index:9998!important;
+  }
+  .quick-creator-input-link,
+  .creator-input-link,
+  a[href*="creator_input"]{ top:140px!important; }
+  .wrap{ padding-bottom:120px!important; }
+}
+@media (max-width:900px){
+  .quick-index-link,
+  .quick-creator-input-link,
+  .creator-input-link{
+    bottom:calc(92px + env(safe-area-inset-bottom))!important;
+  }
+}
+
 </style>
 </head>
 <body class="pc-simple">
