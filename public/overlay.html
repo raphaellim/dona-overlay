@@ -2923,6 +2923,96 @@ body.test-bg{
   0%{background-position:220% 0}
   100%{background-position:-220% 0}
 }
+
+/* =========================================================
+   VIP 고액후원 최종 스타일 CLEAN
+   - 기존 VIP 배경/그라데이션/투명 텍스트 무력화
+   - 10만/30만/50만/100만 단계별 실색 적용
+   - 하트까지 같은 컬러로 통일
+   - 롤러 높이/구조는 건드리지 않음
+========================================================= */
+.roller-item.vip-account,
+.roller-item.vip-account:hover,
+.roller-item.vip-account.active{
+  background:transparent !important;
+  border:0 !important;
+  box-shadow:none !important;
+}
+
+.roller-item.vip-account::before,
+.roller-item.vip-account::after{
+  display:none !important;
+  content:none !important;
+  opacity:0 !important;
+  animation:none !important;
+  background:none !important;
+  box-shadow:none !important;
+}
+
+/* 공통: 투명/그라데이션 제거, 선명한 실색 */
+.roller-item.vip-account .account-donor,
+.roller-item.vip-account .account-heart,
+.roller-item.vip-account .account-amount{
+  background:none !important;
+  background-image:none !important;
+  background-size:auto !important;
+  background-position:initial !important;
+  -webkit-background-clip:initial !important;
+  background-clip:initial !important;
+
+  font-weight:1000 !important;
+  -webkit-text-stroke:0 !important;
+
+  text-shadow:
+    -1px -1px 0 rgba(0,0,0,.85),
+     1px -1px 0 rgba(0,0,0,.85),
+    -1px  1px 0 rgba(0,0,0,.85),
+     1px  1px 0 rgba(0,0,0,.85),
+     0 0 5px rgba(255,230,128,.35) !important;
+
+  filter:none !important;
+  opacity:1 !important;
+  animation:none !important;
+}
+
+/* 10만원 이상 - 골드 */
+.roller-item.vip-10 .account-donor,
+.roller-item.vip-10 .account-heart,
+.roller-item.vip-10 .account-amount{
+  color:#ffe680 !important;
+  -webkit-text-fill-color:#ffe680 !important;
+}
+
+/* 30만원 이상 - 핑크 */
+.roller-item.vip-30 .account-donor,
+.roller-item.vip-30 .account-heart,
+.roller-item.vip-30 .account-amount{
+  color:#ff9fd2 !important;
+  -webkit-text-fill-color:#ff9fd2 !important;
+}
+
+/* 50만원 이상 - 블루 */
+.roller-item.vip-50 .account-donor,
+.roller-item.vip-50 .account-heart,
+.roller-item.vip-50 .account-amount{
+  color:#7ee7ff !important;
+  -webkit-text-fill-color:#7ee7ff !important;
+}
+
+/* 100만원 이상 - 프리미엄 골드 */
+.roller-item.vip-100 .account-donor,
+.roller-item.vip-100 .account-heart,
+.roller-item.vip-100 .account-amount{
+  color:#fff2a8 !important;
+  -webkit-text-fill-color:#fff2a8 !important;
+  text-shadow:
+    -1px -1px 0 rgba(0,0,0,.9),
+     1px -1px 0 rgba(0,0,0,.9),
+    -1px  1px 0 rgba(0,0,0,.9),
+     1px  1px 0 rgba(0,0,0,.9),
+     0 0 7px rgba(255,242,168,.55) !important;
+}
+
 </style>
   <link rel="stylesheet" href="/assets/css/roulette-overlay.css">
 </head>
