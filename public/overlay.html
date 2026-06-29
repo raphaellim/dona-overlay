@@ -2660,92 +2660,158 @@ body.test-bg{
 
 
 /* =========================================================
-   VIP SIMPLE LUXURY PATCH
-   - 10만 이상 복잡한 글자 애니메이션 제거
-   - 고급스러운 굵은 실색 폰트 + 보석빛 배경 반짝이만 적용
-   - 계좌 금액 0.85 / 크리에이터 금액·프리셋 0.85
+   VF3 FINAL OVERLAY READABILITY
+   - 전체 텍스트 굵기 강화
+   - 아웃라인 제거
+   - 계좌 후원자명/금액 굵고 선명하게
+   - 고액 후원: 글자 애니메이션 대신 보석빛 배경 반짝임
+   - 크리에이터 금액/프리셋 0.85 사이즈 + 간격 보정
 ========================================================= */
+.overlay-panel,
+.overlay-panel *,
+#overlayAlertRoot,
+#overlayAlertRoot *{
+  font-weight:1000!important;
+  -webkit-text-stroke:0!important;
+  text-shadow:0 1px 2px rgba(0,0,0,.68)!important;
+}
+
 .account-donor{
   color:#ffffff!important;
   font-weight:1000!important;
-  -webkit-text-stroke:.45px rgba(0,0,0,.72)!important;
-  text-shadow:0 1px 2px rgba(0,0,0,.9)!important;
+  font-size:1em!important;
+  letter-spacing:-.035em!important;
+  text-shadow:0 1px 2px rgba(0,0,0,.72)!important;
+  -webkit-text-stroke:0!important;
 }
+
 .account-amount{
-  font-size:.85em!important;
   color:#ffe27a!important;
   font-weight:1000!important;
-  margin-left:2px!important;
-  -webkit-text-stroke:.35px rgba(0,0,0,.65)!important;
-  text-shadow:0 1px 2px rgba(0,0,0,.9)!important;
+  font-size:.95em!important;
+  letter-spacing:-.035em!important;
+  margin-left:3px!important;
+  text-shadow:0 1px 2px rgba(0,0,0,.72)!important;
+  -webkit-text-stroke:0!important;
 }
+
+.account-heart{
+  font-size:.78em!important;
+  margin:0 2px!important;
+  text-shadow:0 1px 2px rgba(0,0,0,.65)!important;
+}
+
+/* 10만원 이상: 글자는 선명하게 유지, 배경만 보석빛으로 은은하게 */
 .roller-item.vip-account{
   position:relative!important;
   isolation:isolate!important;
   padding:2px 7px!important;
   border-radius:10px!important;
   background:
-    radial-gradient(circle at 14% 18%, rgba(255,255,255,.34), transparent 12%),
-    radial-gradient(circle at 74% 38%, rgba(255,226,122,.28), transparent 12%),
-    linear-gradient(90deg,rgba(255,216,106,.10),rgba(100,217,255,.10),rgba(255,121,189,.10))!important;
-  border:1px solid rgba(255,226,122,.34)!important;
-  box-shadow:inset 0 0 10px rgba(255,255,255,.05),0 0 10px rgba(255,216,106,.18)!important;
+    linear-gradient(90deg, rgba(255,255,255,.13), rgba(255,216,106,.18), rgba(100,217,255,.12)),
+    rgba(255,255,255,.035)!important;
+  border:1px solid rgba(255,216,106,.36)!important;
   overflow:hidden!important;
 }
-.roller-item.vip-account::after{
+
+.roller-item.vip-account::before{
   content:""!important;
   position:absolute!important;
-  inset:-30% -60%!important;
+  inset:-40% -80%!important;
   z-index:-1!important;
   background:
-    radial-gradient(circle, rgba(255,255,255,.70) 0 1px, transparent 2px),
-    linear-gradient(115deg,transparent 0%,rgba(255,255,255,.25) 45%,transparent 62%)!important;
-  background-size:46px 46px, 100% 100%!important;
-  transform:translateX(-35%)!important;
-  animation:vipBgSparkle 2.8s linear infinite!important;
-  opacity:.75!important;
+    radial-gradient(circle, rgba(255,255,255,.72) 0 1px, transparent 2px),
+    linear-gradient(115deg, transparent 0%, rgba(255,255,255,.48) 48%, transparent 62%)!important;
+  background-size:22px 22px, 100% 100%!important;
+  opacity:.42!important;
+  transform:translateX(-35%) rotate(0deg)!important;
+  animation:vipGemSparkle 3.2s ease-in-out infinite!important;
 }
+
 .roller-item.vip-account .account-donor{
-  color:#fff!important;
+  color:#ffffff!important;
   background:none!important;
-  -webkit-background-clip:border-box!important;
-  background-clip:border-box!important;
-  -webkit-text-fill-color:#fff!important;
+  -webkit-text-fill-color:#ffffff!important;
+  text-shadow:0 1px 2px rgba(0,0,0,.74)!important;
   animation:none!important;
-  font-weight:1000!important;
-  -webkit-text-stroke:.55px rgba(0,0,0,.78)!important;
-  text-shadow:0 1px 2px rgba(0,0,0,.95),0 0 6px rgba(255,255,255,.24)!important;
 }
+
 .roller-item.vip-account .account-amount{
   color:#ffe27a!important;
   background:none!important;
-  -webkit-background-clip:border-box!important;
-  background-clip:border-box!important;
   -webkit-text-fill-color:#ffe27a!important;
+  text-shadow:0 1px 2px rgba(0,0,0,.74)!important;
   animation:none!important;
-  font-weight:1000!important;
-  -webkit-text-stroke:.5px rgba(0,0,0,.78)!important;
-  text-shadow:0 1px 2px rgba(0,0,0,.95),0 0 7px rgba(255,226,122,.32)!important;
 }
-@keyframes vipBgSparkle{
-  0%{transform:translateX(-45%)}
-  100%{transform:translateX(45%)}
+
+@keyframes vipGemSparkle{
+  0%,100%{opacity:.26;transform:translateX(-45%) rotate(0deg)}
+  45%{opacity:.62;transform:translateX(25%) rotate(0deg)}
+  65%{opacity:.36;transform:translateX(45%) rotate(0deg)}
 }
+
+/* 크리에이터 줄: 이름 기준, 금액/프리셋 0.85 */
 .creator-align-line{
   gap:10px!important;
 }
+
 .creator-align-main{
   padding-right:12px!important;
+  color:#ffffff!important;
 }
+
 .creator-align-total{
   font-size:.85em!important;
   margin-left:8px!important;
+  color:#ffc2d6!important;
 }
+
 .creator-align-options{
   gap:9px!important;
 }
+
 .creator-align-opt{
   font-size:.85em!important;
+}
+
+.creator-name{
+  font-weight:1000!important;
+  color:#ffffff!important;
+}
+
+.donation-amount,
+.creator-sub,
+.creator-inline-options{
+  font-size:.85em!important;
+  margin-left:8px!important;
+}
+
+.notice-title,
+.funding-title,
+.karaoke-title,
+.creator-box::before,
+.account-title::before{
+  font-weight:1000!important;
+  text-shadow:0 1px 2px rgba(0,0,0,.68)!important;
+}
+
+.notice-text,
+.notice-line{
+  font-weight:1000!important;
+  text-shadow:0 1px 2px rgba(0,0,0,.68)!important;
+}
+
+/* ALERT 가독성 */
+.alert-donor{
+  color:#ffffff!important;
+  font-weight:1000!important;
+}
+.alert-total-amount{
+  color:#ffe27a!important;
+  font-weight:1000!important;
+}
+.alert-target{
+  font-weight:1000!important;
 }
 
 </style>

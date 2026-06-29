@@ -382,36 +382,58 @@ body{padding-bottom:80px}
 }
 
 
-/* creator split checkbox patch */
+/* =========================================================
+   VF3 ADMIN INPUT UX
+   - 크리에이터명 옆 체크박스
+   - 체크 해제 시 분배 입력 비활성
+   - 하단 바로가기 가로 나열
+========================================================= */
 .split-check-name{
   display:flex!important;
   align-items:center!important;
   gap:8px!important;
   min-width:0!important;
-  margin:0!important;
-  color:#e5e7eb!important;
   font-weight:1000!important;
+  color:#fff!important;
 }
 .split-check-name input{
   width:18px!important;
   height:18px!important;
-  min-height:18px!important;
-  accent-color:#22c55e!important;
+  accent-color:#ec4899!important;
   flex:0 0 auto!important;
 }
-.split-check-name .name{
-  overflow:hidden!important;
-  text-overflow:ellipsis!important;
-  white-space:nowrap!important;
-}
 .split-row.split-disabled{
-  opacity:.42;
+  opacity:.46!important;
 }
 .split-row.split-disabled .split-amount,
 .split-row.split-disabled .split-memo{
-  filter:grayscale(1);
-  cursor:not-allowed;
+  pointer-events:none!important;
+  opacity:.55!important;
 }
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+@media(max-width:1000px){.grid-4{grid-template-columns:1fr 1fr}}
+.quick-index-link,
+.quick-creator-input-link,
+.creator-input-link{
+  position:fixed!important;
+  top:auto!important;
+  bottom:18px!important;
+  z-index:99998!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  min-width:128px!important;
+  height:48px!important;
+  padding:0 18px!important;
+  border-radius:999px!important;
+  color:#fff!important;
+  font-weight:1000!important;
+  text-decoration:none!important;
+  box-shadow:0 0 18px rgba(37,99,235,.24)!important;
+}
+.quick-index-link{right:158px!important;background:linear-gradient(90deg,#2563eb,#22c55e)!important}
+.quick-creator-input-link,.creator-input-link{right:18px!important;background:linear-gradient(90deg,#ec4899,#f97316)!important}
+body{padding-bottom:92px!important}
 
 </style>
 <link rel="stylesheet" href="/ux_compact.css">
@@ -1071,7 +1093,6 @@ function renderSplitRows(){
   `).join('');
 
   document.querySelectorAll('.split-amount').forEach(el => el.addEventListener('input', updatePreview));
-  document.querySelectorAll('.split-use').forEach(el => toggleSplitUse(el));
 }
 
 function bindInputs(){
@@ -1099,7 +1120,7 @@ function bindInputs(){
 
 function updatePreview(){
   const topTotal = getTopTotal();
-  const splitTotal = Array.from(document.querySelectorAll('.split-row')).filter(row => !row.querySelector('.split-use') || row.querySelector('.split-use').checked).reduce((sum, row) => sum + toWon(row.querySelector('.split-amount')?.value), 0);
+  const splitTotal = Array.from(document.querySelectorAll('.split-amount')).reduce((sum, el) => sum + toWon(el.value), 0);
   const diff = topTotal - splitTotal;
 
   $('#topTotalText').textContent = fmt(topTotal);
@@ -1291,46 +1312,50 @@ async function sendManualSound(){
   }catch(e){ alert(e.message); }
 }
 
+
 function toggleSplitUse(chk){
   const row = chk.closest('.split-row');
   if(!row) return;
-  const off = !chk.checked;
-  row.classList.toggle('split-disabled', off);
+  const disabled = !chk.checked;
+  row.classList.toggle('split-disabled', disabled);
   const amount = row.querySelector('.split-amount');
   const memo = row.querySelector('.split-memo');
   if(amount){
-    amount.disabled = off;
-    if(off) amount.value = '';
+    amount.disabled = disabled;
+    if(disabled) amount.value = '';
   }
-  if(memo) memo.disabled = off;
-}
-
-function selectedSplitRows(){
-  return Array.from(document.querySelectorAll('.split-row'))
-    .filter(row => !row.querySelector('.split-use') || row.querySelector('.split-use').checked);
+  if(memo) memo.disabled = disabled;
 }
 
 function clearAmounts(){
   $('#accountTotal').value = '';
   $('#toonieTotal').value = '';
-  document.querySelectorAll('.split-use').forEach(chk => { chk.checked = true; toggleSplitUse(chk); });
   document.querySelectorAll('.split-amount').forEach(el => el.value = '');
   document.querySelectorAll('.split-memo').forEach(el => el.value = '');
   updatePreview();
 }
 
+
 function equalDistributeAmounts(){
-  const rows = selectedSplitRows();
-  if(!rows.length) return alert('분배할 크리에이터를 선택하세요.');
+  const rows = Array.from(document.querySelectorAll('.split-row'));
+  if(!rows.length) return;
   const total = getTopTotal();
   if(!total) return alert('상단 총액을 먼저 입력하세요.');
 
+  const selected = rows.filter(row => {
+    const input = row.querySelector('.split-amount');
+    return input && String(input.value || '').trim();
+  });
+
+  const targets = selected.length ? selected : rows;
+  if(!targets.length) return;
+
   document.querySelectorAll('.split-amount').forEach(el => el.value = '');
 
-  const base = Math.floor(total / rows.length);
-  let remain = total - (base * rows.length);
+  const base = Math.floor(total / targets.length);
+  let remain = total - (base * targets.length);
 
-  rows.forEach((row, idx) => {
+  targets.forEach((row, idx) => {
     const v = base + (idx === 0 ? remain : 0);
     row.querySelector('.split-amount').value = inputValueFromWon(v);
   });
@@ -1339,7 +1364,8 @@ function equalDistributeAmounts(){
 }
 
 function fillFirstCreator(){
-  const rows = selectedSplitRows();
+  const rows = Array.from(document.querySelectorAll('.split-row'))
+    .filter(row => !row.querySelector('.split-use') || row.querySelector('.split-use').checked);
   if(!rows.length) return alert('분배할 크리에이터를 선택하세요.');
   document.querySelectorAll('.split-amount').forEach(el => el.value = '');
   rows[0].querySelector('.split-amount').value = inputValueFromWon(getTopTotal());
