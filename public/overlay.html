@@ -3992,7 +3992,19 @@ else if (amountNum >= 100000) vipClass = " vip-account vip-10";
       }
 
       function renderCreators(creators) {
-        const rows = (Array.isArray(creators) ? creators : []).slice(0, 5);
+        const creatorOrder = new Map(
+  (Array.isArray(latestSettingsForTimer?.creators) ? latestSettingsForTimer.creators : [])
+    .map((name, idx) => [normalizeName(name), idx])
+);
+
+const rows = (Array.isArray(creators) ? creators : [])
+  .slice()
+  .sort((a, b) => {
+    const an = normalizeName(a.creator || a.name || "");
+    const bn = normalizeName(b.creator || b.name || "");
+    return (creatorOrder.get(an) ?? 9999) - (creatorOrder.get(bn) ?? 9999);
+  })
+  .slice(0, 5);
         const visiblePresets = (enabledPresets || []).filter(p => p.enabled !== false);
         const showDonation = (typeof showCreatorDonations === "undefined") ? true : showCreatorDonations;
 
