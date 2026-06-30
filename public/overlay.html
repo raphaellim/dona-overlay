@@ -1091,6 +1091,51 @@ body.test-bg{
   .roller{font-size:var(--style-account-roll-size,25px)!important}
   .notice-text{font-size:var(--style-content-size,20px)!important}
 }
+    /* ===== VIP 계좌 텍스트 럭셔리 2톤 최종 ===== */
+.roller-item.vip-account .account-donor,
+.roller-item.vip-account .account-heart,
+.roller-item.vip-account .account-amount{
+  background:none!important;
+  -webkit-background-clip:initial!important;
+  background-clip:initial!important;
+  -webkit-text-fill-color:currentColor!important;
+  font-weight:1000!important;
+  animation:none!important;
+  filter:none!important;
+  opacity:1!important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.24),
+    0 2px 3px rgba(0,0,0,.72),
+    0 0 8px currentColor!important;
+}
+
+/* 10만 */
+.roller-item.vip-10 .account-donor,
+.roller-item.vip-10 .account-heart,
+.roller-item.vip-10 .account-amount{
+  color:#ffe680!important;
+}
+
+/* 30만 */
+.roller-item.vip-30 .account-donor,
+.roller-item.vip-30 .account-heart,
+.roller-item.vip-30 .account-amount{
+  color:#ff9fd2!important;
+}
+
+/* 50만 */
+.roller-item.vip-50 .account-donor,
+.roller-item.vip-50 .account-heart,
+.roller-item.vip-50 .account-amount{
+  color:#8ee7ff!important;
+}
+
+/* 100만 */
+.roller-item.vip-100 .account-donor,
+.roller-item.vip-100 .account-heart,
+.roller-item.vip-100 .account-amount{
+  color:#fff2a8!important;
+}
 
 </style>
   <link rel="stylesheet" href="/assets/css/roulette-overlay.css">
