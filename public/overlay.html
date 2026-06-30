@@ -1047,6 +1047,49 @@ body.test-bg{
   .roller{font-size:var(--style-account-roll-size,25px)!important}
   .notice-text{font-size:var(--style-content-size,20px)!important}
 }
+    /* ===== 고액후원 메탈 그라데이션 최종 강제 ===== */
+.roller-item.vip-account .account-donor,
+.roller-item.vip-account .account-heart,
+.roller-item.vip-account .account-amount{
+  color:transparent!important;
+  -webkit-text-fill-color:transparent!important;
+  -webkit-background-clip:text!important;
+  background-clip:text!important;
+  background-size:100% 100%!important;
+  animation:none!important;
+  font-weight:1000!important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.22),
+    0 2px 2px rgba(0,0,0,.62)!important;
+}
+
+/* 10만 샴페인 골드 */
+.roller-item.vip-10 .account-donor,
+.roller-item.vip-10 .account-heart,
+.roller-item.vip-10 .account-amount{
+  background-image:linear-gradient(180deg,#fffef7 0%,#fff3b0 18%,#f3d15f 40%,#b8841f 58%,#fff0a2 78%,#fffef8 100%)!important;
+}
+
+/* 30만 로즈골드 */
+.roller-item.vip-30 .account-donor,
+.roller-item.vip-30 .account-heart,
+.roller-item.vip-30 .account-amount{
+  background-image:linear-gradient(180deg,#fff8f8 0%,#ffd8d8 20%,#f2a7a7 45%,#b76b6b 60%,#ffdcdc 82%,#fff8f8 100%)!important;
+}
+
+/* 50만 화이트골드 */
+.roller-item.vip-50 .account-donor,
+.roller-item.vip-50 .account-heart,
+.roller-item.vip-50 .account-amount{
+  background-image:linear-gradient(180deg,#ffffff 0%,#f8f8f8 22%,#d8d8d8 45%,#8b8b8b 62%,#ffffff 82%,#ffffff 100%)!important;
+}
+
+/* 100만 블루 메탈 */
+.roller-item.vip-100 .account-donor,
+.roller-item.vip-100 .account-heart,
+.roller-item.vip-100 .account-amount{
+  background-image:linear-gradient(180deg,#ffffff 0%,#dff5ff 18%,#8ad6ff 42%,#2e72c8 60%,#dff5ff 82%,#ffffff 100%)!important;
+}
 </style>
   <link rel="stylesheet" href="/assets/css/roulette-overlay.css">
 </head>
