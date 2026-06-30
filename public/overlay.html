@@ -3031,7 +3031,47 @@ body.test-bg{
   font-size:.82em !important;
   margin-left:4px !important;
 }
+/* ===== 계좌 후원자/금액 메탈 컬러 ===== */
+.roller-item.vip-account .account-donor,
+.roller-item.vip-account .account-amount{
+  background:none !important;
+  -webkit-background-clip:initial !important;
+  background-clip:initial !important;
 
+  color:#f7d978 !important;
+  -webkit-text-fill-color:#f7d978 !important;
+
+  font-weight:1000 !important;
+  -webkit-text-stroke:0 !important;
+
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.35),
+    0 2px 0 rgba(120,75,0,.45),
+    0 3px 3px rgba(0,0,0,.65),
+    0 0 5px rgba(255,220,120,.28) !important;
+
+  filter:none !important;
+  opacity:1 !important;
+  animation:none !important;
+}
+
+/* 금액은 살짝 작게 */
+.roller-item.vip-account .account-amount{
+  font-size:.82em !important;
+  margin-left:5px !important;
+}
+
+/* 하트는 같은 골드톤 */
+.roller-item.vip-account .account-heart{
+  background:none !important;
+  color:#ffe680 !important;
+  -webkit-text-fill-color:#ffe680 !important;
+  font-weight:1000 !important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.35),
+    0 2px 2px rgba(0,0,0,.65),
+    0 0 5px rgba(255,220,120,.35) !important;
+}
 </style>
   <link rel="stylesheet" href="/assets/css/roulette-overlay.css">
 </head>
