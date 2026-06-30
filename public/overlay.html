@@ -8,2091 +8,42 @@
   <!-- overlay-debug-enabled-v2 -->
   <link rel="icon" href="data:,">
   <style>
-    :root {
-      --account-roll-height: 34px;
-      --overlay-w: 285px;
-      --top: 54px;
-      --right: 14px;
-      --pink: rgba(255, 138, 185, .95);
-      --white: rgba(255, 255, 255, .98);
-      --yellow: #ffe680;
-      --plus-blue: #5ecbff;
-      --minus-red: #ff4d5e;
-      --box-bg-top: rgba(18, 22, 32, .88);
-      --box-bg-bottom: rgba(10, 12, 20, .82);
-      --account-title-color: #ffe680;
-      --account-name-color: #fff;
-      --account-amount-color: #ffd1e0;
-    }
-
-    * {
-      box-sizing: border-box
-    }
-
-    html,
-    body {
-      margin: 0;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      background: transparent !important;
-      font-family: "Pretendard", "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", Arial, sans-serif;
-    }
-
-    .overlay-root {
-      user-select: none;
-      pointer-events: none;
-      position: fixed;
-      inset: 0;
-      background: transparent
-    }
-
-    .overlay-stack {
-      position: absolute;
-      top: var(--top);
-      right: var(--right);
-      width: var(--overlay-w);
-      display: flex !important;
-      flex-direction: column !important;
-      align-items: stretch !important;
-      gap: 10px !important
-    }
-
-    /* ===== 공통 박스 ===== */
-    .overlay-box,
-    .account-box,
-    .notice-box,
-    .funding-box,
-    .karaoke-box,
-    .creator-box,
-    .broadcast-timer-box {
-      position: relative !important;
-      width: 100% !important;
-      max-width: 100% !important;
-      box-sizing: border-box !important;
-      color: var(--white) !important;
-      background: linear-gradient(180deg, var(--box-bg-top), var(--box-bg-bottom)) !important;
-      border: 2px solid var(--pink) !important;
-      border-radius: 16px !important;
-      box-shadow: none !important;
-      text-shadow: none !important;
-      filter: none !important;
-      pointer-events: none !important;
-    }
-
-    .account-box {
-      padding: 8px 8px 9px !important
-    }
-
-    .notice-box {
-      padding: 9px 12px !important;
-      text-align: center !important
-    }
-
-    .funding-box {
-      padding: 12px !important;
-      text-align: center !important
-    }
-
-    .karaoke-box {
-      padding: 12px 14px !important;
-      text-align: center !important;
-      overflow: hidden !important;
-      max-height: none !important
-    }
-
-    .creator-box {
-      padding: 10px 12px 12px !important
-    }
-
-    .hidden {
-      display: none !important
-    }
-
-    /* ===== 방송시간 / 타이틀 ===== */
-    .broadcast-timer-box {
-      display: flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-      gap: 10px !important;
-      padding: 8px 18px !important
-    }
-
-    .timer-label,
-    .account-title,
-    .notice-title,
-    .funding-title,
-    .karaoke-title {
-      font-size: 18px !important;
-      line-height: 1.08 !important;
-      letter-spacing: -.04em !important;
-      font-weight: 1000 !important;
-      text-shadow: none !important;
-      filter: none !important
-    }
-
-    .timer-label {
-      color: var(--yellow) !important;
-      opacity: 1 !important
-    }
-
-    .timer-value {
-      font-size: 32px !important;
-      line-height: 1 !important;
-      font-weight: 1000 !important;
-      color: #f8fafc !important;
-      text-shadow: none !important;
-      filter: none !important
-    }
-
-    .notice-title,
-    .funding-title,
-    .karaoke-title {
-      display: inline-flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-      width: auto !important;
-      max-width: 90% !important;
-      margin: 0 auto 7px !important;
-      padding: 4px 12px !important;
-      border-radius: 999px !important;
-      white-space: nowrap !important;
-      overflow: hidden !important;
-      text-overflow: ellipsis !important;
-      text-align: center !important
-    }
-
-    .notice-title {
-      color: #8ee7ff !important;
-      background: rgba(142, 231, 255, .12) !important;
-      border: 1px solid rgba(142, 231, 255, .22) !important
-    }
-
-    .funding-title {
-      color: #b8ff9d !important;
-      background: rgba(184, 255, 157, .12) !important;
-      border: 1px solid rgba(184, 255, 157, .22) !important
-    }
-
-    .karaoke-title {
-      color: #ff9bd6 !important;
-      background: rgba(255, 155, 214, .12) !important;
-      border: 1px solid rgba(255, 155, 214, .22) !important
-    }
-
-    .account-title {
-      flex: 0 0 auto !important;
-      min-width: auto !important;
-      padding: 0 2px !important;
-      color: var(--account-title-color) !important;
-      white-space: nowrap !important
-    }
-
-    /* ===== 계좌후원 롤링 ===== */
-
-   .allowance-row {
-  margin-top: 7px !important;
-  padding: 6px 4px 1px !important;
-  border-top: 1px solid rgba(255,255,255,.24) !important;
-  text-align: center !important;
-
-  font-weight: 950 !important;
-  font-size: calc(var(--style-content-size) * .9) !important;
-  line-height: 1.15 !important;
-
-  color: #fff3a6 !important;
-  -webkit-text-stroke: 0 !important;
-  text-shadow:
-    0 1px 2px rgba(0,0,0,.75),
-    0 0 3px rgba(0,0,0,.45) !important;
-
-  filter: none !important;
-}
-
-    .account-row {
-      display: flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-      gap: 5px !important;
-      height: 34px !important;
-      font-weight: 900 !important;
-      letter-spacing: -.06em !important;
-      text-align: center !important
-    }
-
-    .roller {
-      position: relative !important;
-      flex: 1 1 auto !important;
-      min-width: 0 !important;
-      width: auto !important;
-      height: var(--account-roll-height) !important;
-      line-height: 1 !important;
-      overflow: hidden !important;
-      color: var(--account-amount-color) !important;
-      font-size: 25px !important;
-      font-weight: 950 !important;
-      letter-spacing: -.055em !important;
-      text-shadow: none !important;
-      filter: none !important
-    }
-
-    .roller-track {
-      position: absolute !important;
-      left: 0 !important;
-      right: 0 !important;
-      top: 0 !important;
-      transition: transform .42s ease !important;
-      will-change: transform;
-      transform: translate3d(0, 0, 0)
-    }
-
-    .roller-track.no-transition {
-      transition: none !important
-    }
-
-    .roller-item {
-      height: var(--account-roll-height) !important;
-      min-height: var(--account-roll-height) !important;
-      line-height: 1 !important;
-      display: flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-      gap: 3px !important;
-      padding: 2px 0 0 !important;
-      color: var(--account-amount-color) !important;
-      white-space: nowrap !important;
-      overflow: hidden !important;
-      text-overflow: ellipsis !important
-    }
-
-    .account-donor {
-      min-width: 0 !important;
-      color: var(--account-name-color) !important;
-      overflow: hidden !important;
-      text-overflow: ellipsis !important;
-      white-space: nowrap !important;
-      text-shadow: none !important;
-      filter: none !important
-    }
-
-    .account-heart {
-      display: inline-flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-      flex: 0 0 auto !important;
-      font-size: .76em !important;
-      line-height: 1 !important;
-      transform: translateY(1px);
-      text-shadow: none !important;
-      filter: none !important
-    }
-
-    .account-heart.heart-lv1 {
-      color: #60a5fa !important
-    }
-
-    .account-heart.heart-lv2 {
-      color: #34d399 !important
-    }
-
-    .account-heart.heart-lv3 {
-      color: #facc15 !important
-    }
-
-    .account-heart.heart-lv4 {
-      color: #ff4fd8 !important
-    }
-
-    .account-amount {
-      flex: 0 0 auto !important;
-      color: var(--account-amount-color) !important;
-      font-size: .95em !important;
-      font-weight: 900 !important;
-      letter-spacing: -.04em !important;
-      opacity: .95 !important;
-      text-shadow: none !important;
-      filter: none !important
-    }
-
-    /* ===== 공지 ===== */
-    .notice-text {
-      min-height: 24px;
-      font-size: 20px;
-      line-height: 1.18;
-      font-weight: 900;
-      color: var(--white);
-      letter-spacing: -.055em;
-      word-break: keep-all;
-      white-space: normal !important;
-      text-align: left !important;
-      text-shadow: none !important;
-      filter: none !important
-    }
-
-    .notice-line {
-      display: block !important;
-      line-height: 1.22 !important;
-      margin: 2px 0 !important;
-      word-break: keep-all !important;
-      text-align: left !important;
-      text-shadow: none !important;
-      filter: none !important
-    }
-
-    /* ===== 펀딩 ===== */
-    .funding-value {
-      display: flex !important;
-      flex-direction: column !important;
-      gap: 7px !important;
-      margin-top: 10px !important;
-      font-size: 18px !important;
-      line-height: 1 !important;
-      font-weight: 1000 !important;
-      text-align: left !important;
-      color: #f8fafc !important;
-      text-shadow: none !important;
-      filter: none !important
-    }
-
-    .funding-line {
-      position: relative;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      overflow: hidden;
-      border-radius: 10px;
-      padding: 8px 10px;
-      background: rgba(255, 255, 255, .08);
-      border: 1px solid rgba(255, 255, 255, .14);
-      text-shadow: none !important;
-      filter: none !important
-    }
-
-    .funding-line span,
-    .funding-line b {
-      position: relative;
-      z-index: 2;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis
-    }
-
-    .funding-line b {
-      flex: 0 0 auto;
-      color: #f8fafc !important
-    }
-
-    .funding-line em {
-      position: absolute;
-      left: 0;
-      top: 0;
-      bottom: 0;
-      z-index: 1;
-      background: linear-gradient(90deg, rgba(0, 234, 255, .20), rgba(255, 79, 216, .12));
-      pointer-events: none
-    }
-
-
-    .funding-roller {
-      position: relative !important;
-      height: 34px !important;
-      overflow: hidden !important;
-    }
-
-    .funding-track.no-transition {
-      transition: none !important;
-    }
-
-    .funding-track .funding-line {
-      height: 42px;
-      margin: 0 0 6px
-    }
-
-    /* ===== 노래방 ===== */
-    .karaoke-mini-title {
-      display: none !important
-    }
-
-    .karaoke-notice {
-      margin-top: 4px;
-      color: #fde68a !important;
-      font-size: 17px !important;
-      line-height: 1.15 !important;
-      font-weight: 1000 !important;
-      text-align: left !important;
-      text-shadow: none !important;
-      filter: none !important
-    }
-
-    .karaoke-current {
-      display: grid !important;
-      grid-template-columns: auto auto minmax(0, 1fr) !important;
-      align-items: center !important;
-      gap: 6px !important;
-      margin-top: 8px !important;
-      overflow: hidden !important;
-      font-size: 18px !important;
-      line-height: 1.18 !important;
-      font-weight: 1000 !important;
-      text-align: left !important;
-      color: #e0f2fe !important;
-      text-shadow: none !important;
-      filter: none !important
-    }
-
-    .karaoke-current b {
-      color: #ff7ac8 !important;
-      white-space: nowrap !important;
-      font-weight: 1000 !important
-    }
-
-    .karaoke-heart {
-      color: #ff4fa3 !important;
-      margin-left: 2px !important
-    }
-
-    .karaoke-current em,
-    .karaoke-donor {
-      color: #39ff88 !important;
-      font-style: normal !important;
-      font-weight: 1000 !important;
-      white-space: nowrap !important;
-      text-shadow: none !important;
-      filter: none !important
-    }
-
-    .karaoke-reserve-title {
-      margin-top: 7px;
-      color: #38ff72;
-      text-align: left !important;
-      font-size: 18px;
-      font-weight: 1000
-    }
-
-    .karaoke-queue {
-      display: flex !important;
-      flex-direction: column !important;
-      align-items: stretch !important;
-      justify-content: flex-start !important;
-      gap: 4px !important;
-      margin-top: 5px !important;
-      text-align: left !important;
-      overflow: visible !important
-    }
-
-    .karaoke-song-row {
-      display: grid !important;
-      grid-template-columns: 42px auto minmax(0, 1fr) !important;
-      align-items: center !important;
-      gap: 6px !important;
-      min-width: 0 !important;
-      overflow: hidden !important;
-      color: #fff !important;
-      font-size: 15px !important;
-      font-weight: 900 !important;
-      line-height: 1.15 !important;
-      text-align: left !important
-    }
-
-    .karaoke-song-row.hold {
-      opacity: .78 !important
-    }
-
-    .karaoke-order {
-      color: #fff1a8 !important;
-      white-space: nowrap !important;
-      font-weight: 1000 !important
-    }
-
-    .karaoke-hold-title {
-      margin-top: 7px !important;
-      padding-top: 6px !important;
-      border-top: 1px solid rgba(255, 255, 255, .16) !important;
-      color: #ff9bd6 !important;
-      font-size: 14px !important;
-      line-height: 1 !important;
-      font-weight: 1000 !important;
-      text-align: left !important
-    }
-
-    .karaoke-song-title-wrap {
-      display: block !important;
-      min-width: 0 !important;
-      overflow: hidden !important;
-      white-space: nowrap !important
-    }
-
-    .karaoke-song-title-text {
-      display: inline-block !important;
-      color: #fff !important;
-      font-weight: 950 !important;
-      white-space: nowrap !important;
-      padding-left: 0;
-      animation: karaokeSongMarquee 7.5s linear infinite;
-      animation-delay: 1s
-    }
-
-    @keyframes karaokeSongMarquee {
-
-      0%,
-      18% {
-        transform: translateX(0)
-      }
-
-      100% {
-        transform: translateX(-55%)
-      }
-    }
-
-    .queue-empty {
-      display: block !important;
-      padding: 4px 0 !important;
-      color: rgba(255, 255, 255, .68) !important;
-      font-size: 15px !important;
-      font-weight: 900 !important;
-      text-align: left !important;
-      opacity: .72 !important
-    }
-
-    .karaoke-coin-ticker {
-      width: 100%;
-      overflow: hidden;
-      white-space: nowrap;
-      margin-top: 9px;
-      border-radius: 999px;
-      background: rgba(255, 255, 255, .10);
-      border: 1px solid rgba(255, 255, 255, .18);
-      text-align: left !important
-    }
-
-    .karaoke-coin-ticker span {
-      display: inline-block;
-      padding-left: 100%;
-      font-size: 15px;
-      line-height: 30px;
-      font-weight: 1000;
-      color: #fff;
-      animation: karaokeTickerMove 8s linear infinite
-    }
-
-    @keyframes karaokeTickerMove {
-      from {
-        transform: translateX(0)
-      }
-
-      to {
-        transform: translateX(-100%)
-      }
-    }
-
-    /* ===== 크리에이터 ===== */
-    .creator-list {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
-      width: 100%
-    }
-
-    .creator-item {
-      padding: 0;
-      width: 100%;
-      text-align: center
-    }
-
-    .creator-main {
-      display: grid !important;
-      grid-template-columns: 40% 60% !important;
-      align-items: center !important;
-      justify-content: stretch !important;
-      column-gap: 0 !important;
-      gap: 0 !important;
-      width: 100%;
-      min-height: 28px;
-      font-weight: 900;
-      letter-spacing: -.07em;
-      line-height: 1 !important;
-      padding-top: 2px !important;
-      text-align: center;
-      text-shadow: none !important;
-      filter: none !important
-    }
-
-    .creator-name {
-      width: 100% !important;
-      min-width: 0 !important;
-      color: var(--white);
-      font-size: 25px;
-      line-height: 1 !important;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      text-align: center !important;
-      text-shadow: none !important;
-      filter: none !important
-    }
-
-    .donation-amount {
-      flex: 0 0 auto;
-      color: #ffc2d6;
-      font-size: 25px;
-      line-height: 1 !important;
-      white-space: nowrap;
-      text-align: left;
-      letter-spacing: -.04em !important;
-      text-shadow: none !important;
-      filter: none !important
-    }
-
-    .creator-sub {
-      display: flex;
-      justify-content: center;
-      align-items: center !important;
-      gap: 10px;
-      width: 100%;
-      margin-top: 2px;
-      padding-top: 2px !important;
-      font-size: 23px;
-      line-height: 1 !important;
-      font-weight: 900;
-      letter-spacing: -.065em;
-      text-align: center;
-      text-shadow: none !important;
-      filter: none !important
-    }
-
-    .creator-item.options-only .creator-main {
-      display: grid !important;
-      grid-template-columns: 40% 60% !important;
-      justify-content: stretch !important;
-      gap: 0 !important;
-      min-width: 0 !important;
-    }
-
-    .creator-item.options-only .creator-name {
-      width: 100% !important;
-      max-width: 100% !important;
-      text-align: center !important
-    }
-
-    .creator-inline-options {
-      display: inline-flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-      gap: 7px !important;
-      flex: 0 1 auto !important;
-      min-width: 0 !important;
-      overflow: hidden !important;
-      white-space: nowrap !important;
-      line-height: 1 !important;
-      font-size: calc(var(--style-creator-content-size) * .92) !important;
-      justify-self: center !important;
-      text-align: center !important;
-      font-weight: 900 !important;
-    }
-
-    .creator-inline-options .state-item {
-      display: inline-flex !important;
-      align-items: center !important;
-      flex: 0 0 auto !important;
-      white-space: nowrap !important;
-      line-height: 1 !important;
-    }
-
-    .creator-item.options-only .creator-sub {
-      display: none !important;
-    }
-
-    .state-item {
-      white-space: nowrap;
-      min-width: 0;
-      text-align: center
-    }
-
-    .plus {
-      color: var(--plus-blue)
-    }
-
-    .blue,
-    .red {
-      color: var(--minus-red)
-    }
-
-    .muted {
-      color: var(--yellow)
-    }
-
-    /* ===== ALERT ===== */
-    #overlayAlertRoot {
-      position: fixed !important;
-      left: var(--alert-left, 8px) !important;
-      top: var(--alert-top, 80px) !important;
-      width: var(--alert-width, 420px) !important;
-      height: var(--alert-height, 170px) !important;
-      right: auto !important;
-      bottom: auto !important;
-      inset: auto !important;
-      z-index: 999999 !important;
-      pointer-events: none !important;
-      overflow: visible !important;
-      transform: none !important;
-    }
-
-    .option-alert {
-      position: absolute !important;
-      left: 0 !important;
-      top: 0 !important;
-      right: auto !important;
-      bottom: auto !important;
-      width: 100% !important;
-      max-width: 100% !important;
-      min-height: 150px !important;
-      margin: 0 !important;
-      padding: 13px 12px 14px !important;
-      border-radius: 18px !important;
-      border: 1px solid rgba(255, 255, 255, .22) !important;
-      background: radial-gradient(circle at 18% 0%, rgba(255, 255, 255, .18), transparent 28%), linear-gradient(180deg, rgba(20, 24, 38, .96), rgba(7, 10, 18, .96)) !important;
-      color: #fff;
-      text-align: center;
-      letter-spacing: -.06em;
-      opacity: 0;
-      transform: scale(.92) !important;
-      transition: opacity .22s ease, transform .22s cubic-bezier(.2, 1.35, .3, 1);
-      box-shadow: 0 0 0 1px rgba(255, 255, 255, .07) inset, 0 0 0 2px rgba(255, 194, 214, .18), 0 12px 28px rgba(0, 0, 0, .42), 0 0 22px rgba(255, 194, 214, .22) !important;
-      display: flex !important;
-      flex-direction: column !important;
-      align-items: center !important;
-      justify-content: center !important;
-      pointer-events: none !important;
-    }
-
-    .option-alert.show {
-      opacity: 1 !important;
-      visibility: visible !important;
-      transform: scale(1) !important;
-      animation: alertCleanPop .34s ease-out, alertCleanGlow 1.2s ease-in-out infinite alternate !important
-    }
-
-    .option-alert.hidden {
-      display: none !important
-    }
-
-    @keyframes alertCleanPop {
-      0% {
-        transform: translateX(-50%) scale(.92)
-      }
-
-      70% {
-        transform: translateX(-50%) scale(1.035)
-      }
-
-      100% {
-        transform: translateX(-50%) scale(1)
-      }
-    }
-
-    @keyframes alertCleanGlow {
-      from {
-        box-shadow: 0 0 0 1px rgba(255, 255, 255, .07) inset, 0 0 0 2px rgba(255, 194, 214, .16), 0 12px 28px rgba(0, 0, 0, .42), 0 0 18px rgba(255, 194, 214, .18)
-      }
-
-      to {
-        box-shadow: 0 0 0 1px rgba(255, 255, 255, .10) inset, 0 0 0 2px rgba(94, 203, 255, .28), 0 12px 28px rgba(0, 0, 0, .42), 0 0 26px rgba(94, 203, 255, .24)
-      }
-    }
-
-    .alert-up-line {
-      width: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      text-align: center;
-      white-space: nowrap
-    }
-
-    .alert-donor {
-      display: inline-block;
-      font-size: 32px !important;
-      line-height: 1.05 !important;
-      font-weight: 1000 !important;
-      letter-spacing: -.03em;
-      color: #fff !important;
-      text-shadow: none !important;
-      filter: none !important
-    }
-
-    .alert-up {
-      font-size: 24px !important;
-      font-weight: 1000 !important;
-      color: #ff4fa3 !important;
-      letter-spacing: .02em
-    }
-
-    .alert-creator-line {
-      margin-top: 4px;
-      width: 100%;
-      text-align: center;
-      font-size: 23px !important;
-      line-height: 1.15 !important;
-      font-weight: 900 !important;
-      color: #ffe9a8 !important;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      text-shadow: none !important
-    }
-
-    .alert-line2 {
-      display: flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-      gap: 9px !important;
-      flex-wrap: wrap !important;
-      font-size: 23px !important;
-      line-height: 1.05 !important;
-      font-weight: 950 !important;
-      text-shadow: none !important
-    }
-
-    .alert-amount {
-      color: #ffe066 !important
-    }
-
-    .option-alert .alert-plus {
-      color: #5ecbff !important
-    }
-
-    .option-alert .alert-minus {
-      color: #ff6b7c !important
-    }
-
-    .alert-sound-title {
-      color: #fff;
-      background: rgba(255, 255, 255, .14);
-      border: 1px solid rgba(255, 255, 255, .22);
-      border-radius: 999px;
-      padding: 5px 11px;
-      font-size: 22px;
-      line-height: 1;
-      white-space: nowrap
-    }
-
-    .blink-donor {
-      display: inline-block;
-      font-weight: 1000 !important;
-      background: linear-gradient(90deg, #fff, #ff4fa3, #ffd84d, #44f7ff, #8b5cff, #fff);
-      background-size: 300% 100%;
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent !important;
-      animation: donorColorFlow 1.15s linear infinite, donorPop .72s ease-in-out infinite alternate;
-      text-shadow: none !important;
-      filter: none !important
-    }
-
-    @keyframes donorColorFlow {
-      0% {
-        background-position: 0% 50%
-      }
-
-      100% {
-        background-position: 300% 50%
-      }
-    }
-
-    @keyframes donorPop {
-      0% {
-        transform: scale(1);
-        opacity: .92
-      }
-
-      100% {
-        transform: scale(1.055);
-        opacity: 1
-      }
-    }
-
-    @media(max-width:720px) {
-      :root {
-        --overlay-w: 268px;
-        --top: 50px;
-        --right: 12px
-      }
-
-      .overlay-stack {
-        gap: 8px !important
-      }
-
-      .broadcast-timer-box {
-        padding: 7px 14px !important;
-        border-radius: 16px !important
-      }
-
-      .timer-label {
-        font-size: 18px !important
-      }
-
-      .timer-value {
-        font-size: 32px !important
-      }
-
-      .account-title {
-        font-size: 20px !important
-      }
-
-      .roller {
-        font-size: 24px;
-        height: 31px !important;
-        line-height: 31px
-      }
-
-      .roller-item {
-        height: 31px !important;
-        min-height: 31px !important
-      }
-
-      .creator-name {
-        flex-basis: 76px;
-        width: 76px;
-        font-size: 24px
-      }
-
-      .donation-amount {
-        font-size: 24px
-      }
-
-      .creator-sub {
-        font-size: 22px;
-        gap: 9px
-      }
-
-      .notice-text {
-        font-size: 19px
-      }
-
-      .option-alert {
-        width: calc(100% - 12px) !important
-      }
-
-      .alert-donor {
-        font-size: clamp(28px, 8vw, 39px) !important
-      }
-
-      .alert-up {
-        font-size: clamp(18px, 5vw, 24px) !important
-      }
-
-      .alert-creator-line {
-        font-size: clamp(20px, 6vw, 28px) !important
-      }
-    }
-
-    /* ===== 타이머 OFF 강제 숨김 최종 보정 ===== */
-    #broadcastTimerBox.hidden,
-    .broadcast-timer-box.hidden {
-      display: none !important;
-      visibility: hidden !important;
-      opacity: 0 !important;
-      height: 0 !important;
-      min-height: 0 !important;
-      max-height: 0 !important;
-      padding: 0 !important;
-      margin: 0 !important;
-      border: 0 !important;
-      overflow: hidden !important;
-    }
-
-    /* ===== 방송국별 스타일 변수 적용 ===== */
-    :root {
-      --style-box-border: var(--pink);
-      --style-box-bg-top: var(--box-bg-top);
-      --style-box-bg-bottom: var(--box-bg-bottom);
-      --style-content-color: #ffffff;
-      --style-notice-title-size: 20px;
-      --style-funding-title-size: 20px;
-      --style-karaoke-title-size: 20px;
-      --style-account-title-size: 20px;
-      --style-content-size: 20px;
-      --style-creator-content-size: 24px;
-      --style-account-roll-size: 25px;
-      --style-alert-size: 30px;
-      --style-funding-bar: repeating-linear-gradient(135deg, rgba(255, 182, 213, .9) 0px, rgba(255, 182, 213, .9) 10px, rgba(255, 79, 163, .86) 10px, rgba(255, 79, 163, .86) 20px);
-      --style-karaoke-notice-size: 17px;
-      --style-karaoke-current-size: 18px;
-      --style-karaoke-queue-size: 15px;
-      --style-karaoke-coin-size: 15px;
-      --style-box-radius: 18px;
-      --style-overlay-gap: 8px;
-      --top-slide-height: 105px;
-      --top-slide-opacity: 1;
-    }
-
-    .overlay-box,
-    .account-box,
-    .notice-box,
-    .funding-box,
-    .karaoke-box,
-    .creator-box,
-    .broadcast-timer-box {
-      background: linear-gradient(180deg, var(--style-box-bg-top), var(--style-box-bg-bottom)) !important;
-      border-color: var(--style-box-border) !important;
-    }
-
-    .account-title {
-      font-size: var(--style-account-title-size) !important;
-      color: var(--style-account-title-color, var(--account-title-color)) !important
-    }
-
-    .notice-title {
-      font-size: var(--style-notice-title-size) !important;
-      color: var(--style-notice-title-color, #8ee7ff) !important
-    }
-
-    .funding-title {
-      font-size: var(--style-funding-title-size) !important;
-      color: var(--style-funding-title-color, #b8ff9d) !important
-    }
-
-    .karaoke-title {
-      font-size: var(--style-karaoke-title-size) !important;
-      color: var(--style-karaoke-title-color, #ff9bd6) !important
-    }
-
-    .notice-text,
-    .notice-line {
-      font-size: var(--style-content-size) !important;
-      color: var(--style-notice-content-color, var(--style-content-color)) !important
-    }
-
-    .funding-value,
-    .funding-line b {
-      color: var(--style-funding-content-color, #f8fafc) !important
-    }
-
-    .creator-name,
-    .donation-amount,
-    .creator-sub {
-      font-size: var(--style-creator-content-size) !important
-    }
-
-    .roller {
-      font-size: var(--style-account-roll-size) !important
-    }
-
-    .alert-donor {
-      font-size: var(--style-alert-size) !important
-    }
-
-    .alert-target {
-      font-size: calc(var(--style-alert-size) * .86) !important
-    }
-
-    .alert-line2 {
-      font-size: calc(var(--style-alert-size) * .76) !important
-    }
-
-    .karaoke-notice,
-    .karaoke-song-title-text {
-      color: var(--style-karaoke-content-color, #ffffff) !important
-    }
-
-    /* 펀딩 그래프바 컬러 강조 */
-    .funding-line em {
-      background: var(--style-funding-bar) !important;
-      opacity: .95 !important;
-      box-shadow: 0 0 14px rgba(0, 234, 255, .28), 0 0 20px rgba(255, 79, 216, .18) !important;
-    }
-
-    /* 타이머 OFF 강제 숨김 */
-    #broadcastTimerBox.hidden,
-    .broadcast-timer-box.hidden {
-      display: none !important;
-      visibility: hidden !important;
-      opacity: 0 !important;
-      height: 0 !important;
-      min-height: 0 !important;
-      max-height: 0 !important;
-      padding: 0 !important;
-      margin: 0 !important;
-      border: 0 !important;
-      overflow: hidden !important;
-    }
-
-    /* ALERT 계좌후원 바로 아래: flex 위치 고정 */
-    #overlayAlertRoot {
-      position: relative !important;
-      left: auto !important;
-      top: auto !important;
-      right: auto !important;
-      bottom: auto !important;
-      inset: auto !important;
-      width: 100% !important;
-      height: 0 !important;
-      flex: 0 0 0 !important;
-      z-index: 999999 !important;
-      pointer-events: none !important;
-      overflow: visible !important;
-      transform: none !important;
-    }
-
-    #overlayAlertRoot>#optionAlert.option-alert,
-    #overlayAlertRoot #optionAlert.option-alert {
-      position: absolute !important;
-      left: 0 !important;
-      top: 0 !important;
-      right: auto !important;
-      bottom: auto !important;
-      inset: auto !important;
-      width: 100% !important;
-      max-width: 100% !important;
-      min-width: 0 !important;
-      margin: 0 !important;
-      transform: scale(.92) !important;
-      transform-origin: top center !important;
-    }
-
-    #overlayAlertRoot>#optionAlert.option-alert.show,
-    #overlayAlertRoot #optionAlert.option-alert.show {
-      transform: scale(1) !important;
-      animation: alertStackPop .34s ease-out, alertCleanGlow 1.2s ease-in-out infinite alternate !important;
-    }
-
-    @keyframes alertStackPop {
-      0% {
-        transform: scale(.92)
-      }
-
-      70% {
-        transform: scale(1.035)
-      }
-
-      100% {
-        transform: scale(1)
-      }
-    }
-
-    body>#optionAlert.option-alert {
-      display: none !important;
-    }
-
-    #overlayAlertRoot #optionAlert.option-alert::before {
-      content: "";
-      position: absolute;
-      inset: -2px;
-      border-radius: 20px;
-      pointer-events: none;
-      background: linear-gradient(120deg, transparent 0%, rgba(255, 255, 255, .32) 18%, transparent 34%);
-      transform: translateX(-120%);
-      animation: alertShineSweep 1.05s linear infinite;
-    }
-
-    @keyframes alertShineSweep {
-      to {
-        transform: translateX(120%)
-      }
-    }
-
-    .alert-target {
-      display: inline-block;
-      font-size: 28px !important;
-      line-height: 1.05 !important;
-      font-weight: 1000 !important;
-      color: #ffe9a8 !important;
-      white-space: nowrap;
-    }
-
-    .alert-up-line {
-      font-size: 0 !important;
-    }
-
-
-    to {
-      opacity: .95;
-      filter: brightness(1.35)
-    }
-    }
-
-
-    /* ===== 계좌후원 고액/VIP 롤링 효과 - 텍스트 위치 맞춤 ===== */
-    :root {
-      --style-vip-threshold: 500000;
-      --style-vip-bg1: rgba(255, 216, 77, .30);
-      --style-vip-bg2: rgba(255, 79, 216, .28);
-    }
-
-    /* VIP일 때 padding/height/정렬을 바꾸지 않음: 텍스트 위치 틀어짐 방지 */
-    .roller-item.vip-account {
-      position: relative !important;
-      isolation: isolate !important;
-      border-radius: 999px !important;
-      overflow: hidden !important;
-    }
-
-    /* 배경은 텍스트 줄 안쪽에만 깔고, layout에는 영향 없음 */
-    .roller-item.vip-account::before {
-      content: "";
-      position: absolute;
-      left: 0;
-      right: 0;
-      top: 50%;
-      height: 100%;
-      transform: translateY(-50%);
-      z-index: -1;
-      border-radius: 999px;
-      background:
-        linear-gradient(90deg,
-          transparent 0%,
-          var(--style-vip-bg1) 18%,
-          var(--style-vip-bg2) 46%,
-          rgba(255, 255, 255, .32) 70%,
-          transparent 100%);
-      background-size: 230% 100%;
-      animation: vipAccountFlash .86s linear infinite;
-    }
-
-    /* 가운데 번쩍임도 줄 중앙 기준 */
-    .roller-item.vip-account::after {
-      content: "";
-      position: absolute;
-      left: 0;
-      right: 0;
-      top: 50%;
-      height: 100%;
-      transform: translateY(-50%);
-      z-index: -1;
-      border-radius: 999px;
-      background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, .24), transparent 58%);
-      opacity: .55;
-      animation: vipAccountPulse .65s ease-in-out infinite alternate;
-    }
-
-    /* VIP 안의 텍스트는 기존 롤링 정렬 그대로 유지 */
-    .roller-item.vip-account .account-donor,
-    .roller-item.vip-account .account-heart,
-    .roller-item.vip-account .account-amount {
-      position: relative;
-      z-index: 1;
-    }
-
-    @keyframes vipAccountFlash {
-      from {
-        background-position: 0% 50%
-      }
-
-      to {
-        background-position: 230% 50%
-      }
-    }
-
-    @keyframes vipAccountPulse {
-      from {
-        opacity: .48;
-        filter: brightness(1.08)
-      }
-
-      to {
-        opacity: 1;
-        filter: brightness(1.45)
-      }
-    }
-
-
-
-    /* v2 UX compact overlay: funding 1 line / notice 3-line rolling / karaoke font sizes / single panel */
-    .funding-title {
-      display: none !important
-    }
-
-    .funding-box {
-      padding: 10px 12px !important
-    }
-
-    .funding-value {
-      margin-top: 0 !important;
-      gap: 0 !important
-    }
-
-    .funding-value>.funding-line:not(:first-child) {
-      display: none !important;
-    }
-
-    .funding-line {
-      min-height: 42px !important;
-      font-size: var(--style-content-size) !important
-    }
-
-    .notice-roll-window {
-      height: calc(var(--style-content-size) * 1.28 * 3);
-      overflow: hidden;
-      position: relative
-    }
-
-    .notice-roll-track {
-      display: flex;
-      flex-direction: column;
-      animation: noticeRollUp var(--notice-roll-duration, 8s) linear infinite
-    }
-
-    .notice-roll-track .notice-line {
-      min-height: calc(var(--style-content-size) * 1.28)
-    }
-
-    @keyframes noticeRollUp {
-
-      0%,
-      18% {
-        transform: translateY(0)
-      }
-
-      100% {
-        transform: translateY(var(--notice-roll-distance, -50%))
-      }
-    }
-
-    .notice-text:not(.rolling) .notice-line:nth-child(n+4) {
-      display: none !important
-    }
-
-    .karaoke-notice {
-      font-size: var(--style-karaoke-notice-size) !important
-    }
-
-    .karaoke-current {
-      font-size: var(--style-karaoke-current-size) !important
-    }
-
-    .karaoke-song-row {
-      font-size: var(--style-karaoke-queue-size) !important
-    }
-
-    .karaoke-coin-ticker span {
-      font-size: var(--style-karaoke-coin-size) !important
-    }
-
-    .overlay-stack {
-      gap: var(--style-overlay-gap) !important;
-      width: var(--overlay-w) !important;
-      top: var(--top) !important;
-      right: var(--right) !important
-    }
-
-    .overlay-box {
-      border-radius: var(--style-box-radius) !important
-    }
-
-    body.box-group-single .overlay-stack {
-      gap: 0 !important;
-      padding: 12px !important;
-      border: 2px solid var(--style-box-border) !important;
-      border-radius: calc(var(--style-box-radius) + 10px) !important;
-      background: linear-gradient(180deg, var(--style-box-bg-top), var(--style-box-bg-bottom)) !important;
-      box-shadow: 0 0 18px rgba(255, 182, 213, .22) !important;
-      backdrop-filter: blur(8px) !important;
-      overflow: hidden !important;
-    }
-
-    body.box-group-single .overlay-box {
-      background: transparent !important;
-      border: 0 !important;
-      box-shadow: none !important;
-      border-radius: 0 !important;
-      padding-left: 6px !important;
-      padding-right: 6px !important;
-    }
-
-    body.box-group-single .overlay-box:not(.hidden)+.overlay-box:not(.hidden) {
-      border-top: 1px solid rgba(255, 210, 235, .42) !important
-    }
-
-    /* ===== 상단 미디어 슬라이드: overlay-stack 밖에서 독립 표시 ===== */
-    .top-slide-box {
-      position: fixed !important;
-      top: 8px !important;
-      left: 50% !important;
-      transform: translateX(-50%) !important;
-      width: min(720px, 92vw) !important;
-      aspect-ratio: 16/9 !important;
-      height: auto !important;
-      border-radius: var(--style-box-radius) !important;
-      overflow: hidden !important;
-      border: 1px solid var(--style-box-border) !important;
-      background: rgba(0, 0, 0, .22) !important;
-      box-shadow: 0 0 14px rgba(255, 182, 213, .22) !important;
-      opacity: var(--top-slide-opacity) !important;
-      z-index: 50 !important;
-      pointer-events: none !important;
-    }
-
-    .top-slide-box.hidden {
-      display: none !important
-    }
-
-    .top-slide-img,
-    .top-slide-video {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      opacity: 0;
-      transition: opacity .75s ease;
-      background: #000
-    }
-
-    .top-slide-img.active,
-    .top-slide-video.active {
-      opacity: 1
-    }
-
-
-
-    .karaoke-notice {
-      color: var(--style-karaoke-notice-color, #fde68a) !important
-    }
-
-    .karaoke-current {
-      color: var(--style-karaoke-current-color, #e0f2fe) !important
-    }
-
-    .karaoke-current b,
-    .karaoke-heart {
-      color: var(--style-karaoke-heart-color, #ff4fa3) !important
-    }
-
-    .karaoke-donor,
-    .karaoke-current em {
-      color: var(--style-karaoke-donor-color, #39ff88) !important
-    }
-
-    .karaoke-song-row {
-      color: var(--style-karaoke-queue-color, #fff) !important
-    }
-
-    .karaoke-ticker {
-      color: var(--style-karaoke-coin-color, #ffffff) !important
-    }
-
-    /* ===== 방송 종료/대기 기본화면 ===== */
-    .overlay-idle-screen {
-      position: fixed;
-      inset: 0;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      color: #fff;
-      font-weight: 1000;
-      font-size: 46px;
-      letter-spacing: -.06em;
-      background: transparent;
-      pointer-events: none;
-      text-shadow: 0 0 18px rgba(255, 122, 191, .55)
-    }
-
-    body.broadcast-not-live .overlay-stack {
-      display: none !important
-    }
-
-    body.broadcast-not-live .overlay-idle-screen {
-      display: flex
-    }
-
-
-    /* ===== PANEL_SEPARATE_MEDIA_COMPACT_ROLLING_FIX ===== */
-    /* 미디어는 같은 흐름에 두되, 패널 바깥처럼 보이게 하고 16:9 유지 */
-    .overlay-stack {
-      gap: 6px !important;
-      padding: 0 !important;
-      border: 0 !important;
-      border-radius: 0 !important;
-      background: transparent !important;
-      box-shadow: none !important;
-      overflow: visible !important;
-    }
-
-    .overlay-panel {
-      width: 100% !important;
-      display: flex !important;
-      flex-direction: column !important;
-      gap: 0 !important;
-      padding: 7px 8px !important;
-      border: 2px solid var(--style-box-border) !important;
-      border-radius: calc(var(--style-box-radius) + 6px) !important;
-      background: linear-gradient(180deg, var(--style-box-bg-top), var(--style-box-bg-bottom)) !important;
-      box-shadow: 0 0 14px rgba(255, 182, 213, .16) !important;
-      overflow: visible !important;
-      pointer-events: none !important;
-    }
-
-    /* 이미지 슬라이드는 패널 밖: 선/배경 없음 */
-    .overlay-stack>.top-slide-box {
-      width: 100% !important;
-      aspect-ratio: var(--active-slide-ratio, 16/9) !important;
-      height: auto !important;
-      min-height: 0 !important;
-      margin: 0 0 6px 0 !important;
-      border: 0 !important;
-      border-radius: 18px !important;
-      overflow: hidden !important;
-      background: transparent !important;
-      box-shadow: none !important;
-      flex: 0 0 auto !important;
-    }
-
-    /* 이미지/영상은 가로 기준 16:9 안에 전체 표시 */
-    .top-slide-img,
-    .top-slide-video {
-      position: absolute !important;
-      inset: 0 !important;
-      width: 100% !important;
-      height: 100% !important;
-      object-fit: contain !important;
-      background: transparent !important;
-    }
-
-    /* 패널 내부 박스들은 독립 기능 유지, 겉보기는 하나의 패널 */
-    .overlay-panel>.overlay-box {
-      background: transparent !important;
-      border: 0 !important;
-      border-radius: 0 !important;
-      box-shadow: none !important;
-      margin: 0 !important;
-    }
-
-    /* 섹션 구분선: 펀딩만 보이던 문제 보정 */
-    .overlay-panel>#broadcastTimerBox:not(.hidden)+#accountBox,
-    .overlay-panel>#fundingBox:not(.hidden),
-    .overlay-panel>#noticeBox:not(.hidden),
-    .overlay-panel>#karaokeBox:not(.hidden),
-    .overlay-panel>#creatorBox:not(.hidden) {
-      border-top: 1px solid rgba(255, 210, 235, .58) !important;
-    }
-
-    .overlay-panel>#broadcastTimerBox.hidden+#accountBox {
-      border-top: 0 !important;
-    }
-
-    /* 내부 여백 축소 */
-    .account-box {
-      padding: 4px 2px 5px !important
-    }
-
-    .funding-box {
-      padding: 6px 2px !important
-    }
-
-    .notice-box {
-      padding: 6px 2px !important
-    }
-
-    .karaoke-box {
-      padding: 7px 2px !important
-    }
-
-    .creator-box {
-      padding: 6px 2px !important
-    }
-
-    .account-row {
-      height: 30px !important
-    }
-
-    .roller {
-      height: 30px !important;
-      font-size: 22px !important
-    }
-
-    .roller-item {
-      height: 30px !important;
-      min-height: 30px !important
-    }
-
-    .notice-title,
-    .funding-title,
-    .karaoke-title {
-      margin-bottom: 3px !important;
-      padding: 2px 8px !important;
-      font-size: 16px !important;
-    }
-
-    .notice-line {
-      margin: 1px 0 !important;
-      line-height: 1.13 !important;
-    }
-
-    .funding-line {
-      min-height: 34px !important;
-      height: 34px !important;
-      padding: 5px 8px !important;
-      border-radius: 8px !important;
-    }
-
-    /* 기존 "펀딩 첫 줄만 표시" CSS가 롤링 내부 줄을 숨기는 문제 보정 */
-    .funding-value>.funding-line:not(:first-child) {
-      display: none !important;
-    }
-
-    .funding-value .funding-roller .funding-line {
-      display: flex !important;
-    }
-
-    /* 펀딩 2개 이상 롤링 높이 보정 */
-    .funding-roller {
-      height: 34px !important;
-      overflow: hidden !important;
-    }
-
-    .funding-track .funding-line {
-      height: 34px !important;
-      margin: 0 0 4px !important;
-    }
-
-    /* 공지 3줄 초과 롤링 */
-    .notice-roll-window {
-      height: calc(var(--style-content-size) * 1.13 * 3) !important;
-      overflow: hidden !important;
-      position: relative !important;
-    }
-
-    .notice-roll-track {
-      display: flex !important;
-      flex-direction: column !important;
-      animation: noticeRollUp var(--notice-roll-duration, 10s) linear infinite !important;
-    }
-
-    .notice-roll-track .notice-line {
-      min-height: calc(var(--style-content-size) * 1.13) !important;
-    }
-
-    .notice-text.rolling .notice-line:nth-child(n+4) {
-      display: block !important;
-    }
-
-    .notice-text:not(.rolling) .notice-line:nth-child(n+4) {
-      display: none !important;
-    }
-
-    .overlay-stack {
-      gap: 6px !important;
-      background: transparent !important;
-      border: 0 !important;
-      padding: 0 !important;
-    }
-
-    .top-slide-box {
-      position: relative !important;
-      width: 100% !important;
-      aspect-ratio: 16/9 !important;
-      border: 0 !important;
-      background: transparent !important;
-      box-shadow: none !important;
-      margin: 0 !important;
-      z-index: 1 !important;
-    }
-
-    .content-panel {
-      border: 2px solid var(--style-box-border) !important;
-      border-radius: calc(var(--style-box-radius) + 8px) !important;
-      background: linear-gradient(180deg, var(--style-box-bg-top), var(--style-box-bg-bottom)) !important;
-      overflow: hidden !important;
-    }
-
-    /* ===== TOP SLIDE SIZE/GAP/RADIUS FIX ===== */
-    .overlay-stack {
-      gap: 6px !important;
-    }
-
-    /* 이미지 슬라이드: 패널 가로폭 100%, 16:9, 둥근 모서리 */
-    .overlay-stack>.top-slide-box {
-      width: 100% !important;
-      aspect-ratio: var(--active-slide-ratio, 16/9) !important;
-      height: auto !important;
-      margin: 0 0 6px 0 !important;
-      border: 0 !important;
-      border-radius: 18px !important;
-      overflow: hidden !important;
-      background: transparent !important;
-      box-shadow: none !important;
-      flex: 0 0 auto !important;
-    }
-
-    /* 이미지가 박스 가로 기준 꽉 차게 */
-    .top-slide-img,
-    .top-slide-video {
-      position: absolute !important;
-      inset: 0 !important;
-      width: 100% !important;
-      height: 100% !important;
-      object-fit: fill !important;
-      border-radius: 18px !important;
-      background: transparent !important;
-    }
-
-    .alert-source {
-      color: #8ee7ff !important;
-      background: rgba(142, 231, 255, .15) !important;
-      border: 1px solid rgba(142, 231, 255, .35) !important;
-      border-radius: 999px !important;
-      padding: 4px 9px !important;
-      font-size: .85em !important;
-      font-weight: 1000 !important;
-    }
-
-    .blink-donor {
-      display: inline-block !important;
-      font-weight: 1000 !important;
-      background: linear-gradient(90deg, #fff, #ff4fa3, #ffd84d, #44f7ff, #8b5cff, #fff) !important;
-      background-size: 300% 100% !important;
-      -webkit-background-clip: text !important;
-      background-clip: text !important;
-      color: transparent !important;
-      animation: donorColorFlow 1.15s linear infinite, donorPop .72s ease-in-out infinite alternate !important;
-    }
-
-    @keyframes donorColorFlow {
-      0% {
-        background-position: 0% 50%
-      }
-
-      100% {
-        background-position: 300% 50%
-      }
-    }
-
-    @keyframes donorPop {
-      0% {
-        transform: scale(1);
-        opacity: .92
-      }
-
-      100% {
-        transform: scale(1.055);
-        opacity: 1
-      }
-    }
-    .timer-label{
-  font-size:18px!important;
-}
-
-.timer-value{
-  font-size:32px!important;
-}
-
-.mission-countdown-big{
-  position:fixed;
-  inset:0;
-  display:none;
-  align-items:center;
-  justify-content:center;
-  font-size:180px;
-  font-weight:1000;
-  color:#fff;
-  text-shadow:
-    0 0 20px rgba(255,79,216,.9),
-    0 0 50px rgba(0,234,255,.7);
-  z-index:999999;
-  pointer-events:none;
-}
-
-.mission-countdown-big.show{
-  display:flex;
-  animation:missionCountPop .45s ease-out;
-}
-
-@keyframes missionCountPop{
-  0%{transform:scale(.65);opacity:.4}
-  70%{transform:scale(1.1);opacity:1}
-  100%{transform:scale(1);opacity:1}
-}
-
-
-  
-    /* ===== 우측 잘림 방지: Prism/OBS 확대·축소 시 안전 여백 ===== */
-    @supports (right:max(1px,2px)) {
-      .overlay-stack {
-        right: max(var(--right), 28px) !important;
-        max-width: calc(100vw - 44px) !important;
-      }
-    }
-   .allowance-plus {
-  color: #39ff88 !important;
-  font-weight: 1000 !important;
-}
-
-.allowance-minus {
-  color: #ff5c73 !important;
-  font-weight: 1000 !important;
-} 
-    .allowance-positive {
-  color: #fff3a6 !important;
-  font-weight: 1000 !important;
-}
-
-.allowance-negative {
-  color: #ff5c73 !important;
-  font-weight: 1000 !important;
-}
-    
-
-    /* ===== Ver_f2 ALERT 묶음 표시 보정 ===== */
-    :root {
-      --alert-height: 220px;
-    }
-
-    #overlayAlertRoot #optionAlert.option-alert {
-      min-height: 190px !important;
-      padding: 12px 10px 13px !important;
-      overflow: visible !important;
-    }
-
-    .alert-donor-total-line {
-      display: flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-      gap: 8px !important;
-      width: 100% !important;
-      white-space: nowrap !important;
-      flex-wrap: nowrap !important;
-    }
-
-    .alert-donor-total-line .alert-donor {
-      font-size: 28px !important;
-      max-width: 58% !important;
-      overflow: hidden !important;
-      text-overflow: ellipsis !important;
-      white-space: nowrap !important;
-    }
-
-    .alert-total-amount {
-      font-size: 24px !important;
-      line-height: 1.05 !important;
-      white-space: nowrap !important;
-      color: #ffe066 !important;
-      font-weight: 1000 !important;
-    }
-
-    .alert-creator-line.alert-split-line {
-      margin-top: 7px !important;
-      width: 100% !important;
-      display: flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-      flex-wrap: wrap !important;
-      gap: 5px 8px !important;
-      white-space: normal !important;
-      overflow: visible !important;
-      text-overflow: unset !important;
-      word-break: keep-all !important;
-      overflow-wrap: anywhere !important;
-      line-height: 1.15 !important;
-      max-height: none !important;
-    }
-
-    .alert-target.alert-split-chip {
-      display: inline-flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-      font-size: 20px !important;
-      line-height: 1.1 !important;
-      font-weight: 950 !important;
-      color: #ffe9a8 !important;
-      white-space: nowrap !important;
-      padding: 0 2px !important;
-      margin: 0 !important;
-    }
-
-    .alert-line2 {
-      margin-top: 7px !important;
-      gap: 6px !important;
-    }
-
-    .alert-source {
-      font-size: .72em !important;
-      padding: 3px 7px !important;
-    }
-
-    /* 계좌후원 VIP: 박스 배경보다 텍스트 자체만 반짝이도록 보정 */
-    .roller-item.vip-account::before,
-    .roller-item.vip-account::after {
-      opacity: .18 !important;
-    }
-
-    .roller-item.vip-account .account-donor,
-    .roller-item.vip-account .account-heart,
-    .roller-item.vip-account .account-amount {
-      background: linear-gradient(90deg, #ffffff 0%, #ffe066 18%, #44f7ff 36%, #ff4fa3 55%, #ffffff 74%, #ffe066 100%) !important;
-      background-size: 260% 100% !important;
-      -webkit-background-clip: text !important;
-      background-clip: text !important;
-      color: transparent !important;
-      -webkit-text-fill-color: transparent !important;
-      animation: vipAccountTextShine .95s linear infinite !important;
-      text-shadow: none !important;
-      filter: none !important;
-    }
-
-    @keyframes vipAccountTextShine {
-      0% { background-position: 0% 50%; }
-      100% { background-position: 260% 50%; }
-    }
-
-
-    /* ===== Ver_f2 FINAL2: 프리즘/OBS 계좌후원 VIP 배경 반짝임 완전 OFF ===== */
-    .roller-item.vip-account,
-    .roller-item.vip-account:hover,
-    .roller-item.vip-account.active {
-      background: transparent !important;
-      box-shadow: none !important;
-    }
-
-    /* ===== Ver_f2 FINAL: 계좌후원 VIP 배경 반짝임 OFF / 텍스트만 반짝임 ===== */
-    .roller-item.vip-account::before,
-    .roller-item.vip-account::after {
-      display: none !important;
-      content: none !important;
-      opacity: 0 !important;
-      animation: none !important;
-      background: none !important;
-    }
-
-    .roller-item.vip-account .account-donor,
-    .roller-item.vip-account .account-heart,
-    .roller-item.vip-account .account-amount {
-      background: linear-gradient(90deg, #ffffff 0%, #ffe066 18%, #44f7ff 36%, #ff4fa3 55%, #ffffff 74%, #ffe066 100%) !important;
-      background-size: 260% 100% !important;
-      -webkit-background-clip: text !important;
-      background-clip: text !important;
-      color: transparent !important;
-      -webkit-text-fill-color: transparent !important;
-      animation: vipAccountTextShine .95s linear infinite !important;
-      text-shadow: none !important;
-      filter: none !important;
-    }
-
-    /* ===== Ver_f2 FINAL: 묶음 ALERT 3명 이상 표시 안정화 ===== */
-    #overlayAlertRoot #optionAlert.option-alert {
-      min-height: 205px !important;
-      overflow: visible !important;
-    }
-
-    .alert-creator-line.alert-split-line {
-      display: flex !important;
-      flex-wrap: wrap !important;
-      justify-content: center !important;
-      align-items: center !important;
-      gap: 5px 8px !important;
-      width: 100% !important;
-      max-height: none !important;
-      white-space: normal !important;
-      overflow: visible !important;
-      text-overflow: unset !important;
-      line-height: 1.15 !important;
-    }
-
-    .alert-target.alert-split-chip {
-      font-size: 18px !important;
-      line-height: 1.12 !important;
-      white-space: nowrap !important;
-    }
-
-
-
-    /* ===== Ver_f2 APPLY: 계좌후원 배경 반짝임 OFF / 이름·하트·금액 텍스트 애니메이션 ON ===== */
-    .roller-item.vip-account,
-    .roller-item.vip-account:hover,
-    .roller-item.vip-account.active {
-      background: transparent !important;
-      box-shadow: none !important;
-    }
-
-    .roller-item.vip-account::before,
-    .roller-item.vip-account::after {
-      display: none !important;
-      content: none !important;
-      opacity: 0 !important;
-      animation: none !important;
-      background: none !important;
-      box-shadow: none !important;
-    }
-
-    .roller-item.vip-account .account-donor,
-.roller-item.vip-account .account-amount,
-.roller-item.vip-account .account-heart {
-  background-image: linear-gradient(
-    180deg,
-    #ffffff 0%,
-    #ffe680 38%,
-    #ffbf2e 72%,
-    #fff2a8 100%
-  ) !important;
-  background-size: 100% 180% !important;
-  background-position: 50% 0% !important;
-
-  -webkit-background-clip: text !important;
-  background-clip: text !important;
-
-  color: #ffe680 !important;
-  -webkit-text-fill-color: transparent !important;
-
-  font-weight: 1000 !important;
-
-  text-shadow:
-    -1px -1px 0 rgba(0,0,0,.9),
-     1px -1px 0 rgba(0,0,0,.9),
-    -1px  1px 0 rgba(0,0,0,.9),
-     1px  1px 0 rgba(0,0,0,.9),
-     0 2px 3px rgba(0,0,0,.55) !important;
-
-  filter: none !important;
-  opacity: 1 !important;
-}
-.roller-item.vip-account .account-donor,
-.roller-item.vip-account .account-amount,
-.roller-item.vip-account .account-heart {
-  animation: vipGoldSoftMove 3.5s ease-in-out infinite !important;
-}
-
-@keyframes vipGoldSoftMove {
-  0%, 100% {
-    background-position: 50% 0%;
-  }
-  50% {
-    background-position: 50% 100%;
-  }
-}
-    .roller-item.vip-account .account-heart {
-  background: none !important;
-  color: #7cff9e !important;
-  -webkit-text-fill-color: #7cff9e !important;
-  text-shadow:
-    -1px -1px 0 rgba(0,0,0,.8),
-     1px -1px 0 rgba(0,0,0,.8),
-    -1px  1px 0 rgba(0,0,0,.8),
-     1px  1px 0 rgba(0,0,0,.8),
-     0 0 5px rgba(124,255,158,.45) !important;
-}
-    /* ===== Ver_f2 APPLY: 공지 줄별 정렬 ===== */
-    .notice-line.notice-align-left { text-align: left !important; }
-    .notice-line.notice-align-center { text-align: center !important; }
-    .notice-line.notice-align-right { text-align: right !important; }
-
-
-/* =========================================================
-   OVERLAY PRESET DYNAMIC FINAL v18
-   - 흡/먹 고정 제거
-   - 기존 프리셋 설정값을 따라 표시
-   - +0도 표시, +01/-01 아님
-   - 후원금액 ON/OFF 기존 설정 반영
-   - 폰트크기 컨트롤 스타일 변수 사용
-   - 타이틀 기호: •
-   - theme=gold|pink|blue|green
-========================================================= */
-:root{
-  --overlay-w: 340px;
-  --top: 54px;
-  --right: 30px;
+ :root{
+  --account-roll-height:34px;
+
+  --overlay-w:340px;
+  --top:54px;
+  --right:30px;
+
+  --white:rgba(255,255,255,.98);
+  --yellow:#ffe680;
+  --plus-blue:#5ecbff;
+  --minus-red:#ff4d5e;
+
+  --box-bg-top:rgba(18,22,32,.88);
+  --box-bg-bottom:rgba(10,12,20,.82);
+
+  --style-box-border:rgba(255,216,106,.52);
+  --style-box-bg-top:var(--box-bg-top);
+  --style-box-bg-bottom:var(--box-bg-bottom);
+
+  --style-account-title-size:20px;
+  --style-notice-title-size:20px;
+  --style-funding-title-size:20px;
+  --style-karaoke-title-size:20px;
+  --style-content-size:20px;
+  --style-creator-content-size:24px;
+  --style-account-roll-size:25px;
+  --style-alert-size:30px;
+
+  --style-karaoke-notice-size:17px;
+  --style-karaoke-current-size:18px;
+  --style-karaoke-queue-size:15px;
+  --style-karaoke-coin-size:15px;
+
+  --style-box-radius:18px;
+  --style-overlay-gap:6px;
+  --style-vip-threshold:100000;
 
   --oc-accent:#ffd86a;
   --oc-title-account:#ffd86a;
@@ -2103,17 +54,19 @@
   --oc-plus:#64d9ff;
   --oc-minus:#ff6178;
   --oc-zero:#ffd86a;
-
-  --oc-panel-bg:
-    linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.010)),
-    rgba(0,0,0,.50);
-
   --oc-line:rgba(255,216,106,.52);
   --oc-soft-line:rgba(255,255,255,.16);
   --oc-shadow:0 1px 2px rgba(0,0,0,.76);
   --oc-title-shadow:0 1px 2px rgba(0,0,0,.78);
+  --oc-panel-bg:
+    linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.010)),
+    rgba(0,0,0,.50);
+
+  --alert-height:118px;
+  --top-slide-opacity:1;
 }
 
+/* ===== 테마 ===== */
 body.theme-gold{
   --oc-accent:#ffd86a;
   --oc-title-account:#ffd86a;
@@ -2151,16 +104,41 @@ body.theme-green{
   --oc-line:rgba(168,255,138,.50);
 }
 
+/* ===== 기본 ===== */
+*{box-sizing:border-box}
+html,body{
+  margin:0;
+  width:100%;
+  height:100%;
+  overflow:hidden;
+  background:transparent!important;
+  font-family:"Pretendard","Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",Arial,sans-serif;
+}
+.overlay-root{
+  user-select:none;
+  pointer-events:none;
+  position:fixed;
+  inset:0;
+  background:transparent;
+}
+.hidden{display:none!important}
+
+/* ===== 전체 배치 ===== */
 .overlay-stack{
-  width:var(--overlay-w)!important;
-  max-width:calc(100vw - 54px)!important;
+  position:absolute;
   top:var(--top)!important;
   right:max(var(--right),30px)!important;
-  gap:5px!important;
+  width:var(--overlay-w)!important;
+  max-width:calc(100vw - 54px)!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:stretch!important;
+  gap:var(--style-overlay-gap)!important;
   padding:0!important;
   border:0!important;
   background:transparent!important;
   box-shadow:none!important;
+  overflow:visible!important;
 }
 
 .overlay-panel{
@@ -2177,16 +155,30 @@ body.theme-green{
   backdrop-filter:blur(2px)!important;
   -webkit-backdrop-filter:blur(2px)!important;
   overflow:hidden!important;
+  pointer-events:none!important;
 }
 
-.overlay-panel>.overlay-box{
+.overlay-box,
+.account-box,
+.notice-box,
+.funding-box,
+.karaoke-box,
+.creator-box,
+.broadcast-timer-box{
   position:relative!important;
   z-index:1!important;
   width:100%!important;
+  max-width:100%!important;
+  box-sizing:border-box!important;
+  color:var(--white)!important;
   background:transparent!important;
   border:0!important;
-  box-shadow:none!important;
   border-radius:0!important;
+  box-shadow:none!important;
+  pointer-events:none!important;
+  text-shadow:var(--oc-shadow)!important;
+  -webkit-text-stroke:0!important;
+  filter:none!important;
 }
 
 .overlay-panel>#fundingBox:not(.hidden),
@@ -2196,50 +188,44 @@ body.theme-green{
   border-top:1px solid var(--oc-soft-line)!important;
 }
 
-.account-box{padding:3px 0 6px!important}
+.account-box{padding:3px 0 5px!important}
 .funding-box{padding:6px 0!important}
-.notice-box{padding:6px 0!important}
-.karaoke-box{padding:6px 0!important}
+.notice-box{padding:6px 0!important;text-align:left!important}
+.karaoke-box{padding:6px 0!important;text-align:left!important;overflow:hidden!important}
 .creator-box{padding:7px 0 3px!important}
 .broadcast-timer-box{padding:4px 0 6px!important}
 
-.account-title,.notice-title,.funding-title,.karaoke-title,.notice-text,.notice-line,.allowance-row,
-.creator-align-line,.roller,.roller-item,.karaoke-notice,.karaoke-current,.karaoke-song-row,.timer-label,.timer-value{
-  text-shadow:var(--oc-shadow)!important;
-  -webkit-text-stroke:0!important;
-  filter:none!important;
-}
-
-/* 계좌 한 줄 */
+/* ===== 계좌후원: 한 줄 공간 보정 ===== */
 .account-row{
   display:flex!important;
   align-items:center!important;
   justify-content:stretch!important;
-  height:calc(var(--style-account-roll-size, 25px) + 10px)!important;
-  gap:7px!important;
+  height:calc(var(--style-account-roll-size,25px) + 9px)!important;
+  gap:5px!important;
+  font-weight:1000!important;
+  letter-spacing:-.055em!important;
 }
 
 .account-title{
-  flex:0 0 64px!important;
-  width:64px!important;
-  min-width:64px!important;
+  flex:0 0 42px!important;
+  width:42px!important;
+  min-width:42px!important;
   padding:0!important;
   background:transparent!important;
   border:0!important;
   color:transparent!important;
   font-size:0!important;
   line-height:1!important;
-  letter-spacing:0!important;
   text-align:left!important;
   text-shadow:none!important;
   overflow:visible!important;
+  white-space:nowrap!important;
 }
-
 .account-title::before{
-  content:"• 계좌";
+  content:"계좌"!important;
   display:inline-block!important;
   color:var(--oc-title-account)!important;
-  font-size:calc(var(--style-account-title-size, 20px) * .9)!important;
+  font-size:calc(var(--style-account-title-size,20px) * .9)!important;
   line-height:1!important;
   font-weight:1000!important;
   letter-spacing:-.055em!important;
@@ -2248,39 +234,162 @@ body.theme-green{
 }
 
 .roller{
+  position:relative!important;
   flex:1 1 auto!important;
   min-width:0!important;
-  height:calc(var(--style-account-roll-size, 25px) + 8px)!important;
-  line-height:calc(var(--style-account-roll-size, 25px) + 8px)!important;
-  font-size:var(--style-account-roll-size, 25px)!important;
+  width:auto!important;
+  height:calc(var(--style-account-roll-size,25px) + 8px)!important;
+  line-height:calc(var(--style-account-roll-size,25px) + 8px)!important;
+  overflow:hidden!important;
+  font-size:var(--style-account-roll-size,25px)!important;
   font-weight:1000!important;
   letter-spacing:-.055em!important;
   color:#fff!important;
 }
 
+.roller-track{
+  position:absolute!important;
+  left:0!important;
+  right:0!important;
+  top:0!important;
+  transition:transform .42s ease!important;
+  will-change:transform;
+  transform:translate3d(0,0,0);
+}
+.roller-track.no-transition{transition:none!important}
+
 .roller-item{
-  height:calc(var(--style-account-roll-size, 25px) + 8px)!important;
-  min-height:calc(var(--style-account-roll-size, 25px) + 8px)!important;
+  height:calc(var(--style-account-roll-size,25px) + 8px)!important;
+  min-height:calc(var(--style-account-roll-size,25px) + 8px)!important;
+  line-height:1!important;
+  display:flex!important;
+  align-items:center!important;
   justify-content:flex-end!important;
-  gap:3px!important;
+  gap:4px!important;
   padding:0!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
 }
 
 .account-donor{
-  max-width:120px!important;
+  min-width:0!important;
+  max-width:170px!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
   color:#fff!important;
-  text-shadow:var(--oc-shadow)!important;
-}
-.account-heart{font-size:.70em!important}
-.account-amount{
-  color:var(--oc-title-account)!important;
-  font-size:.98em!important;
+  -webkit-text-fill-color:#fff!important;
+  background:none!important;
+  font-size:1em!important;
   font-weight:1000!important;
+  letter-spacing:-.035em!important;
   text-shadow:var(--oc-shadow)!important;
+  filter:none!important;
 }
 
-/* 섹션 타이틀 */
-.notice-title,.funding-title,.karaoke-title{
+.account-heart{
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  flex:0 0 auto!important;
+  font-size:.70em!important;
+  line-height:1!important;
+  margin:0 1px!important;
+  transform:translateY(1px);
+  color:#7cff9e!important;
+  -webkit-text-fill-color:#7cff9e!important;
+  text-shadow:0 1px 2px rgba(0,0,0,.72)!important;
+}
+
+.account-amount{
+  flex:0 0 auto!important;
+  color:var(--oc-title-account)!important;
+  -webkit-text-fill-color:var(--oc-title-account)!important;
+  background:none!important;
+  font-size:.82em!important;
+  font-weight:1000!important;
+  letter-spacing:-.035em!important;
+  margin-left:4px!important;
+  text-shadow:var(--oc-shadow)!important;
+  opacity:1!important;
+  filter:none!important;
+}
+
+/* ===== 고액후원 메탈 텍스트 ===== */
+/* renderAccountRoller에서 vip-account / vip-10 / vip-30 / vip-50 / vip-100 class가 붙어야 적용됨 */
+.roller-item.vip-account{
+  background:transparent!important;
+  border:0!important;
+  box-shadow:none!important;
+  position:relative!important;
+  isolation:isolate!important;
+}
+.roller-item.vip-account::before,
+.roller-item.vip-account::after{
+  display:none!important;
+  content:none!important;
+  opacity:0!important;
+  animation:none!important;
+  background:none!important;
+  box-shadow:none!important;
+}
+
+.roller-item.vip-account .account-donor,
+.roller-item.vip-account .account-heart,
+.roller-item.vip-account .account-amount{
+  -webkit-background-clip:text!important;
+  background-clip:text!important;
+  -webkit-text-fill-color:transparent!important;
+  color:transparent!important;
+  font-weight:1000!important;
+  -webkit-text-stroke:0!important;
+  animation:none!important;
+  filter:none!important;
+  opacity:1!important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.18),
+    0 2px 3px rgba(0,0,0,.55)!important;
+}
+
+/* 10만원 이상 - 샴페인 골드 */
+.roller-item.vip-10 .account-donor,
+.roller-item.vip-10 .account-heart,
+.roller-item.vip-10 .account-amount{
+  background:linear-gradient(180deg,#fffef7 0%,#fff3b0 18%,#f3d15f 40%,#b8841f 58%,#fff0a2 78%,#fffef8 100%)!important;
+}
+
+/* 30만원 이상 - 로즈 골드 */
+.roller-item.vip-30 .account-donor,
+.roller-item.vip-30 .account-heart,
+.roller-item.vip-30 .account-amount{
+  background:linear-gradient(180deg,#fff8f8 0%,#ffd8d8 20%,#f2a7a7 45%,#b76b6b 60%,#ffdcdc 82%,#fff8f8 100%)!important;
+}
+
+/* 50만원 이상 - 화이트 골드 */
+.roller-item.vip-50 .account-donor,
+.roller-item.vip-50 .account-heart,
+.roller-item.vip-50 .account-amount{
+  background:linear-gradient(180deg,#ffffff 0%,#f8f8f8 25%,#d8d8d8 45%,#8b8b8b 62%,#ffffff 82%,#ffffff 100%)!important;
+}
+
+/* 100만원 이상 - 블루 사파이어 메탈 */
+.roller-item.vip-100 .account-donor,
+.roller-item.vip-100 .account-heart,
+.roller-item.vip-100 .account-amount{
+  background:linear-gradient(180deg,#ffffff 0%,#dff5ff 18%,#8ad6ff 42%,#2e72c8 60%,#dff5ff 82%,#ffffff 100%)!important;
+}
+
+/* 금액은 고액에서도 작게 유지 */
+.roller-item.vip-account .account-amount{
+  font-size:.82em!important;
+  margin-left:5px!important;
+}
+
+/* ===== 공지 ===== */
+.notice-title,
+.funding-title,
+.karaoke-title{
   display:block!important;
   width:100%!important;
   max-width:100%!important;
@@ -2290,25 +399,269 @@ body.theme-green{
   border:0!important;
   box-shadow:none!important;
   border-radius:0!important;
-  font-size:calc(var(--style-notice-title-size, 20px) * .9)!important;
+  font-size:calc(var(--style-notice-title-size,20px) * .9)!important;
   line-height:1.05!important;
   font-weight:1000!important;
   letter-spacing:-.055em!important;
   text-align:left!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
 }
 .notice-title{color:var(--oc-title-notice)!important}
-.notice-title::before{content:"• ";}
-.funding-title{
-  color:var(--oc-title-funding)!important;
-  font-size:calc(var(--style-funding-title-size, 20px) * .9)!important;
-}
-.funding-title::before{content:"• ";}
-.karaoke-title{
-  color:var(--oc-title-karaoke)!important;
-  font-size:calc(var(--style-karaoke-title-size, 20px) * .9)!important;
-}
-.karaoke-title::before{content:"• ";}
+.notice-title::before{content:"• "}
+.funding-title{color:var(--oc-title-funding)!important;font-size:calc(var(--style-funding-title-size,20px) * .9)!important}
+.funding-title::before{content:"• "}
+.karaoke-title{color:var(--oc-title-karaoke)!important;font-size:calc(var(--style-karaoke-title-size,20px) * .9)!important}
+.karaoke-title::before{content:"• "}
 
+.notice-text,
+.notice-line{
+  font-size:var(--style-content-size,20px)!important;
+  line-height:1.14!important;
+  font-weight:1000!important;
+  letter-spacing:-.06em!important;
+  word-break:keep-all!important;
+  overflow-wrap:anywhere!important;
+  color:var(--style-notice-content-color,#fff)!important;
+  text-align:left!important;
+  text-shadow:var(--oc-shadow)!important;
+}
+.notice-line{
+  display:block!important;
+  margin:1px 0!important;
+}
+.notice-line.notice-align-left{text-align:left!important}
+.notice-line.notice-align-center{text-align:center!important}
+.notice-line.notice-align-right{text-align:right!important}
+
+.notice-roll-window{
+  height:calc(var(--style-content-size,20px) * 1.14 * 3)!important;
+  overflow:hidden!important;
+  position:relative!important;
+}
+.notice-roll-track{
+  display:flex!important;
+  flex-direction:column!important;
+  animation:noticeRollUp var(--notice-roll-duration,10s) linear infinite!important;
+}
+.notice-roll-track .notice-line{
+  min-height:calc(var(--style-content-size,20px) * 1.14)!important;
+}
+.notice-text.rolling .notice-line:nth-child(n+4){display:block!important}
+.notice-text:not(.rolling) .notice-line:nth-child(n+4){display:none!important}
+@keyframes noticeRollUp{
+  0%,18%{transform:translateY(0)}
+  100%{transform:translateY(var(--notice-roll-distance,-50%))}
+}
+
+/* ===== 용돈 ===== */
+.allowance-row{
+  margin-top:5px!important;
+  padding:5px 0 0!important;
+  border-top:1px solid rgba(255,255,255,.18)!important;
+  font-size:calc(var(--style-content-size,20px) * .95)!important;
+  line-height:1.1!important;
+  font-weight:1000!important;
+  color:#fff3a6!important;
+  letter-spacing:-.055em!important;
+  text-align:left!important;
+  text-shadow:var(--oc-shadow)!important;
+}
+.allowance-plus,
+.allowance-positive{color:#fff3a6!important;font-weight:1000!important}
+.allowance-minus,
+.allowance-negative{color:#ff5c73!important;font-weight:1000!important}
+
+/* ===== 펀딩 ===== */
+.funding-title{display:none!important}
+.funding-value{
+  display:flex!important;
+  flex-direction:column!important;
+  gap:0!important;
+  margin-top:0!important;
+  font-size:var(--style-content-size,20px)!important;
+  line-height:1!important;
+  font-weight:1000!important;
+  text-align:left!important;
+  color:#f8fafc!important;
+}
+.funding-value>.funding-line:not(:first-child){display:none!important}
+.funding-value .funding-roller .funding-line{display:flex!important}
+.funding-line{
+  position:relative;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  overflow:hidden;
+  min-height:calc(var(--style-content-size,20px) + 13px)!important;
+  height:calc(var(--style-content-size,20px) + 13px)!important;
+  padding:5px 8px!important;
+  border-radius:8px!important;
+  background:rgba(0,0,0,.18)!important;
+  border:1px solid rgba(255,255,255,.14)!important;
+  font-size:var(--style-content-size,20px)!important;
+  font-weight:1000!important;
+  letter-spacing:-.06em!important;
+}
+.funding-line span,
+.funding-line b{
+  position:relative;
+  z-index:2;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.funding-line b{flex:0 0 auto;color:var(--style-funding-content-color,#f8fafc)!important}
+.funding-line em{
+  position:absolute;
+  left:0;
+  top:0;
+  bottom:0;
+  z-index:1;
+  background:var(--style-funding-bar,linear-gradient(90deg,rgba(0,234,255,.20),rgba(255,79,216,.12)))!important;
+  opacity:.95!important;
+  pointer-events:none;
+}
+.funding-roller{
+  position:relative!important;
+  height:calc(var(--style-content-size,20px) + 13px)!important;
+  overflow:hidden!important;
+}
+.funding-track.no-transition{transition:none!important}
+.funding-track .funding-line{
+  height:calc(var(--style-content-size,20px) + 13px)!important;
+  margin:0 0 4px!important;
+}
+
+/* ===== 노래방 ===== */
+.karaoke-mini-title{display:none!important}
+.karaoke-notice{
+  margin-top:4px!important;
+  color:var(--style-karaoke-notice-color,#fde68a)!important;
+  font-size:var(--style-karaoke-notice-size,17px)!important;
+  line-height:1.1!important;
+  font-weight:1000!important;
+  text-align:left!important;
+  text-shadow:var(--oc-shadow)!important;
+}
+.karaoke-current{
+  display:grid!important;
+  grid-template-columns:auto auto minmax(0,1fr)!important;
+  align-items:center!important;
+  gap:4px!important;
+  margin-top:8px!important;
+  overflow:hidden!important;
+  font-size:var(--style-karaoke-current-size,18px)!important;
+  line-height:1.1!important;
+  font-weight:1000!important;
+  text-align:left!important;
+  color:var(--style-karaoke-current-color,#e0f2fe)!important;
+}
+.karaoke-current b,
+.karaoke-heart{color:var(--style-karaoke-heart-color,#ff4fa3)!important;font-weight:1000!important;white-space:nowrap!important}
+.karaoke-current em,
+.karaoke-donor{
+  color:var(--style-karaoke-donor-color,#39ff88)!important;
+  font-style:normal!important;
+  font-weight:1000!important;
+  white-space:nowrap!important;
+}
+.karaoke-reserve-title{
+  margin-top:5px!important;
+  color:var(--oc-title-karaoke)!important;
+  text-align:left!important;
+  font-size:calc(var(--style-karaoke-queue-size,15px) * 1.12)!important;
+  font-weight:1000!important;
+}
+.karaoke-queue{
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:stretch!important;
+  gap:4px!important;
+  margin-top:5px!important;
+  text-align:left!important;
+  overflow:visible!important;
+}
+.karaoke-song-row{
+  display:grid!important;
+  grid-template-columns:36px auto minmax(0,1fr)!important;
+  align-items:center!important;
+  gap:4px!important;
+  min-width:0!important;
+  overflow:hidden!important;
+  color:var(--style-karaoke-queue-color,#fff)!important;
+  font-size:var(--style-karaoke-queue-size,15px)!important;
+  font-weight:900!important;
+  line-height:1.15!important;
+  text-align:left!important;
+}
+.karaoke-song-row.hold{opacity:.78!important}
+.karaoke-order{color:#fff1a8!important;white-space:nowrap!important;font-weight:1000!important}
+.karaoke-hold-title{
+  margin-top:7px!important;
+  padding-top:6px!important;
+  border-top:1px solid rgba(255,255,255,.16)!important;
+  color:#ff9bd6!important;
+  font-size:14px!important;
+  line-height:1!important;
+  font-weight:1000!important;
+  text-align:left!important;
+}
+.karaoke-song-title-wrap{
+  display:block!important;
+  min-width:0!important;
+  overflow:hidden!important;
+  white-space:nowrap!important;
+}
+.karaoke-song-title-text{
+  display:inline-block!important;
+  color:#fff!important;
+  font-weight:950!important;
+  white-space:nowrap!important;
+  padding-left:0;
+  animation:karaokeSongMarquee 7.5s linear infinite;
+  animation-delay:1s;
+}
+@keyframes karaokeSongMarquee{
+  0%,18%{transform:translateX(0)}
+  100%{transform:translateX(-55%)}
+}
+.queue-empty{
+  display:block!important;
+  padding:4px 0!important;
+  color:rgba(255,255,255,.68)!important;
+  font-size:15px!important;
+  font-weight:900!important;
+  text-align:left!important;
+  opacity:.72!important;
+}
+.karaoke-coin-ticker{
+  width:100%;
+  overflow:hidden;
+  white-space:nowrap;
+  margin-top:9px;
+  border-radius:999px;
+  background:rgba(0,0,0,.20)!important;
+  border:1px solid rgba(255,255,255,.14)!important;
+  text-align:left!important;
+}
+.karaoke-coin-ticker span{
+  display:inline-block;
+  padding-left:100%;
+  font-size:var(--style-karaoke-coin-size,15px)!important;
+  line-height:26px!important;
+  font-weight:1000;
+  color:var(--style-karaoke-coin-color,#fff)!important;
+  animation:karaokeTickerMove 8s linear infinite;
+}
+@keyframes karaokeTickerMove{
+  from{transform:translateX(0)}
+  to{transform:translateX(-100%)}
+}
+
+/* ===== 크리에이터 ===== */
 .creator-box::before{
   content:"• 크리에이터";
   display:block!important;
@@ -2316,58 +669,37 @@ body.theme-green{
   margin:0 0 5px!important;
   padding:0!important;
   color:var(--oc-title-creator)!important;
-  font-size:calc(var(--style-creator-content-size, 24px) * .75)!important;
+  font-size:calc(var(--style-creator-content-size,24px) * .75)!important;
   line-height:1.05!important;
   font-weight:1000!important;
   letter-spacing:-.055em!important;
   text-align:left!important;
-  text-shadow:0 1px 2px rgba(0,0,0,.72)!important;
+  text-shadow:var(--oc-shadow)!important;
 }
-
-.notice-text,.notice-line{
-  font-size:var(--style-content-size, 20px)!important;
-  line-height:1.14!important;
-  font-weight:1000!important;
-  letter-spacing:-.06em!important;
-  word-break:keep-all!important;
-  overflow-wrap:anywhere!important;
-  color:var(--style-notice-content-color, #fff)!important;
+.creator-list{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:4px!important;
+  width:100%;
 }
-.notice-roll-window{height:calc(var(--style-content-size, 20px) * 1.14 * 3)!important}
-.notice-roll-track .notice-line{min-height:calc(var(--style-content-size, 20px) * 1.14)!important}
-
-.allowance-row{
-  margin-top:5px!important;
-  padding:5px 0 0!important;
-  border-top:1px solid rgba(255,255,255,.18)!important;
-  font-size:calc(var(--style-content-size, 20px) * .95)!important;
-  line-height:1.1!important;
-  font-weight:1000!important;
-  color:#fff3a6!important;
-  letter-spacing:-.055em!important;
-  text-align:left!important;
-}
-
-/* 크리에이터 정렬 + 후원금액 ON/OFF + 동적 프리셋 */
-.creator-list{gap:4px!important}
 .creator-align-item{width:100%!important;padding:0!important;margin:0!important}
-
 .creator-align-line{
   display:flex!important;
   align-items:baseline!important;
   justify-content:flex-start!important;
-  gap:5px!important;
+  gap:9px!important;
   width:100%!important;
   min-width:0!important;
-  font-size:var(--style-creator-content-size, 24px)!important;
+  font-size:var(--style-creator-content-size,24px)!important;
   line-height:1.08!important;
   font-weight:1000!important;
   letter-spacing:-.06em!important;
   color:#fff!important;
   white-space:nowrap!important;
   overflow:hidden!important;
+  text-shadow:var(--oc-shadow)!important;
 }
-
 .creator-align-main{
   flex:1 1 auto!important;
   min-width:0!important;
@@ -2376,725 +708,344 @@ body.theme-green{
   white-space:nowrap!important;
   color:#fff!important;
   text-align:left!important;
+  padding-right:10px!important;
 }
-
 .creator-align-total{
   color:#ffc2d6!important;
-  margin-left:1px!important;
+  font-size:.85em!important;
+  margin-left:7px!important;
 }
-
 .creator-align-options{
   flex:0 0 auto!important;
   display:inline-flex!important;
   align-items:baseline!important;
   justify-content:flex-end!important;
-  gap:6px!important;
+  gap:8px!important;
   white-space:nowrap!important;
 }
-
 .creator-align-opt{
+  font-size:.85em!important;
   text-align:right!important;
   font-variant-numeric:tabular-nums!important;
   white-space:nowrap!important;
 }
-
-.creator-main,.creator-sub{display:none!important}
-
+.creator-main,
+.creator-sub{display:none!important}
 .plus{color:var(--oc-plus)!important}
 .red,.blue{color:var(--oc-minus)!important}
 .muted{color:var(--oc-zero)!important}
 
-.funding-line{
-  min-height:calc(var(--style-content-size, 20px) + 13px)!important;
-  height:calc(var(--style-content-size, 20px) + 13px)!important;
-  padding:5px 8px!important;
-  border-radius:8px!important;
-  background:rgba(0,0,0,.18)!important;
-  border:1px solid rgba(255,255,255,.14)!important;
-  font-size:var(--style-content-size, 20px)!important;
+/* ===== 방송/미션 타이머 ===== */
+.broadcast-timer-box{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  gap:8px!important;
+}
+#broadcastTimerBox.hidden,
+.broadcast-timer-box.hidden{
+  display:none!important;
+  visibility:hidden!important;
+  opacity:0!important;
+  height:0!important;
+  min-height:0!important;
+  max-height:0!important;
+  padding:0!important;
+  margin:0!important;
+  border:0!important;
+  overflow:hidden!important;
+}
+.timer-label{
+  font-size:calc(var(--style-content-size,20px) * .85)!important;
+  color:var(--oc-title-account)!important;
+  line-height:1.08!important;
+  letter-spacing:-.04em!important;
   font-weight:1000!important;
-  letter-spacing:-.06em!important;
 }
-.funding-roller{height:calc(var(--style-content-size, 20px) + 13px)!important}
-.funding-track .funding-line{height:calc(var(--style-content-size, 20px) + 13px)!important}
+.timer-value{
+  font-size:calc(var(--style-content-size,20px) * 1.45)!important;
+  line-height:1!important;
+  font-weight:1000!important;
+  color:#fff!important;
+}
+.mission-countdown-big{
+  position:fixed;
+  inset:0;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  font-size:180px;
+  font-weight:1000;
+  color:#fff;
+  text-shadow:0 0 20px rgba(255,79,216,.9),0 0 50px rgba(0,234,255,.7);
+  z-index:999999;
+  pointer-events:none;
+}
+.mission-countdown-big.show{
+  display:flex;
+  animation:missionCountPop .45s ease-out;
+}
+@keyframes missionCountPop{
+  0%{transform:scale(.65);opacity:.4}
+  70%{transform:scale(1.1);opacity:1}
+  100%{transform:scale(1);opacity:1}
+}
 
-.karaoke-notice{font-size:var(--style-karaoke-notice-size, 17px)!important;line-height:1.1!important;font-weight:1000!important}
-.karaoke-current{font-size:var(--style-karaoke-current-size, 18px)!important;line-height:1.1!important;gap:4px!important}
-.karaoke-reserve-title{font-size:calc(var(--style-karaoke-queue-size, 15px) * 1.12)!important;margin-top:5px!important;color:var(--oc-title-karaoke)!important;text-shadow:var(--oc-shadow)!important}
-.karaoke-song-row{grid-template-columns:36px auto minmax(0,1fr)!important;font-size:var(--style-karaoke-queue-size, 15px)!important;gap:4px!important}
-.karaoke-coin-ticker{background:rgba(0,0,0,.20)!important;border:1px solid rgba(255,255,255,.14)!important}
-.karaoke-coin-ticker span{font-size:var(--style-karaoke-coin-size, 15px)!important;line-height:26px!important}
+/* ===== ALERT ===== */
+#overlayAlertRoot{
+  position:relative!important;
+  left:auto!important;
+  top:auto!important;
+  right:auto!important;
+  bottom:auto!important;
+  inset:auto!important;
+  width:100%!important;
+  height:0!important;
+  flex:0 0 0!important;
+  z-index:999999!important;
+  pointer-events:none!important;
+  overflow:visible!important;
+  transform:none!important;
+}
 
-.broadcast-timer-box{justify-content:space-between!important;gap:8px!important}
-.timer-label{font-size:calc(var(--style-content-size, 20px) * .85)!important;color:var(--oc-title-account)!important}
-.timer-value{font-size:calc(var(--style-content-size, 20px) * 1.45)!important;color:#fff!important}
-
-:root{--alert-height:112px}
+#overlayAlertRoot>#optionAlert.option-alert,
 #overlayAlertRoot #optionAlert.option-alert{
-  min-height:104px!important;
-  padding:9px 10px 10px!important;
-  border-radius:14px!important;
-  border:1.5px solid var(--oc-line)!important;
-  background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.012)),rgba(0,0,0,.50)!important;
-  box-shadow:0 6px 18px rgba(0,0,0,.45), inset 0 0 10px rgba(255,255,255,.025)!important;
-  backdrop-filter:blur(3px)!important;
-  -webkit-backdrop-filter:blur(3px)!important;
-}
-.alert-donor,.alert-total-amount,.alert-target,.alert-source{text-shadow:var(--oc-shadow)!important;-webkit-text-stroke:0!important}
-.alert-donor-total-line{justify-content:space-between!important}
-.alert-donor-total-line .alert-donor{max-width:54%!important;font-size:calc(var(--style-alert-size, 30px) * .87)!important;line-height:1!important}
-.alert-total-amount{font-size:calc(var(--style-alert-size, 30px) * .83)!important;line-height:1!important;color:var(--oc-title-account)!important}
-.alert-creator-line.alert-split-line{margin-top:6px!important;justify-content:flex-start!important}
-.alert-target.alert-split-chip{font-size:calc(var(--style-alert-size, 30px) * .6)!important;line-height:1.08!important}
-.alert-source{font-size:14px!important}
-
-.overlay-stack>.top-slide-box{margin-bottom:5px!important;border-radius:14px!important}
-
-body.test-bg{
-  background:linear-gradient(rgba(0,0,0,.05),rgba(0,0,0,.08)),radial-gradient(circle at 50% 28%, rgba(255,255,255,.58), transparent 18%),linear-gradient(135deg,#d9e8ff,#8c8178 45%,#1a1d25)!important;
-}
-
-@media(max-width:720px){
-  :root{--overlay-w:336px;--top:52px;--right:30px;}
-}
-
-
-
-/* =========================================================
-   ALERT READABILITY COMPACT FIX v0625
-   - 후원 ALERT 후원자명 색상 확실히 표시
-   - 빈공간 축소 / 글자 크기 확대
-   - 기존 ALERT 기능 유지
-========================================================= */
-:root{--alert-height:118px;}
-#overlayAlertRoot #optionAlert.option-alert{
+  position:absolute!important;
+  left:0!important;
+  top:0!important;
+  right:auto!important;
+  bottom:auto!important;
+  inset:auto!important;
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
   min-height:108px!important;
+  margin:0!important;
   padding:10px 11px 11px!important;
   border-radius:15px!important;
-  border:1.5px solid var(--oc-line, rgba(255,216,106,.70))!important;
-  background:
-    linear-gradient(180deg,rgba(255,255,255,.065),rgba(255,255,255,.015)),
-    rgba(0,0,0,.58)!important;
-  box-shadow:
-    0 7px 20px rgba(0,0,0,.52),
-    inset 0 0 10px rgba(255,255,255,.035)!important;
+  border:1.5px solid var(--oc-line,rgba(255,216,106,.70))!important;
+  background:linear-gradient(180deg,rgba(255,255,255,.065),rgba(255,255,255,.015)),rgba(0,0,0,.58)!important;
+  box-shadow:0 7px 20px rgba(0,0,0,.52), inset 0 0 10px rgba(255,255,255,.035)!important;
   backdrop-filter:blur(3px)!important;
   -webkit-backdrop-filter:blur(3px)!important;
+  color:#fff;
+  text-align:center;
+  letter-spacing:-.06em;
+  opacity:0;
+  visibility:hidden;
+  transform:scale(.92)!important;
+  transform-origin:top center!important;
+  transition:opacity .22s ease, transform .22s cubic-bezier(.2,1.35,.3,1);
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  pointer-events:none!important;
   overflow:hidden!important;
 }
 #overlayAlertRoot #optionAlert.option-alert::before{
   display:none!important;
   content:none!important;
 }
-#overlayAlertRoot .blink-donor,
-#overlayAlertRoot .alert-donor{
-  background:none!important;
-  -webkit-background-clip:initial!important;
-  background-clip:initial!important;
-  color:#ffffff!important;
-  -webkit-text-fill-color:#ffffff!important;
-  animation:none!important;
+#overlayAlertRoot>#optionAlert.option-alert.show,
+#overlayAlertRoot #optionAlert.option-alert.show{
   opacity:1!important;
-  filter:none!important;
-  text-shadow:
-    0 1px 2px rgba(0,0,0,.88),
-    0 0 6px rgba(0,0,0,.55)!important;
+  visibility:visible!important;
+  transform:scale(1)!important;
+  animation:alertStackPop .34s ease-out!important;
 }
-#overlayAlertRoot .alert-donor-total-line{
-  justify-content:space-between!important;
+.option-alert.hidden{display:none!important}
+body>#optionAlert.option-alert{display:none!important}
+
+@keyframes alertStackPop{
+  0%{transform:scale(.92)}
+  70%{transform:scale(1.035)}
+  100%{transform:scale(1)}
+}
+
+.alert-up-line,
+.alert-donor-total-line{
+  width:100%!important;
+  display:flex!important;
   align-items:baseline!important;
+  justify-content:space-between!important;
   gap:8px!important;
   flex-wrap:nowrap!important;
-  width:100%!important;
+  text-align:center;
+  white-space:nowrap!important;
 }
-#overlayAlertRoot .alert-donor-total-line .alert-donor{
+#overlayAlertRoot .blink-donor,
+#overlayAlertRoot .alert-donor{
   flex:1 1 auto!important;
   max-width:none!important;
   min-width:0!important;
+  display:inline-block!important;
   overflow:hidden!important;
   text-overflow:ellipsis!important;
   white-space:nowrap!important;
   text-align:left!important;
-  font-size:calc(var(--style-alert-size, 30px) * .98)!important;
+  background:none!important;
+  -webkit-background-clip:initial!important;
+  background-clip:initial!important;
+  color:#fff!important;
+  -webkit-text-fill-color:#fff!important;
+  font-size:calc(var(--style-alert-size,30px) * .98)!important;
   line-height:1!important;
   font-weight:1000!important;
   letter-spacing:-.055em!important;
+  animation:none!important;
+  opacity:1!important;
+  filter:none!important;
+  text-shadow:0 1px 2px rgba(0,0,0,.88),0 0 6px rgba(0,0,0,.55)!important;
 }
 #overlayAlertRoot .alert-total-amount{
   flex:0 0 auto!important;
   color:var(--oc-title-account,#ffd86a)!important;
   -webkit-text-fill-color:var(--oc-title-account,#ffd86a)!important;
-  font-size:calc(var(--style-alert-size, 30px) * .92)!important;
+  font-size:calc(var(--style-alert-size,30px) * .92)!important;
   line-height:1!important;
   font-weight:1000!important;
   letter-spacing:-.06em!important;
+  white-space:nowrap!important;
   text-shadow:0 1px 2px rgba(0,0,0,.85)!important;
 }
 #overlayAlertRoot .alert-creator-line.alert-split-line{
   margin-top:7px!important;
+  width:100%!important;
   display:flex!important;
   justify-content:flex-start!important;
   align-items:center!important;
+  flex-wrap:wrap!important;
   gap:4px 8px!important;
   line-height:1.08!important;
   max-height:44px!important;
   overflow:hidden!important;
+  white-space:normal!important;
+  text-overflow:unset!important;
 }
 #overlayAlertRoot .alert-target.alert-split-chip{
-  font-size:calc(var(--style-alert-size, 30px) * .68)!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  font-size:calc(var(--style-alert-size,30px) * .68)!important;
   line-height:1.08!important;
   color:#fff3b0!important;
   font-weight:1000!important;
+  white-space:nowrap!important;
+  padding:0 2px!important;
+  margin:0!important;
   text-shadow:0 1px 2px rgba(0,0,0,.82)!important;
 }
 #overlayAlertRoot .alert-line2{
   margin-top:7px!important;
+  width:100%!important;
+  display:flex!important;
   justify-content:flex-start!important;
   align-items:center!important;
   gap:6px!important;
-  font-size:calc(var(--style-alert-size, 30px) * .52)!important;
+  flex-wrap:wrap!important;
+  font-size:calc(var(--style-alert-size,30px) * .52)!important;
   line-height:1!important;
+  font-weight:950!important;
 }
 #overlayAlertRoot .alert-source{
-  font-size:calc(var(--style-alert-size, 30px) * .48)!important;
+  font-size:calc(var(--style-alert-size,30px) * .48)!important;
   padding:3px 7px!important;
   color:#9ee7ff!important;
   background:rgba(80,200,255,.12)!important;
   border:1px solid rgba(120,220,255,.28)!important;
+  border-radius:999px!important;
+  font-weight:1000!important;
 }
 #overlayAlertRoot .option-alert .alert-plus,
 #overlayAlertRoot .option-alert .alert-minus{
-  font-size:calc(var(--style-alert-size, 30px) * .58)!important;
+  font-size:calc(var(--style-alert-size,30px) * .58)!important;
   font-weight:1000!important;
 }
+.option-alert .alert-plus{color:#5ecbff!important}
+.option-alert .alert-minus{color:#ff6b7c!important}
 
-
-/* =========================================================
-   Overlay readability + premium text animation patch
-   - 계좌 금액 = 후원자명 0.85
-   - 10만원 이상: 글자 안쪽만 그라데이션 애니메이션 + 아웃라인
-   - 크리에이터 금액/프리셋 = 이름 0.85, 간격 확보
-========================================================= */
-.account-donor{
-  color:#fff!important;
-  font-weight:1000!important;
-  text-shadow:0 1px 2px rgba(0,0,0,.75)!important;
-}
-.account-amount{
-  font-size:.85em!important;
-  color:var(--oc-title-account, var(--account-amount-color, #ffd86a))!important;
-  font-weight:1000!important;
-  margin-left:1px!important;
-  text-shadow:0 1px 2px rgba(0,0,0,.75)!important;
-}
-.roller-item.vip-account .account-donor{
-  color:transparent!important;
-  background:linear-gradient(90deg, rgba(255,255,255,.15) 0%, #fff 18%, #ffe27a 42%, #8efcff 58%, #fff 74%, rgba(255,255,255,.18) 100%)!important;
-  background-size:240% 100%!important;
-  -webkit-background-clip:text!important;
-  background-clip:text!important;
-  -webkit-text-stroke:1px rgba(0,0,0,.72)!important;
-  text-shadow:none!important;
-  animation:vipTextShine 2.2s linear infinite!important;
-}
-.roller-item.vip-account .account-amount{
-  color:transparent!important;
-  background:linear-gradient(90deg, #ffd86a 0%, #fff4b0 35%, #ff79bd 55%, #ffd86a 100%)!important;
-  background-size:220% 100%!important;
-  -webkit-background-clip:text!important;
-  background-clip:text!important;
-  -webkit-text-stroke:.85px rgba(0,0,0,.76)!important;
-  text-shadow:none!important;
-  animation:vipTextShine 2.4s linear infinite!important;
-}
-@keyframes vipTextShine{
-  0%{background-position:220% 0}
-  100%{background-position:-220% 0}
-}
-.creator-align-line{
-  gap:8px!important;
-}
-.creator-align-main{
-  padding-right:8px!important;
-}
-.creator-align-total,
-.creator-align-options,
-.creator-align-opt{
-  font-size:.85em!important;
-}
-.creator-align-total{
-  margin-left:4px!important;
-}
-.creator-align-options{
-  gap:8px!important;
-}
-
-
-/* =========================================================
-   FINAL VISIBLE OVERLAY PATCH
-   - 계좌 금액: 후원자명 0.85
-   - 고액(10만원 이상): 글자 내부 그라데이션 애니메이션 + 검정 아웃라인
-   - 크리에이터 후원금액/프리셋: 크리에이터명 0.85
-   - 크리에이터명과 금액/프리셋 간격 확보
-========================================================= */
-.account-donor{
-  color:#fff!important;
-  font-weight:1000!important;
-  text-shadow:0 1px 2px rgba(0,0,0,.82)!important;
-}
-.account-amount{
-  font-size:.85em!important;
-  color:var(--oc-title-account, #ffd86a)!important;
-  font-weight:1000!important;
-  margin-left:2px!important;
-  text-shadow:0 1px 2px rgba(0,0,0,.82)!important;
-}
-.roller-item.vip-account .account-donor{
-  color:transparent!important;
-  background-image:linear-gradient(90deg,rgba(255,255,255,.25) 0%,#ffffff 18%,#ffe27a 38%,#6ff0ff 58%,#ffffff 78%,rgba(255,255,255,.25) 100%)!important;
-  background-size:240% 100%!important;
-  -webkit-background-clip:text!important;
-  background-clip:text!important;
-  -webkit-text-stroke:1.1px rgba(0,0,0,.78)!important;
-  text-shadow:none!important;
-  animation:vipTextShineFinal 2.1s linear infinite!important;
-}
-.roller-item.vip-account .account-amount{
-  color:transparent!important;
-  background-image:linear-gradient(90deg,#ffd86a 0%,#fff6b8 32%,#ff79bd 55%,#ffd86a 100%)!important;
-  background-size:220% 100%!important;
-  -webkit-background-clip:text!important;
-  background-clip:text!important;
-  -webkit-text-stroke:.95px rgba(0,0,0,.80)!important;
-  text-shadow:none!important;
-  animation:vipTextShineFinal 2.3s linear infinite!important;
-}
-@keyframes vipTextShineFinal{
-  0%{background-position:220% 0}
-  100%{background-position:-220% 0}
-}
-.creator-align-line{
-  gap:10px!important;
-}
-.creator-align-main{
-  padding-right:12px!important;
-}
-.creator-align-total{
-  font-size:.85em!important;
-  margin-left:8px!important;
-}
-.creator-align-options{
-  gap:9px!important;
-}
-.creator-align-opt{
-  font-size:.85em!important;
-}
-
-
-/* =========================================================
-   VF3 STABLE LUXURY OVERLAY FINAL
-   - 한글 투명 처리 제거
-   - 롤러 구조 유지
-   - 고액 후원은 글자 투명/아웃라인 없이 보석빛 배경만 적용
-   - 전체 가독성 강화
-========================================================= */
-.overlay-panel,
-.overlay-panel *,
-#overlayAlertRoot,
-#overlayAlertRoot *{
-  -webkit-text-stroke:0!important;
-  filter:none!important;
-  font-synthesis-weight:none!important;
-}
-
-.account-title,
-.account-title::before,
-.account-donor,
-.account-amount,
-.account-heart,
-.notice-title,
-.notice-text,
-.notice-line,
-.creator-box::before,
-.creator-name,
-.donation-amount,
-.creator-sub,
-.creator-inline-options,
-.creator-align-main,
-.creator-align-total,
-.creator-align-options,
-.creator-align-opt,
-.karaoke-title,
-.karaoke-notice,
-.karaoke-current,
-.karaoke-song-row,
-.funding-title,
-.funding-line,
-.allowance-row,
-.timer-label,
-.timer-value,
-.alert-donor,
-.alert-total-amount,
-.alert-target,
-.alert-source{
-  font-weight:900!important;
-  -webkit-text-stroke:0!important;
-  text-shadow:0 1px 2px rgba(0,0,0,.72)!important;
-}
-
-/* 계좌 타이틀 */
-.account-title::before{
-  content:"계좌"!important;
-  color:#ffe27a!important;
-}
-
-/* 계좌 후원자/금액: 투명 금지 */
-.account-donor{
-  color:#ffffff!important;
-  -webkit-text-fill-color:#ffffff!important;
-  background:none!important;
-  font-size:1em!important;
-  letter-spacing:-.035em!important;
-}
-
-.account-amount{
-  color:#ffe27a!important;
-  -webkit-text-fill-color:#ffe27a!important;
-  background:none!important;
-  font-size:.92em!important;
-  letter-spacing:-.035em!important;
-  margin-left:3px!important;
-}
-
-.account-heart{
-  font-size:.76em!important;
-  margin:0 2px!important;
-}
-
-/* 고액 후원: 글자효과 대신 배경에만 은은한 보석빛 */
-.roller-item.vip-account{
+/* ===== 상단 미디어 슬라이드 ===== */
+.overlay-stack>.top-slide-box,
+.top-slide-box{
   position:relative!important;
-  isolation:isolate!important;
-  padding:2px 7px!important;
-  border-radius:10px!important;
-  background:
-    linear-gradient(90deg, rgba(255,255,255,.10), rgba(255,216,106,.18), rgba(100,217,255,.10)),
-    rgba(255,255,255,.035)!important;
-  border:1px solid rgba(255,216,106,.32)!important;
+  width:100%!important;
+  aspect-ratio:var(--active-slide-ratio,16/9)!important;
+  height:auto!important;
+  min-height:0!important;
+  margin:0 0 5px 0!important;
+  border:0!important;
+  border-radius:14px!important;
   overflow:hidden!important;
-}
-
-.roller-item.vip-account::before{
-  content:""!important;
-  position:absolute!important;
-  inset:-45% -90%!important;
-  z-index:-1!important;
-  background:
-    radial-gradient(circle, rgba(255,255,255,.55) 0 1px, transparent 2px),
-    linear-gradient(115deg, transparent 0%, rgba(255,255,255,.34) 48%, transparent 62%)!important;
-  background-size:24px 24px, 100% 100%!important;
-  opacity:.32!important;
-  animation:vf3GemBgOnly 3.4s ease-in-out infinite!important;
-}
-
-.roller-item.vip-account .account-donor{
-  color:#ffffff!important;
-  -webkit-text-fill-color:#ffffff!important;
-  background:none!important;
-  animation:none!important;
-}
-
-.roller-item.vip-account .account-amount{
-  color:#ffe27a!important;
-  -webkit-text-fill-color:#ffe27a!important;
-  background:none!important;
-  animation:none!important;
-}
-
-@keyframes vf3GemBgOnly{
-  0%,100%{opacity:.20;transform:translateX(-45%)}
-  45%{opacity:.48;transform:translateX(25%)}
-  65%{opacity:.30;transform:translateX(45%)}
-}
-
-/* 공지 */
-.notice-title{color:#64d9ff!important}
-.notice-text,
-.notice-line{
-  color:#ffffff!important;
-  line-height:1.16!important;
-}
-
-/* 크리에이터: 이름 100%, 금액/프리셋 0.85 */
-.creator-align-line{gap:9px!important}
-.creator-align-main{
-  color:#ffffff!important;
-  padding-right:10px!important;
-}
-.creator-align-total{
-  font-size:.85em!important;
-  margin-left:7px!important;
-  color:#ffc2d6!important;
-}
-.creator-align-options{gap:8px!important}
-.creator-align-opt{font-size:.85em!important}
-
-.creator-name{
-  color:#ffffff!important;
-  font-weight:900!important;
-}
-.donation-amount{
-  font-size:.85em!important;
-  margin-left:7px!important;
-  color:#ffc2d6!important;
-}
-.creator-sub,
-.creator-inline-options{
-  font-size:.85em!important;
-}
-
-/* ALERT */
-.alert-donor{color:#ffffff!important}
-.alert-total-amount{color:#ffe27a!important}
-/* 고액후원 텍스트 그라데이션 */
-.roller-item.vip-account{
-  background:transparent !important;
-  border:0 !important;
-}
-
-.roller-item.vip-account .account-donor,
-.roller-item.vip-account .account-heart,
-.roller-item.vip-account .account-amount{
-  background-image:linear-gradient(
-    180deg,
-    #ffffff 0%,
-    #ffe680 38%,
-    #ffbf2e 72%,
-    #fff2a8 100%
-  ) !important;
-
-  -webkit-background-clip:text !important;
-  background-clip:text !important;
-
-  color:#ffe680 !important;
-  -webkit-text-fill-color:transparent !important;
-
-  font-weight:1000 !important;
-  -webkit-text-stroke:0 !important;
-
-  text-shadow:
-    -1px -1px 0 rgba(0,0,0,.75),
-     1px -1px 0 rgba(0,0,0,.75),
-    -1px  1px 0 rgba(0,0,0,.75),
-     1px  1px 0 rgba(0,0,0,.75),
-     0 2px 2px rgba(0,0,0,.45) !important;
-
-  filter:none !important;
-  opacity:1 !important;
-}
-
-/* 10만원 이상 - 골드 */
-.roller-item.vip-10 .account-donor,
-.roller-item.vip-10 .account-amount{
-  background-image:linear-gradient(180deg,#fff6bf 0%,#ffd95a 45%,#f5a900 100%) !important;
-}
-
-/* 30만원 이상 - 핑크골드 */
-.roller-item.vip-30 .account-donor,
-.roller-item.vip-30 .account-amount{
-  background-image:linear-gradient(180deg,#ffe1f0 0%,#ff8fc8 45%,#ff4fa3 100%) !important;
-}
-
-/* 50만원 이상 - 블루 */
-.roller-item.vip-50 .account-donor,
-.roller-item.vip-50 .account-amount{
-  background-image:linear-gradient(180deg,#d8f7ff 0%,#5edcff 45%,#258dff 100%) !important;
-}
-
-/* 100만원 이상 - 레인보우 골드 */
-.roller-item.vip-100 .account-donor,
-.roller-item.vip-100 .account-amount{
-  background-image:linear-gradient(90deg,#fff6bf,#ffd95a,#ff8fc8,#5edcff,#b6ff8a,#fff6bf) !important;
-  background-size:220% 100% !important;
-  animation:vipRainbowText 2.8s linear infinite !important;
-}
-
-@keyframes vipRainbowText{
-  0%{background-position:220% 0}
-  100%{background-position:-220% 0}
-}
-
-/* =========================================================
-   VIP 고액후원 최종 스타일 CLEAN
-   - 기존 VIP 배경/그라데이션/투명 텍스트 무력화
-   - 10만/30만/50만/100만 단계별 실색 적용
-   - 하트까지 같은 컬러로 통일
-   - 롤러 높이/구조는 건드리지 않음
-========================================================= */
-.roller-item.vip-account,
-.roller-item.vip-account:hover,
-.roller-item.vip-account.active{
-  background:transparent !important;
-  border:0 !important;
-  box-shadow:none !important;
-}
-
-.roller-item.vip-account::before,
-.roller-item.vip-account::after{
-  display:none !important;
-  content:none !important;
-  opacity:0 !important;
-  animation:none !important;
-  background:none !important;
-  box-shadow:none !important;
-}
-
-/* 공통: 투명/그라데이션 제거, 선명한 실색 */
-.roller-item.vip-account .account-donor,
-.roller-item.vip-account .account-heart,
-.roller-item.vip-account .account-amount{
-  background:none !important;
-  background-image:none !important;
-  background-size:auto !important;
-  background-position:initial !important;
-  -webkit-background-clip:initial !important;
-  background-clip:initial !important;
-
-  font-weight:1000 !important;
-  -webkit-text-stroke:0 !important;
-
-  text-shadow:
-    -1px -1px 0 rgba(0,0,0,.85),
-     1px -1px 0 rgba(0,0,0,.85),
-    -1px  1px 0 rgba(0,0,0,.85),
-     1px  1px 0 rgba(0,0,0,.85),
-     0 0 5px rgba(255,230,128,.35) !important;
-
-  filter:none !important;
-  opacity:1 !important;
-  animation:none !important;
-}
-
-/* 10만원 이상 - 골드 */
-.roller-item.vip-10 .account-donor,
-.roller-item.vip-10 .account-heart,
-.roller-item.vip-10 .account-amount{
-  color:#ffe680 !important;
-  -webkit-text-fill-color:#ffe680 !important;
-}
-
-/* 30만원 이상 - 핑크 */
-.roller-item.vip-30 .account-donor,
-.roller-item.vip-30 .account-heart,
-.roller-item.vip-30 .account-amount{
-  color:#ff9fd2 !important;
-  -webkit-text-fill-color:#ff9fd2 !important;
-}
-
-/* 50만원 이상 - 블루 */
-.roller-item.vip-50 .account-donor,
-.roller-item.vip-50 .account-heart,
-.roller-item.vip-50 .account-amount{
-  color:#7ee7ff !important;
-  -webkit-text-fill-color:#7ee7ff !important;
-}
-
-/* 100만원 이상 - 프리미엄 골드 */
-.roller-item.vip-100 .account-donor,
-.roller-item.vip-100 .account-heart,
-.roller-item.vip-100 .account-amount{
-  color:#fff2a8 !important;
-  -webkit-text-fill-color:#fff2a8 !important;
-  text-shadow:
-    -1px -1px 0 rgba(0,0,0,.9),
-     1px -1px 0 rgba(0,0,0,.9),
-    -1px  1px 0 rgba(0,0,0,.9),
-     1px  1px 0 rgba(0,0,0,.9),
-     0 0 7px rgba(255,242,168,.55) !important;
-}
-    /* 계좌 후원자명 / 금액 크기 최종 보정 */
-.account-donor{
-  font-size:1em !important;
-}
-
-.account-amount{
-  font-size:.82em !important;
-  margin-left:4px !important;
-}
-
-/* 고액후원에서도 금액은 계속 작게 */
-.roller-item.vip-account .account-donor{
-  font-size:1em !important;
-}
-
-.roller-item.vip-account .account-amount{
-  font-size:.82em !important;
-  margin-left:4px !important;
-}
-/* ===== 계좌 후원자/금액 메탈 컬러 ===== */
-.roller-item.vip-account .account-donor,
-.roller-item.vip-account .account-amount{
-  background:none !important;
-  -webkit-background-clip:initial !important;
-  background-clip:initial !important;
-
-  color:#f7d978 !important;
-  -webkit-text-fill-color:#f7d978 !important;
-
-  font-weight:1000 !important;
-  -webkit-text-stroke:0 !important;
-
-  text-shadow:
-    0 1px 0 rgba(255,255,255,.35),
-    0 2px 0 rgba(120,75,0,.45),
-    0 3px 3px rgba(0,0,0,.65),
-    0 0 5px rgba(255,220,120,.28) !important;
-
-  filter:none !important;
-  opacity:1 !important;
-  animation:none !important;
-}
-
-/* 금액은 살짝 작게 */
-.roller-item.vip-account .account-amount{
-  font-size:.82em !important;
-  margin-left:5px !important;
-}
-
-/* 하트는 같은 골드톤 */
-.roller-item.vip-account .account-heart{
-  background:none !important;
-  color:#ffe680 !important;
-  -webkit-text-fill-color:#ffe680 !important;
-  font-weight:1000 !important;
-  text-shadow:
-    0 1px 0 rgba(255,255,255,.35),
-    0 2px 2px rgba(0,0,0,.65),
-    0 0 5px rgba(255,220,120,.35) !important;
-}
-    /* 계좌 한 줄 공간 최종 보정 */
-.account-title{
-  flex:0 0 42px!important;
-  width:42px!important;
-  min-width:42px!important;
-}
-
-.account-title::before{
-  content:"계좌"!important;
-}
-
-.roller-item{
-  justify-content:flex-end!important;
-  gap:4px!important;
-}
-
-.account-donor{
-  max-width:170px!important;
-}
-
-.account-amount{
+  background:transparent!important;
+  box-shadow:none!important;
   flex:0 0 auto!important;
-  font-size:.82em!important;
+  z-index:1!important;
+  opacity:var(--top-slide-opacity)!important;
+  pointer-events:none!important;
+}
+.top-slide-box.hidden{display:none!important}
+.top-slide-img,
+.top-slide-video{
+  position:absolute!important;
+  inset:0!important;
+  width:100%!important;
+  height:100%!important;
+  object-fit:fill!important;
+  border-radius:14px!important;
+  background:transparent!important;
+  opacity:0;
+  transition:opacity .75s ease;
+}
+.top-slide-img.active,
+.top-slide-video.active{opacity:1}
+
+/* ===== 방송 종료/대기 ===== */
+.overlay-idle-screen{
+  position:fixed;
+  inset:0;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  color:#fff;
+  font-weight:1000;
+  font-size:46px;
+  letter-spacing:-.06em;
+  background:transparent;
+  pointer-events:none;
+  text-shadow:0 0 18px rgba(255,122,191,.55);
+}
+body.broadcast-not-live .overlay-stack{display:none!important}
+body.broadcast-not-live .overlay-idle-screen{display:flex}
+
+/* ===== 테스트 배경 ===== */
+body.test-bg{
+  background:
+    linear-gradient(rgba(0,0,0,.05),rgba(0,0,0,.08)),
+    radial-gradient(circle at 50% 28%,rgba(255,255,255,.58),transparent 18%),
+    linear-gradient(135deg,#d9e8ff,#8c8178 45%,#1a1d25)!important;
+}
+
+/* ===== Prism/OBS 우측 잘림 방지 ===== */
+@supports (right:max(1px,2px)){
+  .overlay-stack{
+    right:max(var(--right),28px)!important;
+    max-width:calc(100vw - 44px)!important;
+  }
+}
+
+/* ===== 모바일 ===== */
+@media(max-width:720px){
+  :root{
+    --overlay-w:336px;
+    --top:52px;
+    --right:30px;
+  }
+  .overlay-stack{gap:6px!important}
+  .account-title::before{font-size:calc(var(--style-account-title-size,20px) * .9)!important}
+  .roller{font-size:var(--style-account-roll-size,25px)!important}
+  .notice-text{font-size:var(--style-content-size,20px)!important}
 }
 </style>
   <link rel="stylesheet" href="/assets/css/roulette-overlay.css">
