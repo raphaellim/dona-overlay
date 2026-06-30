@@ -3268,10 +3268,10 @@ let missionCountdownLastSec = null;
       const overlaySoundBootAt = new Date().toISOString();
       const claimedSoundEventIds = new Set();
       const playedDonationAlertKeys = new Set(
-  Object.keys(localStorage)
-    .filter(k => k.startsWith("overlay_group_alert_done_"))
-    .map(k => k.replace("overlay_group_alert_done_", ""))
-);
+        Object.keys(localStorage)
+          .filter(k => k.startsWith("overlay_group_alert_done_"))
+          .map(k => k.replace("overlay_group_alert_done_", ""))
+      );
       sessionStorage.setItem("overlay_sound_event_session_start", lastSoundEventAt);
       let alertTimer = null;
       let alertQueue = [];
