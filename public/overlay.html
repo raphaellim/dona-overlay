@@ -3072,6 +3072,30 @@ body.test-bg{
     0 2px 2px rgba(0,0,0,.65),
     0 0 5px rgba(255,220,120,.35) !important;
 }
+    /* 계좌 한 줄 공간 최종 보정 */
+.account-title{
+  flex:0 0 42px!important;
+  width:42px!important;
+  min-width:42px!important;
+}
+
+.account-title::before{
+  content:"계좌"!important;
+}
+
+.roller-item{
+  justify-content:flex-end!important;
+  gap:4px!important;
+}
+
+.account-donor{
+  max-width:170px!important;
+}
+
+.account-amount{
+  flex:0 0 auto!important;
+  font-size:.82em!important;
+}
 </style>
   <link rel="stylesheet" href="/assets/css/roulette-overlay.css">
 </head>
