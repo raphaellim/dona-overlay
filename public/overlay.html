@@ -3267,6 +3267,11 @@ let missionCountdownLastSec = null;
       let lastSoundEventAt = localStorage.getItem("overlay_last_sound_event_at") || new Date().toISOString();
       const overlaySoundBootAt = new Date().toISOString();
       const claimedSoundEventIds = new Set();
+      const playedDonationAlertKeys = new Set(
+  Object.keys(localStorage)
+    .filter(k => k.startsWith("overlay_group_alert_done_"))
+    .map(k => k.replace("overlay_group_alert_done_", ""))
+);
       sessionStorage.setItem("overlay_sound_event_session_start", lastSoundEventAt);
       let alertTimer = null;
       let alertQueue = [];
@@ -4391,7 +4396,7 @@ const rows = (Array.isArray(creators) ? creators : [])
 
 
       function playAlertQueue() {
-        if (alertShowing || !alertQueue.length) return;
+  if (alertShowing || alertPlaying || !alertQueue.length) return;
 
         alertShowing = true;
         alertPlaying = true;
@@ -4511,16 +4516,20 @@ const rows = (Array.isArray(creators) ? creators : [])
 
           const storageKey = "overlay_group_alert_done_" + groupKey;
 
-          if (localStorage.getItem(storageKey) === "1") {
-            return;
-          }
+          if (
+  playedDonationAlertKeys.has(groupKey) ||
+  localStorage.getItem(storageKey) === "1"
+) {
+  return;
+}
 
-          localStorage.setItem(storageKey, "1");
-          alertQueue.push({
-            html: makeDonationAlertHtml(group),
-            row: group
-          });
-        });
+playedDonationAlertKeys.add(groupKey);
+localStorage.setItem(storageKey, "1");
+
+alertQueue.push({
+  html: makeDonationAlertHtml(group),
+  row: group
+});
 
         const last = newRows[newRows.length - 1];
         const lastKey = donationAlertKey(last);
