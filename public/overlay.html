@@ -316,15 +316,18 @@ html,body{
   filter:none!important;
 }
 
-/* ===== 고액후원 메탈 텍스트 ===== */
-/* renderAccountRoller에서 vip-account / vip-10 / vip-30 / vip-50 / vip-100 class가 붙어야 적용됨 */
-.roller-item.vip-account{
+/* ===== 고액후원 VIP 텍스트 컬러 전용 FINAL ===== */
+/* 배지/그라데이션/투명 텍스트 전부 OFF: VIP일 때 글자색만 고급스럽게 변경 */
+.roller-item.vip-account,
+.roller-item.vip-account:hover,
+.roller-item.vip-account.active{
   background:transparent!important;
   border:0!important;
   box-shadow:none!important;
   position:relative!important;
-  isolation:isolate!important;
+  isolation:auto!important;
 }
+
 .roller-item.vip-account::before,
 .roller-item.vip-account::after{
   display:none!important;
@@ -335,55 +338,96 @@ html,body{
   box-shadow:none!important;
 }
 
+/* VIP 공통: 깨짐 방지 */
 .roller-item.vip-account .account-donor,
 .roller-item.vip-account .account-heart,
 .roller-item.vip-account .account-amount{
-  -webkit-background-clip:text!important;
-  background-clip:text!important;
-  -webkit-text-fill-color:transparent!important;
-  color:transparent!important;
-  font-weight:1000!important;
+  background:none!important;
+  background-image:none!important;
+  -webkit-background-clip:initial!important;
+  background-clip:initial!important;
+  -webkit-text-fill-color:currentColor!important;
+  color:currentColor!important;
   -webkit-text-stroke:0!important;
   animation:none!important;
   filter:none!important;
   opacity:1!important;
+  font-weight:1000!important;
+}
+
+/* 후원자명: 모든 VIP 공통 화이트골드 */
+.roller-item.vip-account .account-donor{
+  color:#fff7df!important;
+  max-width:170px!important;
   text-shadow:
-    0 1px 0 rgba(255,255,255,.18),
-    0 2px 3px rgba(0,0,0,.55)!important;
+    0 1px 0 rgba(255,255,255,.24),
+    0 2px 3px rgba(0,0,0,.74),
+    0 0 7px rgba(255,230,170,.28)!important;
 }
 
-/* 10만원 이상 - 샴페인 골드 */
-.roller-item.vip-10 .account-donor,
-.roller-item.vip-10 .account-heart,
-.roller-item.vip-10 .account-amount{
-  background:linear-gradient(180deg,#fffef7 0%,#fff3b0 18%,#f3d15f 40%,#b8841f 58%,#fff0a2 78%,#fffef8 100%)!important;
+/* 하트: 모든 VIP 공통 에메랄드 */
+.roller-item.vip-account .account-heart{
+  color:#36f28f!important;
+  -webkit-text-fill-color:#36f28f!important;
+  text-shadow:
+    0 1px 2px rgba(0,0,0,.72),
+    0 0 8px rgba(54,242,143,.46)!important;
 }
 
-/* 30만원 이상 - 로즈 골드 */
-.roller-item.vip-30 .account-donor,
-.roller-item.vip-30 .account-heart,
-.roller-item.vip-30 .account-amount{
-  background:linear-gradient(180deg,#fff8f8 0%,#ffd8d8 20%,#f2a7a7 45%,#b76b6b 60%,#ffdcdc 82%,#fff8f8 100%)!important;
-}
-
-/* 50만원 이상 - 화이트 골드 */
-.roller-item.vip-50 .account-donor,
-.roller-item.vip-50 .account-heart,
-.roller-item.vip-50 .account-amount{
-  background:linear-gradient(180deg,#ffffff 0%,#f8f8f8 25%,#d8d8d8 45%,#8b8b8b 62%,#ffffff 82%,#ffffff 100%)!important;
-}
-
-/* 100만원 이상 - 블루 사파이어 메탈 */
-.roller-item.vip-100 .account-donor,
-.roller-item.vip-100 .account-heart,
-.roller-item.vip-100 .account-amount{
-  background:linear-gradient(180deg,#ffffff 0%,#dff5ff 18%,#8ad6ff 42%,#2e72c8 60%,#dff5ff 82%,#ffffff 100%)!important;
-}
-
-/* 금액은 고액에서도 작게 유지 */
+/* 금액은 후원자명보다 작게 유지 */
 .roller-item.vip-account .account-amount{
   font-size:.82em!important;
   margin-left:5px!important;
+}
+
+/* 10만원 이상: 샴페인 골드 */
+.roller-item.vip-10 .account-amount{
+  color:#ffe27a!important;
+  -webkit-text-fill-color:#ffe27a!important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.26),
+    0 2px 3px rgba(0,0,0,.76),
+    0 0 9px rgba(255,226,122,.38)!important;
+}
+
+/* 30만원 이상: 로즈골드 */
+.roller-item.vip-30 .account-amount{
+  color:#ff9fca!important;
+  -webkit-text-fill-color:#ff9fca!important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.22),
+    0 2px 3px rgba(0,0,0,.76),
+    0 0 10px rgba(255,159,202,.44)!important;
+}
+
+/* 50만원 이상: 사파이어 블루 */
+.roller-item.vip-50 .account-amount{
+  color:#75ddff!important;
+  -webkit-text-fill-color:#75ddff!important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.24),
+    0 2px 3px rgba(0,0,0,.76),
+    0 0 11px rgba(117,221,255,.50)!important;
+}
+
+/* 100만원 이상: 프리미엄 화이트골드 */
+.roller-item.vip-100 .account-donor{
+  color:#ffffff!important;
+  -webkit-text-fill-color:#ffffff!important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.30),
+    0 2px 3px rgba(0,0,0,.78),
+    0 0 10px rgba(255,255,255,.34)!important;
+}
+
+.roller-item.vip-100 .account-amount{
+  color:#fff0a8!important;
+  -webkit-text-fill-color:#fff0a8!important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.34),
+    0 2px 3px rgba(0,0,0,.80),
+    0 0 13px rgba(255,240,168,.56),
+    0 0 18px rgba(117,221,255,.24)!important;
 }
 
 /* ===== 공지 ===== */
