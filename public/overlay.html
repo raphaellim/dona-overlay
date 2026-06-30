@@ -1090,6 +1090,100 @@ body.test-bg{
 .roller-item.vip-100 .account-amount{
   background-image:linear-gradient(180deg,#ffffff 0%,#dff5ff 18%,#8ad6ff 42%,#2e72c8 60%,#dff5ff 82%,#ffffff 100%)!important;
 }
+    /* ===== 고액후원 선명한 럭셔리 컬러 최종 ===== */
+
+/* VIP 배경/깨지는 그라데이션 완전 제거 */
+.roller-item.vip-account,
+.roller-item.vip-account:hover,
+.roller-item.vip-account.active{
+  background:transparent!important;
+  border:0!important;
+  box-shadow:none!important;
+}
+
+.roller-item.vip-account::before,
+.roller-item.vip-account::after{
+  display:none!important;
+  content:none!important;
+  background:none!important;
+  animation:none!important;
+  opacity:0!important;
+}
+
+/* 고액 공통 */
+.roller-item.vip-account .account-donor,
+.roller-item.vip-account .account-heart,
+.roller-item.vip-account .account-amount{
+  background:none!important;
+  -webkit-background-clip:initial!important;
+  background-clip:initial!important;
+  -webkit-text-fill-color:currentColor!important;
+  font-weight:1000!important;
+  animation:none!important;
+  filter:none!important;
+  opacity:1!important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.18),
+    0 2px 3px rgba(0,0,0,.65),
+    0 0 6px rgba(255,255,255,.12)!important;
+}
+
+/* 이름은 실버화이트 */
+.roller-item.vip-account .account-donor{
+  color:#f7f7f2!important;
+  max-width:170px!important;
+}
+
+/* 금액은 샴페인 골드 */
+.roller-item.vip-account .account-amount{
+  color:#f6d56a!important;
+  font-size:.82em!important;
+  margin-left:5px!important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.22),
+    0 2px 3px rgba(0,0,0,.68),
+    0 0 8px rgba(246,213,106,.30)!important;
+}
+
+/* 하트는 에메랄드 */
+.roller-item.vip-account .account-heart{
+  color:#39d98a!important;
+  -webkit-text-fill-color:#39d98a!important;
+  text-shadow:
+    0 1px 2px rgba(0,0,0,.65),
+    0 0 7px rgba(57,217,138,.42)!important;
+}
+
+/* 30만 이상: 로즈 포인트 */
+.roller-item.vip-30 .account-amount{
+  color:#ffb1d8!important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.20),
+    0 2px 3px rgba(0,0,0,.68),
+    0 0 8px rgba(255,177,216,.32)!important;
+}
+
+/* 50만 이상: 아이스블루 포인트 */
+.roller-item.vip-50 .account-amount{
+  color:#8ee7ff!important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.20),
+    0 2px 3px rgba(0,0,0,.68),
+    0 0 8px rgba(142,231,255,.35)!important;
+}
+
+/* 100만 이상: 프리미엄 화이트골드 */
+.roller-item.vip-100 .account-donor{
+  color:#ffffff!important;
+}
+
+.roller-item.vip-100 .account-amount{
+  color:#fff2a8!important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.32),
+    0 2px 3px rgba(0,0,0,.72),
+    0 0 10px rgba(255,242,168,.45)!important;
+}
 </style>
   <link rel="stylesheet" href="/assets/css/roulette-overlay.css">
 </head>
