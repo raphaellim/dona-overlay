@@ -1301,6 +1301,43 @@ body.test-bg{
 .roller-item.vip-100 .account-amount{
   color:#fff2a8!important;
 }
+    /* 배지는 전체 폭 금지 */
+.roller-item.vip-account{
+  justify-content:flex-end!important;
+  padding:0!important;
+  background:transparent!important;
+  border:0!important;
+  box-shadow:none!important;
+  overflow:visible!important;
+}
+
+/* 실제 배지 느낌은 텍스트 요소 쪽에만 */
+.roller-item.vip-account .account-donor{
+  max-width:150px!important;
+}
+
+.roller-item.vip-account .account-donor,
+.roller-item.vip-account .account-heart,
+.roller-item.vip-account .account-amount{
+  position:relative!important;
+  z-index:1!important;
+}
+
+/* 배경 박스 제거하고 텍스트만 고급스럽게 */
+.roller-item.vip-account .account-donor,
+.roller-item.vip-account .account-amount{
+  color:#ffe8a3!important;
+  -webkit-text-fill-color:#ffe8a3!important;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.25),
+    0 2px 3px rgba(0,0,0,.72),
+    0 0 9px rgba(255,216,106,.35)!important;
+}
+
+.roller-item.vip-account .account-heart{
+  color:#42ff9a!important;
+  -webkit-text-fill-color:#42ff9a!important;
+}
 </style>
   <link rel="stylesheet" href="/assets/css/roulette-overlay.css">
 </head>
