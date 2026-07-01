@@ -316,15 +316,18 @@ html,body{
   filter:none!important;
 }
 
-/* ===== 고액후원 VIP 텍스트 컬러 전용 FINAL ===== */
-/* 배지/그라데이션/투명 텍스트 전부 OFF: VIP일 때 글자색만 고급스럽게 변경 */
+
+/* ===== 고액후원 VIP 텍스트 그라데이션 FINAL =====
+   - 배경/배지 완전 제거
+   - 후원자명 + 하트 + 금액 모두 텍스트 그라데이션
+   - 한글 깨짐 방지: inline-block + paint order 안정화
+*/
 .roller-item.vip-account,
 .roller-item.vip-account:hover,
 .roller-item.vip-account.active{
   background:transparent!important;
   border:0!important;
   box-shadow:none!important;
-  position:relative!important;
   isolation:auto!important;
 }
 
@@ -332,102 +335,69 @@ html,body{
 .roller-item.vip-account::after{
   display:none!important;
   content:none!important;
-  opacity:0!important;
-  animation:none!important;
   background:none!important;
+  border:0!important;
   box-shadow:none!important;
+  animation:none!important;
+  opacity:0!important;
 }
 
-/* VIP 공통: 깨짐 방지 */
 .roller-item.vip-account .account-donor,
 .roller-item.vip-account .account-heart,
 .roller-item.vip-account .account-amount{
-  background:none!important;
-  background-image:none!important;
-  -webkit-background-clip:initial!important;
-  background-clip:initial!important;
-  -webkit-text-fill-color:currentColor!important;
-  color:currentColor!important;
+  display:inline-block!important;
+  position:relative!important;
+  z-index:1!important;
+  background-repeat:no-repeat!important;
+  background-size:100% 100%!important;
+  -webkit-background-clip:text!important;
+  background-clip:text!important;
+  color:transparent!important;
+  -webkit-text-fill-color:transparent!important;
   -webkit-text-stroke:0!important;
-  animation:none!important;
+  font-weight:1000!important;
   filter:none!important;
   opacity:1!important;
-  font-weight:1000!important;
+  animation:none!important;
+  text-shadow:0 2px 2px rgba(0,0,0,.62)!important;
 }
 
-/* 후원자명: 모든 VIP 공통 화이트골드 */
 .roller-item.vip-account .account-donor{
-  color:#fff7df!important;
   max-width:170px!important;
-  text-shadow:
-    0 1px 0 rgba(255,255,255,.24),
-    0 2px 3px rgba(0,0,0,.74),
-    0 0 7px rgba(255,230,170,.28)!important;
 }
 
-/* 하트: 모든 VIP 공통 에메랄드 */
-.roller-item.vip-account .account-heart{
-  color:#36f28f!important;
-  -webkit-text-fill-color:#36f28f!important;
-  text-shadow:
-    0 1px 2px rgba(0,0,0,.72),
-    0 0 8px rgba(54,242,143,.46)!important;
-}
-
-/* 금액은 후원자명보다 작게 유지 */
 .roller-item.vip-account .account-amount{
   font-size:.82em!important;
   margin-left:5px!important;
 }
 
-/* 10만원 이상: 샴페인 골드 */
+/* 10만원 이상 - 샴페인 골드 */
+.roller-item.vip-10 .account-donor,
+.roller-item.vip-10 .account-heart,
 .roller-item.vip-10 .account-amount{
-  color:#ffe27a!important;
-  -webkit-text-fill-color:#ffe27a!important;
-  text-shadow:
-    0 1px 0 rgba(255,255,255,.26),
-    0 2px 3px rgba(0,0,0,.76),
-    0 0 9px rgba(255,226,122,.38)!important;
+  background-image:linear-gradient(180deg,#ffffff 0%,#fff3b8 22%,#ffd45a 46%,#b78318 66%,#fff0a0 84%,#ffffff 100%)!important;
 }
 
-/* 30만원 이상: 로즈골드 */
+/* 30만원 이상 - 로즈골드 */
+.roller-item.vip-30 .account-donor,
+.roller-item.vip-30 .account-heart,
 .roller-item.vip-30 .account-amount{
-  color:#ff9fca!important;
-  -webkit-text-fill-color:#ff9fca!important;
-  text-shadow:
-    0 1px 0 rgba(255,255,255,.22),
-    0 2px 3px rgba(0,0,0,.76),
-    0 0 10px rgba(255,159,202,.44)!important;
+  background-image:linear-gradient(180deg,#ffffff 0%,#ffd8ea 22%,#ff8fc8 46%,#a94778 66%,#ffe1ef 84%,#ffffff 100%)!important;
 }
 
-/* 50만원 이상: 사파이어 블루 */
+/* 50만원 이상 - 사파이어 */
+.roller-item.vip-50 .account-donor,
+.roller-item.vip-50 .account-heart,
 .roller-item.vip-50 .account-amount{
-  color:#75ddff!important;
-  -webkit-text-fill-color:#75ddff!important;
-  text-shadow:
-    0 1px 0 rgba(255,255,255,.24),
-    0 2px 3px rgba(0,0,0,.76),
-    0 0 11px rgba(117,221,255,.50)!important;
+  background-image:linear-gradient(180deg,#ffffff 0%,#dcf8ff 20%,#76dcff 45%,#1e73d8 66%,#d8f7ff 84%,#ffffff 100%)!important;
 }
 
-/* 100만원 이상: 프리미엄 화이트골드 */
-.roller-item.vip-100 .account-donor{
-  color:#ffffff!important;
-  -webkit-text-fill-color:#ffffff!important;
-  text-shadow:
-    0 1px 0 rgba(255,255,255,.30),
-    0 2px 3px rgba(0,0,0,.78),
-    0 0 10px rgba(255,255,255,.34)!important;
-}
-
+/* 100만원 이상 - 플래티넘 골드 */
+.roller-item.vip-100 .account-donor,
+.roller-item.vip-100 .account-heart,
 .roller-item.vip-100 .account-amount{
-  color:#fff0a8!important;
-  -webkit-text-fill-color:#fff0a8!important;
-  text-shadow:
-    0 1px 0 rgba(255,255,255,.34),
-    0 2px 3px rgba(0,0,0,.80),
-    0 0 13px rgba(255,240,168,.56),
-    0 0 18px rgba(117,221,255,.24)!important;
+  background-image:linear-gradient(180deg,#ffffff 0%,#fff8d6 18%,#ffe36f 38%,#d59b12 58%,#7ddfff 73%,#fff5bf 88%,#ffffff 100%)!important;
+  text-shadow:0 2px 2px rgba(0,0,0,.68),0 0 8px rgba(255,232,120,.25)!important;
 }
 
 /* ===== 공지 ===== */
@@ -1090,50 +1060,7 @@ body.test-bg{
   .account-title::before{font-size:calc(var(--style-account-title-size,20px) * .9)!important}
   .roller{font-size:var(--style-account-roll-size,25px)!important}
   .notice-text{font-size:var(--style-content-size,20px)!important}
-}
-    /* ===== VIP 계좌 텍스트 럭셔리 2톤 최종 ===== */
-.roller-item.vip-account .account-donor,
-.roller-item.vip-account .account-heart,
-.roller-item.vip-account .account-amount{
-  background:none!important;
-  -webkit-background-clip:initial!important;
-  background-clip:initial!important;
-  -webkit-text-fill-color:currentColor!important;
-  font-weight:1000!important;
-  animation:none!important;
-  filter:none!important;
-  opacity:1!important;
-  }
-
-/* 10만 */
-.roller-item.vip-10 .account-donor,
-.roller-item.vip-10 .account-heart,
-.roller-item.vip-10 .account-amount{
-  color:#ffe680!important;
-}
-
-/* 30만 */
-.roller-item.vip-30 .account-donor,
-.roller-item.vip-30 .account-heart,
-.roller-item.vip-30 .account-amount{
-  color:#ff9fd2!important;
-}
-
-/* 50만 */
-.roller-item.vip-50 .account-donor,
-.roller-item.vip-50 .account-heart,
-.roller-item.vip-50 .account-amount{
-  color:#8ee7ff!important;
-}
-
-/* 100만 */
-.roller-item.vip-100 .account-donor,
-.roller-item.vip-100 .account-heart,
-.roller-item.vip-100 .account-amount{
-  color:#fff2a8!important;
-}
-
-</style>
+}</style>
   <link rel="stylesheet" href="/assets/css/roulette-overlay.css">
 </head>
 
@@ -2578,20 +2505,20 @@ const rows = (Array.isArray(creators) ? creators : [])
           const storageKey = "overlay_group_alert_done_" + groupKey;
 
           if (
-  playedDonationAlertKeys.has(groupKey) ||
-  localStorage.getItem(storageKey) === "1"
-) {
-  return;
-}
+            playedDonationAlertKeys.has(groupKey) ||
+            localStorage.getItem(storageKey) === "1"
+          ) {
+            return;
+          }
 
-playedDonationAlertKeys.add(groupKey);
-localStorage.setItem(storageKey, "1");
+          playedDonationAlertKeys.add(groupKey);
+          localStorage.setItem(storageKey, "1");
 
-alertQueue.push({
-  html: makeDonationAlertHtml(group),
-  row: group
-});
- });
+          alertQueue.push({
+            html: makeDonationAlertHtml(group),
+            row: group
+          });
+        });
         const last = newRows[newRows.length - 1];
         const lastKey = donationAlertKey(last);
         lastDonationKey = lastKey;
