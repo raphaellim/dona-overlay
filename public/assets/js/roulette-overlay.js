@@ -332,5 +332,12 @@
     }catch(e){/* keep overlay quiet */}
   }
   window.addEventListener('beforeunload', ()=>{ clearSpinTimer(); clearResultPageTimer(); clearHideTimer(); stopSpinSound(); if(resultAudio){ try{ resultAudio.pause(); resultAudio.currentTime=0; }catch(e){} } });
-  window.addEventListener('DOMContentLoaded', ()=>{ ensureRoot(); poll(); setInterval(poll, 500); });
+  window.addEventListener('DOMContentLoaded', ()=>{
+    ensureRoot();
+    poll();
+    // 메인 오버레이 WebSocket 이벤트가 들어올 때만 확인합니다.
+    // 연결 장애 시에만 저빈도 폴링으로 복구합니다.
+    window.addEventListener('overlay:roulette-changed', poll);
+    setInterval(()=>{ if(!window.__overlaySocketConnected) poll(); }, 5000);
+  });
 })();

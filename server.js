@@ -5,12 +5,53 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
+const http = require('http');
+const { Server } = require('socket.io');
 
 const app = express();
+const httpServer = http.createServer(app);
+const io = new Server(httpServer, {
+  transports: ['websocket', 'polling'],
+  pingInterval: 25000,
+  pingTimeout: 20000,
+  perMessageDeflate: false
+});
 const PORT = process.env.PORT || 3000;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '1234';
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+function realtimeRoom(slug) {
+  return `station:${safeSlug(slug || 'default')}`;
+}
+
+io.on('connection', (socket) => {
+  socket.on('station:join', (payload = {}, ack) => {
+    const slug = safeSlug(payload.station || 'default');
+    for (const room of socket.rooms) {
+      if (room.startsWith('station:')) socket.leave(room);
+    }
+    socket.join(realtimeRoom(slug));
+    if (typeof ack === 'function') ack({ ok: true, station: slug });
+  });
+});
+
+// 성공한 API 변경을 같은 방송국의 오버레이에만 알립니다.
+// 실제 데이터는 기존 API를 통해 한 번 동기화하므로 권한/정규화 로직은 그대로 유지됩니다.
+app.use((req, res, next) => {
+  const method = String(req.method || 'GET').toUpperCase();
+  if (method === 'GET' || method === 'HEAD' || !req.path.startsWith('/api/')) return next();
+  res.on('finish', () => {
+    if (res.statusCode < 200 || res.statusCode >= 300) return;
+    const slug = getStationSlug(req);
+    io.to(realtimeRoom(slug)).emit('overlay:changed', {
+      type: req.path.startsWith('/api/roulette') ? 'roulette' :
+        req.path.startsWith('/api/sound-events') ? 'sound' : 'state',
+      at: Date.now()
+    });
+  });
+  next();
+});
 
 
 const MEDIA_BASE_DIR = path.join(__dirname, 'public', 'uploads');
@@ -3598,6 +3639,6 @@ app.post('/api/reset', async (req, res) => {
 
 app.get('/', (req, res) => res.redirect('/station_login.html'));
 
-app.listen(PORT, () => {
+httpServer.listen(PORT, () => {
   console.log(`Donation multi-station server running on port ${PORT}`);
 });

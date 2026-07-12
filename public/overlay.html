@@ -1137,6 +1137,7 @@ body.test-bg{
   <div id="debugPanel"
     style="position:fixed;left:10px;bottom:10px;width:520px;max-width:calc(100vw - 20px);max-height:320px;overflow:auto;background:rgba(0,0,0,.88);color:#00ff66;font-size:12px;font-family:Consolas,monospace;padding:10px;border:1px solid #00ff66;z-index:9999999;display:none;pointer-events:auto;white-space:pre-wrap">
   </div>
+  <script src="/socket.io/socket.io.js"></script>
   <script>
     if (new URLSearchParams(location.search).get("debug") === "1") { console.log("[overlay-debug] overlay.html loaded", location.href); }
     let latestSettingsForTimer = null;
@@ -2900,9 +2901,48 @@ preloadMissionTimerVideo(
         }
       }
 
+      let refreshBusy = false;
+      let refreshQueued = false;
+      const fetchLatestState = refresh;
+      const realtimeRefresh = async () => {
+        if (refreshBusy) { refreshQueued = true; return; }
+        refreshBusy = true;
+        try { await fetchLatestState(); }
+        finally {
+          refreshBusy = false;
+          if (refreshQueued) { refreshQueued = false; setTimeout(realtimeRefresh, 150); }
+        }
+      };
+
+      refresh = realtimeRefresh.bind(null);
       refresh();
       testSoundFromQuery();
-      setInterval(refresh, 1000);
+      // WebSocket 연결이 끊긴 경우에만 15초 간격으로 안전 동기화합니다.
+      setInterval(() => {
+        if (!window.__overlaySocketConnected) refresh();
+      }, 15000);
+
+      const socket = window.io ? window.io({
+        transports: ['websocket', 'polling'],
+        reconnection: true,
+        reconnectionDelay: 1000,
+        reconnectionDelayMax: 10000
+      }) : null;
+      let eventTimer = null;
+      if (socket) {
+        socket.on('connect', () => {
+          window.__overlaySocketConnected = true;
+          socket.emit('station:join', { station: STATION_SLUG }, () => refresh());
+        });
+        socket.on('disconnect', () => { window.__overlaySocketConnected = false; });
+        socket.on('overlay:changed', (event = {}) => {
+          if (event.type === 'roulette') {
+            window.dispatchEvent(new CustomEvent('overlay:roulette-changed'));
+          }
+          clearTimeout(eventTimer);
+          eventTimer = setTimeout(refresh, 120);
+        });
+      }
     })();
 
     window.addEventListener("resize", () => {
