@@ -1418,6 +1418,37 @@ let missionCountdownLastSec = null;
       let fundingRollIndex = 0;
       let topSlideTimer = null;
       let topSlideIndex = 0;
+      let lastTopSlideSignature = null;
+
+      function releaseTopSlideMedia(box) {
+        if (topSlideTimer) {
+          clearInterval(topSlideTimer);
+          topSlideTimer = null;
+        }
+
+        if (!box) return;
+
+        box.querySelectorAll("img").forEach(img => {
+          img.onload = null;
+          img.onerror = null;
+          img.removeAttribute("src");
+        });
+
+        box.querySelectorAll("video").forEach(video => {
+          video.onloadedmetadata = null;
+          video.onerror = null;
+          try {
+            video.pause();
+            video.removeAttribute("src");
+            video.querySelectorAll("source").forEach(source => source.removeAttribute("src"));
+            video.load();
+          } catch (_) { }
+        });
+
+        box.replaceChildren();
+        topSlideIndex = 0;
+      }
+
       function renderTopSlide(settings) {
         debugLog("renderTopSlide input", {
           stationStyle: settings?.stationStyle,
@@ -1477,12 +1508,15 @@ let missionCountdownLastSec = null;
           });
         }
 
-        if (topSlideTimer) {
-          clearInterval(topSlideTimer);
-          topSlideTimer = null;
-        }
+        const interval = Math.max(800, Number(st.topSlideInterval || 3500));
+        const slideSignature = JSON.stringify({ enabled, media, interval });
 
-        topSlideIndex = 0;
+        // 후원·합계 등 다른 데이터만 변경된 경우 기존 이미지/영상 DOM을 유지합니다.
+        if (slideSignature === lastTopSlideSignature) return;
+        lastTopSlideSignature = slideSignature;
+
+        // 목록 변경 또는 OFF 전환 시 기존 미디어의 다운로드·디코딩·재생 참조를 해제합니다.
+        releaseTopSlideMedia(box);
 
         debugLog("topSlide enabled", enabled);
         debugLog("topSlide sections.media", sections.media);
@@ -1491,7 +1525,7 @@ let missionCountdownLastSec = null;
 
         if (!enabled || !media.length) {
           box.classList.add("hidden");
-          box.innerHTML = "";
+          document.documentElement.style.removeProperty("--active-slide-ratio");
           return;
         }
 
@@ -1574,8 +1608,6 @@ let missionCountdownLastSec = null;
         playActive();
 
         if (media.length > 1) {
-          const interval = Math.max(800, Number(st.topSlideInterval || 3500));
-
           topSlideTimer = setInterval(() => {
             const slides = Array.from(
               box.querySelectorAll(".top-slide-img,.top-slide-video")
