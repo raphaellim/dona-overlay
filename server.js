@@ -3535,7 +3535,11 @@ app.post('/api/manual-entry', async (req, res) => {
       const fundingData = normalizeFundingData(current.fundingData);
       const item = fundingData.items.find(f => String(f.id) === fundingId);
       if (item) {
-        item.current = Math.max(0, Number(item.current || 0) + amount);
+        // 펀딩 현재값은 후원금 10,000원당 1 단위로 누적합니다.
+        // 기존 코드는 원 단위 금액을 그대로 더해 모바일/PC 수동 입력 시 값이 과도하게 증가했습니다.
+        const requestedUnits = Math.max(0, Math.trunc(Number(body.fundingUnits || 0)));
+        const fundingUnits = requestedUnits || Math.floor(amount / 10000);
+        if (fundingUnits > 0) item.current = Math.max(0, Number(item.current || 0) + fundingUnits);
         await saveSharedStationSettings(ctx.station.slug, { fundingData });
         await saveEffectiveSettings(ctx.station.slug, ctx.active.id, { fundingData });
       }

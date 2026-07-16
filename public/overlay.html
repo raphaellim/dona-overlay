@@ -2457,14 +2457,7 @@ const rows = (Array.isArray(creators) ? creators : [])
           closed = true;
           clearTimeout(fallbackTimer);
           $alert.classList.remove("show");
-          $alert.style.visibility = "hidden";
-          $alert.style.opacity = "0";
-          $alert.style.transform = "scale(.92)";
-          ensureAlertIndependent();
           setTimeout(() => {
-            $alert.classList.add("hidden");
-            $alert.style.display = "none";
-            $alert.innerHTML = "";
             alertShowing = false;
             alertPlaying = false;
             playAlertQueue();
@@ -2756,6 +2749,7 @@ const rows = (Array.isArray(creators) ? creators : [])
         root.style.overflow = "visible";
         root.style.transform = "none";
 
+        alertEl.classList.remove("hidden");
         alertEl.style.position = "absolute";
         alertEl.style.left = "0";
         alertEl.style.top = "0";
@@ -2769,16 +2763,14 @@ const rows = (Array.isArray(creators) ? creators : [])
         alertEl.style.transformOrigin = "top center";
 
         if (alertEl.classList.contains("show")) {
-          alertEl.classList.remove("hidden");
           alertEl.style.display = "flex";
           alertEl.style.visibility = "visible";
           alertEl.style.opacity = "1";
           alertEl.style.transform = "scale(1)";
         } else {
-          alertEl.classList.add("hidden");
-          alertEl.style.display = "none";
-          alertEl.style.visibility = "hidden";
-          alertEl.style.opacity = "0";
+          alertEl.style.display = "";
+          alertEl.style.visibility = "";
+          alertEl.style.opacity = "";
           alertEl.style.transform = "scale(.92)";
         }
       }
