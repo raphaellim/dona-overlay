@@ -1143,11 +1143,10 @@ body.test-bg{
     let latestSettingsForTimer = null;
     let showCreatorDonations = true;
     let mission30SoundPlayed = false;
-    let missionVideoCache = null;
-let missionVideoCacheSrc = "";
-let missionCountdownLastSec = null;
+    let missionCountdownLastSec = null;
     (() => {
-      const API_SUMMARY = "/api/summary";
+      const API_SUMMARY = "/api/overlay-state";
+      const API_SUMMARY_FALLBACK = "/api/summary";
       const API_SETTINGS = "/api/settings";
       const PARAMS = new URLSearchParams(location.search);
       const ACCESS_TOKEN = PARAMS.get("token") || "";
@@ -2440,9 +2439,15 @@ const rows = (Array.isArray(creators) ? creators : [])
         const eventId = typeof alertItem === "string" ? "" : (alertItem.eventId || "");
 
         $alert.innerHTML = html;
-        ensureAlertIndependent();
+        // 이전 ALERT에서 남은 인라인 시각 상태를 먼저 완전히 정리합니다.
+        $alert.classList.remove("show");
         $alert.classList.remove("hidden");
+        ["display", "visibility", "opacity", "transform"].forEach((prop) => {
+          $alert.style.removeProperty(prop);
+        });
         ensureAlertIndependent();
+        // 같은 프레임에서 show를 다시 붙일 때도 시작 애니메이션이 확실히 재생되도록 리플로우합니다.
+        void $alert.offsetWidth;
         $alert.classList.add("show");
         ensureAlertIndependent();
 
@@ -2456,12 +2461,29 @@ const rows = (Array.isArray(creators) ? creators : [])
           if (closed) return;
           closed = true;
           clearTimeout(fallbackTimer);
+
+          // show 클래스만 제거하면 위치 보정에서 남긴 인라인 opacity/visibility 때문에
+          // 축소 중간 상태가 화면에 남을 수 있으므로 시각 상태를 함께 초기화합니다.
           $alert.classList.remove("show");
-          setTimeout(() => {
+          ["display", "visibility", "opacity", "transform"].forEach((prop) => {
+            $alert.style.removeProperty(prop);
+          });
+          ensureAlertIndependent();
+
+          const finishClose = () => {
+            $alert.classList.add("hidden");
+            $alert.innerHTML = "";
+            ["display", "visibility", "opacity", "transform"].forEach((prop) => {
+              $alert.style.removeProperty(prop);
+            });
+            ensureAlertIndependent();
             alertShowing = false;
             alertPlaying = false;
             playAlertQueue();
-          }, 280);
+          };
+
+          // CSS 전환이 중단되거나 OBS/Prism이 transitionend를 놓쳐도 반드시 닫힙니다.
+          setTimeout(finishClose, 300);
         };
 
         const accountForDuration = num(row?.accountAmount ?? row?.account_amount);
@@ -2675,32 +2697,42 @@ const rows = (Array.isArray(creators) ? creators : [])
         const params = new URLSearchParams(location.search);
         if (params.get("demo") === "1") return demoData;
 
-        try {
-          const s = await fetchJson(API_SUMMARY);
+        const toOverlayData = (s) => {
           const settings = s.settings && Object.keys(s.settings).length ? s.settings : defaultSettings;
-          const accountDonors = (s.accountDonors && s.accountDonors.length) ? s.accountDonors : aggregateAccountDonorsFromDonations(s.donations || []);
+          const accountDonors = (s.accountDonors && s.accountDonors.length)
+            ? s.accountDonors
+            : aggregateAccountDonorsFromDonations(s.donations || []);
           return {
             settings,
             accountDonors,
             creators: normalizeCreatorRows({ ...s, settings }),
             donations: s.donations || []
           };
+        };
+
+        try {
+          return toOverlayData(await fetchJson(API_SUMMARY));
         } catch (e) {
+          // 서버와 HTML이 순차 배포되는 순간에도 기존 summary로 자동 복구합니다.
           try {
-            const settings = await fetchJson(API_SETTINGS);
-            return {
-              settings,
-              accountDonors: [],
-              creators: zeroCreatorsFromSettings(settings),
-              donations: []
-            };
-          } catch (err) {
-            return {
-              settings: defaultSettings,
-              accountDonors: [],
-              creators: [],
-              donations: []
-            };
+            return toOverlayData(await fetchJson(API_SUMMARY_FALLBACK));
+          } catch (summaryError) {
+            try {
+              const settings = await fetchJson(API_SETTINGS);
+              return {
+                settings,
+                accountDonors: [],
+                creators: zeroCreatorsFromSettings(settings),
+                donations: []
+              };
+            } catch (err) {
+              return {
+                settings: defaultSettings,
+                accountDonors: [],
+                creators: [],
+                donations: []
+              };
+            }
           }
         }
       }
@@ -2749,7 +2781,11 @@ const rows = (Array.isArray(creators) ? creators : [])
         root.style.overflow = "visible";
         root.style.transform = "none";
 
-        alertEl.classList.remove("hidden");
+        // 표시/숨김(opacity, visibility, transform, display)은 CSS 클래스가 전담합니다.
+        // 여기서 인라인으로 고정하면 show 제거 후에도 ALERT가 중간 상태로 남습니다.
+        ["display", "visibility", "opacity", "transform"].forEach((prop) => {
+          alertEl.style.removeProperty(prop);
+        });
         alertEl.style.position = "absolute";
         alertEl.style.left = "0";
         alertEl.style.top = "0";
@@ -2762,36 +2798,8 @@ const rows = (Array.isArray(creators) ? creators : [])
         alertEl.style.margin = "0";
         alertEl.style.transformOrigin = "top center";
 
-        if (alertEl.classList.contains("show")) {
-          alertEl.style.display = "flex";
-          alertEl.style.visibility = "visible";
-          alertEl.style.opacity = "1";
-          alertEl.style.transform = "scale(1)";
-        } else {
-          alertEl.style.display = "";
-          alertEl.style.visibility = "";
-          alertEl.style.opacity = "";
-          alertEl.style.transform = "scale(.92)";
-        }
       }
       
-      function preloadMissionTimerVideo(videoFile){
-  const safeFile = String(videoFile || "mission_30sec.mp4").replace(/[\\\/]/g, "");
-  const src = "/videos/" + safeFile;
-
-  if(missionVideoCache && missionVideoCacheSrc === src) return;
-
-  missionVideoCacheSrc = src;
-  missionVideoCache = document.createElement("video");
-  missionVideoCache.src = src;
-  missionVideoCache.preload = "auto";
-  missionVideoCache.playsInline = true;
-  missionVideoCache.muted = true;
-  missionVideoCache.load();
-}
-      
-
-
 function updateBroadcastTimer() {
   if (!$broadcastTimerValue) return;
 
@@ -2870,12 +2878,6 @@ function updateBroadcastTimer() {
         catch (e) { data = { settings: defaultSettings, accountDonors: [], creators: [], donations: [] }; }
 
         const settings = data.settings || defaultSettings;
-        const timerDataForPreload = settings.broadcastTimerData || {};
-preloadMissionTimerVideo(
-  timerDataForPreload.warningVideoFile ||
-  timerDataForPreload.missionVideoFile ||
-  "mission_30sec.mp4"
-);
         debugLog("refresh settings", { broadcastLiveData: settings.broadcastLiveData, overlaySections: settings.overlaySections, stationStyle: settings.stationStyle });
         debugLog("refresh settings loaded", {
           overlaySections: settings.overlaySections,
@@ -2911,7 +2913,6 @@ preloadMissionTimerVideo(
 
         ensureAlertIndependent();
         checkLatestOptionAlert(data.donations || []);
-        checkManualSoundEvents();
 
         if (signature !== lastSignature) {
           lastSignature = signature;
@@ -2949,10 +2950,23 @@ preloadMissionTimerVideo(
       refresh = realtimeRefresh.bind(null);
       refresh();
       testSoundFromQuery();
-      // WebSocket 연결이 끊긴 경우에만 15초 간격으로 안전 동기화합니다.
+
+      // 소켓 장애가 길어질수록 15초 → 30초 → 60초로 안전 동기화 간격을 늘립니다.
+      // 정상 연결 중에는 이 타이머가 네트워크 요청을 만들지 않습니다.
+      let socketDisconnectedAt = Date.now();
+      let lastFallbackRefreshAt = Date.now();
       setInterval(() => {
-        if (!window.__overlaySocketConnected) refresh();
-      }, 15000);
+        if (window.__overlaySocketConnected) return;
+        const now = Date.now();
+        const disconnectedFor = now - socketDisconnectedAt;
+        const fallbackInterval = disconnectedFor < 60000
+          ? 15000
+          : (disconnectedFor < 300000 ? 30000 : 60000);
+        if (now - lastFallbackRefreshAt < fallbackInterval) return;
+        lastFallbackRefreshAt = now;
+        refresh();
+        checkManualSoundEvents();
+      }, 5000);
 
       const socket = window.io ? window.io({
         transports: ['websocket', 'polling'],
@@ -2961,15 +2975,32 @@ preloadMissionTimerVideo(
         reconnectionDelayMax: 10000
       }) : null;
       let eventTimer = null;
+      let hasConnectedOnce = false;
       if (socket) {
         socket.on('connect', () => {
+          const isReconnect = hasConnectedOnce;
+          hasConnectedOnce = true;
           window.__overlaySocketConnected = true;
-          socket.emit('station:join', { station: STATION_SLUG }, () => refresh());
+          socket.emit('station:join', { station: STATION_SLUG }, () => {
+            // 첫 연결에서는 이미 실행 중인 최초 refresh를 중복 호출하지 않습니다.
+            // 재연결 때만 놓친 상태를 한 번 보정하고 수동 사운드 이벤트를 확인합니다.
+            if (isReconnect) refresh();
+            checkManualSoundEvents();
+          });
         });
-        socket.on('disconnect', () => { window.__overlaySocketConnected = false; });
+        socket.on('disconnect', () => {
+          window.__overlaySocketConnected = false;
+          socketDisconnectedAt = Date.now();
+          lastFallbackRefreshAt = Date.now();
+        });
         socket.on('overlay:changed', (event = {}) => {
           if (event.type === 'roulette') {
             window.dispatchEvent(new CustomEvent('overlay:roulette-changed'));
+            return;
+          }
+          if (event.type === 'sound') {
+            checkManualSoundEvents();
+            return;
           }
           clearTimeout(eventTimer);
           eventTimer = setTimeout(refresh, 120);
