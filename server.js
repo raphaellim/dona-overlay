@@ -3163,15 +3163,20 @@ function buildMissionTimerUpdate(prevRaw, body = {}, opts = {}) {
   const label = has('label') ? String(body.label ?? '').trim() : (Object.prototype.hasOwnProperty.call(prev, 'label') ? String(prev.label ?? '') : '미션타이머');
   const durationInput = has('durationMin') ? body.durationMin : (has('timeoutMin') ? body.timeoutMin : '');
   const durationMin = durationInput === '' || durationInput === null || durationInput === undefined ? NaN : Number(durationInput);
-  const durationMs = Number.isFinite(durationMin) && durationMin > 0
+  let durationMs = Number.isFinite(durationMin) && durationMin > 0
     ? Math.round(durationMin * 60 * 1000)
     : (has('durationMs') ? Math.max(0, Number(body.durationMs || 0)) : Math.max(0, Number(prev.durationMs || 0)));
   const targetAt = has('targetAt') ? String(body.targetAt || '') : (prev.targetAt || '');
   const nowIso = new Date().toISOString();
   const running = opts.running === undefined ? prev.running : opts.running === true;
   let elapsedMs = opts.resetElapsed ? 0 : missionTimerElapsedMs(prev);
+  if (mode === 'until' && !running && has('targetAt') && targetAt) {
+    const targetMs = new Date(targetAt).getTime();
+    if (targetMs) durationMs = Math.max(0, targetMs - Date.now());
+  }
   if (opts.endReset) {
     elapsedMs = mode === 'countdown' ? Math.max(0, Number(durationMs || 0)) : 0;
+    if (mode === 'until') durationMs = 0;
   }
   return normalizeBroadcastTimerData({
     running,
@@ -3222,10 +3227,14 @@ async function pauseMissionTimerHandler(req, res) {
     if (!await managerAllowed(req, ctx.station, ctx.active)) return res.status(401).json({ error: '방송매니저 또는 방송국 관리자 권한이 필요합니다.' });
     const current = await readEffectiveSettings(ctx.station.slug, ctx.active.id);
     const prev = normalizeBroadcastTimerData(current.broadcastTimerData);
+    const pausedRemainingMs = prev.mode === 'until' && prev.targetAt
+      ? Math.max(0, new Date(prev.targetAt).getTime() - Date.now())
+      : Math.max(0, Number(prev.durationMs || 0));
     const broadcastTimerData = normalizeBroadcastTimerData({
       ...prev,
       running: false,
       elapsedMs: missionTimerElapsedMs(prev),
+      durationMs: prev.mode === 'until' ? pausedRemainingMs : prev.durationMs,
       startedAt: '',
       endedAt: new Date().toISOString()
     });

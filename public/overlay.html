@@ -1703,9 +1703,12 @@ body.test-bg{
       function timerBaseMs(settings) {
         const t = settings?.broadcastTimerData || {};
         const now = Date.now();
-        if (t.mode === "until" && t.targetAt) {
-          const target = new Date(t.targetAt).getTime();
-          return Math.max(0, target - now);
+        if (t.mode === "until") {
+          if (t.running && t.targetAt) {
+            const target = new Date(t.targetAt).getTime();
+            return Math.max(0, target - now);
+          }
+          return Math.max(0, Number(t.durationMs || 0));
         }
         let elapsed = Math.max(0, Number(t.elapsedMs || 0));
         if (t.running && t.startedAt) {

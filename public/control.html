@@ -1385,7 +1385,7 @@ load();
   setTimeout(init,800);
 })();
 
-function pcMissionMs(){const t=settings?.broadcastTimerData||{};const now=Date.now();let elapsed=Math.max(0,Number(t.elapsedMs||0));if(t.running&&t.startedAt){const s=new Date(t.startedAt).getTime();if(s)elapsed+=Math.max(0,now-s);}if(t.mode==='until'&&t.targetAt){const target=new Date(t.targetAt).getTime();return Math.max(0,target-now);}if(t.mode==='countdown'){const dur=Math.max(0,Number(t.durationMs||0));return Math.max(0,dur-elapsed);}return elapsed;}
+function pcMissionMs(){const t=settings?.broadcastTimerData||{};const now=Date.now();let elapsed=Math.max(0,Number(t.elapsedMs||0));if(t.running&&t.startedAt){const s=new Date(t.startedAt).getTime();if(s)elapsed+=Math.max(0,now-s);}if(t.mode==='until'){if(t.running&&t.targetAt){const target=new Date(t.targetAt).getTime();return Math.max(0,target-now);}return Math.max(0,Number(t.durationMs||0));}if(t.mode==='countdown'){const dur=Math.max(0,Number(t.durationMs||0));return Math.max(0,dur-elapsed);}return elapsed;}
 function pcHms(ms){const sec=Math.max(0,Math.floor(Number(ms||0)/1000));return [Math.floor(sec/3600),Math.floor((sec%3600)/60),sec%60].map(v=>String(v).padStart(2,'0')).join(':')}
 function renderPcMissionClock(){
   const t=settings?.broadcastTimerData||{};
