@@ -16,6 +16,7 @@
   let doneRunId = '';
   let flowToken = 0;
   let advancing = false;
+  let advanceSyncTail = Promise.resolve();
   const completedRunKey = `roulette_completed_${station}`;
   const MIN_RESULT_VISIBLE_MS = 3100;
   const RESULT_POP_DELAY_MS = 750;
@@ -183,6 +184,27 @@
     const title = String(run.listTitle || '룰렛').trim();
     return donor ? `${donor} · ${title}` : title;
   }
+  function localHistoryRow(run){
+    return {
+      id: run.runId, mode: run.mode, listId: run.listId, listTitle: run.listTitle,
+      result: run.result, donor: run.donor, amount: run.amount, createdAt: Date.now(),
+      batchId: run.batchId || '', sequence: Number(run.sequence || 0), total: Number(run.total || 0)
+    };
+  }
+  function buildLocalNext(run, roulette){
+    const queue=Array.isArray(roulette?.queue)?roulette.queue:[];
+    if(!queue.length) return null;
+    const next={...queue[0],startedAt:Date.now(),running:true};
+    const history=[...(roulette.history||[])];
+    if(!history.some(h=>String(h.id||'')===String(next.runId||''))) history.push(localHistoryRow(next));
+    return {run:next,roulette:{...roulette,current:next,queue:queue.slice(1),history:history.slice(-Math.max(10,Number(roulette.historyLimit||50)))}};
+  }
+  function syncAdvance(runId){
+    if(!runId) return;
+    advanceSyncTail = advanceSyncTail
+      .then(()=>postJson('/api/roulette/advance',{runId}))
+      .catch(()=>null);
+  }
   function showDone(run, roulette){
     if(!run || !run.runId) return;
     if(doneRunId === run.runId) return;
@@ -222,21 +244,21 @@
       playResultSound(run.runId);
 
       clearHideTimer();
-      hideTimer = setTimeout(async ()=>{
+      hideTimer = setTimeout(()=>{
         if(myToken !== flowToken) return;
-        if(advancing) return;
-        advancing = true;
-        try{
-          markCompletedRun(run.runId);
-          const out = await postJson('/api/roulette/advance', {runId: run.runId});
-          advancing = false;
-          if(out.run && out.run.runId && out.run.runId !== run.runId){
-            lastRunId = out.run.runId;
-            root.classList.remove('done','stopped');
-            startSpin(out.run, out.roulette || roulette);
-            return;
-          }
-        }catch(e){ advancing = false; }
+        markCompletedRun(run.runId);
+
+        // 연속 룰렛은 시작 시 이미 결과 큐가 만들어져 있습니다.
+        // 다음 회차 화면은 DB 응답을 기다리지 않고 즉시 시작하고, 서버 저장만 뒤에서 순차 동기화합니다.
+        const localNext = buildLocalNext(run, roulette);
+        syncAdvance(run.runId);
+        if(localNext && localNext.run?.runId){
+          lastRunId = localNext.run.runId;
+          root.classList.remove('done','stopped');
+          startSpin(localNext.run, localNext.roulette);
+          return;
+        }
+
         root.classList.remove('show','done','stopped','spinning');
         activeRunId = '';
         doneRunId = '';
@@ -338,6 +360,6 @@
     // 메인 오버레이 WebSocket 이벤트가 들어올 때만 확인합니다.
     // 연결 장애 시에만 저빈도 폴링으로 복구합니다.
     window.addEventListener('overlay:roulette-changed', poll);
-    setInterval(()=>{ if(!window.__overlaySocketConnected) poll(); }, 5000);
+    setInterval(()=>{ if(!window.__overlaySocketConnected) poll(); }, 15000);
   });
 })();

@@ -483,9 +483,19 @@ function pickRouletteWinner(list) {
 
 async function saveRouletteForContext(ctx, roulette) {
   const normalized = normalizeRouletteData(roulette);
-  await saveSharedStationSettings(ctx.station.slug, { roulette: normalized });
-  await saveEffectiveSettings(ctx.station.slug, ctx.active.id, { roulette: normalized });
-  return normalized;
+  return await withSettingsMutation(async () => {
+    const global = await readGlobalSettings();
+    const stationSettings = { ...(global.stationSettings || {}) };
+    const stationBucket = { ...(stationSettings[ctx.station.slug] || {}) };
+    const currentShared = stationBucket._shared && typeof stationBucket._shared === 'object' ? stationBucket._shared : {};
+    const currentScoped = stationBucket[ctx.active.id] && typeof stationBucket[ctx.active.id] === 'object' ? stationBucket[ctx.active.id] : {};
+
+    stationBucket._shared = { ...currentShared, roulette: normalized };
+    stationBucket[ctx.active.id] = { ...currentScoped, roulette: normalized };
+    stationSettings[ctx.station.slug] = stationBucket;
+    await writeGlobalSettings({ ...global, stationSettings });
+    return normalized;
+  });
 }
 
 function makeRouletteHistoryRow(run) {
@@ -599,9 +609,8 @@ async function maybeStartAutoRoulette(ctx, amount, donor = '', body = {}) {
   }
 }
 
-async function advanceRouletteQueue(ctx, currentRunId = '') {
-  const currentSettings = await readEffectiveSettings(ctx.station.slug, ctx.active.id);
-  const roulette = normalizeRouletteData(currentSettings.roulette);
+async function advanceRouletteQueue(ctx, currentRunId = '', preloadedRoulette = null) {
+  const roulette = preloadedRoulette ? normalizeRouletteData(preloadedRoulette) : normalizeRouletteData((await readEffectiveSettings(ctx.station.slug, ctx.active.id)).roulette);
   if (!roulette.current || (currentRunId && roulette.current.runId !== currentRunId)) {
     return { roulette, run: null };
   }
@@ -643,7 +652,7 @@ async function cleanupExpiredRoulette(ctx) {
   // 다음 회차가 자동 진행되게 합니다. 이전에는 /api/roulette/advance 버튼을 눌러야
   // queue가 다음 current로 넘어가서 크리에이터 페이지가 첫 결과에 멈췄습니다.
   if ((roulette.queue || []).length && expired) {
-    const out = await advanceRouletteQueue(ctx, String(roulette.current.runId || ''));
+    const out = await advanceRouletteQueue(ctx, String(roulette.current.runId || ''), roulette);
     return out.roulette;
   }
 
@@ -798,11 +807,14 @@ function effectiveKaraokeData(globalKaraoke, sharedKaraoke, scopedKaraoke) {
   const base = normalizeKaraokeData(hasShared ? sharedKaraoke : (globalKaraoke || {}));
   const scoped = hasScoped ? normalizeKaraokeData(scopedKaraoke) : null;
 
+  const scopedHasUsers = hasScoped && Object.prototype.hasOwnProperty.call(scopedKaraoke, 'users');
+
   return normalizeKaraokeData({
     title: hasScoped && Object.prototype.hasOwnProperty.call(scopedKaraoke, 'title') ? scoped.title : base.title,
     notice: hasScoped && (Object.prototype.hasOwnProperty.call(scopedKaraoke, 'notice') || Object.prototype.hasOwnProperty.call(scopedKaraoke, 'ticker')) ? scoped.notice : base.notice,
-    // 코인 잔량은 방송 간 이월되어야 하므로 공유값을 기준으로 사용합니다.
-    users: base.users,
+    // 현재 방송에 users가 저장되어 있으면 그 값을 우선합니다.
+    // 삭제 직후 공유 이월값이 다시 병합되어 코인이 되살아나는 현상을 막습니다.
+    users: scopedHasUsers ? scoped.users : base.users,
     // 노래/예약/진행/보류/완료 상태와 당일 코인 로그는 당일 방송 데이터만 사용합니다.
     songs: scoped ? scoped.songs : [],
     carryoverUsers: scoped && scoped.carryoverUsers.length ? scoped.carryoverUsers : base.users,
@@ -1032,6 +1044,13 @@ function requireDb(res) {
     return false;
   }
   return true;
+}
+
+let settingsMutationTail = Promise.resolve();
+function withSettingsMutation(task) {
+  const run = settingsMutationTail.then(task, task);
+  settingsMutationTail = run.catch(() => {});
+  return run;
 }
 
 async function readGlobalSettings() {
@@ -1314,27 +1333,24 @@ function pickStationSharedSettings(settings) {
 }
 
 async function saveSharedStationSettings(stationSlug, updates) {
-  const global = await readGlobalSettings();
-  const stationSettings = { ...(global.stationSettings || {}) };
-  const stationBucket = { ...(stationSettings[stationSlug] || {}) };
-  const currentShared = stationBucket._shared && typeof stationBucket._shared === 'object' ? stationBucket._shared : {};
-  const nextShared = { ...currentShared };
+  return await withSettingsMutation(async () => {
+    const global = await readGlobalSettings();
+    const stationSettings = { ...(global.stationSettings || {}) };
+    const stationBucket = { ...(stationSettings[stationSlug] || {}) };
+    const currentShared = stationBucket._shared && typeof stationBucket._shared === 'object' ? stationBucket._shared : {};
+    const nextShared = { ...currentShared };
 
-  for (const key of STATION_SHARED_SETTING_FIELDS) {
-    if (updates[key] !== undefined) nextShared[key] = updates[key];
-  }
+    for (const key of STATION_SHARED_SETTING_FIELDS) {
+      if (updates[key] !== undefined) nextShared[key] = updates[key];
+    }
 
-  stationBucket._shared = pickStationSharedSettings({ ...currentShared, ...nextShared });
-  stationSettings[stationSlug] = stationBucket;
-
-  return await writeGlobalSettings({
-    ...global,
-    stationSettings
+    stationBucket._shared = pickStationSharedSettings({ ...currentShared, ...nextShared });
+    stationSettings[stationSlug] = stationBucket;
+    return await writeGlobalSettings({ ...global, stationSettings });
   });
 }
 
-async function readEffectiveSettings(stationSlug, broadcastId) {
-  const global = await readGlobalSettings();
+function effectiveSettingsFromGlobal(global, stationSlug, broadcastId) {
   const stationMap = global.stationSettings && typeof global.stationSettings === 'object' ? global.stationSettings : {};
   const stationSettings = stationMap[stationSlug] && typeof stationMap[stationSlug] === 'object' ? stationMap[stationSlug] : {};
   const stationShared = stationSettings._shared && typeof stationSettings._shared === 'object' ? stationSettings._shared : {};
@@ -1346,8 +1362,6 @@ async function readEffectiveSettings(stationSlug, broadcastId) {
     ...global,
     ...stationShared,
     ...scoped,
-
-    // 공지/펀딩/스타일은 방송국별 공통값을 우선 사용합니다.
     title: stationShared.title ?? global.title,
     titleImage: stationShared.titleImage ?? global.titleImage,
     noticeTitle: stationShared.noticeTitle ?? global.noticeTitle,
@@ -1357,29 +1371,29 @@ async function readEffectiveSettings(stationSlug, broadcastId) {
     fundingData: stationShared.fundingData ?? global.fundingData,
     allowanceData: scoped.allowanceData ?? stationShared.allowanceData ?? global.allowanceData,
     stationStyle: stationShared.stationStyle ?? global.stationStyle,
-
     stationSettings: global.stationSettings || {}
   });
-
-  // 노래방은 새로고침/ON-OFF 때는 현재 방송 선곡을 유지하고,
-  // 다음 방송에서는 코인만 이월되도록 공유값(코인) + 방송별값(선곡)을 병합합니다.
   merged.karaokeData = effectiveKaraokeData(global.karaokeData, stationShared.karaokeData, scoped.karaokeData);
   return merged;
 }
 
-async function saveEffectiveSettings(stationSlug, broadcastId, updates) {
+async function readEffectiveSettings(stationSlug, broadcastId) {
   const global = await readGlobalSettings();
-  const stationSettings = { ...(global.stationSettings || {}) };
-  const stationBucket = { ...(stationSettings[stationSlug] || {}) };
-  const current = await readEffectiveSettings(stationSlug, broadcastId);
-  const effective = normalizeSettings({ ...current, ...(updates || {}) });
+  return effectiveSettingsFromGlobal(global, stationSlug, broadcastId);
+}
 
-  stationBucket[broadcastId] = pickScopedSettings(effective);
-  stationSettings[stationSlug] = stationBucket;
+async function saveEffectiveSettings(stationSlug, broadcastId, updates) {
+  return await withSettingsMutation(async () => {
+    const global = await readGlobalSettings();
+    const stationSettings = { ...(global.stationSettings || {}) };
+    const stationBucket = { ...(stationSettings[stationSlug] || {}) };
+    const current = effectiveSettingsFromGlobal(global, stationSlug, broadcastId);
+    const effective = normalizeSettings({ ...current, ...(updates || {}) });
 
-  return await writeGlobalSettings({
-    ...global,
-    stationSettings
+    stationBucket[broadcastId] = pickScopedSettings(effective);
+    stationSettings[stationSlug] = stationBucket;
+
+    return await writeGlobalSettings({ ...global, stationSettings });
   });
 }
 
@@ -1556,7 +1570,7 @@ async function accessGuard(req, res, next) {
       }
     }
 
-    if (req.method === 'GET' && ['/api/settings', '/api/summary', '/api/donations', '/api/sound-events'].includes(pathOnly)) {
+    if (req.method === 'GET' && ['/api/settings', '/api/summary', '/api/overlay-state', '/api/donations', '/api/sound-events'].includes(pathOnly)) {
       const station = await getStation(req);
       if (!station) return res.status(404).json({ error: '방송국을 찾을 수 없습니다.' });
       const active = await ensureActiveBroadcast(station.id);
@@ -1809,6 +1823,27 @@ function dbRowToDonation(row) {
 
 async function readDonations(stationId, broadcastId) {
   let q = supabase.from('donations').select('*').eq('station_id', stationId).order('created_at', { ascending: true });
+  if (broadcastId) q = q.eq('broadcast_id', broadcastId);
+
+  const { data, error } = await q;
+  if (error) throw error;
+  return (data || []).map(dbRowToDonation);
+}
+
+// 오버레이는 상세 페이지용 전체 행/중복 집계가 필요하지 않습니다.
+// 필요한 컬럼만 읽어 Render↔DB 전송량과 서버 가공량을 줄입니다.
+async function readOverlayDonations(stationId, broadcastId) {
+  const columns = [
+    'id', 'station_id', 'broadcast_id', 'created_at', 'donor', 'creator',
+    'process_type', 'account_amount', 'toonie_amount', 'total_amount',
+    'display_amount', 'smoke', 'nosmoke', 'eat', 'noeat', 'checks',
+    'result_label', 'memo'
+  ].join(',');
+  let q = supabase
+    .from('donations')
+    .select(columns)
+    .eq('station_id', stationId)
+    .order('created_at', { ascending: true });
   if (broadcastId) q = q.eq('broadcast_id', broadcastId);
 
   const { data, error } = await q;
@@ -2976,6 +3011,43 @@ app.post('/api/karaoke-data', async (req, res) => {
   }
 });
 
+app.delete('/api/karaoke-user/:nick', async (req, res) => {
+  try {
+    if (!requireDb(res)) return;
+    const ctx = await getStationContext(req, res);
+    if (!ctx) return;
+    const fullAdmin = await stationAllowed(req, ctx.station);
+    const manager = await broadcastPasswordAllowed(req, ctx.active);
+    if (!fullAdmin && !manager) {
+      return res.status(401).json({ error: '방송매니저 또는 방송국 관리자 권한이 필요합니다.' });
+    }
+
+    const nick = normName(String(req.params.nick || ''));
+    if (!nick) return res.status(400).json({ error: '삭제할 닉네임이 필요합니다.' });
+
+    const current = await readEffectiveSettings(ctx.station.slug, ctx.active.id);
+    const karaokeData = normalizeKaraokeData(current.karaokeData || {});
+    const before = karaokeData.users.length;
+
+    karaokeData.users = karaokeData.users.filter(user => user.nick !== nick);
+    // 현재 방송의 '이월' 표시에서도 삭제된 닉네임이 다시 나타나지 않게 스냅샷도 함께 제거합니다.
+    karaokeData.carryoverUsers = karaokeData.carryoverUsers.filter(user => user.nick !== nick);
+
+    await saveEffectiveSettings(ctx.station.slug, ctx.active.id, { karaokeData });
+    await saveSharedStationSettings(ctx.station.slug, { karaokeData: karaokeCarryoverData(karaokeData) });
+
+    const effective = await readEffectiveSettings(ctx.station.slug, ctx.active.id);
+    res.json({
+      ok: true,
+      deleted: before !== karaokeData.users.length,
+      nick,
+      karaokeData: effective.karaokeData
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message || '노래방 코인 삭제 실패' });
+  }
+});
+
 app.post('/api/funding-data', async (req, res) => {
   try {
     if (!requireDb(res)) return;
@@ -3253,6 +3325,117 @@ function safeBuildSummary(settings, donations, broadcast, station) {
     };
   }
 }
+
+function buildOverlayState(settings, donations) {
+  const safeSettings = normalizeSettings(settings || {});
+  const creators = new Map();
+  const accountDonorMap = new Map();
+
+  for (const name of safeSettings.creators || []) {
+    const key = normName(name);
+    if (key) creators.set(key, emptyCreator(key));
+  }
+
+  for (const d of donations || []) {
+    const creator = normName(d.creator);
+    const donor = normName(d.donor);
+    if (!creator || !donor) continue;
+    if (!creators.has(creator)) creators.set(creator, emptyCreator(creator));
+
+    const row = creators.get(creator);
+    const account = Number(d.accountAmount || 0);
+    const toonie = Number(d.toonieAmount || 0);
+    const total = account + toonie;
+
+    row.account += account;
+    row.toonie += toonie;
+    row.total += total;
+    row.smoke += Number(d.smoke || 0);
+    row.nosmoke += Number(d.nosmoke || 0);
+    row.eat += Number(d.eat || 0);
+    row.noeat += Number(d.noeat || 0);
+    addPresetCheck(row, d);
+
+    if (account > 0) {
+      if (!accountDonorMap.has(donor)) {
+        accountDonorMap.set(donor, { donor, amount: 0, amountText: '0', latestAt: d.createdAt });
+      }
+      const donorRow = accountDonorMap.get(donor);
+      donorRow.amount += account;
+      donorRow.amountText = displayManText(donorRow.amount);
+      if (new Date(d.createdAt) > new Date(donorRow.latestAt)) donorRow.latestAt = d.createdAt;
+    }
+  }
+
+  const creatorRows = Array.from(creators.values()).map(row => ({
+    creator: row.creator,
+    account: row.account,
+    toonie: row.toonie,
+    total: row.total,
+    accountText: displayManText(row.account),
+    toonieText: displayManText(row.toonie),
+    totalText: displayManText(row.total),
+    smoke: row.smoke,
+    nosmoke: row.nosmoke,
+    eat: row.eat,
+    noeat: row.noeat,
+    smokeNet: row.smoke - row.nosmoke,
+    eatNet: row.eat - row.noeat,
+    presetNets: Object.values(row.presetNets || {})
+  })).sort((a, b) => b.total - a.total);
+
+  const accountDonors = Array.from(accountDonorMap.values())
+    .sort((a, b) => new Date(b.latestAt) - new Date(a.latestAt))
+    .slice(0, 10);
+
+  // ALERT 기준점과 짧은 소켓 장애 복구에 필요한 최신 행만 전달합니다.
+  const recentDonations = (donations || []).slice(-160).map(d => ({
+    id: d.id,
+    createdAt: d.createdAt,
+    donor: d.donor,
+    creator: d.creator,
+    processType: d.processType,
+    accountAmount: Number(d.accountAmount || 0),
+    toonieAmount: Number(d.toonieAmount || 0),
+    totalAmount: Number(d.totalAmount || (Number(d.accountAmount || 0) + Number(d.toonieAmount || 0))),
+    checks: Array.isArray(d.checks) ? d.checks : [],
+    silentAlert: d.silentAlert === true,
+    manualKind: d.manualKind || '',
+    sourceType: d.sourceType || ''
+  }));
+
+  return {
+    settings: safeSettings,
+    creators: creatorRows,
+    accountDonors,
+    donations: recentDonations
+  };
+}
+
+app.get('/api/overlay-state', async (req, res) => {
+  try {
+    if (!requireDb(res)) return;
+    const ctx = await getStationContext(req, res);
+    if (!ctx) return;
+    const role = await accessRole(req, ctx.station, ctx.active);
+    const overlayTokenOk = await stationTokenAllowed(req, ctx.station);
+    if (role === 'broadcast_manager' && !overlayTokenOk) {
+      return res.status(403).json({ error: '방송매니저는 오버레이 조회 토큰이 필요합니다.' });
+    }
+
+    const broadcastId = req.query.broadcastId || ctx.active.id;
+    const [settings, donations] = await Promise.all([
+      readEffectiveSettings(ctx.station.slug, broadcastId),
+      readOverlayDonations(ctx.station.id, broadcastId)
+    ]);
+
+    res.set('Cache-Control', 'no-store');
+    res.json(buildOverlayState(settings, donations));
+  } catch (e) {
+    console.error('[api/overlay-state]', e);
+    res.status(500).json({ error: e.message || '오버레이 상태 조회 실패' });
+  }
+});
 
 app.get('/api/summary', async (req, res) => {
   try {

@@ -4,6 +4,7 @@ let editingListId='';
 let sequenceRunning=false;
 let singleRunLock=false;
 let currentRole='guest';
+let sequenceWatchTimer=null;
 function isManagerRole(){return currentRole==='broadcast_manager'}
 const MIN_RESULT_VISIBLE_MS=3100;
 const IS_MOBILE=document.body.classList.contains('mobile');
@@ -47,6 +48,24 @@ async function startRoulette(extra={}){
     }
   }
 }
+function stopSequenceWatch(){if(sequenceWatchTimer){clearTimeout(sequenceWatchTimer);sequenceWatchTimer=null;}}
+function watchSequence(batchId,total){
+  stopSequenceWatch();
+  const tick=async()=>{
+    try{
+      const d=await api('/api/roulette');
+      roulette=d.roulette||roulette;
+      const rows=(roulette.history||[]).filter(x=>x.batchId===batchId);
+      const cur=roulette.current;
+      const done=rows.length>=total && (!cur || cur.batchId!==batchId);
+      renderResult();
+      setStatus(done?`연속 룰렛 완료: ${total}회`:`연속 룰렛 실행 중: ${Math.min(total,rows.length||1)}/${total}`);
+      if(done){setButtonsRunning(false);stopSequenceWatch();return;}
+    }catch(e){}
+    sequenceWatchTimer=setTimeout(tick,2500);
+  };
+  sequenceWatchTimer=setTimeout(tick,1800);
+}
 async function startMultiRoulette(){
   try{
     if(!selectedListId)return alert('룰렛을 선택하세요.');
@@ -59,14 +78,10 @@ async function startMultiRoulette(){
     const d=await api('/api/roulette/start',{method:'POST',body:JSON.stringify({listId:selectedListId,duration:roulette.duration||3600,count,batchId,donor})});
     roulette=d.roulette||roulette;
     render();
-    setStatus(`연속 룰렛 실행 중: ${count}회`);
+    setStatus(`연속 룰렛 실행 중: 1/${count}`);
     showTab('result');
-  }catch(e){alert(e.message)}
-  finally{
-    const count=Math.max(1,Math.min(50,Math.trunc(Number(RQ('#repeatCount')?.value||1))));
-    const wait=(Math.max(1200,Number(roulette.duration||3600))+MIN_RESULT_VISIBLE_MS)*count;
-    setTimeout(()=>{setButtonsRunning(false);setStatus('다음 룰렛 실행 가능');load();}, wait);
-  }
+    watchSequence(batchId,count);
+  }catch(e){setButtonsRunning(false);stopSequenceWatch();alert(e.message)}
 }
 async function resetOverlay(){try{await api('/api/roulette/reset',{method:'POST',body:'{}'});setStatus('오버레이 룰렛 숨김');await load();}catch(e){alert(e.message)}}
 async function clearHistory(){if(!confirm('룰렛 결과 기록을 삭제할까요?'))return;try{await api('/api/roulette/history/clear',{method:'POST',body:'{}'});await load();}catch(e){alert(e.message)}}
