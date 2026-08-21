@@ -2710,7 +2710,7 @@ app.post('/api/allowance/adjust', async (req, res) => {
     if (amount <= 0) return res.status(400).json({ error: '용돈 금액을 입력하세요.' });
 
     const nextBalance = direction === 'minus'
-      ? Math.max(0, Number(allowanceData.balance || 0) - amount)
+      ? Number(allowanceData.balance || 0) - amount
       : Number(allowanceData.balance || 0) + amount;
 
     const next = normalizeAllowanceData({
