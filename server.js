@@ -41,6 +41,9 @@ io.on('connection', (socket) => {
 app.use((req, res, next) => {
   const method = String(req.method || 'GET').toUpperCase();
   if (method === 'GET' || method === 'HEAD' || !req.path.startsWith('/api/')) return next();
+  // 파일 업로드/삭제 자체는 오버레이 상태값을 바꾸지 않습니다.
+  // 큰 파일 업로드 직후 불필요한 overlay-state 재조회가 겹치지 않도록 제외합니다.
+  if (req.path.startsWith('/api/media')) return next();
   res.on('finish', () => {
     if (res.statusCode < 200 || res.statusCode >= 300) return;
     const slug = getStationSlug(req);
@@ -114,7 +117,19 @@ const mediaUpload = multer({
   }
 });
 
+const mediaListCache = new Map();
+function invalidateMediaListCache(slug) {
+  const safe = safeSlug(slug || 'default');
+  for (const key of mediaListCache.keys()) {
+    if (key.startsWith(safe + '|')) mediaListCache.delete(key);
+  }
+}
+
 function listMediaFiles(slug = 'default', options = {}) {
+  const safe = safeSlug(slug || 'default');
+  const cacheKey = safe + '|' + (options.includeShared === false ? 'local' : 'shared');
+  const cached = mediaListCache.get(cacheKey);
+  if (cached && (Date.now() - cached.at) < 5000) return cached.items;
   const items = [];
   const dirs = stationMediaDirs(slug);
   const scan = (dir, type, urlBase) => {
@@ -159,7 +174,9 @@ function listMediaFiles(slug = 'default', options = {}) {
       }
     }
   }
-  return items.sort((a,b)=> new Date(b.updatedAt) - new Date(a.updatedAt));
+  const sorted = items.sort((a,b)=> new Date(b.updatedAt) - new Date(a.updatedAt));
+  mediaListCache.set(cacheKey, { at: Date.now(), items: sorted });
+  return sorted;
 }
 
 const supabase = SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY
@@ -171,6 +188,13 @@ const supabase = SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY
 app.use(cors());
 app.use(express.json({ limit: '20mb' }));
 app.use(accessGuard);
+// 업로드 파일명은 timestamp+random으로 유일하므로 장기 브라우저 캐시가 안전합니다.
+// OBS/Prism 재연결 때 같은 슬라이드를 다시 내려받아 API 대역폭을 뺏는 것을 줄입니다.
+app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads'), {
+  maxAge: '30d',
+  immutable: true,
+  etag: true
+}));
 app.use(express.static('public'));
 
 function defaultPresets() {
@@ -2645,7 +2669,9 @@ app.post('/api/media/upload', mediaUpload.array('files', 10), async (req, res) =
         size: f.size
       };
     });
-    res.json({ ok: true, uploaded, media: listMediaFiles(ctx.station.slug) });
+    invalidateMediaListCache(ctx.station.slug);
+    // 클라이언트가 업로드 직후 /api/media를 한 번 조회하므로 여기서 다시 전체 폴더를 스캔하지 않습니다.
+    res.json({ ok: true, uploaded });
   } catch (e) {
     res.status(500).json({ error: e.message || '업로드 실패' });
   }
@@ -2671,7 +2697,8 @@ app.delete('/api/media', async (req, res) => {
       return res.status(400).json({ error: '삭제 경로가 올바르지 않습니다.' });
     }
     if (fs.existsSync(abs)) fs.unlinkSync(abs);
-    res.json({ ok: true, media: listMediaFiles(ctx.station.slug) });
+    invalidateMediaListCache(ctx.station.slug);
+    res.json({ ok: true });
   } catch (e) {
     res.status(500).json({ error: e.message || '삭제 실패' });
   }
@@ -3413,8 +3440,12 @@ function buildOverlayState(settings, donations) {
     sourceType: d.sourceType || ''
   }));
 
+  // 오버레이에는 현재 유효 설정만 필요합니다. 방송국/방송별 전체 누적 stationSettings를
+  // 매번 내려보내면 DB가 커질수록 응답량과 JSON 파싱 시간이 함께 증가합니다.
+  const { stationSettings: _historicalStationSettings, ...overlaySettings } = safeSettings;
+
   return {
-    settings: safeSettings,
+    settings: overlaySettings,
     creators: creatorRows,
     accountDonors,
     donations: recentDonations

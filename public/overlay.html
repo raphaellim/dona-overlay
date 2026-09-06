@@ -1418,209 +1418,217 @@ body.test-bg{
       let topSlideTimer = null;
       let topSlideIndex = 0;
       let lastTopSlideSignature = null;
+      let topSlideGeneration = 0;
+      let topSlideSwitching = false;
+      let topSlideMedia = [];
+      let topSlideIntervalMs = 3500;
+
+      function isTopSlideVideo(src) {
+        return /\.(mp4|webm|mov)(\?|#|$)/i.test(String(src || ""));
+      }
+
+      function applyTopSlideRatio(el) {
+        if (!el) return;
+        if (el.tagName === "IMG" && el.naturalWidth && el.naturalHeight) {
+          document.documentElement.style.setProperty("--active-slide-ratio", el.naturalWidth + " / " + el.naturalHeight);
+        } else if (el.tagName === "VIDEO" && el.videoWidth && el.videoHeight) {
+          document.documentElement.style.setProperty("--active-slide-ratio", el.videoWidth + " / " + el.videoHeight);
+        }
+      }
+
+      function disposeTopSlideElement(el) {
+        if (!el) return;
+        try {
+          if (el.tagName === "VIDEO") {
+            el.pause();
+            el.removeAttribute("src");
+            el.querySelectorAll("source").forEach(source => source.removeAttribute("src"));
+            el.load();
+          } else if (el.tagName === "IMG") {
+            el.removeAttribute("src");
+          }
+        } catch (_) { }
+        try { el.remove(); } catch (_) { }
+      }
 
       function releaseTopSlideMedia(box) {
         if (topSlideTimer) {
           clearInterval(topSlideTimer);
           topSlideTimer = null;
         }
-
-        if (!box) return;
-
-        box.querySelectorAll("img").forEach(img => {
-          img.onload = null;
-          img.onerror = null;
-          img.removeAttribute("src");
-        });
-
-        box.querySelectorAll("video").forEach(video => {
-          video.onloadedmetadata = null;
-          video.onerror = null;
-          try {
-            video.pause();
-            video.removeAttribute("src");
-            video.querySelectorAll("source").forEach(source => source.removeAttribute("src"));
-            video.load();
-          } catch (_) { }
-        });
-
-        box.replaceChildren();
+        topSlideGeneration += 1;
+        topSlideSwitching = false;
+        if (box) Array.from(box.children).forEach(disposeTopSlideElement);
+        if (box) box.replaceChildren();
         topSlideIndex = 0;
+        topSlideMedia = [];
+      }
+
+      function createTopSlideElement(src, idx, active) {
+        let el;
+        if (isTopSlideVideo(src)) {
+          el = document.createElement("video");
+          el.muted = true;
+          el.playsInline = true;
+          el.loop = true;
+          el.preload = "metadata";
+        } else {
+          el = document.createElement("img");
+          el.alt = "slide";
+          el.decoding = "async";
+          el.loading = "eager";
+          try { el.fetchPriority = active ? "high" : "low"; } catch (_) { }
+        }
+        el.className = (el.tagName === "VIDEO" ? "top-slide-video" : "top-slide-img") + (active ? " active" : "");
+        el.dataset.slideIndex = String(idx);
+        el.dataset.debugSlide = String(idx);
+        el.src = src;
+        return el;
+      }
+
+      function waitTopSlideReady(el) {
+        if (!el) return Promise.resolve(false);
+        if (el.tagName === "IMG" && el.complete && el.naturalWidth) return Promise.resolve(true);
+        if (el.tagName === "VIDEO" && el.readyState >= 1) return Promise.resolve(true);
+        return new Promise(resolve => {
+          let done = false;
+          const finish = ok => {
+            if (done) return;
+            done = true;
+            clearTimeout(timer);
+            el.removeEventListener("load", onOk);
+            el.removeEventListener("loadedmetadata", onOk);
+            el.removeEventListener("error", onErr);
+            resolve(ok);
+          };
+          const onOk = () => finish(true);
+          const onErr = () => finish(false);
+          const timer = setTimeout(() => finish(false), 10000);
+          el.addEventListener("load", onOk, { once: true });
+          el.addEventListener("loadedmetadata", onOk, { once: true });
+          el.addEventListener("error", onErr, { once: true });
+        });
+      }
+
+      async function ensureTopSlideLoaded(box, idx, generation, active = false) {
+        if (!box || generation !== topSlideGeneration || !topSlideMedia.length) return null;
+        let el = box.querySelector('[data-slide-index="' + idx + '"]');
+        if (!el) {
+          el = createTopSlideElement(topSlideMedia[idx], idx, active);
+          box.appendChild(el);
+        }
+        const ok = await waitTopSlideReady(el);
+        if (generation !== topSlideGeneration || !el.isConnected) return null;
+        if (!ok) debugLog("slide media load delayed/error", topSlideMedia[idx]);
+        return el;
+      }
+
+      function playTopSlideElement(el) {
+        if (!el) return;
+        applyTopSlideRatio(el);
+        if (el.tagName === "VIDEO") {
+          try { el.currentTime = 0; } catch (_) { }
+          el.play().catch(() => { });
+        }
+      }
+
+      function preloadFollowingSlide(box, generation) {
+        if (generation !== topSlideGeneration || topSlideMedia.length <= 1) return;
+        const idx = (topSlideIndex + 1) % topSlideMedia.length;
+        // 현재 + 다음 1개만 유지합니다. 전체 슬라이드를 한 번에 다운로드하지 않습니다.
+        ensureTopSlideLoaded(box, idx, generation, false).catch(() => { });
+      }
+
+      async function advanceTopSlide(box, generation) {
+        if (topSlideSwitching || generation !== topSlideGeneration || topSlideMedia.length <= 1) return;
+        topSlideSwitching = true;
+        try {
+          const nextIndex = (topSlideIndex + 1) % topSlideMedia.length;
+          const next = await ensureTopSlideLoaded(box, nextIndex, generation, false);
+          if (!next || generation !== topSlideGeneration) return;
+
+          const current = box.querySelector(".top-slide-img.active,.top-slide-video.active");
+          next.classList.add("active");
+          playTopSlideElement(next);
+          topSlideIndex = nextIndex;
+
+          if (current && current !== next) {
+            current.classList.remove("active");
+            if (current.tagName === "VIDEO") {
+              try { current.pause(); } catch (_) { }
+            }
+            setTimeout(() => {
+              if (generation !== topSlideGeneration) return;
+              if (current.isConnected && !current.classList.contains("active")) disposeTopSlideElement(current);
+              // 전환이 끝난 뒤에 다음 한 장만 미리 받습니다.
+              preloadFollowingSlide(box, generation);
+            }, 850);
+          } else {
+            preloadFollowingSlide(box, generation);
+          }
+        } finally {
+          topSlideSwitching = false;
+        }
       }
 
       function renderTopSlide(settings) {
-        debugLog("renderTopSlide input", {
-          stationStyle: settings?.stationStyle,
-          overlaySections: settings?.overlaySections,
-          media: settings?.media
-        });
-
         const box = document.getElementById("topSlideBox");
         if (!box) return;
 
         const st = settings?.stationStyle || {};
         const sections = getOverlaySections(settings);
-
         const enabled = sections.media !== false;
 
-        const normalizeSlideSrc = (item) => {
+        const normalizeSlideSrc = item => {
           if (!item) return "";
           if (typeof item === "string") return item.trim();
-          if (typeof item === "object") {
-            return String(item.url || item.src || item.path || item.file || "").trim();
-          }
+          if (typeof item === "object") return String(item.url || item.src || item.path || item.file || "").trim();
           return "";
         };
-
-        const splitTextList = (value) => String(value || "")
-          .split(/\r?\n|,/)
-          .map(v => v.trim())
-          .filter(Boolean);
-
-        let media = [];
-
+        const splitTextList = value => String(value || "").split(/\r?\n|,/).map(v => v.trim()).filter(Boolean);
+        const media = [];
         [
-          st.topSlideImages,
-          st.topSlideItems,
-          st.mediaSlides,
-          st.slideImages,
-          st.slides,
-          settings?.media?.slides,
-          settings?.media?.items,
-          settings?.topSlideImages,
-          settings?.mediaSlides
+          st.topSlideImages, st.topSlideItems, st.mediaSlides, st.slideImages, st.slides,
+          settings?.media?.slides, settings?.media?.items, settings?.topSlideImages, settings?.mediaSlides
         ].forEach(list => {
-          if (Array.isArray(list)) {
-            list.map(normalizeSlideSrc).filter(Boolean).forEach(src => {
-              if (!media.includes(src)) media.push(src);
-            });
-          } else if (typeof list === "string") {
-            splitTextList(list).forEach(src => {
-              if (!media.includes(src)) media.push(src);
-            });
-          }
+          const values = Array.isArray(list) ? list.map(normalizeSlideSrc).filter(Boolean) : (typeof list === "string" ? splitTextList(list) : []);
+          values.forEach(src => { if (!media.includes(src)) media.push(src); });
         });
-
         if (Array.isArray(st.mediaItems)) {
-          st.mediaItems.map(normalizeSlideSrc).filter(Boolean).forEach(src => {
-            if (!media.includes(src)) media.push(src);
-          });
+          st.mediaItems.map(normalizeSlideSrc).filter(Boolean).forEach(src => { if (!media.includes(src)) media.push(src); });
         }
 
         const interval = Math.max(800, Number(st.topSlideInterval || 3500));
         const slideSignature = JSON.stringify({ enabled, media, interval });
-
-        // 후원·합계 등 다른 데이터만 변경된 경우 기존 이미지/영상 DOM을 유지합니다.
+        // 후원/공지/타이머 데이터만 바뀌었으면 이미지 DOM과 다운로드 상태를 그대로 유지합니다.
         if (slideSignature === lastTopSlideSignature) return;
         lastTopSlideSignature = slideSignature;
 
-        // 목록 변경 또는 OFF 전환 시 기존 미디어의 다운로드·디코딩·재생 참조를 해제합니다.
         releaseTopSlideMedia(box);
-
-        debugLog("topSlide enabled", enabled);
-        debugLog("topSlide sections.media", sections.media);
-        debugLog("topSlide media count", media.length);
-        debugLog("topSlide media", media);
+        document.documentElement.style.removeProperty("--active-slide-ratio");
 
         if (!enabled || !media.length) {
           box.classList.add("hidden");
-          document.documentElement.style.removeProperty("--active-slide-ratio");
           return;
         }
 
-        const isVideo = (src) => /\.(mp4|webm|mov)(\?|#|$)/i.test(String(src));
-
-        const html = media.map((src, idx) => {
-          const active = idx === 0 ? "active" : "";
-          const safe = escapeHtml(src);
-
-          return isVideo(src)
-            ? '<video class="top-slide-video ' + active + '" data-debug-slide="' + idx + '" src="' + safe + '" muted playsinline loop preload="metadata"></video>'
-            : '<img class="top-slide-img ' + active + '" data-debug-slide="' + idx + '" src="' + safe + '" alt="slide">';
-        }).join("");
-
+        topSlideMedia = media;
+        topSlideIntervalMs = interval;
+        topSlideIndex = 0;
+        const generation = topSlideGeneration;
         box.classList.remove("hidden");
-        box.innerHTML = html;
 
-        debugLog("topSlide rendered html length", html.length);
+        // 첫 장만 즉시 요청하고, 로드된 뒤 다음 한 장만 선로딩합니다.
+        const first = createTopSlideElement(topSlideMedia[0], 0, true);
+        box.appendChild(first);
+        waitTopSlideReady(first).then(() => {
+          if (generation !== topSlideGeneration || !first.isConnected) return;
+          playTopSlideElement(first);
+          preloadFollowingSlide(box, generation);
+        }).catch(() => { });
 
-        function applySlideRatio(el) {
-          if (!el) return;
-
-          if (el.tagName === "IMG" && el.naturalWidth && el.naturalHeight) {
-            document.documentElement.style.setProperty(
-              "--active-slide-ratio",
-              el.naturalWidth + " / " + el.naturalHeight
-            );
-          }
-
-          if (el.tagName === "VIDEO" && el.videoWidth && el.videoHeight) {
-            document.documentElement.style.setProperty(
-              "--active-slide-ratio",
-              el.videoWidth + " / " + el.videoHeight
-            );
-          }
-        }
-
-        box.querySelectorAll("img").forEach(img => {
-          img.onload = () => {
-            applySlideRatio(img);
-            debugLog("slide img loaded", img.src);
-          };
-
-          img.onerror = () => {
-            debugLog("slide img error", img.src);
-          };
-
-          if (img.complete) {
-            applySlideRatio(img);
-          }
-        });
-
-        box.querySelectorAll("video").forEach(v => {
-          v.onloadedmetadata = () => {
-            applySlideRatio(v);
-            debugLog("slide video loaded", v.src);
-          };
-
-          v.onerror = () => {
-            debugLog("slide video error", v.src);
-          };
-        });
-
-        const playActive = () => {
-          box.querySelectorAll("video").forEach(v => {
-            try {
-              v.pause();
-              v.currentTime = 0;
-            } catch (_) { }
-          });
-
-          const active = box.querySelector(".active");
-          applySlideRatio(active);
-
-          if (active && active.tagName === "VIDEO") {
-            active.play().catch(() => { });
-          }
-        };
-
-        playActive();
-
-        if (media.length > 1) {
-          topSlideTimer = setInterval(() => {
-            const slides = Array.from(
-              box.querySelectorAll(".top-slide-img,.top-slide-video")
-            );
-
-            if (!slides.length) return;
-
-            slides.forEach(el => el.classList.remove("active"));
-
-            topSlideIndex = (topSlideIndex + 1) % slides.length;
-            slides[topSlideIndex].classList.add("active");
-
-            playActive();
-          }, interval);
+        if (topSlideMedia.length > 1) {
+          topSlideTimer = setInterval(() => advanceTopSlide(box, generation), topSlideIntervalMs);
         }
       }
 
