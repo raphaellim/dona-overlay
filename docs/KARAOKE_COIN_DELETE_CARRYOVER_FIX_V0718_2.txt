@@ -1,0 +1,16 @@
+KARAOKE COIN DELETE / CARRYOVER FIX V0718.2
+
+문제
+- control.html에서 코인 삭제 버튼이 화면에서만 삭제하고 서버에 즉시 저장하지 않음
+- 다음 설정 조회 시 방송국 공유 이월 코인이 다시 병합되어 삭제한 코인이 되살아남
+
+수정
+- DELETE /api/karaoke-user/:nick 전용 API 추가
+- 현재 방송 users, carryoverUsers 및 다음 방송 이월용 공유 users를 한 번에 삭제
+- 현재 방송 scoped users를 공유값보다 우선 적용
+- control.html, admin.html, m_control.html 삭제 버튼을 전용 API 방식으로 통일
+
+결과
+- 삭제 즉시 서버 저장
+- 새로고침, 노래방 OFF/ON, 설정 재조회 후에도 삭제한 코인이 다시 나타나지 않음
+- 다른 닉네임의 코인과 선곡 리스트는 유지

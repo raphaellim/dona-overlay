@@ -271,6 +271,14 @@ function displayManText(won) {
   return displayMan(won).toFixed(1).replace(/\.0$/, '');
 }
 
+// 합산 전용 금액: 각 후원 건마다 천원 미만을 먼저 절삭한 뒤 누적한다.
+// 원본 금액은 프리셋/룰렛 판정과 상세 내역을 위해 그대로 보존한다.
+function aggregateWon(won) {
+  const n = Number(won || 0);
+  if (!Number.isFinite(n)) return 0;
+  return Math.trunc(n / 1000) * 1000;
+}
+
 function normalizePreset(p, idx) {
   const defaults = defaultPresets()[idx] || {
     id: `preset_${idx + 1}`,
@@ -1924,11 +1932,14 @@ function buildSummary(settings, donations, broadcast, station) {
     const account = Number(d.accountAmount || 0);
     const toonie = Number(d.toonieAmount || 0);
     const total = account + toonie;
+    const sumAccount = aggregateWon(account);
+    const sumToonie = aggregateWon(toonie);
+    const sumTotal = sumAccount + sumToonie;
     const row = { ...d, accountAmount: account, toonieAmount: toonie, totalAmount: total, displayAmount: displayManText(total) };
 
-    c.account += account;
-    c.toonie += toonie;
-    c.total += total;
+    c.account += sumAccount;
+    c.toonie += sumToonie;
+    c.total += sumTotal;
     c.smoke += Number(d.smoke || 0);
     c.nosmoke += Number(d.nosmoke || 0);
     c.eat += Number(d.eat || 0);
@@ -1936,9 +1947,9 @@ function buildSummary(settings, donations, broadcast, station) {
     addPresetCheck(c, d);
     c.rows.push(row);
 
-    dn.account += account;
-    dn.toonie += toonie;
-    dn.total += total;
+    dn.account += sumAccount;
+    dn.toonie += sumToonie;
+    dn.total += sumTotal;
     dn.latestProcess = d.processType || '후원';
     dn.rows.push(row);
 
@@ -1953,9 +1964,11 @@ function buildSummary(settings, donations, broadcast, station) {
       const donor = normName(r.donor);
       if (!donorMap.has(donor)) donorMap.set(donor, emptyDonor(donor));
       const dn = donorMap.get(donor);
-      dn.account += Number(r.accountAmount || 0);
-      dn.toonie += Number(r.toonieAmount || 0);
-      dn.total += Number(r.totalAmount || 0);
+      const rowAccount = aggregateWon(r.accountAmount);
+      const rowToonie = aggregateWon(r.toonieAmount);
+      dn.account += rowAccount;
+      dn.toonie += rowToonie;
+      dn.total += rowAccount + rowToonie;
       dn.latestProcess = r.processType || '후원';
       dn.rows.push(r);
     }
@@ -1994,7 +2007,7 @@ function buildSummary(settings, donations, broadcast, station) {
       accountDonorMap.set(key, { donor: key, amount: 0, amountText: '0', latestAt: item.createdAt });
     }
     const row = accountDonorMap.get(key);
-    row.amount += Number(item.amount || 0);
+    row.amount += aggregateWon(item.amount);
     row.amountText = displayManText(row.amount);
     if (new Date(item.createdAt) > new Date(row.latestAt)) row.latestAt = item.createdAt;
   }
@@ -3381,11 +3394,13 @@ function buildOverlayState(settings, donations) {
     const row = creators.get(creator);
     const account = Number(d.accountAmount || 0);
     const toonie = Number(d.toonieAmount || 0);
-    const total = account + toonie;
+    const sumAccount = aggregateWon(account);
+    const sumToonie = aggregateWon(toonie);
+    const sumTotal = sumAccount + sumToonie;
 
-    row.account += account;
-    row.toonie += toonie;
-    row.total += total;
+    row.account += sumAccount;
+    row.toonie += sumToonie;
+    row.total += sumTotal;
     row.smoke += Number(d.smoke || 0);
     row.nosmoke += Number(d.nosmoke || 0);
     row.eat += Number(d.eat || 0);
@@ -3397,7 +3412,7 @@ function buildOverlayState(settings, donations) {
         accountDonorMap.set(donor, { donor, amount: 0, amountText: '0', latestAt: d.createdAt });
       }
       const donorRow = accountDonorMap.get(donor);
-      donorRow.amount += account;
+      donorRow.amount += sumAccount;
       donorRow.amountText = displayManText(donorRow.amount);
       if (new Date(d.createdAt) > new Date(donorRow.latestAt)) donorRow.latestAt = d.createdAt;
     }

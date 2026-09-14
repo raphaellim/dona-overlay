@@ -179,6 +179,11 @@ function fmtMan(won){
   return displayMan(Number(won || 0)).toFixed(1).replace(/\.0$/, '');
 }
 
+function aggregateWon(won){
+  const n = Number(won || 0);
+  return Number.isFinite(n) ? Math.trunc(n / 1000) * 1000 : 0;
+}
+
 function baseDonors(){
   let rows = (summary?.donors || []).slice();
 
@@ -295,9 +300,9 @@ function renderDetail(){
 
   const detailRows = filteredDetailRows(donor).slice().reverse();
 
-  const account = detailRows.reduce((sum, r) => sum + Number(r.accountAmount || 0), 0);
-  const toonie = detailRows.reduce((sum, r) => sum + Number(r.toonieAmount || 0), 0);
-  const total = detailRows.reduce((sum, r) => sum + Number(r.totalAmount || 0), 0);
+  const account = detailRows.reduce((sum, r) => sum + aggregateWon(r.accountAmount), 0);
+  const toonie = detailRows.reduce((sum, r) => sum + aggregateWon(r.toonieAmount), 0);
+  const total = account + toonie;
 
   const modeText = mode === 'account' ? '계좌 상세' : mode === 'toonie' ? '투네 상세' : '전체 상세';
 

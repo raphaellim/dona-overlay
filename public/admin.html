@@ -950,11 +950,12 @@ async function deleteKaraokeSong(id){
   await saveKaraokeData(false);
 }
 async function deleteKaraokeUser(nick){
-  const data=getKaraokeData();
-  if(!confirm(`${nick} 닉네임과 보유 코인을 삭제할까요?`))return;
-  data.users=data.users.filter(u=>u.nick!==nick);
-  renderKaraokeManager();
-  await saveKaraokeData(false);
+  if(!confirm(`${nick} 닉네임과 보유 코인을 완전히 삭제할까요?`))return;
+  try{
+    const saved=await api('/api/karaoke-user/'+encodeURIComponent(nick),{method:'DELETE'});
+    if(saved&&saved.karaokeData)settings.karaokeData=saved.karaokeData;
+    renderKaraokeManager();
+  }catch(e){alert(e.message||'코인 삭제 실패')}
 }
 async function saveKaraokeData(showMessage=true){
   try{

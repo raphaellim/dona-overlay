@@ -3312,10 +3312,15 @@ body.shorts-mode #overlayAlertRoot{display:none!important;}
         })).filter(row => row.creator);
       }
 
+      function aggregateWon(won) {
+        const n = num(won);
+        return Math.trunc(n / 1000) * 1000;
+      }
+
       function aggregateAccountDonorsFromDonations(donations) {
         const map = new Map();
         (donations || []).forEach(d => {
-          const account = num(d.accountAmount ?? d.account_amount);
+          const account = aggregateWon(d.accountAmount ?? d.account_amount);
           if (account <= 0) return;
           const donor = normalizeName(d.donor || d.donor_name || "익명");
           if (!map.has(donor)) map.set(donor, { donor, amount: 0, latestAt: d.createdAt || d.created_at || "" });
@@ -3339,9 +3344,9 @@ body.shorts-mode #overlayAlertRoot{display:none!important;}
           const creator = normalizeName(d.creator || "");
           if (!creator || !allowed.has(creator)) return;
 
-          const account = num(d.accountAmount ?? d.account_amount);
-          const toonie = num(d.toonieAmount ?? d.toonie_amount);
-          const total = num(d.totalAmount ?? d.total_amount ?? account + toonie);
+          const account = aggregateWon(d.accountAmount ?? d.account_amount);
+          const toonie = aggregateWon(d.toonieAmount ?? d.toonie_amount);
+          const total = account + toonie;
 
           const row = map.get(creator) || { creator, total: 0, smokeNet: 0, eatNet: 0, presetNets: [] };
           row.total += total;
