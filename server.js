@@ -7,6 +7,7 @@ const path = require('path');
 const multer = require('multer');
 const http = require('http');
 const { Server } = require('socket.io');
+const { createNightbotChat, normalizeChatSettings } = require('./nightbot-chat');
 
 const app = express();
 const httpServer = http.createServer(app);
@@ -224,6 +225,7 @@ function defaultSettings() {
     fundingData: normalizeFundingData({}),
     allowanceData: normalizeAllowanceData({}),
     stationStyle: normalizeStationStyle({}),
+    nightbotChat: normalizeChatSettings({}),
     broadcastTimerData: normalizeBroadcastTimerData({}),
     broadcastLiveData: normalizeBroadcastLiveData({}),
     roulette: defaultRouletteData(),
@@ -991,6 +993,7 @@ function normalizeSettings(settings) {
     fundingData: normalizeFundingData(raw.fundingData || base.fundingData),
     allowanceData: normalizeAllowanceData(raw.allowanceData || base.allowanceData),
     stationStyle: normalizeStationStyle(raw.stationStyle || base.stationStyle),
+    nightbotChat: normalizeChatSettings(raw.nightbotChat || base.nightbotChat),
     broadcastTimerData: normalizeBroadcastTimerData(raw.broadcastTimerData || base.broadcastTimerData),
     broadcastLiveData: normalizeBroadcastLiveData(raw.broadcastLiveData || base.broadcastLiveData),
     columns: Math.max(1, Math.min(6, Number(raw.columns || base.columns))),
@@ -1084,6 +1087,8 @@ function withSettingsMutation(task) {
   settingsMutationTail = run.catch(() => {});
   return run;
 }
+
+const nightbotChat = createNightbotChat({ supabase, withSettingsMutation });
 
 async function readGlobalSettings() {
   const { data, error } = await supabase.from('settings').select('data').eq('id', 1).maybeSingle();
@@ -1352,7 +1357,8 @@ function managerSafeStation(row, includeToken = false) {
 const STATION_SHARED_SETTING_FIELDS = [
   // 방송국별로 유지하면서, 같은 방송국의 새 방송에는 이어질 항목
   'title', 'titleImage', 'noticeTitle', 'notice', 'noticeColors', 'noticeAligns',
-  'karaokeData', 'fundingData', 'allowanceData', 'stationStyle', 'presets', 'roulette'
+  'karaokeData', 'fundingData', 'allowanceData', 'stationStyle', 'presets', 'roulette',
+  'nightbotChat'
 ];
 
 function pickStationSharedSettings(settings) {
@@ -1403,6 +1409,7 @@ function effectiveSettingsFromGlobal(global, stationSlug, broadcastId) {
     fundingData: stationShared.fundingData ?? global.fundingData,
     allowanceData: scoped.allowanceData ?? stationShared.allowanceData ?? global.allowanceData,
     stationStyle: stationShared.stationStyle ?? global.stationStyle,
+    nightbotChat: stationShared.nightbotChat ?? global.nightbotChat,
     stationSettings: global.stationSettings || {}
   });
   merged.karaokeData = effectiveKaraokeData(global.karaokeData, stationShared.karaokeData, scoped.karaokeData);
@@ -2903,6 +2910,47 @@ app.post('/api/roulette/history/clear', async (req, res) => {
 });
 
 /* 설정 */
+app.get('/api/nightbot/status', async (req, res) => {
+  try {
+    if (!requireDb(res)) return;
+    const ctx = await getStationContext(req, res);
+    if (!ctx) return;
+    if (!await stationAllowed(req, ctx.station)) return res.status(401).json({ error: '방송국 관리자 권한이 필요합니다.' });
+    res.json(await nightbotChat.status(ctx.station.slug));
+  } catch (e) { res.status(500).json({ error: e.message || 'Nightbot 상태 조회 실패' }); }
+});
+
+app.post('/api/nightbot/connect', async (req, res) => {
+  try {
+    if (!requireDb(res)) return;
+    const ctx = await getStationContext(req, res);
+    if (!ctx) return;
+    if (!await stationAllowed(req, ctx.station)) return res.status(401).json({ error: '방송국 관리자 권한이 필요합니다.' });
+    res.json({ url: nightbotChat.begin(ctx.station.slug) });
+  } catch (e) { res.status(400).json({ error: e.message || 'Nightbot 연결 시작 실패' }); }
+});
+
+app.get('/api/nightbot/callback', async (req, res) => {
+  try {
+    if (req.query.error) throw new Error('Nightbot 연결이 승인되지 않았습니다.');
+    const slug = await nightbotChat.finish(req.query.state, req.query.code);
+    res.redirect(`/control.html?station=${encodeURIComponent(slug)}&nightbot=connected`);
+  } catch (e) {
+    res.status(400).type('text/plain').send(e.message || 'Nightbot 연결 실패');
+  }
+});
+
+app.post('/api/nightbot/disconnect', async (req, res) => {
+  try {
+    if (!requireDb(res)) return;
+    const ctx = await getStationContext(req, res);
+    if (!ctx) return;
+    if (!await stationAllowed(req, ctx.station)) return res.status(401).json({ error: '방송국 관리자 권한이 필요합니다.' });
+    await nightbotChat.disconnect(ctx.station.slug);
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: e.message || 'Nightbot 연결 해제 실패' }); }
+});
+
 app.get('/api/settings', async (req, res) => {
   try {
     if (!requireDb(res)) return;
@@ -2947,6 +2995,7 @@ app.post('/api/settings', async (req, res) => {
     if (has('fundingData')) updates.fundingData = normalizeFundingData(body.fundingData);
     if (has('allowanceData')) updates.allowanceData = normalizeAllowanceData(body.allowanceData);
     if (has('stationStyle')) updates.stationStyle = normalizeStationStyle(body.stationStyle);
+    if (has('nightbotChat') && fullAdmin) updates.nightbotChat = normalizeChatSettings(body.nightbotChat);
 
     // 방송별/운영 설정
     if (has('viewerPassword')) updates.viewerPassword = String(body.viewerPassword ?? '');
@@ -3586,6 +3635,7 @@ app.post('/api/donations', async (req, res) => {
 
     const { data, error } = await supabase.from('donations').insert(row).select().single();
     if (error) throw error;
+    if (!dbRowToDonation(data).silentAlert) nightbotChat.enqueue(ctx.station.slug, [data], settings.nightbotChat);
     const rouletteRun = await maybeStartAutoRoulette(ctx, row.total_amount, row.donor, req.body || {});
     res.json({ ok: true, station: stationToClient(ctx.station), broadcast: broadcastToClient(ctx.active), donation: dbRowToDonation(data), rouletteRun: rouletteRun?.run || null });
   } catch (e) {
@@ -3644,6 +3694,7 @@ app.post('/api/donations/batch', async (req, res) => {
 
     const { data, error } = await supabase.from('donations').insert(created).select();
     if (error) throw error;
+    nightbotChat.enqueue(ctx.station.slug, data, settings.nightbotChat);
 
     const fundingId = String(req.body.fundingId || '').trim();
     if (fundingId) {
