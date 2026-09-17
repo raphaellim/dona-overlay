@@ -2942,6 +2942,10 @@ app.get('/api/youtube-chat/callback', async (req, res) => {
     res.redirect(`/youtube_chat_remote.html?station=${encodeURIComponent(slug)}&auth=ok`);
   } catch (e) { res.status(400).type('text/plain').send(e.message); }
 });
+app.patch('/api/youtube-chat/accounts', async (req, res) => {
+  try { const ctx = await youtubeChatAdmin(req, res); if (ctx) res.json({ accounts: await youtubeChat.updateAll(ctx.station.slug, req.body) }); }
+  catch (e) { res.status(400).json({ error: e.message }); }
+});
 app.patch('/api/youtube-chat/accounts/:id', async (req, res) => {
   try { const ctx = await youtubeChatAdmin(req, res); if (ctx) { await youtubeChat.update(ctx.station.slug, req.params.id, req.body); res.json({ ok: true }); } }
   catch (e) { res.status(400).json({ error: e.message }); }

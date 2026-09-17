@@ -20,13 +20,19 @@
   <section>
     <div class="row" style="justify-content:space-between;margin-bottom:14px"><h2 style="margin:0">채팅 계정</h2><button id="addAccount">+ 계정 연결</button></div>
     <div id="accounts" class="accounts"><p>연결된 계정이 없습니다.</p></div>
-    <p class="note">채팅을 보낼 각 계정에서 Google 승인을 한 번씩 받아야 합니다. 계정별로 랜덤 또는 수동 개별 멘트를 선택하세요. 기존 이모지는 수동 개별 멘트로 유지됩니다.</p>
+    <div class="row" style="margin-top:14px;flex-wrap:wrap">
+      <label for="allMode" style="margin:0">모든 계정 설정</label>
+      <select id="allMode" style="width:auto;min-width:150px"><option value="">방식 선택</option><option value="random">🎲 모두 랜덤</option><option value="manual">✍️ 모두 수동</option><option value="off">🚫 모두 끄기</option></select>
+      <input id="allManual" maxlength="80" placeholder="선택: 모든 계정에 같은 수동 멘트 적용" aria-label="모든 계정 공통 수동 멘트" hidden style="flex:1;min-width:220px">
+      <button id="applyAll">전체 적용</button>
+    </div>
+    <p class="note">전체 적용은 연결된 모든 계정에 반영됩니다. 모두 수동에서 위 입력을 비우면 기존 계정별 수동 문구를 유지합니다.</p>
   </section>
   <section>
     <h2>메시지 작성</h2>
     <label for="message">공용 멘트</label><textarea id="message" maxlength="180" placeholder="예: 빵떠기 화이팅"></textarea>
     <div id="preview" class="preview" aria-live="polite"></div>
-    <div class="actions"><button class="primary" id="sendSelected">선택 계정 전송</button><span class="note">전송 형식: 공용멘트업 개별멘트 (업 앞에는 공백 없음)</span></div>
+    <div class="actions"><button class="primary" id="sendSelected">선택 계정 전송</button><span class="note">전송 형식: 공용 멘트 + 선택한 개별 멘트</span></div>
     <div id="result" class="result" role="status" aria-live="polite"></div>
   </section>
   <div class="hint note" id="setupNote">서버 연동 전에는 미리보기만 가능합니다. 계정 인증 및 실제 전송에는 서버 API가 필요합니다.</div>
@@ -41,7 +47,7 @@
   $('liveUrl').value = stored.url || '';
   $('message').value = stored.message || '';
   const saveDraft = () => localStorage.setItem('chatRemoteDraft', JSON.stringify({url:$('liveUrl').value,message:$('message').value}));
-  const composed = a => `${$('message').value.trim()} ${a.suffixMode === 'random' ? '[랜덤: 6개 중 하나]' : (a.manualSuffix || '[수동 멘트 입력 필요]')}`;
+  const composed = a => `${$('message').value.trim()}${a.suffixMode === 'off' ? '' : ' ' + (a.suffixMode === 'random' ? '[랜덤: 6개 중 하나]' : (a.manualSuffix || '[수동 멘트 입력 필요]'))}`;
   const errorText = e => e?.message || '요청을 처리하지 못했습니다.';
   async function request(path, options={}) {
     const response = await fetch(api + path + (path.includes('?') ? '&' : '?') + 'station=' + encodeURIComponent(station), {credentials:'same-origin',headers:{'Content-Type':'application/json'},...options});
@@ -58,7 +64,7 @@
       const name=document.createElement('div');name.className='name';name.textContent=a.name;
       const sub=document.createElement('small');sub.textContent=a.connected===false?'재인증 필요':'연결됨';name.append(sub);
       const mode=document.createElement('select');mode.setAttribute('aria-label',`${a.name} 개별 멘트 방식`);
-      [['random','🎲 랜덤'],['manual','✍️ 수동 입력']].forEach(([value,text])=>{const option=document.createElement('option');option.value=value;option.textContent=text;mode.append(option)});
+      [['random','🎲 랜덤'],['manual','✍️ 수동 입력'],['off','🚫 끄기']].forEach(([value,text])=>{const option=document.createElement('option');option.value=value;option.textContent=text;mode.append(option)});
       mode.value=a.suffixMode || 'random';
       const manual=document.createElement('input');manual.className='manual';manual.placeholder='개별 멘트 + 이모지';manual.maxLength=80;manual.value=a.manualSuffix || '';manual.setAttribute('aria-label',`${a.name} 수동 개별 멘트`);manual.hidden=mode.value!=='manual';
       function saveAccount(changes){a.pending=(a.pending||Promise.resolve()).then(async()=>{await request(`/accounts/${encodeURIComponent(a.id)}`,{method:'PATCH',body:JSON.stringify(changes)});Object.assign(a,changes);a.saveError=null;renderPreview()}).catch(e=>{mode.value=a.suffixMode;manual.value=a.manualSuffix || '';manual.hidden=mode.value!=='manual';$('result').textContent=errorText(e);$('result').className='result error';a.saveError=e;});return a.pending}
@@ -76,6 +82,22 @@
     selected.forEach(a=>{const item=document.createElement('div');const label=document.createElement('strong');label.textContent=a.name+' → ';item.append(label,document.createTextNode(composed(a)));box.append(item)})
   }
   async function loadAccounts(){try{const data=await request('/accounts');accounts=(data.accounts||[]).map(a=>({...a,selected:true}));serverReady=true;$('connection').textContent='서버 연결됨';$('setupNote').hidden=true}catch(e){serverReady=false;$('connection').textContent='서버 연동 필요';$('setupNote').hidden=false}render()}
+  $('allMode').onchange=()=>{$('allManual').hidden=$('allMode').value!=='manual'};
+  $('applyAll').onclick=async()=>{
+    const mode=$('allMode').value;
+    if(!mode||!accounts.length){$('result').textContent='방식을 선택하고 계정을 연결하세요.';$('result').className='result error';return}
+    const button=$('applyAll');button.disabled=true;
+    try{
+      await Promise.all(accounts.map(a=>a.pending).filter(Boolean));
+      if(accounts.some(a=>a.saveError))throw new Error('계정별 설정 저장을 확인한 뒤 다시 적용하세요.');
+      const payload={suffixMode:mode};
+      if(mode==='manual'&&$('allManual').value.trim())payload.manualSuffix=$('allManual').value.trim();
+      const data=await request('/accounts',{method:'PATCH',body:JSON.stringify(payload)});
+      const selected=new Map(accounts.map(a=>[a.id,a.selected]));
+      accounts=(data.accounts||[]).map(a=>({...a,selected:selected.get(a.id)!==false}));render();
+      $('result').textContent=`${accounts.length}개 계정에 전체 설정을 적용했습니다.`;$('result').className='result ok';
+    }catch(e){$('result').textContent=errorText(e);$('result').className='result error'}finally{button.disabled=false}
+  };
   $('addAccount').onclick=()=>{if(!serverReady){$('result').textContent='계정을 연결하려면 서버의 Google 인증 기능을 먼저 설정하세요.';$('result').className='result error';return}location.href=api+'/auth?station='+encodeURIComponent(station)};
   $('connect').onclick=async()=>{saveDraft();chatId='';$('liveStatus').textContent='방송 확인 중…';try{const data=await request('/resolve',{method:'POST',body:JSON.stringify({url:$('liveUrl').value.trim()})});chatId=data.liveChatId;$('liveStatus').textContent=`채팅 가능 · ${data.title||'라이브 방송'}`}catch(e){$('liveStatus').textContent=errorText(e)}};
   async function sendMessages(chosen){if(busy)return;const message=$('message').value.trim();if(!message||!chosen.length||!chatId){$('result').textContent='방송을 확인하고 공용 멘트와 계정을 선택하세요.';$('result').className='result error';return}busy=true;$('sendSelected').disabled=true;$('result').textContent='전송 중…';$('result').className='result';try{await Promise.all(chosen.map(a=>a.pending).filter(Boolean));if(chosen.some(a=>a.saveError))throw new Error('개별 멘트 저장에 실패했습니다. 다시 입력하세요.');const data=await request('/send',{method:'POST',body:JSON.stringify({url:$('liveUrl').value.trim(),accountIds:chosen.map(a=>a.id),message})});const outcomes=data.results||[];$('result').textContent=outcomes.length?outcomes.map(x=>`${x.name||x.accountId}: ${x.ok?'전송 완료 · '+x.text:x.error||'실패'}`).join('\n'):'전송 요청이 완료되었습니다.';$('result').className=outcomes.some(x=>!x.ok)?'result error':'result ok'}catch(e){$('result').textContent=errorText(e);$('result').className='result error'}finally{busy=false;$('sendSelected').disabled=false}}

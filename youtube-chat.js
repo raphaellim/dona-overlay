@@ -1,6 +1,6 @@
 const crypto = require('crypto');
 const RANDOM_SUFFIXES = ['할짝할짝 😋💦', '츄릅츄릅 🤤💦', '낼름낼름 😛✨', '쫍쫍쫍 😘💋', '쭈압쭈압 😘💖', '굽신굽신 🙇‍♂️✨'];
-const modeOf = a => a.suffixMode === 'random' || a.suffixMode === 'manual' ? a.suffixMode : (a.emoji ? 'manual' : 'random');
+const modeOf = a => ['random', 'manual', 'off'].includes(a.suffixMode) ? a.suffixMode : (a.emoji ? 'manual' : 'random');
 const manualOf = a => String(a.manualSuffix ?? a.emoji ?? '').trim();
 
 function createYoutubeChat({ supabase, withSettingsMutation, env = process.env, fetchImpl = fetch }) {
@@ -73,7 +73,7 @@ function createYoutubeChat({ supabase, withSettingsMutation, env = process.env, 
   }
   async function update(slug, id, value) {
     const changes = value || {};
-    if (changes.suffixMode !== undefined && !['random', 'manual'].includes(changes.suffixMode)) throw new Error('개별 멘트 방식을 선택하세요.');
+    if (changes.suffixMode !== undefined && !['random', 'manual', 'off'].includes(changes.suffixMode)) throw new Error('개별 멘트 방식을 선택하세요.');
     const manual = changes.manualSuffix ?? changes.emoji;
     if (manual !== undefined && (typeof manual !== 'string' || manual.length > 80)) throw new Error('개별 멘트는 80자 이내로 입력하세요.');
     await changeStore(slug, accounts => {
@@ -82,6 +82,19 @@ function createYoutubeChat({ supabase, withSettingsMutation, env = process.env, 
       if (changes.suffixMode !== undefined) item.suffixMode = changes.suffixMode;
       if (manual !== undefined) item.manualSuffix = manual.trim();
     });
+  }
+  async function updateAll(slug, value) {
+    const mode = value?.suffixMode;
+    if (!['random', 'manual', 'off'].includes(mode)) throw new Error('전체 설정을 선택하세요.');
+    const manual = value?.manualSuffix;
+    if (manual !== undefined && (typeof manual !== 'string' || manual.length > 80)) throw new Error('공통 수동 멘트는 80자 이내로 입력하세요.');
+    await changeStore(slug, accounts => {
+      for (const item of accounts) {
+        item.suffixMode = mode;
+        if (mode === 'manual' && manual?.trim()) item.manualSuffix = manual.trim();
+      }
+    });
+    return accounts(slug);
   }
   async function access(account) {
     const auth = open(account.secret);
@@ -106,15 +119,16 @@ function createYoutubeChat({ supabase, withSettingsMutation, env = process.env, 
     const results = [];
     for (const a of selected) {
       try {
-        const suffix = modeOf(a) === 'random' ? RANDOM_SUFFIXES[crypto.randomInt(RANDOM_SUFFIXES.length)] : manualOf(a);
-        if (!suffix) throw new Error('수동 개별 멘트를 입력하세요.');
-        const text = `${message.trim()} ${suffix}`;
+        const mode = modeOf(a);
+        const suffix = mode === 'random' ? RANDOM_SUFFIXES[crypto.randomInt(RANDOM_SUFFIXES.length)] : mode === 'manual' ? manualOf(a) : '';
+        if (mode === 'manual' && !suffix) throw new Error('수동 개별 멘트를 입력하세요.');
+        const text = `${message.trim()}${suffix ? ` ${suffix}` : ''}`;
         await google('https://www.googleapis.com/youtube/v3/liveChat/messages?part=snippet', { method: 'POST', headers: { Authorization: `Bearer ${await access(a)}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ snippet: { liveChatId: target.liveChatId, type: 'textMessageEvent', textMessageDetails: { messageText: text } } }) });
         results.push({ accountId: a.id, name: a.name, ok: true, text });
       } catch (error) { results.push({ accountId: a.id, name: a.name, ok: false, error: error.message }); }
     }
     return { results };
   }
-  return { configured, begin, finish, accounts, update, resolve, send };
+  return { configured, begin, finish, accounts, update, updateAll, resolve, send };
 }
 module.exports = { createYoutubeChat };
