@@ -125,7 +125,7 @@ function createNightbotChat({ supabase, withSettingsMutation, fetchImpl = fetch,
       const task = (async () => {
         const latest = await readAuth(stationSlug);
         if (latest?.expiresAt > Date.now() + 60 * 1000) return latest.accessToken;
-        const token = await exchange({ grant_type: 'refresh_token', refresh_token: latest.refreshToken });
+        const token = await exchange({ grant_type: 'refresh_token', refresh_token: latest.refreshToken, redirect_uri: env.NIGHTBOT_REDIRECT_URI });
         if (!token.access_token) throw new Error('Nightbot 토큰 갱신 실패');
         await saveAuth(stationSlug, {
           accessToken: token.access_token,
