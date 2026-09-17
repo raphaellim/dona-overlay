@@ -108,7 +108,7 @@ function createYoutubeChat({ supabase, withSettingsMutation, env = process.env, 
       try {
         const suffix = modeOf(a) === 'random' ? RANDOM_SUFFIXES[crypto.randomInt(RANDOM_SUFFIXES.length)] : manualOf(a);
         if (!suffix) throw new Error('수동 개별 멘트를 입력하세요.');
-        const text = `${message.trim()}업 ${suffix}`;
+        const text = `${message.trim()} ${suffix}`;
         await google('https://www.googleapis.com/youtube/v3/liveChat/messages?part=snippet', { method: 'POST', headers: { Authorization: `Bearer ${await access(a)}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ snippet: { liveChatId: target.liveChatId, type: 'textMessageEvent', textMessageDetails: { messageText: text } } }) });
         results.push({ accountId: a.id, name: a.name, ok: true, text });
       } catch (error) { results.push({ accountId: a.id, name: a.name, ok: false, error: error.message }); }
