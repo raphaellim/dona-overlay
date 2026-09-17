@@ -1,0 +1,21 @@
+유튜브 채팅 리모컨 설치
+
+압축 파일의 server.js, youtube-chat.js, public/youtube_chat_remote.html을 프로젝트의 같은 경로에 덮어씁니다.
+package.json 변경은 필요하지 않습니다. Node 18 이상에서 내장 fetch를 사용합니다.
+
+Google Cloud에서 YouTube Data API v3를 사용 설정하고, OAuth 동의 화면 및 웹 애플리케이션 OAuth 클라이언트를 만듭니다.
+승인된 리디렉션 URI: https://dona-overlay.onrender.com/api/youtube-chat/callback
+OAuth 앱이 테스트 상태라면 채팅 계정들을 테스트 사용자에 등록하세요. 승인 화면에는 YouTube 권한이 표시됩니다.
+
+Render 환경변수:
+YOUTUBE_CLIENT_ID=Google OAuth 클라이언트 ID
+YOUTUBE_CLIENT_SECRET=Google OAuth 클라이언트 보안 비밀
+YOUTUBE_REDIRECT_URI=https://dona-overlay.onrender.com/api/youtube-chat/callback
+YOUTUBE_CHAT_ENCRYPTION_KEY=임의의 길고 비밀인 문자열(운영 중 바꾸면 기존 계정을 다시 연결해야 함)
+
+방송국 관리자 암호를 설정하고 로그인한 다음
+https://dona-overlay.onrender.com/youtube_chat_remote.html?station=default
+에서 각 Google 계정을 연결합니다. 실제 station이 default가 아니면 해당 슬러그로 바꿉니다.
+방송 URL을 입력해 '방송 확인'한 다음 멘트와 계정별 이모지를 입력해 전송합니다.
+각 계정은 본인 계정에서 한 번씩 Google 권한을 승인해야 합니다.
+이 기능은 버튼을 누른 경우에만 전송하며 한 번에 최대 10개 계정까지 순차 전송합니다.

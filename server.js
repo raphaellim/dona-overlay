@@ -8,6 +8,7 @@ const multer = require('multer');
 const http = require('http');
 const { Server } = require('socket.io');
 const { createNightbotChat, normalizeChatSettings } = require('./nightbot-chat');
+const { createYoutubeChat } = require('./youtube-chat');
 
 const app = express();
 const httpServer = http.createServer(app);
@@ -1089,6 +1090,7 @@ function withSettingsMutation(task) {
 }
 
 const nightbotChat = createNightbotChat({ supabase, withSettingsMutation });
+const youtubeChat = createYoutubeChat({ supabase, withSettingsMutation });
 
 async function readGlobalSettings() {
   const { data, error } = await supabase.from('settings').select('data').eq('id', 1).maybeSingle();
@@ -1504,7 +1506,8 @@ const STATION_HTML = new Set([
   '/station_style.html',
   '/media_manager.html',
   '/m_media_manager.html',
-  '/roulette.html'
+  '/roulette.html',
+  '/youtube_chat_remote.html'
 ]);
 
 // 크리에이터 리모컨은 방송국관리자/크리에이터 전용입니다.
@@ -1578,6 +1581,10 @@ async function accessGuard(req, res, next) {
       if (!station) return htmlRedirect(res, loginRedirectUrl('/station_login.html', getStationSlug(req), req, pathOnly));
 
       const active = await ensureActiveBroadcast(station.id);
+
+      if (pathOnly === '/youtube_chat_remote.html' && !isMasterRequest(req) && !station.station_admin_password) {
+        return htmlRedirect(res, loginRedirectUrl('/admin_login.html', station.slug, req, pathOnly));
+      }
 
       // overlay는 관리자 로그인 여부와 상관없이 방송국 토큰이 있어야만 접근 허용
       if (pathOnly === '/overlay.html' || pathOnly === '/overlay2.html') {
@@ -2910,6 +2917,57 @@ app.post('/api/roulette/history/clear', async (req, res) => {
 });
 
 /* 설정 */
+// 유튜브 채팅 계정은 관리자 암호가 설정된 방송국에서만 연결할 수 있습니다.
+async function youtubeChatAdmin(req, res) {
+  if (!requireDb(res)) return null;
+  const ctx = await getStationContext(req, res);
+  if (!ctx) return null;
+  if (!isMasterRequest(req) && (!ctx.station.station_admin_password || !await stationAllowed(req, ctx.station))) {
+    res.status(403).json({ error: '방송국 관리자 로그인 및 관리자 암호 설정이 필요합니다.' });
+    return null;
+  }
+  return ctx;
+}
+app.get('/api/youtube-chat/accounts', async (req, res) => {
+  try { const ctx = await youtubeChatAdmin(req, res); if (ctx) res.json({ configured: youtubeChat.configured(), accounts: await youtubeChat.accounts(ctx.station.slug) }); }
+  catch (e) { res.status(500).json({ error: e.message }); }
+});
+app.get('/api/youtube-chat/auth', async (req, res) => {
+  try { const ctx = await youtubeChatAdmin(req, res); if (ctx) res.redirect(youtubeChat.begin(ctx.station.slug)); }
+  catch (e) { res.status(400).type('text/plain').send(e.message); }
+});
+app.get('/api/youtube-chat/callback', async (req, res) => {
+  try {
+    const slug = await youtubeChat.finish(req.query.state, req.query.code);
+    res.redirect(`/youtube_chat_remote.html?station=${encodeURIComponent(slug)}&auth=ok`);
+  } catch (e) { res.status(400).type('text/plain').send(e.message); }
+});
+app.patch('/api/youtube-chat/accounts/:id', async (req, res) => {
+  try { const ctx = await youtubeChatAdmin(req, res); if (ctx) { await youtubeChat.update(ctx.station.slug, req.params.id, req.body?.emoji); res.json({ ok: true }); } }
+  catch (e) { res.status(400).json({ error: e.message }); }
+});
+app.post('/api/youtube-chat/resolve', async (req, res) => {
+  try { const ctx = await youtubeChatAdmin(req, res); if (ctx) res.json(await youtubeChat.resolve(ctx.station.slug, youtubeVideoId(req.body?.url))); }
+  catch (e) { res.status(400).json({ error: e.message }); }
+});
+app.post('/api/youtube-chat/send', async (req, res) => {
+  try {
+    const ctx = await youtubeChatAdmin(req, res);
+    if (ctx) res.json(await youtubeChat.send(ctx.station.slug, youtubeVideoId(req.body?.url), req.body?.accountIds || [], req.body?.message));
+  } catch (e) { res.status(400).json({ error: e.message }); }
+});
+function youtubeVideoId(input) {
+  let url;
+  try { url = new URL(String(input || '')); } catch (_) { throw new Error('유튜브 라이브 주소를 입력하세요.'); }
+  const host = url.hostname.toLowerCase().replace(/^www\./, '');
+  let id = '';
+  if (host === 'youtu.be') id = url.pathname.split('/')[1];
+  else if (host === 'youtube.com' || host === 'm.youtube.com') {
+    id = url.pathname === '/watch' ? url.searchParams.get('v') : /^\/(live|embed)\//.test(url.pathname) ? url.pathname.split('/')[2] : '';
+  }
+  if (!/^[\w-]{11}$/.test(id || '')) throw new Error('유효한 유튜브 라이브 영상 주소가 아닙니다.');
+  return id;
+}
 app.get('/api/nightbot/status', async (req, res) => {
   try {
     if (!requireDb(res)) return;
