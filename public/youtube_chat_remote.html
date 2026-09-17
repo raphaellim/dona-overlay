@@ -41,7 +41,7 @@
   $('liveUrl').value = stored.url || '';
   $('message').value = stored.message || '';
   const saveDraft = () => localStorage.setItem('chatRemoteDraft', JSON.stringify({url:$('liveUrl').value,message:$('message').value}));
-  const composed = a => `${$('message').value.trim()}업 ${a.suffixMode === 'random' ? '[랜덤: 6개 중 하나]' : (a.manualSuffix || '[수동 멘트 입력 필요]')}`;
+  const composed = a => `${$('message').value.trim()} ${a.suffixMode === 'random' ? '[랜덤: 6개 중 하나]' : (a.manualSuffix || '[수동 멘트 입력 필요]')}`;
   const errorText = e => e?.message || '요청을 처리하지 못했습니다.';
   async function request(path, options={}) {
     const response = await fetch(api + path + (path.includes('?') ? '&' : '?') + 'station=' + encodeURIComponent(station), {credentials:'same-origin',headers:{'Content-Type':'application/json'},...options});
