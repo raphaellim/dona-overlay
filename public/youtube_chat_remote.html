@@ -22,11 +22,11 @@
     <div id="accounts" class="accounts"><p>연결된 계정이 없습니다.</p></div>
     <div class="row" style="margin-top:14px;flex-wrap:wrap">
       <label for="allMode" style="margin:0">모든 계정 설정</label>
-      <select id="allMode" style="width:auto;min-width:150px"><option value="">방식 선택</option><option value="random">🎲 모두 랜덤</option><option value="manual">✍️ 모두 수동</option><option value="off">🚫 모두 끄기</option></select>
+      <select id="allMode" style="width:auto;min-width:150px"><option value="">방식 선택</option><option value="random">🎲 모두 랜덤</option><option value="manual">✍️ 모두 수동</option><option value="mixed">🔀 모두 섞기</option><option value="off">🚫 모두 끄기</option></select>
       <input id="allManual" maxlength="80" placeholder="선택: 모든 계정에 같은 수동 멘트 적용" aria-label="모든 계정 공통 수동 멘트" hidden style="flex:1;min-width:220px">
       <button id="applyAll">전체 적용</button>
     </div>
-    <p class="note">전체 적용은 연결된 모든 계정에 반영됩니다. 모두 수동에서 위 입력을 비우면 기존 계정별 수동 문구를 유지합니다.</p>
+    <p class="note">섞기는 전송할 때마다 랜덤 문구와 저장된 수동 문구를 골라 보냅니다. 수동 문구가 비어 있으면 랜덤만 사용합니다. 전체 적용 시 입력을 비우면 기존 계정별 수동 문구를 유지합니다.</p>
   </section>
   <section>
     <h2>메시지 작성</h2>
@@ -47,7 +47,7 @@
   $('liveUrl').value = stored.url || '';
   $('message').value = stored.message || '';
   const saveDraft = () => localStorage.setItem('chatRemoteDraft', JSON.stringify({url:$('liveUrl').value,message:$('message').value}));
-  const composed = a => `${$('message').value.trim()}${a.suffixMode === 'off' ? '' : ' ' + (a.suffixMode === 'random' ? '[랜덤: 6개 중 하나]' : (a.manualSuffix || '[수동 멘트 입력 필요]'))}`;
+  const composed = a => `${$('message').value.trim()}${a.suffixMode === 'off' ? '' : ' ' + (a.suffixMode === 'random' ? '[랜덤: 6개 중 하나]' : a.suffixMode === 'mixed' ? (a.manualSuffix ? `[랜덤 또는 ${a.manualSuffix}]` : '[랜덤: 수동 문구 없음]') : (a.manualSuffix || '[수동 멘트 입력 필요]'))}`;
   const errorText = e => e?.message || '요청을 처리하지 못했습니다.';
   async function request(path, options={}) {
     const response = await fetch(api + path + (path.includes('?') ? '&' : '?') + 'station=' + encodeURIComponent(station), {credentials:'same-origin',headers:{'Content-Type':'application/json'},...options});
@@ -64,11 +64,11 @@
       const name=document.createElement('div');name.className='name';name.textContent=a.name;
       const sub=document.createElement('small');sub.textContent=a.connected===false?'재인증 필요':'연결됨';name.append(sub);
       const mode=document.createElement('select');mode.setAttribute('aria-label',`${a.name} 개별 멘트 방식`);
-      [['random','🎲 랜덤'],['manual','✍️ 수동 입력'],['off','🚫 끄기']].forEach(([value,text])=>{const option=document.createElement('option');option.value=value;option.textContent=text;mode.append(option)});
+      [['random','🎲 랜덤'],['manual','✍️ 수동 입력'],['mixed','🔀 랜덤+수동 섞기'],['off','🚫 끄기']].forEach(([value,text])=>{const option=document.createElement('option');option.value=value;option.textContent=text;mode.append(option)});
       mode.value=a.suffixMode || 'random';
-      const manual=document.createElement('input');manual.className='manual';manual.placeholder='개별 멘트 + 이모지';manual.maxLength=80;manual.value=a.manualSuffix || '';manual.setAttribute('aria-label',`${a.name} 수동 개별 멘트`);manual.hidden=mode.value!=='manual';
-      function saveAccount(changes){a.pending=(a.pending||Promise.resolve()).then(async()=>{await request(`/accounts/${encodeURIComponent(a.id)}`,{method:'PATCH',body:JSON.stringify(changes)});Object.assign(a,changes);a.saveError=null;renderPreview()}).catch(e=>{mode.value=a.suffixMode;manual.value=a.manualSuffix || '';manual.hidden=mode.value!=='manual';$('result').textContent=errorText(e);$('result').className='result error';a.saveError=e;});return a.pending}
-      mode.onchange=()=>{manual.hidden=mode.value!=='manual';saveAccount({suffixMode:mode.value})};
+      const manual=document.createElement('input');manual.className='manual';manual.placeholder='개별 멘트 + 이모지';manual.maxLength=80;manual.value=a.manualSuffix || '';manual.setAttribute('aria-label',`${a.name} 수동 개별 멘트`);manual.hidden=!['manual','mixed'].includes(mode.value);
+      function saveAccount(changes){a.pending=(a.pending||Promise.resolve()).then(async()=>{await request(`/accounts/${encodeURIComponent(a.id)}`,{method:'PATCH',body:JSON.stringify(changes)});Object.assign(a,changes);a.saveError=null;renderPreview()}).catch(e=>{mode.value=a.suffixMode;manual.value=a.manualSuffix || '';manual.hidden=!['manual','mixed'].includes(mode.value);$('result').textContent=errorText(e);$('result').className='result error';a.saveError=e;});return a.pending}
+      mode.onchange=()=>{manual.hidden=!['manual','mixed'].includes(mode.value);saveAccount({suffixMode:mode.value})};
       manual.onchange=()=>saveAccount({manualSuffix:manual.value.trim()});
       const actions=document.createElement('div');actions.className='account-actions';
       const send=document.createElement('button');send.textContent='개별 전송';send.onclick=()=>sendMessages([a]);send.disabled=!serverReady||a.connected===false;
@@ -82,7 +82,7 @@
     selected.forEach(a=>{const item=document.createElement('div');const label=document.createElement('strong');label.textContent=a.name+' → ';item.append(label,document.createTextNode(composed(a)));box.append(item)})
   }
   async function loadAccounts(){try{const data=await request('/accounts');accounts=(data.accounts||[]).map(a=>({...a,selected:true}));serverReady=true;$('connection').textContent='서버 연결됨';$('setupNote').hidden=true}catch(e){serverReady=false;$('connection').textContent='서버 연동 필요';$('setupNote').hidden=false}render()}
-  $('allMode').onchange=()=>{$('allManual').hidden=$('allMode').value!=='manual'};
+  $('allMode').onchange=()=>{$('allManual').hidden=!['manual','mixed'].includes($('allMode').value)};
   $('applyAll').onclick=async()=>{
     const mode=$('allMode').value;
     if(!mode||!accounts.length){$('result').textContent='방식을 선택하고 계정을 연결하세요.';$('result').className='result error';return}
@@ -91,7 +91,7 @@
       await Promise.all(accounts.map(a=>a.pending).filter(Boolean));
       if(accounts.some(a=>a.saveError))throw new Error('계정별 설정 저장을 확인한 뒤 다시 적용하세요.');
       const payload={suffixMode:mode};
-      if(mode==='manual'&&$('allManual').value.trim())payload.manualSuffix=$('allManual').value.trim();
+      if(['manual','mixed'].includes(mode)&&$('allManual').value.trim())payload.manualSuffix=$('allManual').value.trim();
       const data=await request('/accounts',{method:'PATCH',body:JSON.stringify(payload)});
       const selected=new Map(accounts.map(a=>[a.id,a.selected]));
       accounts=(data.accounts||[]).map(a=>({...a,selected:selected.get(a.id)!==false}));render();
