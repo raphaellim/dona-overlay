@@ -2943,7 +2943,7 @@ app.get('/api/youtube-chat/callback', async (req, res) => {
   } catch (e) { res.status(400).type('text/plain').send(e.message); }
 });
 app.patch('/api/youtube-chat/accounts/:id', async (req, res) => {
-  try { const ctx = await youtubeChatAdmin(req, res); if (ctx) { await youtubeChat.update(ctx.station.slug, req.params.id, req.body?.emoji); res.json({ ok: true }); } }
+  try { const ctx = await youtubeChatAdmin(req, res); if (ctx) { await youtubeChat.update(ctx.station.slug, req.params.id, req.body); res.json({ ok: true }); } }
   catch (e) { res.status(400).json({ error: e.message }); }
 });
 app.post('/api/youtube-chat/resolve', async (req, res) => {
