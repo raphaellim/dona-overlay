@@ -2929,8 +2929,12 @@ async function youtubeChatAdmin(req, res) {
   return ctx;
 }
 app.get('/api/youtube-chat/accounts', async (req, res) => {
-  try { const ctx = await youtubeChatAdmin(req, res); if (ctx) res.json({ configured: youtubeChat.configured(), accounts: await youtubeChat.accounts(ctx.station.slug) }); }
+  try { const ctx = await youtubeChatAdmin(req, res); if (ctx) res.json({ configured: youtubeChat.configured(), accounts: await youtubeChat.accounts(ctx.station.slug), options: await youtubeChat.options(ctx.station.slug) }); }
   catch (e) { res.status(500).json({ error: e.message }); }
+});
+app.patch('/api/youtube-chat/options', async (req, res) => {
+  try { const ctx = await youtubeChatAdmin(req, res); if (ctx) res.json({ options: await youtubeChat.updateOptions(ctx.station.slug, req.body) }); }
+  catch (e) { res.status(400).json({ error: e.message }); }
 });
 app.get('/api/youtube-chat/auth', async (req, res) => {
   try { const ctx = await youtubeChatAdmin(req, res); if (ctx) res.redirect(youtubeChat.begin(ctx.station.slug)); }

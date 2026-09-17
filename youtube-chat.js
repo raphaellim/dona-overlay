@@ -2,6 +2,38 @@ const crypto = require('crypto');
 const RANDOM_SUFFIXES = ['할짝할짝 😋💦', '츄릅츄릅 🤤💦', '낼름낼름 😛✨', '쫍쫍쫍 😘💋', '쭈압쭈압 😘💖', '굽신굽신 🙇‍♂️✨'];
 const modeOf = a => ['random', 'manual', 'mixed', 'off'].includes(a.suffixMode) ? a.suffixMode : (a.emoji ? 'manual' : 'random');
 const manualOf = a => String(a.manualSuffix ?? a.emoji ?? '').trim();
+const DEFAULT_EMOJI_POOL = '❤️ 🧡 💛 💚 🩵 💙 💜 🩷 🤍 🌹 🌷 🌸 🌼 🌻 🪻 💐';
+function normalizeOptions(value) {
+  const raw = value && typeof value === 'object' ? value : {};
+  return {
+    randomOrder: true,
+    varietyMode: raw.varietyMode !== false,
+    emojiPool: typeof raw.emojiPool === 'string' ? raw.emojiPool : DEFAULT_EMOJI_POOL
+  };
+}
+function emojisOf(options) {
+  return options.emojiPool.trim().split(/[\s,]+/u).filter(Boolean);
+}
+function pickIcons(pool, count) {
+  const available = [...pool], chosen = [];
+  for (let i = 0; i < count; i++) chosen.push(available.splice(crypto.randomInt(available.length), 1)[0]);
+  return chosen.join('');
+}
+function variedMessage(message, options) {
+  const body = message.trim(), pool = emojisOf(options);
+  const variant = body ? crypto.randomInt(3) : 2;
+  if (variant === 2) return pickIcons(pool, 3);
+  if (variant === 1) return `${body} ${pickIcons(pool, 2)}`;
+  const width = crypto.randomInt(3, 11);
+  return body.split(/(\s+)/u).map(part => part.trim() ? Array.from(part).join('ㅡ'.repeat(width)) : part).join('');
+}
+function shuffle(values) {
+  for (let i = values.length - 1; i > 0; i--) {
+    const j = crypto.randomInt(i + 1);
+    [values[i], values[j]] = [values[j], values[i]];
+  }
+  return values;
+}
 
 function createYoutubeChat({ supabase, withSettingsMutation, env = process.env, fetchImpl = fetch }) {
   const states = new Map();
@@ -27,7 +59,7 @@ function createYoutubeChat({ supabase, withSettingsMutation, env = process.env, 
     return withSettingsMutation(async () => {
       const store = await readStore();
       const accounts = Array.isArray(store[slug]) ? store[slug] : [];
-      const result = await callback(accounts);
+      const result = await callback(accounts, store);
       store[slug] = accounts;
       const { error } = await supabase.from('settings').upsert({ id: 3, data: store, updated_at: new Date().toISOString() }, { onConflict: 'id' });
       if (error) throw error;
@@ -70,6 +102,23 @@ function createYoutubeChat({ supabase, withSettingsMutation, env = process.env, 
   async function accounts(slug) {
     const store = await readStore();
     return (store[slug] || []).map(a => ({ id: a.id, name: a.name, suffixMode: modeOf(a), manualSuffix: manualOf(a), connected: true }));
+  }
+  async function options(slug) {
+    const store = await readStore();
+    return normalizeOptions(store.$chatOptions?.[slug]);
+  }
+  async function updateOptions(slug, input) {
+    if (!input || ['randomOrder', 'varietyMode'].some(key => typeof input[key] !== 'boolean')) throw new Error('전송 옵션을 다시 확인하세요.');
+    if (typeof input.emojiPool !== 'string' || input.emojiPool.length > 250) throw new Error('이모지 목록은 250자 이내로 입력하세요.');
+    const pool = emojisOf(input);
+    if (input.varietyMode && pool.length < 3) throw new Error('서로 다른 이모지를 3개 이상 입력하세요.');
+    if (pool.length > 30 || pool.some(item => Array.from(item).length > 12)) throw new Error('이모지는 최대 30개, 각 항목은 12자 이내로 입력하세요.');
+    const value = { randomOrder: true, varietyMode: input.varietyMode, emojiPool: input.emojiPool.trim() };
+    await changeStore(slug, (_, store) => {
+      if (!store.$chatOptions || typeof store.$chatOptions !== 'object') store.$chatOptions = {};
+      store.$chatOptions[slug] = value;
+    });
+    return value;
   }
   async function update(slug, id, value) {
     const changes = value || {};
@@ -114,22 +163,30 @@ function createYoutubeChat({ supabase, withSettingsMutation, env = process.env, 
   async function send(slug, videoId, ids, message) {
     const target = await resolve(slug, videoId);
     const store = await readStore(), selected = (store[slug] || []).filter(a => ids.includes(a.id));
+    const settings = normalizeOptions(store.$chatOptions?.[slug]);
     if (!selected.length || selected.length !== ids.length || selected.length > 10) throw new Error('전송할 연결 계정을 1~10개 선택하세요.');
-    if (typeof message !== 'string' || !message.trim() || message.length > 180) throw new Error('공용 멘트는 1~180자로 입력하세요.');
+    if (typeof message !== 'string' || message.length > 180 || (!settings.varietyMode && !message.trim())) throw new Error('공용 멘트는 180자 이내로 입력하세요.');
+    if (settings.varietyMode && emojisOf(settings).length < 3) throw new Error('서로 다른 이모지를 3개 이상 등록하세요.');
     const results = [];
+    shuffle(selected);
     for (const a of selected) {
       try {
-        const mode = modeOf(a);
-        const useManual = mode === 'manual' || (mode === 'mixed' && manualOf(a) && crypto.randomInt(2) === 0);
-        const suffix = mode === 'off' ? '' : useManual ? manualOf(a) : RANDOM_SUFFIXES[crypto.randomInt(RANDOM_SUFFIXES.length)];
-        if (mode === 'manual' && !suffix) throw new Error('수동 개별 멘트를 입력하세요.');
-        const text = `${message.trim()}${suffix ? ` ${suffix}` : ''}`;
+        let text;
+        if (settings.varietyMode) text = variedMessage(message, settings);
+        else {
+          const mode = modeOf(a);
+          const useManual = mode === 'manual' || (mode === 'mixed' && manualOf(a) && crypto.randomInt(2) === 0);
+          const suffix = mode === 'off' ? '' : useManual ? manualOf(a) : RANDOM_SUFFIXES[crypto.randomInt(RANDOM_SUFFIXES.length)];
+          if (mode === 'manual' && !suffix) throw new Error('수동 개별 멘트를 입력하세요.');
+          text = `${message.trim()}${suffix ? ` ${suffix}` : ''}`;
+        }
+        if (Array.from(text).length > 200) throw new Error('장식과 개별 멘트를 합친 메시지가 너무 깁니다. 공용 멘트를 줄이세요.');
         await google('https://www.googleapis.com/youtube/v3/liveChat/messages?part=snippet', { method: 'POST', headers: { Authorization: `Bearer ${await access(a)}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ snippet: { liveChatId: target.liveChatId, type: 'textMessageEvent', textMessageDetails: { messageText: text } } }) });
         results.push({ accountId: a.id, name: a.name, ok: true, text });
       } catch (error) { results.push({ accountId: a.id, name: a.name, ok: false, error: error.message }); }
     }
     return { results };
   }
-  return { configured, begin, finish, accounts, update, updateAll, resolve, send };
+  return { configured, begin, finish, accounts, options, updateOptions, update, updateAll, resolve, send };
 }
 module.exports = { createYoutubeChat };
