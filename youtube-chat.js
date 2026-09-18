@@ -21,10 +21,8 @@ function pickIcons(pool, count) {
 }
 function variedMessage(message, options) {
   const body = message.trim(), pool = emojisOf(options);
-  const variant = body ? crypto.randomInt(3) : 2;
-  if (variant === 2) return pickIcons(pool, 3);
-  if (variant === 1) return `${body} ${pickIcons(pool, 2)}`;
-  const width = crypto.randomInt(3, 11);
+  if (crypto.randomInt(2) === 1) return `${body} ${pickIcons(pool, 2)}`;
+  const width = crypto.randomInt(1, 4);
   return body.split(/(\s+)/u).map(part => part.trim() ? Array.from(part).join('ㅡ'.repeat(width)) : part).join('');
 }
 function shuffle(values) {
@@ -171,7 +169,7 @@ function createYoutubeChat({ supabase, withSettingsMutation, env = process.env, 
     const store = await readStore(), selected = (store[storeKey(slug)] || []).filter(a => ids.includes(a.id));
     const settings = normalizeOptions(store.$chatOptions?.[storeKey(slug)]);
     if (!selected.length || selected.length !== ids.length || selected.length > 10) throw new Error('전송할 연결 계정을 1~10개 선택하세요.');
-    if (typeof message !== 'string' || message.length > 180 || (!settings.varietyMode && !message.trim())) throw new Error('공용 멘트는 180자 이내로 입력하세요.');
+    if (typeof message !== 'string' || !message.trim() || message.length > 180) throw new Error('공용 멘트는 1~180자로 입력하세요.');
     if (settings.varietyMode && emojisOf(settings).length < 3) throw new Error('서로 다른 이모지를 3개 이상 등록하세요.');
     const results = [];
     shuffle(selected);
@@ -182,15 +180,12 @@ function createYoutubeChat({ supabase, withSettingsMutation, env = process.env, 
         continue;
       }
       try {
-        let text;
-        if (settings.varietyMode) text = variedMessage(message, settings);
-        else {
-          const mode = modeOf(a);
-          const useManual = mode === 'manual' || (mode === 'mixed' && manualOf(a) && crypto.randomInt(2) === 0);
-          const suffix = mode === 'off' ? '' : useManual ? manualOf(a) : RANDOM_SUFFIXES[crypto.randomInt(RANDOM_SUFFIXES.length)];
-          if (mode === 'manual' && !suffix) throw new Error('수동 개별 멘트를 입력하세요.');
-          text = `${message.trim()}${suffix ? ` ${suffix}` : ''}`;
-        }
+        const mode = modeOf(a);
+        const useManual = mode === 'manual' || (mode === 'mixed' && manualOf(a) && crypto.randomInt(2) === 0);
+        const suffix = mode === 'off' ? '' : useManual ? manualOf(a) : RANDOM_SUFFIXES[crypto.randomInt(RANDOM_SUFFIXES.length)];
+        if (mode === 'manual' && !suffix) throw new Error('수동 개별 멘트를 입력하세요.');
+        const body = settings.varietyMode && !useManual ? variedMessage(message, settings) : message.trim();
+        const text = `${body}${suffix ? ` ${suffix}` : ''}`;
         if (Array.from(text).length > 200) throw new Error('장식과 개별 멘트를 합친 메시지가 너무 깁니다. 공용 멘트를 줄이세요.');
         await google('https://www.googleapis.com/youtube/v3/liveChat/messages?part=snippet', { method: 'POST', headers: { Authorization: `Bearer ${await access(a)}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ snippet: { liveChatId: target.liveChatId, type: 'textMessageEvent', textMessageDetails: { messageText: text } } }) });
         results.push({ accountId: a.id, name: a.name, ok: true, text });

@@ -32,18 +32,18 @@
     <h2>전송 꾸미기</h2>
     <div class="row" style="flex-wrap:wrap;gap:16px">
       <span class="note">계정 전송 순서는 항상 랜덤하게 섞습니다.</span>
-      <label style="margin:0"><input type="checkbox" id="varietyMode" style="width:auto"> 문구 형태 세 가지 중 랜덤 선택</label>
+      <label style="margin:0"><input type="checkbox" id="varietyMode" style="width:auto"> 랜덤 문구 형태 사용 (수동 멘트 제외)</label>
     </div>
     <label for="emojiPool" style="margin-top:16px">랜덤으로 사용할 이모지 (공백으로 구분)</label>
     <input id="emojiPool" maxlength="250" placeholder="❤️ 🧡 💛 💚 🩵 💙 💜 🩷 🤍 🌹 🌷 🌸 🌼 🌻 🪻 💐 [elbowcough]">
-    <p class="note">랜덤 형식: 떠ㅡㅡㅡ기ㅡㅡㅡ업 / 떠기업 🌸💗 / 🩵🌷🌼. 이모지만 나올 때는 공용 멘트와 개별 멘트를 넣지 않습니다. 계정 전송 순서도 매번 섞습니다.</p>
+    <p class="note">랜덤 형식: 떠ㅡ기ㅡ업 / 떠ㅡㅡ기ㅡㅡ업 / 떠ㅡㅡㅡ기ㅡㅡㅡ업 또는 떠기업 🌸💗. ㅡ는 글자 사이에 1~3개를 넣습니다. 계정 전송 순서도 매번 섞습니다.</p>
     <div class="actions"><button id="addElbowcough" type="button">[elbowcough] 추가</button><button id="saveOptions">설정 저장</button><span class="note">이모지 코드는 실제 라이브 채팅에서 표시 여부를 확인하세요.</span></div>
   </section>
   <section>
     <h2>메시지 작성</h2>
     <label for="message">공용 멘트</label><textarea id="message" maxlength="180" placeholder="예: 빵떠기 화이팅"></textarea>
     <div id="preview" class="preview" aria-live="polite"></div>
-    <div class="actions"><button class="primary" id="sendSelected">선택 계정 전송</button><span class="note">랜덤 형식 사용 시 계정별 개별 멘트는 적용되지 않습니다. 공용 멘트를 비우면 이모지만 보냅니다.</span></div>
+    <div class="actions"><button class="primary" id="sendSelected">선택 계정 전송</button><span class="note">수동을 선택한 계정은 공용 멘트 + 수동 개별 멘트를 그대로 전송합니다. 공용 멘트를 입력하세요.</span></div>
     <div id="result" class="result" role="status" aria-live="polite"></div>
   </section>
   <div class="hint note" id="setupNote">서버 연동 전에는 미리보기만 가능합니다. 계정 인증 및 실제 전송에는 서버 API가 필요합니다.</div>
@@ -64,10 +64,10 @@
     const body=$('message').value.trim();
     if(!$('varietyMode').checked)return body;
     const pool=$('emojiPool').value.trim().split(/[\s,]+/u).filter(Boolean);
-    if(!body)return pool.slice(0,3).join('')||'이모지를 3개 이상 등록하세요';
-    return `${Array.from(body).join('ㅡㅡㅡ')} / ${body} ${pool.slice(0,2).join('')} / ${pool.slice(0,3).join('')}`;
+    if(!body)return '';
+    return `${Array.from(body).join('ㅡㅡㅡ')} / ${body} ${pool.slice(0,2).join('')}`;
   }
-  const composed = a => $('varietyMode').checked ? sampleCommon() : `${sampleCommon()}${a.suffixMode === 'off' ? '' : ' ' + (a.suffixMode === 'random' ? '[랜덤: 6개 중 하나]' : a.suffixMode === 'mixed' ? (a.manualSuffix ? `[랜덤 또는 ${a.manualSuffix}]` : '[랜덤: 수동 문구 없음]') : (a.manualSuffix || '[수동 멘트 입력 필요]'))}`;
+  const composed = a => `${a.suffixMode === 'manual' ? $('message').value.trim() : sampleCommon()}${a.suffixMode === 'off' ? '' : ' ' + (a.suffixMode === 'random' ? '[랜덤: 6개 중 하나]' : a.suffixMode === 'mixed' ? (a.manualSuffix ? `[랜덤 또는 ${a.manualSuffix}]` : '[랜덤: 수동 문구 없음]') : (a.manualSuffix || '[수동 멘트 입력 필요]'))}`;
   const errorText = e => e?.message || '요청을 처리하지 못했습니다.';
   async function request(path, options={}) {
     const response = await fetch(api + path + (path.includes('?') ? '&' : '?') + 'station=' + encodeURIComponent(station), {credentials:'same-origin',headers:{'Content-Type':'application/json'},...options});
@@ -98,7 +98,7 @@
   function renderPreview(){
     const box=$('preview');box.replaceChildren();
     const selected=accounts.filter(a=>a.selected!==false);
-    if((!$('message').value.trim()&&!$('varietyMode').checked)||!selected.length)return;
+    if(!$('message').value.trim()||!selected.length)return;
     selected.forEach(a=>{const item=document.createElement('div');const label=document.createElement('strong');label.textContent=a.name+' → ';item.append(label,document.createTextNode(composed(a)));box.append(item)})
   }
   async function loadAccounts(){try{const data=await request('/accounts');accounts=(data.accounts||[]).map(a=>({...a,selected:true}));savedOptions=data.options||{};$('varietyMode').checked=savedOptions.varietyMode!==false;$('emojiPool').value=savedOptions.emojiPool||'';serverReady=!!data.configured;$('connection').textContent=serverReady?'운영 서버 연결됨':'운영용 OAuth 설정 필요';$('setupNote').textContent='운영용 OAuth 환경변수 4개를 Render에 등록하고, 이 운영 페이지에서 계정을 새로 연결하세요.';$('setupNote').hidden=serverReady}catch(e){serverReady=false;$('connection').textContent='서버 연동 필요';$('setupNote').hidden=false}render()}
@@ -131,7 +131,7 @@
   };
   $('addAccount').onclick=()=>{if(!serverReady){$('result').textContent='계정을 연결하려면 서버의 Google 인증 기능을 먼저 설정하세요.';$('result').className='result error';return}location.href=api+'/auth?station='+encodeURIComponent(station)};
   $('connect').onclick=async()=>{saveDraft();chatId='';$('liveStatus').textContent='방송 확인 중…';try{const data=await request('/resolve',{method:'POST',body:JSON.stringify({url:$('liveUrl').value.trim()})});chatId=data.liveChatId;$('liveStatus').textContent=`채팅 가능 · ${data.title||'라이브 방송'}`}catch(e){$('liveStatus').textContent=errorText(e)}};
-  async function sendMessages(chosen){if(busy)return;const message=$('message').value.trim();if((!message&&!savedOptions.varietyMode)||!chosen.length||!chatId){$('result').textContent='방송을 확인하고 계정을 선택하세요. 일반 모드에서는 공용 멘트도 입력하세요.';$('result').className='result error';return}busy=true;$('sendSelected').disabled=true;$('result').textContent='전송 중…';$('result').className='result';try{if(optionPending)await optionPending;await Promise.all(chosen.map(a=>a.pending).filter(Boolean));if(chosen.some(a=>a.saveError))throw new Error('개별 멘트 저장에 실패했습니다. 다시 입력하세요.');const data=await request('/send',{method:'POST',body:JSON.stringify({url:$('liveUrl').value.trim(),accountIds:chosen.map(a=>a.id),message})});const outcomes=data.results||[];$('result').textContent=outcomes.length?outcomes.map(x=>`${x.name||x.accountId}: ${x.ok?'전송 완료 · '+x.text:x.error||'실패'}`).join('\n'):'전송 요청이 완료되었습니다.';$('result').className=outcomes.some(x=>!x.ok)?'result error':'result ok'}catch(e){$('result').textContent=errorText(e);$('result').className='result error'}finally{busy=false;$('sendSelected').disabled=false}}
+  async function sendMessages(chosen){if(busy)return;const message=$('message').value.trim();if(!message||!chosen.length||!chatId){$('result').textContent='방송을 확인하고 공용 멘트와 계정을 선택하세요.';$('result').className='result error';return}busy=true;$('sendSelected').disabled=true;$('result').textContent='전송 중…';$('result').className='result';try{if(optionPending)await optionPending;await Promise.all(chosen.map(a=>a.pending).filter(Boolean));if(chosen.some(a=>a.saveError))throw new Error('개별 멘트 저장에 실패했습니다. 다시 입력하세요.');const data=await request('/send',{method:'POST',body:JSON.stringify({url:$('liveUrl').value.trim(),accountIds:chosen.map(a=>a.id),message})});const outcomes=data.results||[];$('result').textContent=outcomes.length?outcomes.map(x=>`${x.name||x.accountId}: ${x.ok?'전송 완료 · '+x.text:x.error||'실패'}`).join('\n'):'전송 요청이 완료되었습니다.';$('result').className=outcomes.some(x=>!x.ok)?'result error':'result ok'}catch(e){$('result').textContent=errorText(e);$('result').className='result error'}finally{busy=false;$('sendSelected').disabled=false}}
   $('sendSelected').onclick=()=>sendMessages(accounts.filter(a=>a.selected!==false&&a.connected!==false));
   $('liveUrl').addEventListener('input',()=>{chatId='';$('liveStatus').textContent='방송 확인을 눌러주세요.';saveDraft()});$('message').addEventListener('input',()=>{saveDraft();renderPreview()});
   const params=new URLSearchParams(location.search);if(params.has('auth')){$('result').textContent=params.get('auth')==='ok'?'계정 연결이 완료되었습니다.':'계정 연결에 실패했습니다.';history.replaceState(null,'',location.pathname+'?station='+encodeURIComponent(station))}
