@@ -1091,6 +1091,18 @@ function withSettingsMutation(task) {
 
 const nightbotChat = createNightbotChat({ supabase, withSettingsMutation });
 const youtubeChat = createYoutubeChat({ supabase, withSettingsMutation });
+// 운영용 API와 인증 정보는 테스트용 채팅 페이지와 분리합니다.
+const youtubeChatService = createYoutubeChat({
+  supabase,
+  withSettingsMutation,
+  namespace: 'service',
+  env: {
+    YOUTUBE_CLIENT_ID: process.env.YOUTUBE_SERVICE_CLIENT_ID,
+    YOUTUBE_CLIENT_SECRET: process.env.YOUTUBE_SERVICE_CLIENT_SECRET,
+    YOUTUBE_REDIRECT_URI: process.env.YOUTUBE_SERVICE_REDIRECT_URI,
+    YOUTUBE_CHAT_ENCRYPTION_KEY: process.env.YOUTUBE_SERVICE_CHAT_ENCRYPTION_KEY
+  }
+});
 
 async function readGlobalSettings() {
   const { data, error } = await supabase.from('settings').select('data').eq('id', 1).maybeSingle();
@@ -2962,6 +2974,43 @@ app.post('/api/youtube-chat/send', async (req, res) => {
   try {
     const ctx = await youtubeChatAdmin(req, res);
     if (ctx) res.json(await youtubeChat.send(ctx.station.slug, youtubeVideoId(req.body?.url), req.body?.accountIds || [], req.body?.message));
+  } catch (e) { res.status(400).json({ error: e.message }); }
+});
+// 별도의 OAuth 프로젝트와 계정 저장 공간을 쓰는 운영용 채팅 페이지입니다.
+app.get('/api/youtube-chat-service/accounts', async (req, res) => {
+  try { const ctx = await youtubeChatAdmin(req, res); if (ctx) res.json({ configured: youtubeChatService.configured(), accounts: await youtubeChatService.accounts(ctx.station.slug), options: await youtubeChatService.options(ctx.station.slug) }); }
+  catch (e) { res.status(500).json({ error: e.message }); }
+});
+app.patch('/api/youtube-chat-service/options', async (req, res) => {
+  try { const ctx = await youtubeChatAdmin(req, res); if (ctx) res.json({ options: await youtubeChatService.updateOptions(ctx.station.slug, req.body) }); }
+  catch (e) { res.status(400).json({ error: e.message }); }
+});
+app.get('/api/youtube-chat-service/auth', async (req, res) => {
+  try { const ctx = await youtubeChatAdmin(req, res); if (ctx) res.redirect(youtubeChatService.begin(ctx.station.slug)); }
+  catch (e) { res.status(400).type('text/plain').send(e.message); }
+});
+app.get('/api/youtube-chat-service/callback', async (req, res) => {
+  try {
+    const slug = await youtubeChatService.finish(req.query.state, req.query.code);
+    res.redirect(`/youtube_chat_service.html?station=${encodeURIComponent(slug)}&auth=ok`);
+  } catch (e) { res.status(400).type('text/plain').send(e.message); }
+});
+app.patch('/api/youtube-chat-service/accounts', async (req, res) => {
+  try { const ctx = await youtubeChatAdmin(req, res); if (ctx) res.json({ accounts: await youtubeChatService.updateAll(ctx.station.slug, req.body) }); }
+  catch (e) { res.status(400).json({ error: e.message }); }
+});
+app.patch('/api/youtube-chat-service/accounts/:id', async (req, res) => {
+  try { const ctx = await youtubeChatAdmin(req, res); if (ctx) { await youtubeChatService.update(ctx.station.slug, req.params.id, req.body); res.json({ ok: true }); } }
+  catch (e) { res.status(400).json({ error: e.message }); }
+});
+app.post('/api/youtube-chat-service/resolve', async (req, res) => {
+  try { const ctx = await youtubeChatAdmin(req, res); if (ctx) res.json(await youtubeChatService.resolve(ctx.station.slug, youtubeVideoId(req.body?.url))); }
+  catch (e) { res.status(400).json({ error: e.message }); }
+});
+app.post('/api/youtube-chat-service/send', async (req, res) => {
+  try {
+    const ctx = await youtubeChatAdmin(req, res);
+    if (ctx) res.json(await youtubeChatService.send(ctx.station.slug, youtubeVideoId(req.body?.url), req.body?.accountIds || [], req.body?.message));
   } catch (e) { res.status(400).json({ error: e.message }); }
 });
 function youtubeVideoId(input) {

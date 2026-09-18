@@ -35,8 +35,9 @@ function shuffle(values) {
   return values;
 }
 
-function createYoutubeChat({ supabase, withSettingsMutation, env = process.env, fetchImpl = fetch }) {
+function createYoutubeChat({ supabase, withSettingsMutation, env = process.env, fetchImpl = fetch, namespace = '' }) {
   const states = new Map();
+  const storeKey = slug => namespace ? `${namespace}:${slug}` : slug;
   const key = () => crypto.createHash('sha256').update(env.YOUTUBE_CHAT_ENCRYPTION_KEY).digest();
   const configured = () => !!(env.YOUTUBE_CLIENT_ID && env.YOUTUBE_CLIENT_SECRET && env.YOUTUBE_REDIRECT_URI && env.YOUTUBE_CHAT_ENCRYPTION_KEY);
   const seal = value => {
@@ -58,9 +59,10 @@ function createYoutubeChat({ supabase, withSettingsMutation, env = process.env, 
   async function changeStore(slug, callback) {
     return withSettingsMutation(async () => {
       const store = await readStore();
-      const accounts = Array.isArray(store[slug]) ? store[slug] : [];
+      const storageKey = storeKey(slug);
+      const accounts = Array.isArray(store[storageKey]) ? store[storageKey] : [];
       const result = await callback(accounts, store);
-      store[slug] = accounts;
+      store[storageKey] = accounts;
       const { error } = await supabase.from('settings').upsert({ id: 3, data: store, updated_at: new Date().toISOString() }, { onConflict: 'id' });
       if (error) throw error;
       return result;
@@ -69,7 +71,11 @@ function createYoutubeChat({ supabase, withSettingsMutation, env = process.env, 
   async function google(url, options = {}) {
     const response = await fetchImpl(url, { ...options, signal: AbortSignal.timeout(12000) });
     const result = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(result.error?.message || result.error_description || `Google API 오류 (${response.status})`);
+    if (!response.ok) {
+      const error = new Error(result.error?.message || result.error_description || `Google API 오류 (${response.status})`);
+      error.reason = result.error?.errors?.[0]?.reason;
+      throw error;
+    }
     return result;
   }
   async function token(form) {
@@ -101,11 +107,11 @@ function createYoutubeChat({ supabase, withSettingsMutation, env = process.env, 
   }
   async function accounts(slug) {
     const store = await readStore();
-    return (store[slug] || []).map(a => ({ id: a.id, name: a.name, suffixMode: modeOf(a), manualSuffix: manualOf(a), connected: true }));
+    return (store[storeKey(slug)] || []).map(a => ({ id: a.id, name: a.name, suffixMode: modeOf(a), manualSuffix: manualOf(a), connected: true }));
   }
   async function options(slug) {
     const store = await readStore();
-    return normalizeOptions(store.$chatOptions?.[slug]);
+    return normalizeOptions(store.$chatOptions?.[storeKey(slug)]);
   }
   async function updateOptions(slug, input) {
     if (!input || ['randomOrder', 'varietyMode'].some(key => typeof input[key] !== 'boolean')) throw new Error('전송 옵션을 다시 확인하세요.');
@@ -116,7 +122,7 @@ function createYoutubeChat({ supabase, withSettingsMutation, env = process.env, 
     const value = { randomOrder: true, varietyMode: input.varietyMode, emojiPool: input.emojiPool.trim() };
     await changeStore(slug, (_, store) => {
       if (!store.$chatOptions || typeof store.$chatOptions !== 'object') store.$chatOptions = {};
-      store.$chatOptions[slug] = value;
+      store.$chatOptions[storeKey(slug)] = value;
     });
     return value;
   }
@@ -153,7 +159,7 @@ function createYoutubeChat({ supabase, withSettingsMutation, env = process.env, 
     return fresh.access_token;
   }
   async function resolve(slug, videoId) {
-    const store = await readStore(), first = (store[slug] || [])[0];
+    const store = await readStore(), first = (store[storeKey(slug)] || [])[0];
     if (!first) throw new Error('채팅 계정을 먼저 연결하세요.');
     const data = await google(`https://www.googleapis.com/youtube/v3/videos?part=snippet,liveStreamingDetails&id=${encodeURIComponent(videoId)}`, { headers: { Authorization: `Bearer ${await access(first)}` } });
     const video = data.items?.[0];
@@ -162,14 +168,19 @@ function createYoutubeChat({ supabase, withSettingsMutation, env = process.env, 
   }
   async function send(slug, videoId, ids, message) {
     const target = await resolve(slug, videoId);
-    const store = await readStore(), selected = (store[slug] || []).filter(a => ids.includes(a.id));
-    const settings = normalizeOptions(store.$chatOptions?.[slug]);
+    const store = await readStore(), selected = (store[storeKey(slug)] || []).filter(a => ids.includes(a.id));
+    const settings = normalizeOptions(store.$chatOptions?.[storeKey(slug)]);
     if (!selected.length || selected.length !== ids.length || selected.length > 10) throw new Error('전송할 연결 계정을 1~10개 선택하세요.');
     if (typeof message !== 'string' || message.length > 180 || (!settings.varietyMode && !message.trim())) throw new Error('공용 멘트는 180자 이내로 입력하세요.');
     if (settings.varietyMode && emojisOf(settings).length < 3) throw new Error('서로 다른 이모지를 3개 이상 등록하세요.');
     const results = [];
     shuffle(selected);
+    let quotaStopped = false;
     for (const a of selected) {
+      if (quotaStopped) {
+        results.push({ accountId: a.id, name: a.name, ok: false, skipped: true, error: '할당량 초과로 전송하지 않았습니다.' });
+        continue;
+      }
       try {
         let text;
         if (settings.varietyMode) text = variedMessage(message, settings);
@@ -183,7 +194,10 @@ function createYoutubeChat({ supabase, withSettingsMutation, env = process.env, 
         if (Array.from(text).length > 200) throw new Error('장식과 개별 멘트를 합친 메시지가 너무 깁니다. 공용 멘트를 줄이세요.');
         await google('https://www.googleapis.com/youtube/v3/liveChat/messages?part=snippet', { method: 'POST', headers: { Authorization: `Bearer ${await access(a)}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ snippet: { liveChatId: target.liveChatId, type: 'textMessageEvent', textMessageDetails: { messageText: text } } }) });
         results.push({ accountId: a.id, name: a.name, ok: true, text });
-      } catch (error) { results.push({ accountId: a.id, name: a.name, ok: false, error: error.message }); }
+      } catch (error) {
+        if (['quotaExceeded', 'dailyLimitExceeded'].includes(error.reason) || /exceeded.*quota|quota.*exceeded/i.test(error.message)) quotaStopped = true;
+        results.push({ accountId: a.id, name: a.name, ok: false, error: error.message });
+      }
     }
     return { results };
   }
