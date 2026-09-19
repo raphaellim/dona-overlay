@@ -190,11 +190,40 @@ function buildFundingGroups(){
   );
   const fundingItems = summary?.settings?.fundingData?.items || [];
   const titleMap = new Map(fundingItems.map(f => [String(f.id || ''), String(f.title || '').trim()]));
-  const map = new Map();
 
+  // 후원입력 1건이 여러 크리에이터 행으로 분배되어 저장돼도
+  // fundingBatchId가 같으면 펀딩 내역에서는 1건으로 다시 묶습니다.
+  const txMap = new Map();
   donations.forEach(d => {
-    const fundingId = String(d.fundingId || '').trim();
-    const fallbackTitle = String(d.creator || '펀딩').trim() || '펀딩';
+    const batchId = String(d.fundingBatchId || '').trim();
+    const txKey = batchId ? `batch:${batchId}` : `row:${d.id}`;
+    if(!txMap.has(txKey)){
+      txMap.set(txKey, {
+        id:txKey,
+        fundingBatchId:batchId,
+        fundingId:String(d.fundingId || '').trim(),
+        fundingTitle:String(d.fundingTitle || '').trim(),
+        donor:String(d.donor || '').trim(),
+        createdAt:d.createdAt,
+        broadcastTitle:d.broadcastTitle || '',
+        accountAmount:0,
+        toonieAmount:0,
+        creators:new Set()
+      });
+    }
+    const tx=txMap.get(txKey);
+    tx.accountAmount += Number(d.accountAmount || 0);
+    tx.toonieAmount += Number(d.toonieAmount || 0);
+    if(String(d.creator || '').trim()) tx.creators.add(String(d.creator).trim());
+    if(!tx.fundingId && d.fundingId) tx.fundingId=String(d.fundingId).trim();
+    if(!tx.fundingTitle && d.fundingTitle) tx.fundingTitle=String(d.fundingTitle).trim();
+    if(!tx.broadcastTitle && d.broadcastTitle) tx.broadcastTitle=d.broadcastTitle;
+  });
+
+  const map = new Map();
+  Array.from(txMap.values()).forEach(tx => {
+    const fundingId = String(tx.fundingId || '').trim();
+    const fallbackTitle = String(tx.fundingTitle || '펀딩').trim() || '펀딩';
     const title = titleMap.get(fundingId) || fallbackTitle;
     const key = fundingId ? `id:${fundingId}` : `title:${title}`;
     if(!map.has(key)){
@@ -212,25 +241,30 @@ function buildFundingGroups(){
       });
     }
     const g = map.get(key);
-    const account = Number(d.accountAmount || 0);
-    const toonie = Number(d.toonieAmount || 0);
+    const account = Number(tx.accountAmount || 0);
+    const toonie = Number(tx.toonieAmount || 0);
     const sumAccount = fundingAggregateWon(account);
     const sumToonie = fundingAggregateWon(toonie);
     const sumTotal = sumAccount + sumToonie;
     g.count += 1;
-    if(String(d.donor || '').trim()) g.donors.add(String(d.donor).trim());
+    if(tx.donor) g.donors.add(tx.donor);
     g.account += sumAccount;
     g.toonie += sumToonie;
     g.total += sumTotal;
     g.rawTotal += account + toonie;
-    g.rows.push({ ...d, sumAccount, sumToonie, sumTotal });
+    g.rows.push({
+      ...tx,
+      creator:Array.from(tx.creators).join(', '),
+      sumAccount,
+      sumToonie,
+      sumTotal
+    });
   });
 
   return Array.from(map.values())
     .map(g => ({ ...g, donorCount:g.donors.size }))
     .sort((a,b) => b.total - a.total || b.count - a.count || a.title.localeCompare(b.title, 'ko'));
 }
-
 function selectFunding(key){
   selectedFundingKey = key;
   renderFundingSummary();

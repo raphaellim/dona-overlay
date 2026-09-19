@@ -1824,6 +1824,8 @@ function makeDonationRow(body, settings, stationId, broadcastId) {
       manualKind,
       sourceType: normName(body.sourceType || body.source || ''),
       fundingId: String(body.fundingId || '').trim(),
+      fundingBatchId: String(body.fundingBatchId || '').trim(),
+      fundingTitle: String(body.fundingTitle || '').trim(),
       editedAt: body.editedAt || ''
     });
   }
@@ -1875,7 +1877,9 @@ function dbRowToDonation(row) {
     silentAlert,
     manualKind: meta.manualKind || '',
     sourceType: meta.sourceType || '',
-    fundingId: meta.fundingId || ''
+    fundingId: meta.fundingId || '',
+    fundingBatchId: meta.fundingBatchId || '',
+    fundingTitle: meta.fundingTitle || ''
   };
 }
 
@@ -3838,6 +3842,15 @@ app.post('/api/donations/batch', async (req, res) => {
       });
     }
 
+    const fundingIdForRows = String(req.body.fundingId || '').trim();
+    const fundingItemForRows = fundingIdForRows
+      ? (settings.fundingData?.items || []).find(f => String(f.id) === fundingIdForRows)
+      : null;
+    const fundingTitleForRows = String(fundingItemForRows?.title || '').trim();
+    const fundingBatchId = fundingIdForRows
+      ? `fundbatch_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`
+      : '';
+
     let remainAccount = accountTotal;
     const created = validRows.map(r => {
       const accountPart = Math.min(remainAccount, r.amount);
@@ -3851,7 +3864,12 @@ app.post('/api/donations/batch', async (req, res) => {
         accountAmount: accountPart,
         toonieAmount: tooniePart,
         memo: r.memo,
-        rouletteRuleId: req.body.rouletteRuleId || ''
+        rouletteRuleId: req.body.rouletteRuleId || '',
+        manualKind: fundingIdForRows ? 'funding' : '',
+        fundingId: fundingIdForRows,
+        fundingBatchId,
+        fundingTitle: fundingTitleForRows,
+        sourceType: fundingIdForRows ? 'batch' : ''
       }, settings, ctx.station.id, ctx.active.id);
     });
 
@@ -3859,7 +3877,7 @@ app.post('/api/donations/batch', async (req, res) => {
     if (error) throw error;
     nightbotChat.enqueue(ctx.station.slug, data, settings.nightbotChat);
 
-    const fundingId = String(req.body.fundingId || '').trim();
+    const fundingId = fundingIdForRows;
     if (fundingId) {
       const current = await readEffectiveSettings(ctx.station.slug, ctx.active.id);
       const fundingData = normalizeFundingData(current.fundingData);
@@ -3975,7 +3993,9 @@ app.post('/api/manual-entry', async (req, res) => {
       silentAlert: true,
       manualKind: kind,
       sourceType,
-      fundingId
+      fundingId,
+      fundingBatchId: kind === 'funding' ? `fundbatch_${Date.now()}_${Math.random().toString(36).slice(2, 10)}` : '',
+      fundingTitle: kind === 'funding' ? String((settings.fundingData?.items || []).find(x => String(x.id) === fundingId)?.title || '').trim() : ''
     };
 
     const row = makeDonationRow(donationBody, settings, ctx.station.id, ctx.active.id);
