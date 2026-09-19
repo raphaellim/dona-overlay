@@ -3516,6 +3516,54 @@ app.get('/api/donations', async (req, res) => {
 });
 
 
+// 펀딩 합산 화면 전용: 현재 방송이 아니라 방송국 전체 기간의 펀딩 입력 이력만 반환합니다.
+// 일반 /api/summary 는 현재 방송 기준을 그대로 유지합니다.
+app.get('/api/funding-history', async (req, res) => {
+  try {
+    if (!requireDb(res)) return;
+    const ctx = await getStationContext(req, res);
+    if (!ctx) return;
+
+    const role = await accessRole(req, ctx.station, ctx.active);
+    const overlayTokenOk = await stationTokenAllowed(req, ctx.station);
+    if (role === 'broadcast_manager' && !overlayTokenOk) {
+      return res.status(403).json({ error: '방송매니저는 전체 펀딩 이력을 볼 수 없습니다.' });
+    }
+
+    const donationColumns = [
+      'id', 'station_id', 'broadcast_id', 'created_at', 'donor', 'creator',
+      'process_type', 'account_amount', 'toonie_amount', 'total_amount',
+      'display_amount', 'checks', 'result_label', 'memo'
+    ].join(',');
+
+    const [donResult, broadcasts] = await Promise.all([
+      supabase
+        .from('donations')
+        .select(donationColumns)
+        .eq('station_id', ctx.station.id)
+        .order('created_at', { ascending: true }),
+      listBroadcasts(ctx.station.id)
+    ]);
+    if (donResult.error) throw donResult.error;
+
+    const broadcastTitleMap = new Map((broadcasts || []).map(b => [String(b.id), String(b.title || '')]));
+    const donations = (donResult.data || [])
+      .map(dbRowToDonation)
+      .filter(d => String(d.manualKind || '').toLowerCase() === 'funding')
+      .map(d => ({
+        ...d,
+        broadcastTitle: broadcastTitleMap.get(String(d.broadcastId || '')) || ''
+      }));
+
+    res.set('Cache-Control', 'no-store');
+    res.json({ station: stationToClient(ctx.station), donations, count: donations.length });
+  } catch (e) {
+    console.error('[api/funding-history]', e);
+    res.status(500).json({ error: e.message || '전체 펀딩 이력 조회 실패' });
+  }
+});
+
+
 function safeBuildSummary(settings, donations, broadcast, station) {
   const safeSettings = normalizeSettings(settings || {});
   const safeDonations = Array.isArray(donations) ? donations : [];

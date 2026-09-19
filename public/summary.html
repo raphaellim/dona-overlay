@@ -101,19 +101,19 @@
 
   <div class="detail-grid" id="fundingSummarySection">
     <section class="card">
-      <h2>펀딩 합산 <span class="hint">펀딩 입력만 별도 집계</span></h2>
+      <h2>펀딩 합산 <span class="hint">전체 기간 · 모든 방송 펀딩 집계</span></h2>
       <div class="stat-pills" id="fundingStats"></div>
       <table class="table">
         <thead><tr><th>펀딩명</th><th>건수</th><th>참여자</th><th>계좌</th><th>투네</th><th>합산</th></tr></thead>
         <tbody id="fundingRows"></tbody>
       </table>
-      <p class="hint">금액은 각 입력 건마다 천원 미만 절삭 후 합산됩니다. 행을 클릭하면 오른쪽 상세내역이 바뀝니다.</p>
+      <p class="hint">현재 방송만이 아니라 방송국 전체 기간의 펀딩 이력을 집계합니다. 금액은 각 입력 건마다 천원 미만 절삭 후 합산됩니다.</p>
     </section>
 
     <section class="card">
       <h2>선택 펀딩 상세내역 <span class="hint" id="fundingDetailTitle">-</span></h2>
       <table class="table">
-        <thead><tr><th>시간</th><th>도네이터</th><th>구분</th><th>입력금액</th><th>합산반영</th></tr></thead>
+        <thead><tr><th>시간</th><th>방송</th><th>도네이터</th><th>구분</th><th>입력금액</th><th>합산반영</th></tr></thead>
         <tbody id="fundingDetailRows"></tbody>
       </table>
     </section>
@@ -139,6 +139,7 @@ let summary = null;
 let selectedCreator = '';
 let selectedFundingKey = '';
 let fundingGroups = [];
+let fundingHistory = [];
 let allPage = 1;
 const allPageSize = 10;
 
@@ -184,7 +185,7 @@ function wonText(value){
 }
 
 function buildFundingGroups(){
-  const donations = (summary?.donations || []).filter(d =>
+  const donations = (fundingHistory || []).filter(d =>
     String(d.manualKind || '').toLowerCase() === 'funding'
   );
   const fundingItems = summary?.settings?.fundingData?.items || [];
@@ -251,9 +252,9 @@ function renderFundingSummary(){
 
   if(!fundingGroups.length){
     selectedFundingKey = '';
-    $('#fundingRows').innerHTML = '<tr><td class="empty-row" colspan="6">현재 방송의 펀딩 입력 내역이 없습니다.</td></tr>';
+    $('#fundingRows').innerHTML = '<tr><td class="empty-row" colspan="6">전체 기간의 펀딩 입력 내역이 없습니다.</td></tr>';
     $('#fundingDetailTitle').textContent = '-';
-    $('#fundingDetailRows').innerHTML = '<tr><td class="empty-row" colspan="5">펀딩을 입력하면 여기에 상세내역이 표시됩니다.</td></tr>';
+    $('#fundingDetailRows').innerHTML = '<tr><td class="empty-row" colspan="6">펀딩을 입력하면 여기에 전체 기간 상세내역이 표시됩니다.</td></tr>';
     return;
   }
 
@@ -280,6 +281,7 @@ function renderFundingSummary(){
     return `
       <tr>
         <td>${new Date(r.createdAt).toLocaleString('ko-KR')}</td>
+        <td>${esc(r.broadcastTitle || '-')}</td>
         <td><b>${esc(r.donor)}</b></td>
         <td>${source}</td>
         <td class="num">${wonText(raw)}</td>
@@ -290,7 +292,12 @@ function renderFundingSummary(){
 }
 
 async function load(){
-  summary = await api('/api/summary');
+  const [summaryData, fundingData] = await Promise.all([
+    api('/api/summary'),
+    api('/api/funding-history')
+  ]);
+  summary = summaryData;
+  fundingHistory = Array.isArray(fundingData?.donations) ? fundingData.donations : [];
   $('#currentBroadcast').textContent = summary.broadcast ? `현재 방송: ${summary.broadcast.title}` : '현재 방송 없음';
 
   $('#creatorRows').innerHTML = (summary.creators||[]).map(r => `
