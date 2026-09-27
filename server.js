@@ -2985,6 +2985,14 @@ app.get('/api/youtube-chat-service/accounts', async (req, res) => {
   try { const ctx = await youtubeChatAdmin(req, res); if (ctx) res.json({ configured: youtubeChatService.configured(), accounts: await youtubeChatService.accounts(ctx.station.slug), options: await youtubeChatService.options(ctx.station.slug) }); }
   catch (e) { res.status(500).json({ error: e.message }); }
 });
+app.get('/api/youtube-chat-service/donation-auto', async (req, res) => {
+  try { const ctx = await youtubeChatAdmin(req, res); if (ctx) res.json({ auto: await youtubeChatService.donationAuto(ctx.station.slug) }); }
+  catch (e) { res.status(500).json({ error: e.message }); }
+});
+app.patch('/api/youtube-chat-service/donation-auto', async (req, res) => {
+  try { const ctx = await youtubeChatAdmin(req, res); if (ctx) res.json({ auto: await youtubeChatService.updateDonationAuto(ctx.station.slug, req.body) }); }
+  catch (e) { res.status(400).json({ error: e.message }); }
+});
 app.patch('/api/youtube-chat-service/options', async (req, res) => {
   try { const ctx = await youtubeChatAdmin(req, res); if (ctx) res.json({ options: await youtubeChatService.updateOptions(ctx.station.slug, req.body) }); }
   catch (e) { res.status(400).json({ error: e.message }); }
@@ -3789,6 +3797,53 @@ app.get('/api/summary', async (req, res) => {
   }
 });
 
+async function maybeSendDonationYoutubeChat(ctx, settings, donor, accountTotal, toonieTotal, createdRows) {
+  try {
+    const cfg = await youtubeChatService.donationAuto(ctx.station.slug);
+    if (!cfg.enabled || !cfg.liveUrl || !cfg.accountId || !youtubeChatService.configured()) return;
+    const videoId = youtubeVideoId(cfg.liveUrl);
+    const grandTotal = Number(accountTotal || 0) + Number(toonieTotal || 0);
+    const source = accountTotal > 0 && toonieTotal > 0 ? '계좌+투네' : accountTotal > 0 ? '계좌' : '투네';
+    const byCreator = new Map();
+    for (const r of createdRows || []) {
+      const c = normName(r.creator || r.creator_name);
+      const a = Number(r.total_amount ?? r.totalAmount ?? r.amount ?? 0);
+      if (c) byCreator.set(c, (byCreator.get(c) || 0) + a);
+    }
+    const splitText = [...byCreator].map(([c,a]) => `${c}(${displayManText(a)})`).join(' · ');
+    const first = `${normName(donor)} ${displayManText(grandTotal)} ${source} → ${splitText}`;
+
+    const { data: allRows, error } = await supabase.from('donations')
+      .select('creator,total_amount')
+      .eq('station_id', ctx.station.id)
+      .eq('broadcast_id', ctx.active.id);
+    if (error) throw error;
+    const totals = new Map();
+    for (const r of allRows || []) {
+      const c = normName(r.creator);
+      if (c) totals.set(c, (totals.get(c) || 0) + aggregateWon(r.total_amount));
+    }
+    const order = Array.isArray(settings?.creators) ? settings.creators.map(normName) : [];
+    const entries = [...totals].sort((a,b) => {
+      const ai=order.indexOf(a[0]), bi=order.indexOf(b[0]);
+      if (ai >= 0 || bi >= 0) return (ai < 0 ? 999 : ai) - (bi < 0 ? 999 : bi);
+      return b[1]-a[1];
+    });
+    const cumulativeText = entries.map(([c,a]) => `${c}(${displayManText(a)})`).join(' · ');
+    const fill = (tpl, values) => String(tpl || '').replace(/\{(후원자|금액|방식|분배|누적)\}/g, (_, key) => values[key] ?? '');
+    const values = { 후원자: normName(donor), 금액: displayManText(grandTotal), 방식: source, 분배: splitText, 누적: cumulativeText };
+    const firstMessage = fill(cfg.firstTemplate || '{후원자} {금액} {방식} → {분배}', values).trim();
+    const secondMessage = fill(cfg.secondTemplate || '현재 누적후원현황 {누적}', values).trim();
+    if (cfg.firstEnabled !== false && firstMessage) await youtubeChatService.sendExact(ctx.station.slug, videoId, cfg.accountId, firstMessage);
+    if (cfg.secondEnabled !== false && secondMessage) {
+      if (cfg.firstEnabled !== false && firstMessage) await new Promise(resolve => setTimeout(resolve, 650));
+      await youtubeChatService.sendExact(ctx.station.slug, videoId, cfg.accountId, secondMessage);
+    }
+  } catch (e) {
+    console.error('[youtube donation auto chat]', e?.message || e);
+  }
+}
+
 app.post('/api/donations', async (req, res) => {
   try {
     if (!requireDb(res)) return;
@@ -3876,6 +3931,7 @@ app.post('/api/donations/batch', async (req, res) => {
     const { data, error } = await supabase.from('donations').insert(created).select();
     if (error) throw error;
     nightbotChat.enqueue(ctx.station.slug, data, settings.nightbotChat);
+    await maybeSendDonationYoutubeChat(ctx, settings, donor, accountTotal, toonieTotal, data);
 
     const fundingId = fundingIdForRows;
     if (fundingId) {

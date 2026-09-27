@@ -111,6 +111,37 @@ function createYoutubeChat({ supabase, withSettingsMutation, env = process.env, 
     const store = await readStore();
     return normalizeOptions(store.$chatOptions?.[storeKey(slug)]);
   }
+  async function donationAuto(slug) {
+    const store = await readStore();
+    const v = store.$donationAuto?.[storeKey(slug)] || {};
+    return { enabled: v.enabled === true, liveUrl: String(v.liveUrl || ''), accountId: String(v.accountId || ''), firstEnabled: v.firstEnabled !== false, secondEnabled: v.secondEnabled !== false, firstTemplate: String(v.firstTemplate || '{후원자} {금액} {방식} → {분배}'), secondTemplate: String(v.secondTemplate || '현재 누적후원현황 {누적}') };
+  }
+  async function updateDonationAuto(slug, input) {
+    const value = { enabled: input?.enabled === true, liveUrl: String(input?.liveUrl || '').trim(), accountId: String(input?.accountId || '').trim(), firstEnabled: input?.firstEnabled !== false, secondEnabled: input?.secondEnabled !== false, firstTemplate: String(input?.firstTemplate || '{후원자} {금액} {방식} → {분배}').trim(), secondTemplate: String(input?.secondTemplate || '현재 누적후원현황 {누적}').trim() };
+    if (value.firstTemplate.length > 180 || value.secondTemplate.length > 180) throw new Error('자동 채팅 문구는 각각 180자 이내로 입력하세요.');
+    if (value.enabled && !value.firstEnabled && !value.secondEnabled) throw new Error('1차 또는 2차 자동 메시지 중 하나는 켜주세요.');
+    if (value.enabled && !value.liveUrl) throw new Error('자동 후원 채팅에 사용할 라이브 주소를 입력하세요.');
+    if (value.enabled && !value.accountId) throw new Error('자동 후원 채팅에 사용할 계정을 선택하세요.');
+    if (value.liveUrl) {
+      let u; try { u = new URL(value.liveUrl); } catch (_) { throw new Error('유효한 유튜브 라이브 주소를 입력하세요.'); }
+      if (!/youtube\.com$|youtu\.be$/i.test(u.hostname.replace(/^www\./,''))) throw new Error('유튜브 라이브 주소를 입력하세요.');
+    }
+    await changeStore(slug, (_, store) => {
+      if (!store.$donationAuto || typeof store.$donationAuto !== 'object') store.$donationAuto = {};
+      store.$donationAuto[storeKey(slug)] = value;
+    });
+    return value;
+  }
+  async function sendExact(slug, videoId, accountId, message) {
+    const target = await resolve(slug, videoId);
+    const store = await readStore();
+    const account = (store[storeKey(slug)] || []).find(a => a.id === accountId);
+    if (!account) throw new Error('자동 채팅 계정을 다시 선택하세요.');
+    const text = String(message || '').trim();
+    if (!text || Array.from(text).length > 200) throw new Error('자동 채팅 메시지가 비어 있거나 너무 깁니다.');
+    await google('https://www.googleapis.com/youtube/v3/liveChat/messages?part=snippet', { method: 'POST', headers: { Authorization: `Bearer ${await access(account)}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ snippet: { liveChatId: target.liveChatId, type: 'textMessageEvent', textMessageDetails: { messageText: text } } }) });
+    return { ok: true, accountId: account.id, name: account.name, text };
+  }
   async function updateOptions(slug, input) {
     if (!input || ['randomOrder', 'varietyMode'].some(key => typeof input[key] !== 'boolean')) throw new Error('전송 옵션을 다시 확인하세요.');
     if (typeof input.emojiPool !== 'string' || input.emojiPool.length > 250) throw new Error('이모지 목록은 250자 이내로 입력하세요.');
@@ -196,6 +227,6 @@ function createYoutubeChat({ supabase, withSettingsMutation, env = process.env, 
     }
     return { results };
   }
-  return { configured, begin, finish, accounts, options, updateOptions, update, updateAll, resolve, send };
+  return { configured, begin, finish, accounts, options, updateOptions, donationAuto, updateDonationAuto, sendExact, update, updateAll, resolve, send };
 }
 module.exports = { createYoutubeChat };
