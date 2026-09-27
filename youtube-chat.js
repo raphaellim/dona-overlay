@@ -114,10 +114,10 @@ function createYoutubeChat({ supabase, withSettingsMutation, env = process.env, 
   async function donationAuto(slug) {
     const store = await readStore();
     const v = store.$donationAuto?.[storeKey(slug)] || {};
-    return { enabled: v.enabled === true, liveUrl: String(v.liveUrl || ''), accountId: String(v.accountId || ''), firstEnabled: v.firstEnabled !== false, secondEnabled: v.secondEnabled !== false, firstTemplate: String(v.firstTemplate || '{후원자} {금액} {방식} → {분배}'), secondTemplate: String(v.secondTemplate || '현재 누적후원현황 {누적}') };
+    return { enabled: v.enabled === true, liveUrl: String(v.liveUrl || ''), accountId: String(v.accountId || ''), firstEnabled: v.firstEnabled !== false, secondEnabled: v.secondEnabled !== false, firstTemplate: String(v.firstTemplate || '{후원자} {금액} {방식} → {분배} {프리셋}'), secondTemplate: String(v.secondTemplate || '현재 누적후원현황 {누적}') };
   }
   async function updateDonationAuto(slug, input) {
-    const value = { enabled: input?.enabled === true, liveUrl: String(input?.liveUrl || '').trim(), accountId: String(input?.accountId || '').trim(), firstEnabled: input?.firstEnabled !== false, secondEnabled: input?.secondEnabled !== false, firstTemplate: String(input?.firstTemplate || '{후원자} {금액} {방식} → {분배}').trim(), secondTemplate: String(input?.secondTemplate || '현재 누적후원현황 {누적}').trim() };
+    const value = { enabled: input?.enabled === true, liveUrl: String(input?.liveUrl || '').trim(), accountId: String(input?.accountId || '').trim(), firstEnabled: input?.firstEnabled !== false, secondEnabled: input?.secondEnabled !== false, firstTemplate: String(input?.firstTemplate || '{후원자} {금액} {방식} → {분배} {프리셋}').trim(), secondTemplate: String(input?.secondTemplate || '현재 누적후원현황 {누적}').trim() };
     if (value.firstTemplate.length > 180 || value.secondTemplate.length > 180) throw new Error('자동 채팅 문구는 각각 180자 이내로 입력하세요.');
     if (value.enabled && !value.firstEnabled && !value.secondEnabled) throw new Error('1차 또는 2차 자동 메시지 중 하나는 켜주세요.');
     if (value.enabled && !value.liveUrl) throw new Error('자동 후원 채팅에 사용할 라이브 주소를 입력하세요.');

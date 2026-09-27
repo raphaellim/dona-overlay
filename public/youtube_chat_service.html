@@ -47,11 +47,11 @@
     <label for="donationAutoAccount" style="margin-top:14px">자동 전송 계정</label>
     <select id="donationAutoAccount"><option value="">계정을 선택하세요</option></select>
     <label style="display:flex;align-items:center;gap:9px;margin-top:14px"><input type="checkbox" id="donationFirstEnabled" style="width:auto" checked> 1차 후원내역 전송</label>
-    <input id="donationFirstTemplate" maxlength="180" value="{후원자} {금액} {방식} → {분배}">
+    <input id="donationFirstTemplate" maxlength="180" value="{후원자} {금액} {방식} → {분배} {프리셋}">
     <label style="display:flex;align-items:center;gap:9px;margin-top:14px"><input type="checkbox" id="donationSecondEnabled" style="width:auto" checked> 2차 누적현황 전송</label>
     <input id="donationSecondTemplate" maxlength="180" value="현재 누적후원현황 {누적}">
-    <p class="note">치환값: {후원자} · {금액} · {방식} · {분배} · {누적}. 원하는 문구로 바로 수정할 수 있습니다.</p>
-    <div class="actions"><button class="primary" id="saveDonationAuto">자동전송 설정 저장</button><span id="donationAutoStatus" class="note"></span></div>
+    <p class="note">치환값: {후원자} · {금액} · {방식} · {분배} · {프리셋} · {누적}. 프리셋 후원일 때 {프리셋}에 예: 흡연 흡연+2 처럼 자동 표기됩니다.</p>
+    <div class="actions"><button class="primary" id="saveDonationAuto">자동전송 설정 저장</button><button id="sendCumulativeNow" type="button">현재 누적후원현황 수동 전송</button><span id="donationAutoStatus" class="note"></span></div>
   </section>
   <section>
     <h2>메시지 작성</h2>
@@ -120,7 +120,7 @@
     accounts.forEach(a=>{const o=document.createElement('option');o.value=a.id;o.textContent=a.name;sel.append(o)});sel.value=selected||'';
   }
   async function loadDonationAuto(){
-    try{const data=await request('/donation-auto');const a=data.auto||{};$('donationAutoEnabled').checked=!!a.enabled;$('donationAutoUrl').value=a.liveUrl||$('liveUrl').value||'';$('donationFirstEnabled').checked=a.firstEnabled!==false;$('donationSecondEnabled').checked=a.secondEnabled!==false;$('donationFirstTemplate').value=a.firstTemplate||'{후원자} {금액} {방식} → {분배}';$('donationSecondTemplate').value=a.secondTemplate||'현재 누적후원현황 {누적}';renderDonationAutoAccounts(a.accountId||'');$('donationAutoStatus').textContent=a.enabled?'자동전송 ON':'자동전송 OFF'}catch(e){$('donationAutoStatus').textContent=errorText(e)}
+    try{const data=await request('/donation-auto');const a=data.auto||{};$('donationAutoEnabled').checked=!!a.enabled;$('donationAutoUrl').value=a.liveUrl||$('liveUrl').value||'';$('donationFirstEnabled').checked=a.firstEnabled!==false;$('donationSecondEnabled').checked=a.secondEnabled!==false;$('donationFirstTemplate').value=a.firstTemplate||'{후원자} {금액} {방식} → {분배} {프리셋}';$('donationSecondTemplate').value=a.secondTemplate||'현재 누적후원현황 {누적}';renderDonationAutoAccounts(a.accountId||'');$('donationAutoStatus').textContent=a.enabled?'자동전송 ON':'자동전송 OFF'}catch(e){$('donationAutoStatus').textContent=errorText(e)}
   }
   async function loadAccounts(){try{const data=await request('/accounts');accounts=(data.accounts||[]).map(a=>({...a,selected:true}));savedOptions=data.options||{};$('varietyMode').checked=savedOptions.varietyMode!==false;$('emojiPool').value=savedOptions.emojiPool||'';serverReady=!!data.configured;$('connection').textContent=serverReady?'운영 서버 연결됨':'운영용 OAuth 설정 필요';$('setupNote').textContent='운영용 OAuth 환경변수 4개를 Render에 등록하고, 이 운영 페이지에서 계정을 새로 연결하세요.';$('setupNote').hidden=serverReady}catch(e){serverReady=false;$('connection').textContent='서버 연동 필요';$('setupNote').hidden=false}render();await loadDonationAuto()}
   $('saveOptions').onclick=async()=>{
@@ -135,6 +135,10 @@
   $('saveDonationAuto').onclick=async()=>{
     const btn=$('saveDonationAuto');btn.disabled=true;
     try{const payload={enabled:$('donationAutoEnabled').checked,liveUrl:$('donationAutoUrl').value.trim(),accountId:$('donationAutoAccount').value,firstEnabled:$('donationFirstEnabled').checked,secondEnabled:$('donationSecondEnabled').checked,firstTemplate:$('donationFirstTemplate').value.trim(),secondTemplate:$('donationSecondTemplate').value.trim()};const data=await request('/donation-auto',{method:'PATCH',body:JSON.stringify(payload)});$('donationAutoStatus').textContent=data.auto?.enabled?'저장 완료 · 자동전송 ON':'저장 완료 · 자동전송 OFF';$('donationAutoStatus').style.color='#28764f'}catch(e){$('donationAutoStatus').textContent=errorText(e);$('donationAutoStatus').style.color='#ab2844'}finally{btn.disabled=false}
+  };
+  $('sendCumulativeNow').onclick=async()=>{
+    const btn=$('sendCumulativeNow');btn.disabled=true;
+    try{const data=await request('/donation-cumulative/send',{method:'POST',body:JSON.stringify({template:$('donationSecondTemplate').value.trim()})});$('donationAutoStatus').textContent='수동 전송 완료 · '+(data.message||'');$('donationAutoStatus').style.color='#28764f'}catch(e){$('donationAutoStatus').textContent=errorText(e);$('donationAutoStatus').style.color='#ab2844'}finally{btn.disabled=false}
   };
   $('addElbowcough').onclick=()=>{const pool=$('emojiPool');if(!pool.value.split(/[\s,]+/u).includes('[elbowcough]'))pool.value=(pool.value.trim()+' [elbowcough]').trim();renderPreview()};
   ['varietyMode','emojiPool'].forEach(key=>$(key).addEventListener('input',renderPreview));
