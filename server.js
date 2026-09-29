@@ -3058,7 +3058,7 @@ app.patch('/api/youtube-chat-service/accounts/:id', async (req, res) => {
   catch (e) { res.status(400).json({ error: e.message }); }
 });
 app.post('/api/youtube-chat-service/resolve', async (req, res) => {
-  try { const ctx = await youtubeChatAdmin(req, res); if (ctx) res.json(await youtubeChatService.resolve(ctx.station.slug, youtubeVideoId(req.body?.url))); }
+  try { const ctx = await youtubeChatAdmin(req, res); if (ctx) res.json(await youtubeChatService.resolve(ctx.station.slug, youtubeVideoId(req.body?.url), String(req.body?.accountId || ''))); }
   catch (e) { res.status(400).json({ error: e.message }); }
 });
 app.post('/api/youtube-chat-service/send', async (req, res) => {

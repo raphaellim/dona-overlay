@@ -143,10 +143,10 @@ function createYoutubeChat({ supabase, withSettingsMutation, env = process.env, 
     return value;
   }
   async function sendExact(slug, videoId, accountId, message) {
-    const target = await resolve(slug, videoId);
     const store = await readStore();
     const account = (store[storeKey(slug)] || []).find(a => a.id === accountId);
     if (!account) throw new Error('자동 채팅 계정을 다시 선택하세요.');
+    const target = await resolve(slug, videoId, accountId);
     const text = String(message || '').trim();
     if (!text || Array.from(text).length > 200) throw new Error('자동 채팅 메시지가 비어 있거나 너무 깁니다.');
     await google('https://www.googleapis.com/youtube/v3/liveChat/messages?part=snippet', { method: 'POST', headers: { Authorization: `Bearer ${await access(slug, account)}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ snippet: { liveChatId: target.liveChatId, type: 'textMessageEvent', textMessageDetails: { messageText: text } } }) });
@@ -206,16 +206,18 @@ function createYoutubeChat({ supabase, withSettingsMutation, env = process.env, 
     account.secret = nextSecret;
     return fresh.access_token;
   }
-  async function resolve(slug, videoId) {
-    const store = await readStore(), first = (store[storeKey(slug)] || [])[0];
-    if (!first) throw new Error('채팅 계정을 먼저 연결하세요.');
-    const data = await google(`https://www.googleapis.com/youtube/v3/videos?part=snippet,liveStreamingDetails&id=${encodeURIComponent(videoId)}`, { headers: { Authorization: `Bearer ${await access(slug, first)}` } });
+  async function resolve(slug, videoId, accountId = '') {
+    const store = await readStore();
+    const saved = store[storeKey(slug)] || [];
+    const account = accountId ? saved.find(a => a.id === accountId) : saved[0];
+    if (!account) throw new Error(accountId ? '선택한 YouTube 계정을 찾을 수 없습니다. 계정을 다시 선택하세요.' : '채팅 계정을 먼저 연결하세요.');
+    const data = await google(`https://www.googleapis.com/youtube/v3/videos?part=snippet,liveStreamingDetails&id=${encodeURIComponent(videoId)}`, { headers: { Authorization: `Bearer ${await access(slug, account)}` } });
     const video = data.items?.[0];
     if (!video?.liveStreamingDetails?.activeLiveChatId) throw new Error('현재 라이브 채팅이 열려 있지 않습니다.');
     return { videoId, liveChatId: video.liveStreamingDetails.activeLiveChatId, title: video.snippet?.title || '' };
   }
   async function send(slug, videoId, ids, message) {
-    const target = await resolve(slug, videoId);
+    const target = await resolve(slug, videoId, Array.isArray(ids) && ids.length ? ids[0] : '');
     const store = await readStore(), selected = (store[storeKey(slug)] || []).filter(a => ids.includes(a.id));
     const settings = normalizeOptions(store.$chatOptions?.[storeKey(slug)]);
     if (!selected.length || selected.length !== ids.length || selected.length > 10) throw new Error('전송할 연결 계정을 1~10개 선택하세요.');
