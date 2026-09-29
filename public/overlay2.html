@@ -1166,6 +1166,29 @@ body.broadcast-not-live *{animation-play-state:paused!important}
 
 </style>
   <link rel="stylesheet" href="/assets/css/roulette-overlay.css">
+
+<style id="account-compact-0930">
+/* 계좌 라벨을 세로형에 가깝게: 가로 공간 확보 + 한 줄 유지 */
+.account-title{
+  flex:0 0 34px!important; width:34px!important; min-width:34px!important;
+  height:32px!important;
+}
+.account-title::before{
+  width:32px!important; height:30px!important;
+  font-size:14px!important; line-height:30px!important;
+  border-radius:6px!important;
+}
+.account-row{height:34px!important;gap:4px!important;}
+.roller{height:30px!important;}
+.roller-item{
+  height:30px!important; min-height:30px!important;
+  grid-template-columns:54px 20px minmax(88px,1fr)!important;
+  gap:4px!important; padding:0 5px!important;
+}
+.roller-item .account-donor{width:54px!important;max-width:54px!important;}
+.roller-item .account-heart{width:20px!important;}
+.roller-item .account-amount{min-width:88px!important;}
+</style>
 </head>
 
 <body class="theme-gold">
