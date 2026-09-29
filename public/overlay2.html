@@ -1119,6 +1119,45 @@ body.test-bg{
 .overlay-box,.account-box,.notice-box,.funding-box,.karaoke-box,.creator-box{filter:none!important}
 body.broadcast-not-live *{animation-play-state:paused!important}
 
+
+/* ===== 0929 FIX: account/creator overlap ===== */
+/* The old theme creates a pseudo label ("계좌"). The 0928 theme restored
+   the real text ("계좌후원"), so both were being painted on top of each other. */
+.account-title::before{content:none!important;display:none!important;}
+.account-title{
+  box-sizing:border-box!important;
+  flex:0 0 62px!important;width:62px!important;min-width:62px!important;
+  height:28px!important;padding:0 5px!important;overflow:hidden!important;
+  white-space:nowrap!important;font-size:14px!important;line-height:28px!important;
+  letter-spacing:-.08em!important;
+}
+.account-row{height:36px!important;gap:6px!important;align-items:center!important;}
+.roller{height:30px!important;line-height:normal!important;overflow:hidden!important;}
+.roller-track{top:0!important;}
+.roller-item{
+  box-sizing:border-box!important;height:30px!important;min-height:30px!important;
+  grid-template-columns:minmax(0,1fr) auto!important;gap:6px!important;
+  padding:0 7px!important;font-size:20px!important;line-height:1!important;
+  overflow:hidden!important;
+}
+.roller-item .account-donor,.roller-item .account-amount{line-height:1!important;}
+.roller-item .account-heart{display:none!important;}
+
+.creator-box{padding:6px 0 4px!important;}
+.creator-box::before{
+  margin:0 0 5px!important;font-size:17px!important;line-height:20px!important;
+}
+.creator-list{gap:3px!important;}
+.creator-align-line{
+  box-sizing:border-box!important;align-items:center!important;gap:5px!important;
+  min-height:25px!important;font-size:20px!important;line-height:25px!important;
+  letter-spacing:-.055em!important;overflow:hidden!important;
+}
+.creator-align-main{padding-right:4px!important;overflow:hidden!important;text-overflow:ellipsis!important;}
+.creator-align-total{font-size:.78em!important;margin-left:4px!important;}
+.creator-align-options{gap:5px!important;flex-shrink:0!important;}
+.creator-align-opt{font-size:.78em!important;line-height:1!important;}
+
 </style>
   <link rel="stylesheet" href="/assets/css/roulette-overlay.css">
 </head>
