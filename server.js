@@ -2993,22 +2993,40 @@ app.patch('/api/youtube-chat-service/donation-auto', async (req, res) => {
   try { const ctx = await youtubeChatAdmin(req, res); if (ctx) res.json({ auto: await youtubeChatService.updateDonationAuto(ctx.station.slug, req.body) }); }
   catch (e) { res.status(400).json({ error: e.message }); }
 });
-app.post('/api/youtube-chat-service/donation-cumulative/send', async (req, res) => {
+app.post('/api/youtube-chat-service/donation-status/send', async (req, res) => {
   try {
-    const ctx = await youtubeChatAdmin(req, res);
-    if (!ctx) return;
+    const ctx = await youtubeChatAdmin(req, res); if (!ctx) return;
     const cfg = await youtubeChatService.donationAuto(ctx.station.slug);
-    if (!cfg.liveUrl || !cfg.accountId) return res.status(400).json({ error: '후원 자동채팅의 라이브 주소와 전송 계정을 먼저 저장하세요.' });
+    if (!cfg.liveUrl || !cfg.accountId) return res.status(400).json({ error: '후원채팅의 라이브 주소와 전송 계정을 먼저 저장하세요.' });
+    const requested = Array.isArray(req.body?.selections) ? req.body.selections : cfg.statusSelections;
+    const selections = [...new Set((requested || []).filter(x => ['cumulative','preset','allowance'].includes(x)))];
+    if (!selections.length) return res.status(400).json({ error: '전송할 현황을 하나 이상 선택하세요.' });
     const settings = await readEffectiveSettings(ctx.station.slug, ctx.active.id);
-    const cumulativeText = await currentDonationCumulativeText(ctx, settings);
-    if (!cumulativeText) return res.status(400).json({ error: '현재 방송의 누적 후원내역이 없습니다.' });
-    const template = String(req.body?.template || cfg.secondTemplate || '현재 누적후원현황 {누적}');
-    const message = template.replace(/\{누적\}/g, cumulativeText).trim();
-    const result = await youtubeChatService.sendExact(ctx.station.slug, youtubeVideoId(cfg.liveUrl), cfg.accountId, message);
-    res.json({ ok: true, message, result });
+    const texts = await currentChatStatus(ctx, settings);
+    const sent = [];
+    for (const key of selections) {
+      const message = texts[key];
+      if (!message) continue;
+      if (sent.length) await new Promise(r => setTimeout(r, 650));
+      const result = await youtubeChatService.sendExact(ctx.station.slug, youtubeVideoId(cfg.liveUrl), cfg.accountId, message);
+      sent.push({ key, message, result });
+    }
+    res.json({ ok: true, messages: sent.map(x => x.message), sent });
   } catch (e) { res.status(400).json({ error: e.message }); }
 });
-app.patch('/api/youtube-chat-service/options', async (req, res) => {
+// V3 주소 호환: 누적후원만 수동 전송
+app.post('/api/youtube-chat-service/donation-cumulative/send', async (req, res) => {
+  try {
+    const ctx = await youtubeChatAdmin(req, res); if (!ctx) return;
+    const cfg = await youtubeChatService.donationAuto(ctx.station.slug);
+    if (!cfg.liveUrl || !cfg.accountId) return res.status(400).json({ error: '후원채팅의 라이브 주소와 전송 계정을 먼저 저장하세요.' });
+    const settings = await readEffectiveSettings(ctx.station.slug, ctx.active.id);
+    const texts = await currentChatStatus(ctx, settings);
+    const result = await youtubeChatService.sendExact(ctx.station.slug, youtubeVideoId(cfg.liveUrl), cfg.accountId, texts.cumulative);
+    res.json({ ok: true, message: texts.cumulative, result });
+  } catch (e) { res.status(400).json({ error: e.message }); }
+});
+app.patch('/api/youtube-chat-service/options' , async (req, res) => {
   try { const ctx = await youtubeChatAdmin(req, res); if (ctx) res.json({ options: await youtubeChatService.updateOptions(ctx.station.slug, req.body) }); }
   catch (e) { res.status(400).json({ error: e.message }); }
 });
@@ -3832,6 +3850,30 @@ async function currentDonationCumulativeText(ctx, settings) {
     return b[1]-a[1];
   });
   return entries.map(([c,a]) => `${c}(${displayManText(a)})`).join(' · ');
+}
+
+async function currentChatStatus(ctx, settings) {
+  const donations = await readDonations(ctx.station.id, ctx.active.id);
+  const summary = buildSummary(settings, donations, ctx.active, ctx.station);
+  const cumulative = (summary.creators || []).map(r => `${r.creator}(${r.totalText || displayManText(r.total || 0)})`).join(' · ');
+  const presetParts = [];
+  for (const r of summary.creators || []) {
+    const items = [];
+    for (const pn of r.presetNets || []) {
+      const title = normName(pn.presetTitle || pn.presetId);
+      const plusName = normName(pn.plusName || '추가');
+      const minusName = normName(pn.minusName || '제외');
+      const plus = Number(pn.plus || 0), minus = Number(pn.minus || 0), net = Number(pn.net || (plus-minus));
+      if (plus || minus || net) items.push(`${title} ${plusName}+${plus} ${minusName}-${minus}=${net >= 0 ? '+' : ''}${net}`);
+    }
+    if (items.length) presetParts.push(`${r.creator} ${items.join(' / ')}`);
+  }
+  const allowance = Number(settings?.allowanceData?.balance || 0);
+  return {
+    cumulative: `현재 누적후원현황 ${cumulative || '후원내역 없음'}`,
+    preset: `현재 프리셋현황 ${presetParts.join(' · ') || '변동 없음'}`,
+    allowance: `현재 용돈 ${displayManText(allowance)}`
+  };
 }
 
 function donationPresetText(createdRows) {
