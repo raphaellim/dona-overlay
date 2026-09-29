@@ -3003,13 +3003,19 @@ app.post('/api/youtube-chat-service/donation-status/send', async (req, res) => {
     if (!selections.length) return res.status(400).json({ error: '전송할 현황을 하나 이상 선택하세요.' });
     const settings = await readEffectiveSettings(ctx.station.slug, ctx.active.id);
     const texts = await currentChatStatus(ctx, settings);
+    const queue = [];
+    if (selections.includes('cumulative')) queue.push({ key: 'cumulative', message: texts.cumulative });
+    const wantsPreset = selections.includes('preset');
+    const wantsAllowance = selections.includes('allowance');
+    if (wantsPreset && wantsAllowance) queue.push({ key: 'presetAllowance', message: texts.presetAllowance });
+    else if (wantsPreset) queue.push({ key: 'preset', message: texts.preset });
+    else if (wantsAllowance) queue.push({ key: 'allowance', message: texts.allowance });
     const sent = [];
-    for (const key of selections) {
-      const message = texts[key];
-      if (!message) continue;
+    for (const item of queue) {
+      if (!item.message) continue;
       if (sent.length) await new Promise(r => setTimeout(r, 650));
-      const result = await youtubeChatService.sendExact(ctx.station.slug, youtubeVideoId(cfg.liveUrl), cfg.accountId, message);
-      sent.push({ key, message, result });
+      const result = await youtubeChatService.sendExact(ctx.station.slug, youtubeVideoId(cfg.liveUrl), cfg.accountId, item.message);
+      sent.push({ ...item, result });
     }
     res.json({ ok: true, messages: sent.map(x => x.message), sent });
   } catch (e) { res.status(400).json({ error: e.message }); }
@@ -3858,30 +3864,34 @@ async function currentDonationCumulativeText(ctx, settings) {
     if (ai >= 0 || bi >= 0) return (ai < 0 ? 999 : ai) - (bi < 0 ? 999 : bi);
     return b[1]-a[1];
   });
-  return entries.map(([c,a]) => `${c}(${displayManText(a)})`).join(' · ');
+  const hearts = ['❤️','🧡','💛','💚','💙','💜','🩷','🤍'];
+  return `💰 누적 ${entries.map(([c,a], i) => `${hearts[i % hearts.length]} ${c} ${displayManText(a)}`).join(' ') || '후원내역 없음'}`;
 }
 
 async function currentChatStatus(ctx, settings) {
   const donations = await readDonations(ctx.station.id, ctx.active.id);
   const summary = buildSummary(settings, donations, ctx.active, ctx.station);
-  const cumulative = (summary.creators || []).map(r => `${r.creator}(${r.totalText || displayManText(r.total || 0)})`).join(' · ');
-  const presetParts = [];
-  for (const r of summary.creators || []) {
-    const items = [];
+  const hearts = ['❤️','🧡','💛','💚','💙','💜','🩷','🤍'];
+  const creators = summary.creators || [];
+  const cumulativeParts = creators.map((r, i) => `${hearts[i % hearts.length]} ${r.creator} ${r.totalText || displayManText(r.total || 0)}`);
+
+  let smokeNet = 0, foodNet = 0;
+  for (const r of creators) {
     for (const pn of r.presetNets || []) {
-      const title = normName(pn.presetTitle || pn.presetId);
-      const plusName = normName(pn.plusName || '추가');
-      const minusName = normName(pn.minusName || '제외');
-      const plus = Number(pn.plus || 0), minus = Number(pn.minus || 0), net = Number(pn.net || (plus-minus));
-      if (plus || minus || net) items.push(`${title} ${plusName}+${plus} ${minusName}-${minus}=${net >= 0 ? '+' : ''}${net}`);
+      const id = normName(pn.presetId || '').toLowerCase();
+      const title = normName(pn.presetTitle || '').toLowerCase();
+      const net = Number.isFinite(Number(pn.net)) ? Number(pn.net) : Number(pn.plus || 0) - Number(pn.minus || 0);
+      if (id === 'smoke' || /흡|금연|smoke/.test(title)) smokeNet += net;
+      else if (id === 'food' || /먹|food/.test(title)) foodNet += net;
     }
-    if (items.length) presetParts.push(`${r.creator} ${items.join(' / ')}`);
   }
   const allowance = Number(settings?.allowanceData?.balance || 0);
+  const signed = n => `${Number(n) >= 0 ? '+' : ''}${Number(n) || 0}`;
   return {
-    cumulative: `현재 누적후원현황 ${cumulative || '후원내역 없음'}`,
-    preset: `현재 프리셋현황 ${presetParts.join(' · ') || '변동 없음'}`,
-    allowance: `현재 용돈 ${displayManText(allowance)}`
+    cumulative: `💰 누적 ${cumulativeParts.join(' ') || '후원내역 없음'}`,
+    preset: `🎯 🚬 흡금 ${signed(smokeNet)} 🍴 먹먹마 ${signed(foodNet)}`,
+    allowance: `💵 용돈 ${signed(displayManText(allowance))}`,
+    presetAllowance: `🎯 🚬 흡금 ${signed(smokeNet)} 🍴 먹먹마 ${signed(foodNet)} 💵 용돈 ${signed(displayManText(allowance))}`
   };
 }
 
@@ -3916,15 +3926,16 @@ async function maybeSendDonationYoutubeChat(ctx, settings, donor, accountTotal, 
       const a = Number(r.total_amount ?? r.totalAmount ?? r.amount ?? 0);
       if (c) byCreator.set(c, (byCreator.get(c) || 0) + a);
     }
-    const splitText = [...byCreator].map(([c,a]) => `${c}(${displayManText(a)})`).join(' · ');
+    const splitHearts = ['❤️','🧡','💛','💚','💙','💜','🩷','🤍'];
+    const splitText = [...byCreator].map(([c,a], i) => `${splitHearts[i % splitHearts.length]} ${c} ${displayManText(a)}`).join(' ');
     const first = `${normName(donor)} ${displayManText(grandTotal)} ${source} → ${splitText}`;
 
     const cumulativeText = await currentDonationCumulativeText(ctx, settings);
     const presetText = donationPresetText(createdRows);
     const fill = (tpl, values) => String(tpl || '').replace(/\{(후원자|금액|방식|분배|누적|프리셋)\}/g, (_, key) => values[key] ?? '');
     const values = { 후원자: normName(donor), 금액: displayManText(grandTotal), 방식: source, 분배: splitText, 누적: cumulativeText, 프리셋: presetText };
-    const firstMessage = fill(cfg.firstTemplate || '{후원자} {금액} {방식} → {분배}', values).trim();
-    const secondMessage = fill(cfg.secondTemplate || '현재 누적후원현황 {누적}', values).trim();
+    const firstMessage = fill(cfg.firstTemplate || '💸 {후원자} {금액} {방식} → {분배}', values).trim();
+    const secondMessage = fill(cfg.secondTemplate || '{누적}', values).trim();
     if (cfg.firstEnabled !== false && firstMessage) await youtubeChatService.sendExact(ctx.station.slug, videoId, cfg.accountId, firstMessage);
     if (cfg.secondEnabled !== false && secondMessage) {
       if (cfg.firstEnabled !== false && firstMessage) await new Promise(resolve => setTimeout(resolve, 650));
@@ -4259,6 +4270,64 @@ app.post('/api/reset', async (req, res) => {
     res.status(500).json({ error: e.message || '현재 방송 데이터 초기화 실패' });
   }
 });
+
+
+// 후원 현황 주기 자동전송: 브라우저/모바일 리모컨이 닫혀 있어도 서버에서 실행합니다.
+const donationRepeatState = new Map();
+let donationRepeatWorkerBusy = false;
+async function runDonationRepeatWorker() {
+  if (donationRepeatWorkerBusy || !supabase || !youtubeChatService.configured()) return;
+  donationRepeatWorkerBusy = true;
+  try {
+    const { data: stations, error } = await supabase.from('stations').select('*');
+    if (error) throw error;
+    const now = Date.now();
+    for (const station of stations || []) {
+      try {
+        const cfg = await youtubeChatService.donationAuto(station.slug);
+        if (!cfg.repeatEnabled || !cfg.liveUrl || !cfg.accountId) {
+          donationRepeatState.delete(station.slug);
+          continue;
+        }
+        const intervalMs = Math.max(1, Number(cfg.repeatMinutes || 10)) * 60000;
+        const signature = `${cfg.accountId}|${cfg.liveUrl}|${cfg.repeatMinutes}|${(cfg.statusSelections || []).join(',')}`;
+        let state = donationRepeatState.get(station.slug);
+        if (!state || state.signature !== signature) {
+          donationRepeatState.set(station.slug, { signature, nextAt: now + intervalMs });
+          continue;
+        }
+        if (now < state.nextAt) continue;
+        // 다음 실행 시각을 먼저 잡아 중복 전송을 방지합니다.
+        state.nextAt = now + intervalMs;
+        const active = await ensureActiveBroadcast(station.id);
+        const ctx = { station, active };
+        const settings = await readEffectiveSettings(station.slug, active.id);
+        const texts = await currentChatStatus(ctx, settings);
+        const selections = [...new Set((cfg.statusSelections || ['cumulative']).filter(x => ['cumulative','preset','allowance'].includes(x)))];
+        const queue = [];
+        if (selections.includes('cumulative')) queue.push(texts.cumulative);
+        const wantsPreset = selections.includes('preset');
+        const wantsAllowance = selections.includes('allowance');
+        if (wantsPreset && wantsAllowance) queue.push(texts.presetAllowance);
+        else if (wantsPreset) queue.push(texts.preset);
+        else if (wantsAllowance) queue.push(texts.allowance);
+        for (let i = 0; i < queue.length; i++) {
+          if (i) await new Promise(r => setTimeout(r, 650));
+          await youtubeChatService.sendExact(station.slug, youtubeVideoId(cfg.liveUrl), cfg.accountId, queue[i]);
+        }
+        console.log(`[youtube donation repeat] ${station.slug}: ${queue.join(' / ')}`);
+      } catch (e) {
+        console.error(`[youtube donation repeat] ${station.slug}:`, e?.message || e);
+      }
+    }
+  } catch (e) {
+    console.error('[youtube donation repeat worker]', e?.message || e);
+  } finally {
+    donationRepeatWorkerBusy = false;
+  }
+}
+setInterval(runDonationRepeatWorker, 30000).unref?.();
+setTimeout(runDonationRepeatWorker, 5000).unref?.();
 
 app.get('/', (req, res) => res.redirect('/station_login.html'));
 
