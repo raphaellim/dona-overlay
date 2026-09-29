@@ -1123,25 +1123,31 @@ body.broadcast-not-live *{animation-play-state:paused!important}
 /* ===== 0929 FIX: account/creator overlap ===== */
 /* The old theme creates a pseudo label ("계좌"). The 0928 theme restored
    the real text ("계좌후원"), so both were being painted on top of each other. */
-.account-title::before{content:none!important;display:none!important;}
 .account-title{
   box-sizing:border-box!important;
-  flex:0 0 62px!important;width:62px!important;min-width:62px!important;
-  height:28px!important;padding:0 5px!important;overflow:hidden!important;
-  white-space:nowrap!important;font-size:14px!important;line-height:28px!important;
-  letter-spacing:-.08em!important;
+  flex:0 0 42px!important;width:42px!important;min-width:42px!important;
+  height:28px!important;padding:0!important;overflow:hidden!important;
+  color:transparent!important;font-size:0!important;line-height:28px!important;
+  white-space:nowrap!important;
 }
-.account-row{height:36px!important;gap:6px!important;align-items:center!important;}
-.roller{height:30px!important;line-height:normal!important;overflow:hidden!important;}
+.account-title::before{
+  content:"계좌"!important;display:flex!important;align-items:center!important;justify-content:center!important;
+  width:40px!important;height:26px!important;box-sizing:border-box!important;
+  color:var(--o2-cyan)!important;font-size:14px!important;font-weight:1000!important;
+  line-height:26px!important;letter-spacing:-.06em!important;
+}
+.account-row{height:32px!important;gap:5px!important;align-items:center!important;}
+.roller{height:28px!important;line-height:normal!important;overflow:hidden!important;}
 .roller-track{top:0!important;}
 .roller-item{
-  box-sizing:border-box!important;height:30px!important;min-height:30px!important;
-  grid-template-columns:minmax(0,1fr) auto!important;gap:6px!important;
-  padding:0 7px!important;font-size:20px!important;line-height:1!important;
+  box-sizing:border-box!important;height:28px!important;min-height:28px!important;
+  grid-template-columns:56px 22px minmax(78px,1fr)!important;gap:5px!important;
+  padding:0 6px!important;font-size:19px!important;line-height:1!important;
   overflow:hidden!important;
 }
-.roller-item .account-donor,.roller-item .account-amount{line-height:1!important;}
-.roller-item .account-heart{display:none!important;}
+.roller-item .account-donor{width:56px!important;max-width:56px!important;overflow:hidden!important;text-overflow:clip!important;white-space:nowrap!important;line-height:1!important;}
+.roller-item .account-amount{min-width:78px!important;line-height:1!important;white-space:nowrap!important;text-align:right!important;}
+.roller-item .account-heart{display:block!important;width:22px!important;font-size:16px!important;line-height:1!important;text-align:center!important;}
 
 .creator-box{padding:6px 0 4px!important;}
 .creator-box::before{
@@ -2069,12 +2075,13 @@ body.broadcast-not-live *{animation-play-state:paused!important}
         });
       }
 
-      function accountHeartClass(amount) {
+      function accountHeartIcon(amount) {
         const v = num(amount);
-        if (v <= 10000) return "heart-lv1";
-        if (v <= 50000) return "heart-lv2";
-        if (v <= 100000) return "heart-lv3";
-        return "heart-lv4";
+        if (v >= 300000) return "💎";
+        if (v >= 200000) return "❤️";
+        if (v >= 100000) return "💜";
+        if (v >= 50000) return "💙";
+        return "🤍";
       }
 
 
@@ -2111,10 +2118,10 @@ body.broadcast-not-live *{animation-play-state:paused!important}
         if (rollingTimer) { clearInterval(rollingTimer); rollingTimer = null; }
 
         const makeItemHtml = item => {
-          const donor = normalizeName(item.donor || item.name || "익명");
+          const donor = Array.from(normalizeName(item.donor || item.name || "익명")).slice(0, 3).join("");
           const rawAmount = item.amount ?? item.accountAmount ?? item.account_amount ?? item.total ?? 0;
           const amount = displayAmount(rawAmount);
-          const heartClass = accountHeartClass(rawAmount);
+          const heartIcon = accountHeartIcon(rawAmount);
           const amountNum = Number(rawAmount || 0);
 
 let vipClass = "";
@@ -2122,7 +2129,7 @@ if (amountNum >= 1000000) vipClass = " vip-account vip-100";
 else if (amountNum >= 500000) vipClass = " vip-account vip-50";
 else if (amountNum >= 300000) vipClass = " vip-account vip-30";
 else if (amountNum >= 100000) vipClass = " vip-account vip-10";
-          return `<div class="roller-item${vipClass}"><span class="account-donor">${escapeHtml(donor)}</span><span class="account-heart ${heartClass}">♥</span><span class="account-amount">${amount}</span></div>`;
+          return `<div class="roller-item${vipClass}"><span class="account-donor">${escapeHtml(donor)}</span><span class="account-heart">${heartIcon}</span><span class="account-amount">${amount}</span></div>`;
         };
 
         const moveToIndex = (index, useTransition = true) => {
