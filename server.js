@@ -3824,6 +3824,8 @@ async function currentDonationCumulativeText(ctx, settings) {
     if (c) totals.set(c, (totals.get(c) || 0) + aggregateWon(r.total_amount));
   }
   const order = Array.isArray(settings?.creators) ? settings.creators.map(normName) : [];
+  // 후원이 아직 없어도 설정된 크리에이터는 0으로 표시하여 수동/주기 현황전송이 가능하게 합니다.
+  for (const c of order) if (c && !totals.has(c)) totals.set(c, 0);
   const entries = [...totals].sort((a,b) => {
     const ai=order.indexOf(a[0]), bi=order.indexOf(b[0]);
     if (ai >= 0 || bi >= 0) return (ai < 0 ? 999 : ai) - (bi < 0 ? 999 : bi);
