@@ -51,6 +51,14 @@ body{background:#070b12;color:#e5e7eb}.wrap{max-width:1220px;margin:0 auto;paddi
       <div id="broadcasts"></div>
     </section>
   </div>
+  <section class="card">
+    <h2>투네 자동등록 위젯</h2>
+    <p class="muted">방송국별 알림 위젯 주소를 등록합니다. 서버에서 이 주소를 열어 표시된 후원을 수집합니다.</p>
+    <div class="row"><label>투네 통합 알림 위젯 URL</label><input id="toonieWidgetUrl" class="input" type="url" autocomplete="off" placeholder="https://toon.at/widget/alertbox/..."></div>
+    <button class="btn green" onclick="saveToonieWidget()">주소 저장</button>
+    <button class="btn red" onclick="clearToonieWidget()">수집 중지·주소 삭제</button>
+    <p id="toonieWidgetStatus" class="muted"></p>
+  </section>
 </div>
 <script src="/common.js"></script>
 <script>
@@ -120,11 +128,32 @@ async function load(){
     broadcasts = data.broadcasts || [];
 
     render();
+    loadToonieWidget();
   }catch(e){
     console.error(e);
     document.getElementById('info').textContent = '방송국 정보 또는 방송 목록을 불러오지 못했습니다.';
     document.getElementById('broadcasts').innerHTML = `<div class="muted">오류: ${esc(e.message || e)}</div>`;
   }
+}
+
+async function loadToonieWidget(){
+  try{
+    const data=await api('/api/station/toonie-widget');
+    document.getElementById('toonieWidgetUrl').value=data.widgetUrl||'';
+    document.getElementById('toonieWidgetStatus').textContent=data.widgetUrl?`주소 등록됨 · 수집 상태: ${data.collector||'확인 중'}`:'주소 미등록';
+  }catch(e){ document.getElementById('toonieWidgetStatus').textContent='방송국 관리자 로그인 후 설정할 수 있습니다.'; }
+}
+async function saveToonieWidget(){
+  try{
+    const widgetUrl=document.getElementById('toonieWidgetUrl').value.trim();
+    await api('/api/station/toonie-widget',{method:'POST',body:JSON.stringify({widgetUrl})});
+    document.getElementById('toonieWidgetStatus').textContent=widgetUrl?'주소 저장됨':'수집 중지됨';
+  }catch(e){alert(e.message||e)}
+}
+async function clearToonieWidget(){
+  if(!confirm('투네 위젯 수집을 중지하고 주소를 지울까요?'))return;
+  document.getElementById('toonieWidgetUrl').value='';
+  await saveToonieWidget();
 }
 
 function render(){
