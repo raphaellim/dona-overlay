@@ -1141,13 +1141,13 @@ body.broadcast-not-live *{animation-play-state:paused!important}
 .roller-track{top:0!important;}
 .roller-item{
   box-sizing:border-box!important;height:28px!important;min-height:28px!important;
-  grid-template-columns:56px minmax(78px,1fr) auto!important;gap:5px!important;
+  grid-template-columns:56px 22px minmax(78px,1fr)!important;gap:5px!important;
   padding:0 6px!important;font-size:19px!important;line-height:1!important;
   overflow:hidden!important;
 }
 .roller-item .account-donor{width:56px!important;max-width:56px!important;overflow:hidden!important;text-overflow:clip!important;white-space:nowrap!important;line-height:1!important;}
 .roller-item .account-amount{min-width:78px!important;line-height:1!important;white-space:nowrap!important;text-align:right!important;}
-.roller-item .account-heart{display:block!important;width:14px!important;font-size:16px!important;line-height:1!important;text-align:right!important;}
+.roller-item .account-heart{display:block!important;width:22px!important;font-size:16px!important;line-height:1!important;text-align:center!important;}
 
 .creator-box{padding:6px 0 4px!important;}
 .creator-box::before{
@@ -2075,12 +2075,13 @@ body.broadcast-not-live *{animation-play-state:paused!important}
         });
       }
 
-      function accountHeartClass(amount) {
+      function accountHeartIcon(amount) {
         const v = num(amount);
-        if (v <= 10000) return "heart-lv1";
-        if (v <= 50000) return "heart-lv2";
-        if (v <= 100000) return "heart-lv3";
-        return "heart-lv4";
+        if (v >= 300000) return "💎";
+        if (v >= 200000) return "❤️";
+        if (v >= 100000) return "💜";
+        if (v >= 50000) return "💙";
+        return "🤍";
       }
 
 
@@ -2120,7 +2121,7 @@ body.broadcast-not-live *{animation-play-state:paused!important}
           const donor = Array.from(normalizeName(item.donor || item.name || "익명")).slice(0, 3).join("");
           const rawAmount = item.amount ?? item.accountAmount ?? item.account_amount ?? item.total ?? 0;
           const amount = displayAmount(rawAmount);
-          const heartClass = accountHeartClass(rawAmount);
+          const heartIcon = accountHeartIcon(rawAmount);
           const amountNum = Number(rawAmount || 0);
 
 let vipClass = "";
@@ -2128,7 +2129,7 @@ if (amountNum >= 1000000) vipClass = " vip-account vip-100";
 else if (amountNum >= 500000) vipClass = " vip-account vip-50";
 else if (amountNum >= 300000) vipClass = " vip-account vip-30";
 else if (amountNum >= 100000) vipClass = " vip-account vip-10";
-          return `<div class="roller-item${vipClass}"><span class="account-donor">${escapeHtml(donor)}</span><span class="account-heart ${heartClass}">♥</span><span class="account-amount">${amount}</span></div>`;
+          return `<div class="roller-item${vipClass}"><span class="account-donor">${escapeHtml(donor)}</span><span class="account-heart">${heartIcon}</span><span class="account-amount">${amount}</span></div>`;
         };
 
         const moveToIndex = (index, useTransition = true) => {
