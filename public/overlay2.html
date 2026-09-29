@@ -1226,6 +1226,28 @@ body.broadcast-not-live *{animation-play-state:paused!important}
   white-space:nowrap!important;text-align:right!important;
 }
 </style>
+
+<style id="account-name-wide-amount-small-0930">
+/* 이름 3글자 공간 확대, 아이콘 분리, 금액만 살짝 축소 */
+.roller-item{
+  grid-template-columns:82px 28px minmax(86px,1fr)!important;
+  column-gap:5px!important;
+  padding:0 6px!important;
+}
+.roller-item .account-donor{
+  width:82px!important;max-width:82px!important;
+  font-size:23px!important;line-height:1.25!important;
+}
+.roller-item .account-heart{
+  width:28px!important;min-width:28px!important;height:30px!important;
+  font-size:20px!important;
+}
+.roller-item .account-amount{
+  min-width:86px!important;
+  font-size:18px!important;line-height:1.25!important;
+  letter-spacing:-0.02em!important;
+}
+</style>
 </head>
 
 <body class="theme-gold">
