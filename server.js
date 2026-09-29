@@ -3031,13 +3031,22 @@ app.patch('/api/youtube-chat-service/options' , async (req, res) => {
   catch (e) { res.status(400).json({ error: e.message }); }
 });
 app.get('/api/youtube-chat-service/auth', async (req, res) => {
-  try { const ctx = await youtubeChatAdmin(req, res); if (ctx) res.redirect(youtubeChatService.begin(ctx.station.slug)); }
-  catch (e) { res.status(400).type('text/plain').send(e.message); }
+  try {
+    const ctx = await youtubeChatAdmin(req, res);
+    if (!ctx) return;
+    const returnTo = req.query.return === 'donation' ? 'donation' : 'service';
+    res.cookie('yt_service_auth_return', returnTo, { httpOnly: true, sameSite: 'lax', secure: req.secure || req.headers['x-forwarded-proto'] === 'https', maxAge: 10 * 60 * 1000, path: '/' });
+    res.redirect(youtubeChatService.begin(ctx.station.slug));
+  } catch (e) { res.status(400).type('text/plain').send(e.message); }
 });
 app.get('/api/youtube-chat-service/callback', async (req, res) => {
   try {
     const slug = await youtubeChatService.finish(req.query.state, req.query.code);
-    res.redirect(`/youtube_chat_service.html?station=${encodeURIComponent(slug)}&auth=ok`);
+    const cookies = Object.fromEntries(String(req.headers.cookie || '').split(';').map(x => x.trim()).filter(Boolean).map(x => { const i=x.indexOf('='); return i<0?[x,'']:[x.slice(0,i),decodeURIComponent(x.slice(i+1))]; }));
+    const returnTo = cookies.yt_service_auth_return === 'donation' ? 'donation' : 'service';
+    res.clearCookie('yt_service_auth_return', { path: '/' });
+    const page = returnTo === 'donation' ? '/donation_chat_remote.html' : '/youtube_chat_service.html';
+    res.redirect(`${page}?station=${encodeURIComponent(slug)}&auth=ok`);
   } catch (e) { res.status(400).type('text/plain').send(e.message); }
 });
 app.patch('/api/youtube-chat-service/accounts', async (req, res) => {

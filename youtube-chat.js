@@ -105,7 +105,15 @@ function createYoutubeChat({ supabase, withSettingsMutation, env = process.env, 
   }
   async function accounts(slug) {
     const store = await readStore();
-    return (store[storeKey(slug)] || []).map(a => ({ id: a.id, name: a.name, suffixMode: modeOf(a), manualSuffix: manualOf(a), connected: true }));
+    const saved = store[storeKey(slug)] || [];
+    const result = [];
+    for (const a of saved) {
+      let connected = true, authError = '';
+      try { await access(slug, a); }
+      catch (e) { connected = false; authError = /expired|revoked|invalid_grant|재인증/i.test(String(e.message||'')) ? '인증 만료 · 다시 연결 필요' : String(e.message||'연결 확인 실패'); }
+      result.push({ id: a.id, name: a.name, suffixMode: modeOf(a), manualSuffix: manualOf(a), connected, authError });
+    }
+    return result;
   }
   async function options(slug) {
     const store = await readStore();
@@ -141,7 +149,7 @@ function createYoutubeChat({ supabase, withSettingsMutation, env = process.env, 
     if (!account) throw new Error('자동 채팅 계정을 다시 선택하세요.');
     const text = String(message || '').trim();
     if (!text || Array.from(text).length > 200) throw new Error('자동 채팅 메시지가 비어 있거나 너무 깁니다.');
-    await google('https://www.googleapis.com/youtube/v3/liveChat/messages?part=snippet', { method: 'POST', headers: { Authorization: `Bearer ${await access(account)}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ snippet: { liveChatId: target.liveChatId, type: 'textMessageEvent', textMessageDetails: { messageText: text } } }) });
+    await google('https://www.googleapis.com/youtube/v3/liveChat/messages?part=snippet', { method: 'POST', headers: { Authorization: `Bearer ${await access(slug, account)}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ snippet: { liveChatId: target.liveChatId, type: 'textMessageEvent', textMessageDetails: { messageText: text } } }) });
     return { ok: true, accountId: account.id, name: account.name, text };
   }
   async function updateOptions(slug, input) {
@@ -182,17 +190,26 @@ function createYoutubeChat({ supabase, withSettingsMutation, env = process.env, 
     });
     return accounts(slug);
   }
-  async function access(account) {
+  async function access(slug, account) {
     const auth = open(account.secret);
-    if (auth.expiresAt > Date.now() + 60000) return auth.accessToken;
-    const fresh = await token({ grant_type: 'refresh_token', refresh_token: auth.refreshToken });
-    if (!fresh.access_token) throw new Error('계정 재인증이 필요합니다.');
+    if (auth.expiresAt > Date.now() + 60000 && auth.accessToken) return auth.accessToken;
+    let fresh;
+    try { fresh = await token({ grant_type: 'refresh_token', refresh_token: auth.refreshToken }); }
+    catch (e) {
+      if (/expired|revoked|invalid_grant/i.test(String(e.message||''))) throw new Error('YouTube 인증이 만료되었거나 취소되었습니다. 이 계정을 다시 연결하세요.');
+      throw e;
+    }
+    if (!fresh.access_token) throw new Error('YouTube 계정 재인증이 필요합니다.');
+    const nextAuth = { refreshToken: fresh.refresh_token || auth.refreshToken, accessToken: fresh.access_token, expiresAt: Date.now() + Number(fresh.expires_in || 3600) * 1000 };
+    const nextSecret = seal(nextAuth);
+    await changeStore(slug, accounts => { const item = accounts.find(x => x.id === account.id); if (item) item.secret = nextSecret; });
+    account.secret = nextSecret;
     return fresh.access_token;
   }
   async function resolve(slug, videoId) {
     const store = await readStore(), first = (store[storeKey(slug)] || [])[0];
     if (!first) throw new Error('채팅 계정을 먼저 연결하세요.');
-    const data = await google(`https://www.googleapis.com/youtube/v3/videos?part=snippet,liveStreamingDetails&id=${encodeURIComponent(videoId)}`, { headers: { Authorization: `Bearer ${await access(first)}` } });
+    const data = await google(`https://www.googleapis.com/youtube/v3/videos?part=snippet,liveStreamingDetails&id=${encodeURIComponent(videoId)}`, { headers: { Authorization: `Bearer ${await access(slug, first)}` } });
     const video = data.items?.[0];
     if (!video?.liveStreamingDetails?.activeLiveChatId) throw new Error('현재 라이브 채팅이 열려 있지 않습니다.');
     return { videoId, liveChatId: video.liveStreamingDetails.activeLiveChatId, title: video.snippet?.title || '' };
@@ -220,7 +237,7 @@ function createYoutubeChat({ supabase, withSettingsMutation, env = process.env, 
         const body = settings.varietyMode && !useManual ? variedMessage(message, settings) : message.trim();
         const text = `${body}${suffix ? ` ${suffix}` : ''}`;
         if (Array.from(text).length > 200) throw new Error('장식과 개별 멘트를 합친 메시지가 너무 깁니다. 공용 멘트를 줄이세요.');
-        await google('https://www.googleapis.com/youtube/v3/liveChat/messages?part=snippet', { method: 'POST', headers: { Authorization: `Bearer ${await access(a)}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ snippet: { liveChatId: target.liveChatId, type: 'textMessageEvent', textMessageDetails: { messageText: text } } }) });
+        await google('https://www.googleapis.com/youtube/v3/liveChat/messages?part=snippet', { method: 'POST', headers: { Authorization: `Bearer ${await access(slug, a)}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ snippet: { liveChatId: target.liveChatId, type: 'textMessageEvent', textMessageDetails: { messageText: text } } }) });
         results.push({ accountId: a.id, name: a.name, ok: true, text });
       } catch (error) {
         if (['quotaExceeded', 'dailyLimitExceeded'].includes(error.reason) || /exceeded.*quota|quota.*exceeded/i.test(error.message)) quotaStopped = true;
