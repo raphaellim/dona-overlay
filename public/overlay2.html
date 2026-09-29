@@ -1202,6 +1202,30 @@ body.broadcast-not-live *{animation-play-state:paused!important}
 .roller-item .account-heart{display:block!important;width:25px!important;font-size:20px!important;line-height:1!important;}
 .roller-item .account-amount{min-width:92px!important;font-size:21px!important;line-height:1!important;text-align:right!important;}
 </style>
+
+<style id="account-grid-no-overlap-0930">
+/* 현재 큰 크기 유지 + 이름/아이콘/금액을 독립 칸으로 분리 */
+.roller-item{
+  grid-template-columns:72px 30px minmax(100px,1fr)!important;
+  column-gap:7px!important;
+  padding:0 7px!important;
+  align-items:center!important;
+}
+.roller-item .account-donor{
+  width:72px!important;max-width:72px!important;min-width:0!important;
+  overflow:hidden!important;text-overflow:clip!important;white-space:nowrap!important;
+  font-size:23px!important;line-height:1.25!important;text-align:left!important;
+}
+.roller-item .account-heart{
+  display:flex!important;width:30px!important;min-width:30px!important;height:30px!important;
+  align-items:center!important;justify-content:center!important;
+  font-size:20px!important;line-height:1!important;overflow:visible!important;
+}
+.roller-item .account-amount{
+  min-width:100px!important;font-size:21px!important;line-height:1.25!important;
+  white-space:nowrap!important;text-align:right!important;
+}
+</style>
 </head>
 
 <body class="theme-gold">
