@@ -1261,6 +1261,27 @@ body.broadcast-not-live *{animation-play-state:paused!important}
   padding:0!important;
 }
 </style>
+
+<style id="account-heart-compact-0930">
+/* 하트/다이아 칸을 줄여 금액 오른쪽 여유 확보 */
+.roller-item{
+  grid-template-columns:82px 20px minmax(94px,1fr)!important;
+  column-gap:4px!important;
+  padding-left:6px!important;
+  padding-right:4px!important;
+}
+.roller-item .account-heart{
+  width:20px!important;min-width:20px!important;
+  font-size:18px!important;
+  justify-self:center!important;
+  text-align:center!important;
+}
+.roller-item .account-amount{
+  min-width:94px!important;
+  padding-right:1px!important;
+  box-sizing:border-box!important;
+}
+</style>
 </head>
 
 <body class="theme-gold">
