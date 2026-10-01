@@ -2998,14 +2998,22 @@ app.patch('/api/youtube-chat-service/options', async (req, res) => {
   try { const ctx = await youtubeChatAdmin(req, res); if (ctx) res.json({ options: await youtubeChatService.updateOptions(ctx.station.slug, req.body) }); }
   catch (e) { res.status(400).json({ error: e.message }); }
 });
+app.get('/api/youtube-chat-service/oauth-info', async (req, res) => {
+  try {
+    const ctx = await youtubeChatAdmin(req, res);
+    if (ctx) res.json(youtubeChatService.oauthInfo());
+  } catch (e) { res.status(400).json({ error: e.message }); }
+});
 app.get('/api/youtube-chat-service/auth', async (req, res) => {
   try { const ctx = await youtubeChatAdmin(req, res); if (ctx) res.redirect(youtubeChatService.begin(ctx.station.slug)); }
   catch (e) { res.status(400).type('text/plain').send(e.message); }
 });
 app.get('/api/youtube-chat-service/callback', async (req, res) => {
   try {
+    if (req.query.error) throw new Error(`Google 인증이 취소되었거나 실패했습니다: ${req.query.error}`);
     const slug = await youtubeChatService.finish(req.query.state, req.query.code);
-    res.redirect(`/youtube_chat_service.html?station=${encodeURIComponent(slug)}&auth=ok`);
+    // 후원채팅 리모컨에서 시작한 서비스 OAuth는 실제 사용하는 후원채팅 페이지로 복귀합니다.
+    res.redirect(`/donation_chat_remote.html?station=${encodeURIComponent(slug)}&auth=ok`);
   } catch (e) { res.status(400).type('text/plain').send(e.message); }
 });
 app.patch('/api/youtube-chat-service/accounts', async (req, res) => {
