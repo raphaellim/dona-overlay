@@ -1,4 +1,4 @@
-// force-deploy-20261001-122011
+// force-deploy-20261001-1220
 const express = require('express');
 const cors = require('cors');
 const { createClient } = require('@supabase/supabase-js');
@@ -3036,6 +3036,22 @@ app.post('/api/youtube-chat-service/resolve', async (req, res) => {
   try { const ctx = await youtubeChatAdmin(req, res); if (ctx) res.json(await youtubeChatService.resolve(ctx.station.slug, youtubeVideoId(req.body?.url))); }
   catch (e) { res.status(400).json({ error: e.message }); }
 });
+
+app.post('/api/youtube-chat-service/send-exact', async (req, res) => {
+  try {
+    const ctx = await youtubeChatAdmin(req, res);
+    if (!ctx) return;
+    const videoId = youtubeVideoId(req.body?.url);
+    const accountId = String(req.body?.accountId || '').trim();
+    const message = String(req.body?.message || '').trim();
+    if (!accountId) return res.status(400).json({ error: '전송 계정을 선택하세요.' });
+    if (!message) return res.status(400).json({ error: '전송할 메시지가 없습니다.' });
+    res.json(await youtubeChatService.sendExact(ctx.station.slug, videoId, accountId, message));
+  } catch (e) {
+    res.status(400).json({ error: e.message || '정확 전송 실패' });
+  }
+});
+
 app.post('/api/youtube-chat-service/send', async (req, res) => {
   try {
     const ctx = await youtubeChatAdmin(req, res);

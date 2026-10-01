@@ -14,11 +14,40 @@ function sels(){return [$('selC').checked&&'cumulative',$('selP').checked&&'pres
 function body(){return {enabled:$('enabled').checked,liveUrl:$('liveUrl').value.trim(),accountId:$('account').value,firstEnabled:$('firstEnabled').checked,secondEnabled:$('secondEnabled').checked,firstTemplate:$('firstTemplate').value.trim(),secondTemplate:$('secondTemplate').value.trim(),statusSelections:sels(),repeatEnabled:$('repeatEnabled').checked,repeatMinutes:Number($('minutes').value)||10}}
 function setRepeat(){if(!$('repeatEnabled').checked){$('repeatStatus').textContent='서버 자동전송 OFF';return}const m=Number($('minutes').value)||10;$('repeatStatus').textContent=`서버에서 ${m}분마다 선택 현황 자동전송 ON`}
 function manText(won){const n=Math.trunc(Number(won||0)/1000)/10;return n.toFixed(1).replace(/\.0$/,'')}
-function statusMessages(summary,selected){const messages=[];const creators=Array.isArray(summary?.creators)?summary.creators:[];if(selected.includes('cumulative')){const parts=creators.filter(x=>Number(x.total||0)!==0).map(x=>`${x.creator} ${x.totalText||manText(x.total)}`);messages.push(parts.length?`현재 누적후원현황 ${parts.join(' · ')}`:'현재 누적후원현황 0')}
-const side=[];if(selected.includes('preset')){const p=[];for(const c of creators){for(const n of (Array.isArray(c.presetNets)?c.presetNets:[])){const net=Number(n.net||0);if(!net)continue;const label=net>0?(n.plusName||n.presetTitle||n.presetId||'프리셋'):(n.minusName||n.presetTitle||n.presetId||'프리셋');p.push(`${c.creator} ${label} ${net>0?'+':''}${net}`)}}side.push(p.length?`프리셋 ${p.join(' · ')}`:'프리셋 0')}
-if(selected.includes('allowance')){const a=summary?.settings?.allowanceData||summary?.allowanceData||{};const v=Number(a.balance??a.current??a.amount??0)||0;side.push(`용돈 ${v.toLocaleString('ko-KR')}원`)}if(side.length)messages.push(side.join(' · '));return messages.filter(Boolean)}
+function statusMessages(summary,selected){
+  const messages=[];
+  const creators=Array.isArray(summary?.creators)?summary.creators:[];
+  if(selected.includes('cumulative')){
+    const hearts=['💗','💙','💛','💜','💚','🧡','🤍','🩵'];
+    const parts=creators
+      .filter(x=>Number(x.total||0)!==0)
+      .map((x,i)=>`${hearts[i%hearts.length]}${x.creator}(${x.totalText||manText(x.total)})`);
+    messages.push(parts.length?`💰누적 ${parts.join('·')}`:'💰누적 0');
+  }
+  const side=[];
+  if(selected.includes('preset')){
+    const p=[];
+    for(const c of creators){
+      for(const n of (Array.isArray(c.presetNets)?c.presetNets:[])){
+        const net=Number(n.net||0);
+        if(!net)continue;
+        const label=net>0?(n.plusName||n.presetTitle||n.presetId||'프리셋'):(n.minusName||n.presetTitle||n.presetId||'프리셋');
+        p.push(`${c.creator} ${label} ${net>0?'+':''}${net}`);
+      }
+    }
+    side.push(p.length?`🎛 ${p.join(' | ')}`:'🎛 프리셋 0');
+  }
+  if(selected.includes('allowance')){
+    const a=summary?.settings?.allowanceData||summary?.allowanceData||{};
+    const v=Number(a.balance??a.current??a.amount??0)||0;
+    side.push(`💵 용돈 ${v.toLocaleString('ko-KR')}원`);
+  }
+  if(side.length)messages.push(side.join(' | '));
+  return messages.filter(Boolean);
+}
+
 async function save(msg=true){const v=body();if(!v.statusSelections.length)throw Error('전송할 현황을 하나 이상 선택하세요.');await api('/donation-auto',{method:'PATCH',body:JSON.stringify(v)});if(msg)$('saveStatus').textContent='저장 완료';setRepeat()}
 async function load(){try{const [a,c]=await Promise.all([api('/accounts'),api('/donation-auto')]);$('account').innerHTML='<option value="">전송 계정 선택</option>'+((a.accounts||[]).map(x=>`<option value="${x.id}" ${x.connected===false?'disabled':''}>${x.name}${x.connected===false?' · 재연결 필요':''}</option>`).join('')); $('accountStatus').textContent=(a.accounts||[]).map(x=>`${x.connected===false?'🔴':'🟢'} ${x.name}${x.authError?' · '+x.authError:''}`).join(' / ');const v=c.auto||{};$('account').value=v.accountId||'';$('liveUrl').value=v.liveUrl||'';$('enabled').checked=!!v.enabled;$('firstEnabled').checked=v.firstEnabled!==false;$('secondEnabled').checked=v.secondEnabled!==false;$('firstTemplate').value=v.firstTemplate||'💸 {후원자} {금액} {방식} → {분배} {프리셋}';$('secondTemplate').value=v.secondTemplate||'{누적}';const ss=v.statusSelections||['cumulative'];$('selC').checked=ss.includes('cumulative');$('selP').checked=ss.includes('preset');$('selA').checked=ss.includes('allowance');$('repeatEnabled').checked=!!v.repeatEnabled;$('minutes').value=String(v.repeatMinutes||10);$('connStatus').textContent=(a.configured?'YouTube API 설정됨 · ':'YouTube API 환경설정 필요 · ')+(a.accounts||[]).length+'개 계정 연결됨';setRepeat()}catch(e){$('connStatus').textContent=e.message}}
-async function sendNow(auto=false){try{const selected=sels();if(!selected.length)throw Error('전송할 현황을 하나 이상 선택하세요.');const accountId=$('account').value,liveUrl=$('liveUrl').value.trim();if(!accountId)throw Error('전송 계정을 선택하세요.');if(!liveUrl)throw Error('YouTube 라이브 주소를 입력하세요.');if(!auto){$('sendNow').disabled=true;$('sendStatus').textContent='전송 중...'}await save(false);const summary=await rootApi('/api/summary');const messages=statusMessages(summary,selected);if(!messages.length)throw Error('전송할 현황 메시지를 만들 수 없습니다.');const sent=[];for(const message of messages){await api('/send',{method:'POST',body:JSON.stringify({url:liveUrl,accountIds:[accountId],message})});sent.push(message)}$('sendStatus').textContent=(auto?'자동전송 완료 · ':'전송 완료 · ')+sent.join(' / ')}catch(e){$('sendStatus').textContent=(auto?'자동전송 실패 · ':'전송 실패 · ')+e.message}finally{$('sendNow').disabled=false}}
+async function sendNow(auto=false){try{const selected=sels();if(!selected.length)throw Error('전송할 현황을 하나 이상 선택하세요.');const accountId=$('account').value,liveUrl=$('liveUrl').value.trim();if(!accountId)throw Error('전송 계정을 선택하세요.');if(!liveUrl)throw Error('YouTube 라이브 주소를 입력하세요.');if(!auto){$('sendNow').disabled=true;$('sendStatus').textContent='전송 중...'}await save(false);const summary=await rootApi('/api/summary');const messages=statusMessages(summary,selected);if(!messages.length)throw Error('전송할 현황 메시지를 만들 수 없습니다.');const sent=[];for(const message of messages){await api('/send-exact',{method:'POST',body:JSON.stringify({url:liveUrl,accountId,message})});sent.push(message)}$('sendStatus').textContent=(auto?'자동전송 완료 · ':'전송 완료 · ')+sent.join(' / ')}catch(e){$('sendStatus').textContent=(auto?'자동전송 실패 · ':'전송 실패 · ')+e.message}finally{$('sendNow').disabled=false}}
 $('connect').onclick=()=>{location.href=base+'/auth?station='+encodeURIComponent(station)+'&return=donation'};$('checkLive').onclick=async()=>{try{const a=$('account').value,u=$('liveUrl').value.trim();if(!a)throw Error('전송 계정을 선택하세요.');if(!u)throw Error('YouTube 라이브 주소를 입력하세요.');$('connStatus').textContent='방송 연결 확인 중...';const r=await api('/resolve',{method:'POST',body:JSON.stringify({url:u,accountId:a})});$('connStatus').textContent='🟢 채팅 가능 · '+(r.title||'라이브 방송')}catch(e){$('connStatus').textContent='🔴 '+e.message}};$('saveConnection').onclick=async()=>{try{await save(false);$('connStatus').textContent='라이브 주소/전송 계정 저장 완료'}catch(e){$('connStatus').textContent=e.message}};$('saveAll').onclick=async()=>{try{await save(true)}catch(e){$('saveStatus').textContent=e.message}};$('sendNow').onclick=()=>sendNow(false);$('repeatEnabled').onchange=setRepeat;$('minutes').onchange=setRepeat;load();
 </script></body></html>
