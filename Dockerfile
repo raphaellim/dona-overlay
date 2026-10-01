@@ -3,18 +3,18 @@ FROM node:22-bookworm
 WORKDIR /app
 
 ENV NODE_ENV=production
-ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+
+ARG BUILD_ID=20261001_1205
+RUN echo "BUILD_ID=$BUILD_ID"
+
+COPY package*.json ./
+RUN npm install --omit=dev
 
 COPY . .
 
-RUN npm install --omit=dev
-
-RUN npx playwright install --with-deps chromium
-
-# Playwright가 local-browsers를 찾더라도 /ms-playwright를 보도록 연결
-RUN rm -rf /app/node_modules/playwright-core/.local-browsers \
-    && ln -s /ms-playwright /app/node_modules/playwright-core/.local-browsers \
-    && ls -la /app/node_modules/playwright-core/.local-browsers \
-    && ls -la /ms-playwright
+# 최신 server.js가 이미지에 실제 포함됐는지 빌드 단계에서 확인
+RUN echo "=== OAUTH ROUTE CHECK ===" \
+    && grep -n "youtube-chat-service/oauth-info" server.js \
+    && echo "=== SERVER FILE OK ==="
 
 CMD ["npm", "start"]
