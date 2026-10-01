@@ -3,7 +3,7 @@ FROM node:22-bookworm
 WORKDIR /app
 
 ENV NODE_ENV=production
-ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+ENV PLAYWRIGHT_BROWSERS_PATH=0
 
 COPY package*.json ./
 
