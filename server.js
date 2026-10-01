@@ -1,4 +1,4 @@
-// deploy-check-20261001
+// force-deploy-20261001-1220
 const express = require('express');
 const cors = require('cors');
 const { createClient } = require('@supabase/supabase-js');
