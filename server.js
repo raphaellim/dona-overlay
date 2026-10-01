@@ -3843,7 +3843,7 @@ async function maybeSendDonationYoutubeChat(ctx, settings, donor, accountTotal, 
       const a = Number(r.total_amount ?? r.totalAmount ?? r.amount ?? 0);
       if (c) byCreator.set(c, (byCreator.get(c) || 0) + a);
     }
-    const splitText = [...byCreator].map(([c,a]) => `${c}(${displayManText(a)})`).join(' · ');
+    const splitText = [...byCreator].map(([c,a]) => `${c}${displayManText(a)}`).join('·');
     const first = `${normName(donor)} ${displayManText(grandTotal)} ${source} → ${splitText}`;
 
     const { data: allRows, error } = await supabase.from('donations')
@@ -3865,7 +3865,7 @@ async function maybeSendDonationYoutubeChat(ctx, settings, donor, accountTotal, 
     const cumulativeText = entries.map(([c,a]) => `${c}(${displayManText(a)})`).join(' · ');
     const fill = (tpl, values) => String(tpl || '').replace(/\{(후원자|금액|방식|분배|누적)\}/g, (_, key) => values[key] ?? '');
     const values = { 후원자: normName(donor), 금액: displayManText(grandTotal), 방식: source, 분배: splitText, 누적: cumulativeText };
-    const firstMessage = fill(cfg.firstTemplate || '{후원자} {금액} {방식} → {분배}', values).trim();
+    const firstMessage = fill(cfg.firstTemplate || '💸{후원자}업({금액}) → {분배}', values).trim();
     const secondMessage = fill(cfg.secondTemplate || '현재 누적후원현황 {누적}', values).trim();
     if (cfg.firstEnabled !== false && firstMessage) await youtubeChatService.sendExact(ctx.station.slug, videoId, cfg.accountId, firstMessage);
     if (cfg.secondEnabled !== false && secondMessage) {
