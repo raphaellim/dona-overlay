@@ -3013,15 +3013,31 @@ app.get('/api/youtube-chat-service/oauth-info', async (req, res) => {
   } catch (e) { res.status(400).json({ error: e.message }); }
 });
 app.get('/api/youtube-chat-service/auth', async (req, res) => {
-  try { const ctx = await youtubeChatAdmin(req, res); if (ctx) res.redirect(youtubeChatService.begin(ctx.station.slug)); }
+  try {
+    const ctx = await youtubeChatAdmin(req, res);
+    if (!ctx) return;
+    const returnTarget = String(req.query.return || '').toLowerCase() === 'general' ? 'general' : 'donation';
+    res.cookie('youtube_service_return', returnTarget, {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: true,
+      maxAge: 10 * 60 * 1000
+    });
+    res.redirect(youtubeChatService.begin(ctx.station.slug));
+  }
   catch (e) { res.status(400).type('text/plain').send(e.message); }
 });
 app.get('/api/youtube-chat-service/callback', async (req, res) => {
   try {
     if (req.query.error) throw new Error(`Google 인증이 취소되었거나 실패했습니다: ${req.query.error}`);
     const slug = await youtubeChatService.finish(req.query.state, req.query.code);
-    // 후원채팅 리모컨에서 시작한 서비스 OAuth는 실제 사용하는 후원채팅 페이지로 복귀합니다.
-    res.redirect(`/donation_chat_remote.html?station=${encodeURIComponent(slug)}&auth=ok`);
+    const cookieHeader = String(req.headers.cookie || '');
+    const returnCookie = cookieHeader.split(';').map(v => v.trim()).find(v => v.startsWith('youtube_service_return='));
+    const returnValue = returnCookie ? decodeURIComponent(returnCookie.split('=').slice(1).join('=')) : '';
+    const returnTarget = returnValue === 'general' ? 'general' : 'donation';
+    res.clearCookie('youtube_service_return', { httpOnly: true, sameSite: 'lax', secure: true });
+    const page = returnTarget === 'general' ? 'youtube_chat_remote.html' : 'donation_chat_remote.html';
+    res.redirect(`/${page}?station=${encodeURIComponent(slug)}&auth=ok`);
   } catch (e) { res.status(400).type('text/plain').send(e.message); }
 });
 app.patch('/api/youtube-chat-service/accounts', async (req, res) => {

@@ -51,7 +51,7 @@
 <script>
   'use strict';
   const $ = id => document.getElementById(id);
-  const api = '/api/youtube-chat';
+  const api = '/api/youtube-chat-service';
   const station = new URLSearchParams(location.search).get('station') || 'default';
   let accounts = [], chatId = '', serverReady = false, busy = false, optionPending = null;
   let savedOptions = null;
@@ -129,7 +129,7 @@
       $('result').textContent=`${accounts.length}개 계정에 전체 설정을 적용했습니다.`;$('result').className='result ok';
     }catch(e){$('result').textContent=errorText(e);$('result').className='result error'}finally{button.disabled=false}
   };
-  $('addAccount').onclick=()=>{if(!serverReady){$('result').textContent='계정을 연결하려면 서버의 Google 인증 기능을 먼저 설정하세요.';$('result').className='result error';return}location.href=api+'/auth?station='+encodeURIComponent(station)};
+  $('addAccount').onclick=()=>{if(!serverReady){$('result').textContent='계정을 연결하려면 서버의 Google 인증 기능을 먼저 설정하세요.';$('result').className='result error';return}location.href=api+'/auth?station='+encodeURIComponent(station)+'&return=general'};
   $('connect').onclick=async()=>{saveDraft();chatId='';$('liveStatus').textContent='방송 확인 중…';try{const data=await request('/resolve',{method:'POST',body:JSON.stringify({url:$('liveUrl').value.trim()})});chatId=data.liveChatId;$('liveStatus').textContent=`채팅 가능 · ${data.title||'라이브 방송'}`}catch(e){$('liveStatus').textContent=errorText(e)}};
   async function sendMessages(chosen){if(busy)return;const message=$('message').value.trim();if(!message||!chosen.length||!chatId){$('result').textContent='방송을 확인하고 공용 멘트와 계정을 선택하세요.';$('result').className='result error';return}busy=true;$('sendSelected').disabled=true;$('result').textContent='전송 중…';$('result').className='result';try{if(optionPending)await optionPending;await Promise.all(chosen.map(a=>a.pending).filter(Boolean));if(chosen.some(a=>a.saveError))throw new Error('개별 멘트 저장에 실패했습니다. 다시 입력하세요.');const data=await request('/send',{method:'POST',body:JSON.stringify({url:$('liveUrl').value.trim(),accountIds:chosen.map(a=>a.id),message})});const outcomes=data.results||[];$('result').textContent=outcomes.length?outcomes.map(x=>`${x.name||x.accountId}: ${x.ok?'전송 완료 · '+x.text:x.error||'실패'}`).join('\n'):'전송 요청이 완료되었습니다.';$('result').className=outcomes.some(x=>!x.ok)?'result error':'result ok'}catch(e){$('result').textContent=errorText(e);$('result').className='result error'}finally{busy=false;$('sendSelected').disabled=false}}
   $('sendSelected').onclick=()=>sendMessages(accounts.filter(a=>a.selected!==false&&a.connected!==false));
