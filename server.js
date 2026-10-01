@@ -39,6 +39,13 @@ io.on('connection', (socket) => {
   });
 });
 
+app.get('/api/build-check', (req, res) => {
+  res.json({
+    ok: true,
+    build: '2026-10-01-oauth-patch'
+  });
+});
+
 // 성공한 API 변경을 같은 방송국의 오버레이에만 알립니다.
 // 실제 데이터는 기존 API를 통해 한 번 동기화하므로 권한/정규화 로직은 그대로 유지됩니다.
 app.use((req, res, next) => {
