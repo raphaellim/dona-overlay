@@ -3862,11 +3862,23 @@ async function maybeSendDonationYoutubeChat(ctx, settings, donor, accountTotal, 
       if (ai >= 0 || bi >= 0) return (ai < 0 ? 999 : ai) - (bi < 0 ? 999 : bi);
       return b[1]-a[1];
     });
-    const cumulativeText = entries.map(([c,a]) => `${c}(${displayManText(a)})`).join(' · ');
+    const hearts = ['💗','💙','💛','💜','💚','🧡','🤍','🩵'];
+    const cumulativeText = entries.map(([c,a], i) => `${hearts[i % hearts.length]}${c}(${displayManText(a)})`).join('·');
     const fill = (tpl, values) => String(tpl || '').replace(/\{(후원자|금액|방식|분배|누적)\}/g, (_, key) => values[key] ?? '');
     const values = { 후원자: normName(donor), 금액: displayManText(grandTotal), 방식: source, 분배: splitText, 누적: cumulativeText };
-    const firstMessage = fill(cfg.firstTemplate || '💸{후원자}업({금액}) → {분배}', values).trim();
-    const secondMessage = fill(cfg.secondTemplate || '현재 누적후원현황 {누적}', values).trim();
+    const savedFirst = String(cfg.firstTemplate || '').trim();
+    const savedSecond = String(cfg.secondTemplate || '').trim();
+    const legacyFirst = !savedFirst
+      || savedFirst === '💸 {후원자} {금액} {방식} → {분배} {프리셋}'
+      || savedFirst === '{후원자} {금액} {방식} → {분배}'
+      || savedFirst === '💸 {후원자} {금액} {방식} → {분배}';
+    const legacySecond = !savedSecond
+      || savedSecond === '{누적}'
+      || savedSecond === '현재 누적후원현황 {누적}';
+    const firstTemplate = legacyFirst ? '💸{후원자}업({금액}) → {분배}' : savedFirst;
+    const secondTemplate = legacySecond ? '💰누적 {누적}' : savedSecond;
+    const firstMessage = fill(firstTemplate, values).trim();
+    const secondMessage = fill(secondTemplate, values).trim();
     if (cfg.firstEnabled !== false && firstMessage) await youtubeChatService.sendExact(ctx.station.slug, videoId, cfg.accountId, firstMessage);
     if (cfg.secondEnabled !== false && secondMessage) {
       if (cfg.firstEnabled !== false && firstMessage) await new Promise(resolve => setTimeout(resolve, 650));
