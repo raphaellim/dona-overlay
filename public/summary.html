@@ -7,7 +7,7 @@
 <link rel="stylesheet" href="/app.css">
 <style>
   body{background:#070b12;color:#e5e7eb}
-  .wrap{max-width:1180px;margin:0 auto;padding:22px}
+  .wrap{max-width:1380px;margin:0 auto;padding:22px}
   .top{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:16px}
   .title{font-size:30px;font-weight:900;letter-spacing:-.06em}
   .nav{display:flex;gap:8px;flex-wrap:wrap}
@@ -37,7 +37,21 @@
   tr.selected td{background:#172554!important}
   .empty-row{color:#64748b;text-align:center!important;padding:18px!important}
   .funding-name{max-width:230px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  @media(max-width:980px){.grid,.detail-grid{grid-template-columns:1fr}.top{align-items:flex-start;flex-direction:column}}
+
+  .kpi-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:0 0 14px}
+  .kpi{background:linear-gradient(180deg,#0f172a,#0b1220);border:1px solid #2b3a52;border-radius:16px;padding:14px}
+  .kpi-label{color:#94a3b8;font-size:12px;font-weight:800}
+  .kpi-value{font-size:25px;font-weight:950;letter-spacing:-.04em;margin-top:4px;font-variant-numeric:tabular-nums}
+  .section-tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .search{background:#070b12;color:#e5e7eb;border:1px solid #334155;border-radius:10px;padding:8px 10px;min-width:180px}
+  .table-wrap{overflow:auto;max-width:100%}
+  .table th{position:sticky;top:0;z-index:2}
+  .table td{vertical-align:middle}
+  .money-total{font-size:15px;color:#fff}
+  .subtle{color:#64748b;font-size:12px}
+  .refresh-state{color:#94a3b8;font-size:12px;font-weight:800}
+  @media(max-width:980px){.grid,.detail-grid{grid-template-columns:1fr}.kpi-grid{grid-template-columns:1fr 1fr}.top{align-items:flex-start;flex-direction:column}}
+  @media(max-width:560px){.kpi-grid{grid-template-columns:1fr}.wrap{padding:12px}.title{font-size:25px}}
 </style>
 <link rel="stylesheet" href="/ux_compact.css">
 </head>
@@ -49,13 +63,20 @@
       <a href="/admin.html">입력</a>
       <a href="/control.html">방송컨트롤</a>
       <a href="/creator_detail.html">크리에이터 전체</a>
-      <a href="/donor_detail.html">도네이터 전체</a>
+      <a href="/donor_history.html">후원자 전체이력</a>
       <a href="/donations.html">전체 입력</a>
       <a href="/overlay.html" target="_blank">OBS화면</a>
     </div>
   </div>
 
   <div id="currentBroadcast" class="resultBox">현재 방송 확인 중...</div>
+
+  <div class="kpi-grid">
+    <div class="kpi"><div class="kpi-label">총 후원</div><div class="kpi-value" id="kpiTotal">0</div></div>
+    <div class="kpi"><div class="kpi-label">계좌</div><div class="kpi-value" id="kpiAccount">0</div></div>
+    <div class="kpi"><div class="kpi-label">투네</div><div class="kpi-value" id="kpiToonie">0</div></div>
+    <div class="kpi"><div class="kpi-label">후원자</div><div class="kpi-value" id="kpiDonors">0명</div><div class="refresh-state" id="refreshState">동기화 대기</div></div>
+  </div>
 
   <div class="grid">
     <section class="card">
@@ -68,11 +89,11 @@
     </section>
 
     <section class="card">
-      <h2>도네이터 합산</h2>
-      <table class="table">
+      <h2><span>도네이터 합산</span><span class="section-tools"><input id="donorSearch" class="search" placeholder="후원자 검색"><a class="btn blue mini" href="/donor_history.html">전체이력</a></span></h2>
+      <div class="table-wrap"><table class="table">
         <thead><tr><th>도네이터</th><th>계좌</th><th>투네</th><th>합산</th><th>최근처리</th></tr></thead>
         <tbody id="donorRows"></tbody>
-      </table>
+      </table></div>
     </section>
   </div>
 
@@ -134,6 +155,7 @@
 </div>
 
 <script src="/common.js"></script>
+<script src="/socket.io/socket.io.js"></script>
 <script>
 let summary = null;
 let selectedCreator = '';
@@ -142,6 +164,11 @@ let fundingGroups = [];
 let fundingHistory = [];
 let allPage = 1;
 const allPageSize = 10;
+let summaryLoading = false;
+let fundingLoading = false;
+let fundingLoadedAt = 0;
+let fallbackTimer = null;
+let refreshQueued = false;
 
 function statusTextForCreator(row){
   const presets = (summary?.settings?.presets || []).filter(p => p.enabled !== false);
@@ -325,43 +352,88 @@ function renderFundingSummary(){
   }).join('');
 }
 
-async function load(){
-  const [summaryData, fundingData] = await Promise.all([
-    api('/api/summary'),
-    api('/api/funding-history')
-  ]);
-  summary = summaryData;
-  fundingHistory = Array.isArray(fundingData?.donations) ? fundingData.donations : [];
-  $('#currentBroadcast').textContent = summary.broadcast ? `현재 방송: ${summary.broadcast.title}` : '현재 방송 없음';
+function renderTopStats(){
+  const creators = Array.isArray(summary?.creators) ? summary.creators : [];
+  const donors = Array.isArray(summary?.donors) ? summary.donors : [];
+  const account = creators.reduce((a,x)=>a+Number(x.account||0),0);
+  const toonie = creators.reduce((a,x)=>a+Number(x.toonie||0),0);
+  $('#kpiAccount').textContent = (Math.trunc(account/1000)/10).toFixed(1).replace(/\.0$/,'');
+  $('#kpiToonie').textContent = (Math.trunc(toonie/1000)/10).toFixed(1).replace(/\.0$/,'');
+  $('#kpiTotal').textContent = (Math.trunc((account+toonie)/1000)/10).toFixed(1).replace(/\.0$/,'');
+  $('#kpiDonors').textContent = donors.length.toLocaleString('ko-KR') + '명';
+  $('#refreshState').textContent = '마지막 동기화 ' + new Date().toLocaleTimeString('ko-KR');
+}
 
-  $('#creatorRows').innerHTML = (summary.creators||[]).map(r => `
-    <tr class="clickable" onclick="selectCreator('${escAttr(r.creator)}')">
-      <td><b>${esc(r.creator)}</b></td>
-      <td class="num">${r.accountText}</td>
-      <td class="num">${r.toonieText}</td>
-      <td class="num"><b>${r.totalText}</b></td>
-      <td>${esc(statusTextForCreator(r))}</td>
-    </tr>
-  `).join('');
-
-  $('#donorRows').innerHTML = (summary.donors||[]).slice(0,10).map(r => `
+function renderDonorRows(){
+  const q = String($('#donorSearch')?.value || '').trim().toLowerCase();
+  const rows = (summary?.donors || [])
+    .filter(r => !q || String(r.donor||'').toLowerCase().includes(q))
+    .slice(0, q ? 80 : 15);
+  $('#donorRows').innerHTML = rows.length ? rows.map(r => `
     <tr>
       <td><b>${esc(r.donor)}</b></td>
       <td class="num">${r.accountText}</td>
       <td class="num">${r.toonieText}</td>
-      <td class="num"><b>${r.totalText}</b></td>
+      <td class="num money-total"><b>${r.totalText}</b></td>
       <td>${esc(r.latestProcess)}</td>
     </tr>
-  `).join('');
+  `).join('') : `<tr><td colspan="5" class="empty-row">검색 결과가 없습니다.</td></tr>`;
+}
 
-  const sel = $('#creatorSelect');
-  const names = (summary.creators||[]).map(r=>r.creator);
-  if(!selectedCreator || !names.includes(selectedCreator)) selectedCreator = names[0] || '';
-  sel.innerHTML = names.map(n => `<option value="${escAttr(n)}" ${n===selectedCreator?'selected':''}>${esc(n)}</option>`).join('');
+async function loadFunding(force=false){
+  if(fundingLoading) return;
+  if(!force && fundingLoadedAt && Date.now()-fundingLoadedAt < 120000) return;
+  fundingLoading = true;
+  try{
+    const fundingData = await api('/api/funding-history');
+    fundingHistory = Array.isArray(fundingData?.donations) ? fundingData.donations : [];
+    fundingLoadedAt = Date.now();
+    if(summary) renderFundingSummary();
+  }catch(e){
+    console.warn('funding-history load failed', e);
+  }finally{
+    fundingLoading = false;
+  }
+}
 
-  renderCreatorDetail();
-  renderFundingSummary();
-  renderAllRows();
+async function load(forceFunding=false){
+  if(summaryLoading){ refreshQueued = true; return; }
+  if(document.hidden && !forceFunding) return;
+  summaryLoading = true;
+  try{
+    const summaryData = await api('/api/summary');
+    summary = summaryData;
+    $('#currentBroadcast').textContent = summary.broadcast ? `현재 방송: ${summary.broadcast.title}` : '현재 방송 없음';
+
+    $('#creatorRows').innerHTML = (summary.creators||[]).map(r => `
+      <tr class="clickable" onclick="selectCreator('${escAttr(r.creator)}')">
+        <td><b>${esc(r.creator)}</b></td>
+        <td class="num">${r.accountText}</td>
+        <td class="num">${r.toonieText}</td>
+        <td class="num money-total"><b>${r.totalText}</b></td>
+        <td>${esc(statusTextForCreator(r))}</td>
+      </tr>
+    `).join('');
+
+    renderDonorRows();
+
+    const sel = $('#creatorSelect');
+    const names = (summary.creators||[]).map(r=>r.creator);
+    if(!selectedCreator || !names.includes(selectedCreator)) selectedCreator = names[0] || '';
+    sel.innerHTML = names.map(n => `<option value="${escAttr(n)}" ${n===selectedCreator?'selected':''}>${esc(n)}</option>`).join('');
+
+    renderTopStats();
+    renderCreatorDetail();
+    renderFundingSummary();
+    renderAllRows();
+    loadFunding(forceFunding);
+  }catch(e){
+    $('#refreshState').textContent = '동기화 실패 · ' + (e.message||e);
+    console.error(e);
+  }finally{
+    summaryLoading = false;
+    if(refreshQueued){ refreshQueued=false; setTimeout(()=>load(false),250); }
+  }
 }
 
 function selectCreator(name){
@@ -456,8 +528,29 @@ function escAttr(v){
   return String(v ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
 }
 
-load();
-setInterval(load, 5000);
+let donorSearchTimer=0;
+$('#donorSearch')?.addEventListener('input', ()=>{
+  clearTimeout(donorSearchTimer);
+  donorSearchTimer=setTimeout(renderDonorRows,120);
+});
+
+function initRealtimeSummary(){
+  try{
+    if(typeof io !== 'function') return;
+    const station = new URLSearchParams(location.search).get('station') || localStorage.getItem('STATION_SLUG') || 'default';
+    const socket = io({transports:['websocket','polling']});
+    socket.on('connect', ()=>socket.emit('station:join',{station}));
+    socket.on('overlay:changed', ()=>load(false));
+    window.addEventListener('beforeunload', ()=>socket.disconnect(), {once:true});
+  }catch(e){ console.warn('realtime summary unavailable', e); }
+}
+
+load(true);
+initRealtimeSummary();
+// WebSocket 누락/절전 복귀 대비용 저빈도 안전 동기화. 중복 요청은 load()에서 차단합니다.
+fallbackTimer=setInterval(()=>load(false),30000);
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) load(false); });
+window.addEventListener('beforeunload', ()=>{ if(fallbackTimer) clearInterval(fallbackTimer); clearTimeout(donorSearchTimer); }, {once:true});
 </script>
 
 <script>

@@ -129,14 +129,27 @@ const mediaUpload = multer({
 });
 
 const mediaListCache = new Map();
+const MEDIA_LIST_CACHE_MAX = 40;
+const MEDIA_LIST_CACHE_TTL_MS = 30 * 1000;
+function pruneMediaListCache() {
+  const now = Date.now();
+  for (const [key, value] of mediaListCache) {
+    if (!value || now - Number(value.at || 0) > MEDIA_LIST_CACHE_TTL_MS) mediaListCache.delete(key);
+  }
+  while (mediaListCache.size > MEDIA_LIST_CACHE_MAX) {
+    mediaListCache.delete(mediaListCache.keys().next().value);
+  }
+}
 function invalidateMediaListCache(slug) {
   const safe = safeSlug(slug || 'default');
   for (const key of mediaListCache.keys()) {
     if (key.startsWith(safe + '|')) mediaListCache.delete(key);
   }
+  pruneMediaListCache();
 }
 
 function listMediaFiles(slug = 'default', options = {}) {
+  pruneMediaListCache();
   const safe = safeSlug(slug || 'default');
   const cacheKey = safe + '|' + (options.includeShared === false ? 'local' : 'shared');
   const cached = mediaListCache.get(cacheKey);
@@ -1289,12 +1302,20 @@ function broadcastToClient(row) {
   };
 }
 
-async function listBroadcasts(stationId) {
-  const { data, error } = await supabase
+async function listBroadcasts(stationId, options = {}) {
+  const days = Math.max(0, Math.min(3650, Number(options.days || 0)));
+  const limit = Math.max(1, Math.min(200, Number(options.limit || (days ? 50 : 200))));
+  let query = supabase
     .from('broadcasts')
     .select('*')
     .eq('station_id', stationId)
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  if (days > 0) {
+    const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+    query = query.gte('created_at', since);
+  }
+  const { data, error } = await query;
   if (error) throw error;
   return (data || []).map(broadcastToClient);
 }
@@ -2303,7 +2324,12 @@ app.get('/api/broadcasts', async (req, res) => {
     if (!station) return res.status(404).json({ error: '방송국을 찾을 수 없습니다.' });
     if (!await stationAllowed(req, station)) return res.status(401).json({ error: '방송국 관리자 권한이 필요합니다.' });
     const active = await ensureActiveBroadcast(station.id);
-    const broadcasts = await listBroadcasts(station.id);
+    const days = Math.max(0, Math.min(3650, Number(req.query.days || 0)));
+    const limit = Math.max(1, Math.min(200, Number(req.query.limit || (days ? 50 : 200))));
+    let broadcasts = await listBroadcasts(station.id, { days, limit });
+    if (active && !broadcasts.some(b => String(b.id) === String(active.id))) {
+      broadcasts = [broadcastToClient(active), ...broadcasts].slice(0, limit);
+    }
 
     const withTimers = await Promise.all((broadcasts || []).map(async b => {
       const settings = await readEffectiveSettings(station.slug, b.id);
@@ -2989,17 +3015,167 @@ app.post('/api/youtube-chat/send', async (req, res) => {
     if (ctx) res.json(await youtubeChat.send(ctx.station.slug, youtubeVideoId(req.body?.url), req.body?.accountIds || [], req.body?.message));
   } catch (e) { res.status(400).json({ error: e.message }); }
 });
+// 후원 자동채팅 설정은 서비스 OAuth 저장공간(service:<slug>)과 함께 settings.id=3에 저장합니다.
+// 기존 youtube-chat.js 기본설정보다 항목을 더 확장해 누적/계좌후원자 명단을 각각 독립적으로 선택할 수 있습니다.
+function serviceDonationAutoKey(slug) {
+  return `service:${String(slug || 'default')}`;
+}
+
+async function readServiceDonationAuto(slug) {
+  const { data, error } = await supabase.from('settings').select('data').eq('id', 3).maybeSingle();
+  if (error && error.code !== 'PGRST116') throw error;
+  const store = data?.data && typeof data.data === 'object' ? data.data : {};
+  const v = store.$donationAuto?.[serviceDonationAutoKey(slug)] || {};
+  const selections = Array.isArray(v.statusSelections)
+    ? v.statusSelections.filter(x => ['cumulative','preset','allowance'].includes(String(x)))
+    : ['cumulative'];
+  return {
+    enabled: v.enabled === true,
+    liveUrl: String(v.liveUrl || ''),
+    accountId: String(v.accountId || ''),
+    firstEnabled: v.firstEnabled !== false,
+    secondEnabled: v.secondEnabled !== false,
+    accountDonorsEnabled: v.accountDonorsEnabled === true,
+    firstTemplate: String(v.firstTemplate || '💸{후원자}업({금액}) → {분배}'),
+    secondTemplate: String(v.secondTemplate || '💰누적 {누적}'),
+    statusSelections: selections.length ? selections : ['cumulative'],
+    statusAccountDonors: v.statusAccountDonors === true,
+    repeatEnabled: v.repeatEnabled === true,
+    repeatMinutes: Math.max(1, Number(v.repeatMinutes || 10))
+  };
+}
+
+async function updateServiceDonationAuto(slug, input) {
+  const prev = await readServiceDonationAuto(slug);
+  const selections = Array.isArray(input?.statusSelections)
+    ? input.statusSelections.filter(x => ['cumulative','preset','allowance'].includes(String(x)))
+    : prev.statusSelections;
+  const value = {
+    enabled: input?.enabled === true,
+    liveUrl: String(input?.liveUrl ?? prev.liveUrl ?? '').trim(),
+    accountId: String(input?.accountId ?? prev.accountId ?? '').trim(),
+    firstEnabled: input?.firstEnabled !== undefined ? input.firstEnabled !== false : prev.firstEnabled,
+    secondEnabled: input?.secondEnabled !== undefined ? input.secondEnabled !== false : prev.secondEnabled,
+    accountDonorsEnabled: input?.accountDonorsEnabled !== undefined ? input.accountDonorsEnabled === true : prev.accountDonorsEnabled,
+    firstTemplate: String(input?.firstTemplate ?? prev.firstTemplate ?? '💸{후원자}업({금액}) → {분배}').trim(),
+    secondTemplate: String(input?.secondTemplate ?? prev.secondTemplate ?? '💰누적 {누적}').trim(),
+    statusSelections: selections?.length ? selections : ['cumulative'],
+    statusAccountDonors: input?.statusAccountDonors !== undefined ? input.statusAccountDonors === true : prev.statusAccountDonors,
+    repeatEnabled: input?.repeatEnabled !== undefined ? input.repeatEnabled === true : prev.repeatEnabled,
+    repeatMinutes: Math.max(1, Number(input?.repeatMinutes ?? prev.repeatMinutes ?? 10))
+  };
+
+  if (value.firstTemplate.length > 180 || value.secondTemplate.length > 180) {
+    throw new Error('자동 채팅 문구는 각각 180자 이내로 입력하세요.');
+  }
+  if (value.enabled && !value.firstEnabled && !value.secondEnabled && !value.accountDonorsEnabled) {
+    throw new Error('후원내역, 누적현황, 계좌후원자 중 하나 이상 켜주세요.');
+  }
+  if ((value.enabled || value.repeatEnabled) && !value.liveUrl) {
+    throw new Error('자동 채팅에 사용할 라이브 주소를 입력하세요.');
+  }
+  if ((value.enabled || value.repeatEnabled) && !value.accountId) {
+    throw new Error('자동 채팅에 사용할 계정을 선택하세요.');
+  }
+  if (value.liveUrl) {
+    let u;
+    try { u = new URL(value.liveUrl); } catch (_) { throw new Error('유효한 유튜브 라이브 주소를 입력하세요.'); }
+    if (!/youtube\.com$|youtu\.be$/i.test(u.hostname.replace(/^www\./,''))) {
+      throw new Error('유튜브 라이브 주소를 입력하세요.');
+    }
+  }
+
+  await withSettingsMutation(async () => {
+    const { data, error } = await supabase.from('settings').select('data').eq('id', 3).maybeSingle();
+    if (error && error.code !== 'PGRST116') throw error;
+    const store = data?.data && typeof data.data === 'object' ? data.data : {};
+    if (!store.$donationAuto || typeof store.$donationAuto !== 'object') store.$donationAuto = {};
+    store.$donationAuto[serviceDonationAutoKey(slug)] = value;
+    const saved = await supabase.from('settings').upsert({
+      id: 3,
+      data: store,
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'id' });
+    if (saved.error) throw saved.error;
+  });
+  return value;
+}
+
+function buildAccountDonorEntries(donations) {
+  const map = new Map();
+  for (const d of donations || []) {
+    const donor = normName(d.donor ?? d.donor_name);
+    const account = aggregateWon(Number(d.accountAmount ?? d.account_amount ?? 0));
+    if (!donor || account <= 0) continue;
+    if (!map.has(donor)) map.set(donor, 0);
+    map.set(donor, map.get(donor) + account);
+  }
+  return [...map].map(([donor, amount]) => ({ donor, amount, amountText: displayManText(amount) }));
+}
+
+function splitStatusLine(prefix, parts, maxChars = 190) {
+  const safePrefix = String(prefix || '').trim();
+  const out = [];
+  let line = safePrefix;
+  for (const raw of parts || []) {
+    const part = String(raw || '').trim();
+    if (!part) continue;
+    const candidate = line === safePrefix ? `${safePrefix} ${part}` : `${line}·${part}`;
+    if (Array.from(candidate).length > maxChars && line !== safePrefix) {
+      out.push(line);
+      line = `${safePrefix} ${part}`;
+    } else {
+      line = candidate;
+    }
+  }
+  if (line !== safePrefix) out.push(line);
+  if (!out.length) out.push(`${safePrefix} 0`);
+  return out;
+}
+
+function buildCumulativeChatMessages(settings, donations) {
+  const totals = new Map();
+  for (const d of donations || []) {
+    const c = normName(d.creator ?? d.creator_name);
+    const a = aggregateWon(Number(d.totalAmount ?? d.total_amount ?? d.amount ?? 0));
+    if (c && a) totals.set(c, (totals.get(c) || 0) + a);
+  }
+  const order = Array.isArray(settings?.creators) ? settings.creators.map(normName) : [];
+  const entries = [...totals].sort((a,b) => {
+    const ai=order.indexOf(a[0]), bi=order.indexOf(b[0]);
+    if (ai >= 0 || bi >= 0) return (ai < 0 ? 999 : ai) - (bi < 0 ? 999 : bi);
+    return b[1]-a[1];
+  });
+  const hearts = ['💗','💙','💛','💜','💚','🧡','🤍','🩵'];
+  return splitStatusLine('💰누적', entries.map(([c,a], i) => `${hearts[i % hearts.length]}${c}(${displayManText(a)})`));
+}
+
+function buildAccountDonorChatMessages(donations) {
+  return splitStatusLine('🏦계좌', buildAccountDonorEntries(donations).map(x => `${x.donor}(${x.amountText})`));
+}
+
+async function sendExactMessages(slug, videoId, accountId, messages) {
+  const sent = [];
+  for (const msg of messages || []) {
+    if (!msg) continue;
+    if (sent.length) await new Promise(resolve => setTimeout(resolve, 650));
+    const r = await youtubeChatService.sendExact(slug, videoId, accountId, msg);
+    sent.push(r.text || msg);
+  }
+  return sent;
+}
+
 // 별도의 OAuth 프로젝트와 계정 저장 공간을 쓰는 운영용 채팅 페이지입니다.
 app.get('/api/youtube-chat-service/accounts', async (req, res) => {
   try { const ctx = await youtubeChatAdmin(req, res); if (ctx) res.json({ configured: youtubeChatService.configured(), accounts: await youtubeChatService.accounts(ctx.station.slug), options: await youtubeChatService.options(ctx.station.slug) }); }
   catch (e) { res.status(500).json({ error: e.message }); }
 });
 app.get('/api/youtube-chat-service/donation-auto', async (req, res) => {
-  try { const ctx = await youtubeChatAdmin(req, res); if (ctx) res.json({ auto: await youtubeChatService.donationAuto(ctx.station.slug) }); }
+  try { const ctx = await youtubeChatAdmin(req, res); if (ctx) res.json({ auto: await readServiceDonationAuto(ctx.station.slug) }); }
   catch (e) { res.status(500).json({ error: e.message }); }
 });
 app.patch('/api/youtube-chat-service/donation-auto', async (req, res) => {
-  try { const ctx = await youtubeChatAdmin(req, res); if (ctx) res.json({ auto: await youtubeChatService.updateDonationAuto(ctx.station.slug, req.body) }); }
+  try { const ctx = await youtubeChatAdmin(req, res); if (ctx) res.json({ auto: await updateServiceDonationAuto(ctx.station.slug, req.body) }); }
   catch (e) { res.status(400).json({ error: e.message }); }
 });
 app.patch('/api/youtube-chat-service/options', async (req, res) => {
@@ -3579,6 +3755,110 @@ app.get('/api/donations', async (req, res) => {
 
 // 펀딩 합산 화면 전용: 현재 방송이 아니라 방송국 전체 기간의 펀딩 입력 이력만 반환합니다.
 // 일반 /api/summary 는 현재 방송 기준을 그대로 유지합니다.
+
+// 방송 종료 후 과거 방송 목록을 뒤지는 대신 후원자 기준으로 전체 이력을 봅니다.
+// 목록 집계는 DB를 1000행씩 순차 처리하여 서버 메모리에 전체 donation 행을 쌓지 않습니다.
+app.get('/api/donor-history', async (req, res) => {
+  try {
+    if (!requireDb(res)) return;
+    const ctx = await getStationContext(req, res);
+    if (!ctx) return;
+    if (!await stationAllowed(req, ctx.station)) return res.status(401).json({ error: '방송국 관리자 권한이 필요합니다.' });
+
+    const search = normName(req.query.search || '').toLowerCase();
+    const maxDonors = Math.max(20, Math.min(500, Number(req.query.limit || 250)));
+    const pageSize = 1000;
+    const donors = new Map();
+    let from = 0;
+
+    while (true) {
+      const { data, error } = await supabase
+        .from('donations')
+        .select('donor,account_amount,toonie_amount,total_amount,created_at')
+        .eq('station_id', ctx.station.id)
+        .order('created_at', { ascending: true })
+        .range(from, from + pageSize - 1);
+      if (error) throw error;
+      const rows = data || [];
+      for (const row of rows) {
+        const donor = normName(row.donor);
+        if (!donor) continue;
+        const key = donor.toLowerCase();
+        let item = donors.get(key);
+        if (!item) {
+          item = { donor, account: 0, toonie: 0, total: 0, count: 0, latestAt: row.created_at || null };
+          donors.set(key, item);
+        }
+        const account = aggregateWon(row.account_amount);
+        const toonie = aggregateWon(row.toonie_amount);
+        item.account += account;
+        item.toonie += toonie;
+        item.total += account + toonie;
+        item.count += 1;
+        if (!item.latestAt || new Date(row.created_at) > new Date(item.latestAt)) item.latestAt = row.created_at;
+      }
+      if (rows.length < pageSize) break;
+      from += pageSize;
+      if (from >= 200000) break; // 안전상한: 비정상적인 무한 페이지 조회 방지
+    }
+
+    let list = Array.from(donors.values())
+      .filter(x => !search || x.donor.toLowerCase().includes(search))
+      .sort((a,b) => b.total - a.total || b.count - a.count || new Date(b.latestAt || 0) - new Date(a.latestAt || 0))
+      .slice(0, maxDonors)
+      .map(x => ({
+        ...x,
+        accountText: displayManText(x.account),
+        toonieText: displayManText(x.toonie),
+        totalText: displayManText(x.total)
+      }));
+
+    res.set('Cache-Control', 'no-store');
+    res.json({ donors: list, count: list.length });
+  } catch (e) {
+    console.error('[api/donor-history]', e);
+    res.status(500).json({ error: e.message || '후원자 전체 이력 조회 실패' });
+  }
+});
+
+app.get('/api/donor-history/detail', async (req, res) => {
+  try {
+    if (!requireDb(res)) return;
+    const ctx = await getStationContext(req, res);
+    if (!ctx) return;
+    if (!await stationAllowed(req, ctx.station)) return res.status(401).json({ error: '방송국 관리자 권한이 필요합니다.' });
+    const donor = normName(req.query.donor || '');
+    if (!donor) return res.status(400).json({ error: '후원자명을 선택하세요.' });
+    const limit = Math.max(10, Math.min(200, Number(req.query.limit || 80)));
+
+    const { data, error } = await supabase
+      .from('donations')
+      .select('id,broadcast_id,donor,creator,process_type,account_amount,toonie_amount,total_amount,display_amount,created_at,memo')
+      .eq('station_id', ctx.station.id)
+      .eq('donor', donor)
+      .order('created_at', { ascending: false })
+      .limit(limit);
+    if (error) throw error;
+
+    const rows = (data || []).map(dbRowToDonation);
+    const broadcastIds = [...new Set(rows.map(r => r.broadcastId).filter(Boolean))];
+    let titleMap = new Map();
+    if (broadcastIds.length) {
+      const result = await supabase.from('broadcasts').select('id,title').eq('station_id', ctx.station.id).in('id', broadcastIds);
+      if (result.error) throw result.error;
+      titleMap = new Map((result.data || []).map(b => [String(b.id), String(b.title || '')]));
+    }
+    res.set('Cache-Control', 'no-store');
+    res.json({
+      donor,
+      rows: rows.map(r => ({ ...r, broadcastTitle: titleMap.get(String(r.broadcastId || '')) || '' }))
+    });
+  } catch (e) {
+    console.error('[api/donor-history/detail]', e);
+    res.status(500).json({ error: e.message || '후원자 상세 이력 조회 실패' });
+  }
+});
+
 app.get('/api/funding-history', async (req, res) => {
   try {
     if (!requireDb(res)) return;
@@ -3848,11 +4128,13 @@ app.get('/api/summary', async (req, res) => {
 
 async function maybeSendDonationYoutubeChat(ctx, settings, donor, accountTotal, toonieTotal, createdRows) {
   try {
-    const cfg = await youtubeChatService.donationAuto(ctx.station.slug);
+    const cfg = await readServiceDonationAuto(ctx.station.slug);
     if (!cfg.enabled || !cfg.liveUrl || !cfg.accountId || !youtubeChatService.configured()) return;
+
     const videoId = youtubeVideoId(cfg.liveUrl);
     const grandTotal = Number(accountTotal || 0) + Number(toonieTotal || 0);
     const source = accountTotal > 0 && toonieTotal > 0 ? '계좌+투네' : accountTotal > 0 ? '계좌' : '투네';
+
     const byCreator = new Map();
     for (const r of createdRows || []) {
       const c = normName(r.creator || r.creator_name);
@@ -3860,28 +4142,21 @@ async function maybeSendDonationYoutubeChat(ctx, settings, donor, accountTotal, 
       if (c) byCreator.set(c, (byCreator.get(c) || 0) + a);
     }
     const splitText = [...byCreator].map(([c,a]) => `${c}${displayManText(a)}`).join('·');
-    const first = `${normName(donor)} ${displayManText(grandTotal)} ${source} → ${splitText}`;
 
-    const { data: allRows, error } = await supabase.from('donations')
-      .select('creator,total_amount')
-      .eq('station_id', ctx.station.id)
-      .eq('broadcast_id', ctx.active.id);
-    if (error) throw error;
-    const totals = new Map();
-    for (const r of allRows || []) {
-      const c = normName(r.creator);
-      if (c) totals.set(c, (totals.get(c) || 0) + aggregateWon(r.total_amount));
-    }
-    const order = Array.isArray(settings?.creators) ? settings.creators.map(normName) : [];
-    const entries = [...totals].sort((a,b) => {
-      const ai=order.indexOf(a[0]), bi=order.indexOf(b[0]);
-      if (ai >= 0 || bi >= 0) return (ai < 0 ? 999 : ai) - (bi < 0 ? 999 : bi);
-      return b[1]-a[1];
-    });
-    const hearts = ['💗','💙','💛','💜','💚','🧡','🤍','🩵'];
-    const cumulativeText = entries.map(([c,a], i) => `${hearts[i % hearts.length]}${c}(${displayManText(a)})`).join('·');
+    const donations = await readDonations(ctx.station.id, ctx.active.id);
+    const cumulativeMessages = buildCumulativeChatMessages(settings, donations);
+    const accountDonorMessages = buildAccountDonorChatMessages(donations);
+
     const fill = (tpl, values) => String(tpl || '').replace(/\{(후원자|금액|방식|분배|누적)\}/g, (_, key) => values[key] ?? '');
-    const values = { 후원자: normName(donor), 금액: displayManText(grandTotal), 방식: source, 분배: splitText, 누적: cumulativeText };
+    const cumulativeInline = cumulativeMessages.length ? cumulativeMessages[0].replace(/^💰누적\s*/, '') : '';
+    const values = {
+      후원자: normName(donor),
+      금액: displayManText(grandTotal),
+      방식: source,
+      분배: splitText,
+      누적: cumulativeInline
+    };
+
     const savedFirst = String(cfg.firstTemplate || '').trim();
     const savedSecond = String(cfg.secondTemplate || '').trim();
     const legacyFirst = !savedFirst
@@ -3895,11 +4170,20 @@ async function maybeSendDonationYoutubeChat(ctx, settings, donor, accountTotal, 
     const secondTemplate = legacySecond ? '💰누적 {누적}' : savedSecond;
     const firstMessage = fill(firstTemplate, values).trim();
     const secondMessage = fill(secondTemplate, values).trim();
-    if (cfg.firstEnabled !== false && firstMessage) await youtubeChatService.sendExact(ctx.station.slug, videoId, cfg.accountId, firstMessage);
-    if (cfg.secondEnabled !== false && secondMessage) {
-      if (cfg.firstEnabled !== false && firstMessage) await new Promise(resolve => setTimeout(resolve, 650));
-      await youtubeChatService.sendExact(ctx.station.slug, videoId, cfg.accountId, secondMessage);
+
+    const messages = [];
+    if (cfg.firstEnabled !== false && firstMessage) messages.push(firstMessage);
+    if (cfg.secondEnabled !== false) {
+      if (secondMessage && Array.from(secondMessage).length <= 200 && cumulativeMessages.length <= 1) messages.push(secondMessage);
+      else messages.push(...cumulativeMessages);
     }
+    // 계좌후원자 명단은 실제 계좌후원이 들어온 순간에만 자동 갱신 공지합니다.
+    // 투네 후원 때 동일한 계좌명단이 반복되는 것을 막습니다.
+    if (cfg.accountDonorsEnabled === true && Number(accountTotal || 0) > 0) {
+      messages.push(...accountDonorMessages);
+    }
+
+    await sendExactMessages(ctx.station.slug, videoId, cfg.accountId, messages);
   } catch (e) {
     console.error('[youtube donation auto chat]', e?.message || e);
   }
@@ -3919,6 +4203,14 @@ app.post('/api/donations', async (req, res) => {
     const { data, error } = await supabase.from('donations').insert(row).select().single();
     if (error) throw error;
     if (!dbRowToDonation(data).silentAlert) nightbotChat.enqueue(ctx.station.slug, [data], settings.nightbotChat);
+    await maybeSendDonationYoutubeChat(
+      ctx,
+      settings,
+      row.donor,
+      Number(row.account_amount || 0),
+      Number(row.toonie_amount || 0),
+      [data]
+    );
     const rouletteRun = await maybeStartAutoRoulette(ctx, row.total_amount, row.donor, req.body || {});
     res.json({ ok: true, station: stationToClient(ctx.station), broadcast: broadcastToClient(ctx.active), donation: dbRowToDonation(data), rouletteRun: rouletteRun?.run || null });
   } catch (e) {
@@ -4009,6 +4301,14 @@ app.post('/api/auto-donations/:source', async (req, res) => {
     if (!resultData?.duplicate) {
       io.to(realtimeRoom(station.slug)).emit('overlay:changed', { type: 'state', at: Date.now() });
       nightbotChat.enqueue(station.slug, [resultData.donation], settings.nightbotChat);
+      await maybeSendDonationYoutubeChat(
+        ctx,
+        settings,
+        donor,
+        source === 'account' ? amount : 0,
+        source === 'toonie' ? amount : 0,
+        resultData?.donation ? [resultData.donation] : [row]
+      );
     }
     return res.json({ ok: true, duplicate: !!resultData?.duplicate, deleted: !!resultData?.deleted,
       donation: resultData?.donation ? dbRowToDonation(resultData.donation) : null });
@@ -4225,6 +4525,14 @@ app.post('/api/manual-entry', async (req, res) => {
       }
     }
 
+    await maybeSendDonationYoutubeChat(
+      ctx,
+      settings,
+      donor,
+      Number(row.account_amount || 0),
+      Number(row.toonie_amount || 0),
+      [data]
+    );
     const rouletteRun = await maybeStartAutoRoulette(ctx, row.total_amount, row.donor, req.body || {});
     res.json({ ok: true, donation: dbRowToDonation(data), rouletteRun: rouletteRun?.run || null });
   } catch (e) {
@@ -4335,6 +4643,69 @@ async function listToonieSources() {
   const byId = new Map((stations || []).map(x => [x.id, x.slug]));
   return sources.filter(x => byId.has(x.station_id)).map(x => ({ slug: byId.get(x.station_id), url: x.widget_url }));
 }
+
+// 선택 현황 주기 자동전송.
+// 기존 화면에는 repeatEnabled/repeatMinutes가 있었지만 서버 타이머가 없어 페이지를 닫으면 실제 자동전송이 되지 않았습니다.
+const donationStatusLastSent = new Map();
+const DONATION_STATUS_STATE_MAX = 100;
+function pruneDonationStatusState(now = Date.now()) {
+  for (const [key, at] of donationStatusLastSent) {
+    if (now - Number(at || 0) > 24 * 60 * 60 * 1000) donationStatusLastSent.delete(key);
+  }
+  while (donationStatusLastSent.size > DONATION_STATUS_STATE_MAX) {
+    donationStatusLastSent.delete(donationStatusLastSent.keys().next().value);
+  }
+}
+
+async function sendScheduledDonationStatus(station, active, cfg) {
+  const videoId = youtubeVideoId(cfg.liveUrl);
+  const settings = await readEffectiveSettings(station.slug, active.id);
+  const donations = await readDonations(station.id, active.id);
+  const messages = [];
+
+  if ((cfg.statusSelections || []).includes('cumulative')) {
+    messages.push(...buildCumulativeChatMessages(settings, donations));
+  }
+  if (cfg.statusAccountDonors === true) {
+    messages.push(...buildAccountDonorChatMessages(donations));
+  }
+
+  // 프리셋/용돈은 기존 수동 전송 UI의 계산방식을 그대로 유지하고,
+  // 서버 주기전송에서는 누적/계좌후원자처럼 DB에서 안정적으로 재계산 가능한 항목을 우선 전송합니다.
+  if (!messages.length) return;
+  await sendExactMessages(station.slug, videoId, cfg.accountId, messages);
+}
+
+async function runDonationStatusScheduler() {
+  if (!supabase) return;
+  try {
+    const { data: stations, error } = await supabase.from('stations').select('id,slug');
+    if (error) throw error;
+    const now = Date.now();
+    pruneDonationStatusState(now);
+    for (const station of stations || []) {
+      try {
+        const cfg = await readServiceDonationAuto(station.slug);
+        if (!cfg.repeatEnabled || !cfg.liveUrl || !cfg.accountId || !youtubeChatService.configured()) continue;
+        const key = `${station.slug}:${cfg.accountId}:${cfg.liveUrl}`;
+        const interval = Math.max(1, Number(cfg.repeatMinutes || 10)) * 60 * 1000;
+        const last = Number(donationStatusLastSent.get(key) || 0);
+        if (last && now - last < interval) continue;
+        const active = await ensureActiveBroadcast(station.id);
+        await sendScheduledDonationStatus(station, active, cfg);
+        donationStatusLastSent.set(key, now);
+      } catch (e) {
+        console.error('[youtube donation repeat]', station?.slug || 'unknown', e?.message || e);
+      }
+    }
+  } catch (e) {
+    console.error('[youtube donation repeat scheduler]', e?.message || e);
+  }
+}
+
+const donationStatusScheduler = setInterval(runDonationStatusScheduler, 60 * 1000);
+if (typeof donationStatusScheduler.unref === 'function') donationStatusScheduler.unref();
+setTimeout(runDonationStatusScheduler, 15000);
 
 httpServer.listen(PORT, () => {
   console.log(`Donation multi-station server running on port ${PORT}`);

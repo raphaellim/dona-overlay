@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>후원자 전체 이력</title>
+<link rel="stylesheet" href="/app.css">
+<style>
+:root{--bg:#070b12;--card:#0b1220;--card2:#0f172a;--line:#253247;--line2:#334155;--text:#e5e7eb;--muted:#94a3b8;--blue:#2563eb;--cyan:#22d3ee;--green:#22c55e;--pink:#ec4899}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text)}
+.wrap{max-width:1280px;margin:auto;padding:22px}
+.top{display:flex;justify-content:space-between;gap:14px;align-items:flex-start;margin-bottom:16px}
+.title{font-size:30px;font-weight:950;letter-spacing:-.05em}
+.nav{display:flex;gap:8px;flex-wrap:wrap}.nav a{color:#dbeafe;text-decoration:none;background:#111827;border:1px solid var(--line2);padding:10px 14px;border-radius:12px;font-weight:900}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:14px}
+.toolbar{display:grid;grid-template-columns:minmax(220px,1fr) auto auto;gap:8px;align-items:center;margin-bottom:12px}
+input,select,button{font:inherit}.input,select{width:100%;background:#070b12;color:#fff;border:1px solid var(--line2);border-radius:12px;padding:11px 12px}
+.btn{border:0;border-radius:11px;padding:10px 13px;font-weight:900;cursor:pointer;background:#334155;color:#fff}.btn.blue{background:var(--blue)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}.stat{background:var(--card2);border:1px solid var(--line2);border-radius:15px;padding:13px}.stat b{display:block;font-size:21px;margin-top:5px}.stat span{font-size:12px;color:var(--muted)}
+.layout{display:grid;grid-template-columns:1.15fr .85fr;gap:14px;align-items:start}
+.table-wrap{overflow:auto;max-height:70vh}.table{width:100%;border-collapse:collapse;font-size:14px}.table th,.table td{padding:10px 9px;border-bottom:1px solid #1f2937;white-space:nowrap;text-align:left}.table th{position:sticky;top:0;background:#0f172a;color:#93c5fd;z-index:1}.table tr{cursor:pointer}.table tr:hover td,.table tr.active td{background:#172554}.num{text-align:right!important;font-variant-numeric:tabular-nums}.muted{color:var(--muted);font-size:13px}.empty{text-align:center!important;color:#64748b;padding:22px!important}
+.detail-head{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:10px}.detail-name{font-size:22px;font-weight:950}
+@media(max-width:900px){.layout,.stats{grid-template-columns:1fr 1fr}.toolbar{grid-template-columns:1fr}.top{flex-direction:column}}
+@media(max-width:600px){.layout,.stats{grid-template-columns:1fr}.wrap{padding:12px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div>
+      <div class="title">후원자 전체 이력</div>
+      <div class="muted">방송이 달라도 같은 후원자명을 합산해서 봅니다.</div>
+    </div>
+    <div class="nav">
+      <a href="/station_control.html">방송컨트롤</a>
+      <a href="/summary.html">현재방송 합산</a>
+      <a href="/admin.html">입력</a>
+    </div>
+  </div>
+
+  <section class="card">
+    <div class="toolbar">
+      <input id="search" class="input" placeholder="후원자 이름 검색">
+      <select id="sort">
+        <option value="total">총 후원 높은순</option>
+        <option value="latest">최근 후원순</option>
+        <option value="count">후원 횟수순</option>
+        <option value="name">이름순</option>
+      </select>
+      <button class="btn blue" id="refresh">새로고침</button>
+    </div>
+    <div class="stats">
+      <div class="stat"><span>표시 후원자</span><b id="statDonors">0명</b></div>
+      <div class="stat"><span>계좌 합계</span><b id="statAccount">0</b></div>
+      <div class="stat"><span>투네 합계</span><b id="statToonie">0</b></div>
+      <div class="stat"><span>총 합계</span><b id="statTotal">0</b></div>
+    </div>
+  </section>
+
+  <div class="layout">
+    <section class="card">
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th>후원자</th><th class="num">계좌</th><th class="num">투네</th><th class="num">총합</th><th class="num">횟수</th><th>최근</th></tr></thead>
+          <tbody id="donorRows"><tr><td colspan="6" class="empty">불러오는 중...</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="detail-head"><div><div class="detail-name" id="detailName">후원자를 선택하세요</div><div class="muted" id="detailMeta"></div></div></div>
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th>시간</th><th>방송</th><th>크리에이터</th><th class="num">계좌</th><th class="num">투네</th></tr></thead>
+          <tbody id="detailRows"><tr><td colspan="5" class="empty">왼쪽 후원자를 선택하세요.</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</div>
+<script src="/common.js"></script>
+<script>
+let donors=[], selected='';
+const $=s=>document.querySelector(s);
+const man=n=>(Math.trunc(Number(n||0)/1000)/10).toFixed(1).replace(/\.0$/,'');
+const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+const dateText=v=>v?new Date(v).toLocaleString('ko-KR'):'-';
+
+function sortedRows(){
+  const q=$('#search').value.trim().toLowerCase();
+  let rows=donors.filter(x=>!q||String(x.donor||'').toLowerCase().includes(q));
+  const sort=$('#sort').value;
+  rows=[...rows].sort((a,b)=>{
+    if(sort==='latest')return new Date(b.latestAt||0)-new Date(a.latestAt||0);
+    if(sort==='count')return Number(b.count||0)-Number(a.count||0);
+    if(sort==='name')return String(a.donor||'').localeCompare(String(b.donor||''),'ko');
+    return Number(b.total||0)-Number(a.total||0);
+  });
+  return rows;
+}
+function render(){
+  const rows=sortedRows();
+  const account=rows.reduce((a,x)=>a+Number(x.account||0),0);
+  const toonie=rows.reduce((a,x)=>a+Number(x.toonie||0),0);
+  $('#statDonors').textContent=rows.length.toLocaleString('ko-KR')+'명';
+  $('#statAccount').textContent=man(account);
+  $('#statToonie').textContent=man(toonie);
+  $('#statTotal').textContent=man(account+toonie);
+  $('#donorRows').innerHTML=rows.length?rows.map(x=>`
+    <tr class="${selected===x.donor?'active':''}" data-donor="${esc(x.donor)}">
+      <td><b>${esc(x.donor)}</b></td>
+      <td class="num">${esc(x.accountText||man(x.account))}</td>
+      <td class="num">${esc(x.toonieText||man(x.toonie))}</td>
+      <td class="num"><b>${esc(x.totalText||man(x.total))}</b></td>
+      <td class="num">${Number(x.count||0).toLocaleString('ko-KR')}</td>
+      <td>${dateText(x.latestAt)}</td>
+    </tr>`).join(''):`<tr><td colspan="6" class="empty">검색 결과가 없습니다.</td></tr>`;
+  document.querySelectorAll('#donorRows tr[data-donor]').forEach(tr=>tr.onclick=()=>loadDetail(tr.dataset.donor));
+}
+async function load(){
+  $('#donorRows').innerHTML='<tr><td colspan="6" class="empty">불러오는 중...</td></tr>';
+  const data=await api('/api/donor-history?limit=500');
+  donors=Array.isArray(data.donors)?data.donors:[];
+  render();
+}
+async function loadDetail(donor){
+  selected=donor; render();
+  $('#detailName').textContent=donor;
+  $('#detailMeta').textContent='최근 내역 불러오는 중...';
+  $('#detailRows').innerHTML='<tr><td colspan="5" class="empty">불러오는 중...</td></tr>';
+  try{
+    const data=await api('/api/donor-history/detail?donor='+encodeURIComponent(donor)+'&limit=100');
+    const rows=Array.isArray(data.rows)?data.rows:[];
+    $('#detailMeta').textContent=`최근 ${rows.length}건 표시`;
+    $('#detailRows').innerHTML=rows.length?rows.map(r=>`
+      <tr>
+        <td>${dateText(r.createdAt)}</td>
+        <td>${esc(r.broadcastTitle||'-')}</td>
+        <td>${esc(r.creator||'-')}</td>
+        <td class="num">${man(r.accountAmount)}</td>
+        <td class="num">${man(r.toonieAmount)}</td>
+      </tr>`).join(''):'<tr><td colspan="5" class="empty">내역이 없습니다.</td></tr>';
+  }catch(e){
+    $('#detailMeta').textContent=e.message||'상세 조회 실패';
+    $('#detailRows').innerHTML='<tr><td colspan="5" class="empty">상세 조회 실패</td></tr>';
+  }
+}
+let searchTimer=0;
+$('#search').addEventListener('input',()=>{clearTimeout(searchTimer);searchTimer=setTimeout(render,150)});
+$('#sort').addEventListener('change',render);
+$('#refresh').onclick=load;
+(function preserveStation(){
+  const station=new URLSearchParams(location.search).get('station')||localStorage.getItem('STATION_SLUG')||'default';
+  localStorage.setItem('STATION_SLUG',station);
+  document.querySelectorAll('a[href^="/"]').forEach(a=>{const u=new URL(a.href,location.origin);u.searchParams.set('station',station);a.href=u.pathname+u.search});
+})();
+load().catch(e=>{$('#donorRows').innerHTML=`<tr><td colspan="6" class="empty">${esc(e.message)}</td></tr>`});
+</script>
+</body>
+</html>

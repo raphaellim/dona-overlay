@@ -20,6 +20,7 @@ body{background:#070b12;color:#e5e7eb}.wrap{max-width:1220px;margin:0 auto;paddi
     </div>
     <div class="nav">
       <a id="summaryLink" target="_blank" href="/summary.html">합산</a>
+      <a id="donorHistoryLink" target="_blank" href="/donor_history.html">후원자 이력</a>
       <a id="adminLink" target="_blank" href="/admin.html">PC 입력</a>
       <a id="mAdminLink" target="_blank" href="/m_admin.html">모바일 입력</a>
       <a id="mCreatorLink" target="_blank" href="/m_creator.html">크리에이터</a>
@@ -47,8 +48,9 @@ body{background:#070b12;color:#e5e7eb}.wrap{max-width:1220px;margin:0 auto;paddi
       <p class="muted">방송 비밀번호로는 해당 방송만 선택/입력/설정할 수 있습니다. 방송국 관리자 비밀번호는 모든 방송을 관리할 수 있습니다.</p>
     </section>
     <section class="card">
-      <h2>방송 목록</h2>
+      <h2>최근 7일 방송 <span class="muted">종료된 오래된 방송은 숨김</span></h2>
       <div id="broadcasts"></div>
+      <p class="muted">과거 방송을 찾기보다 상단의 <b>후원자 이력</b>에서 이름으로 전체 후원 기록을 확인할 수 있습니다.</p>
     </section>
   </div>
   <section class="card">
@@ -96,6 +98,9 @@ function setLinks(){
   const summaryLink = document.getElementById('summaryLink');
   if (summaryLink) summaryLink.href = `/summary.html?station=${slug}`;
 
+  const donorHistoryLink = document.getElementById('donorHistoryLink');
+  if (donorHistoryLink) donorHistoryLink.href = `/donor_history.html?station=${slug}`;
+
   const styleLink = document.getElementById('styleLink');
   if (styleLink) styleLink.href = `/station_style.html?station=${slug}`;
 
@@ -124,7 +129,7 @@ async function load(){
 
     setLinks();
 
-    const data = await api('/api/broadcasts');
+    const data = await api('/api/broadcasts?days=7&limit=30');
     broadcasts = data.broadcasts || [];
 
     render();
@@ -159,12 +164,19 @@ async function clearToonieWidget(){
 function render(){
   const box = document.getElementById('broadcasts');
 
-  if (!broadcasts.length) {
-    box.innerHTML = `<div class="muted">생성된 방송이 없습니다.</div>`;
+  const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  const visibleBroadcasts = (broadcasts || []).filter(b => {
+    if (b.isActive) return true;
+    const at = new Date(b.createdAt || 0).getTime();
+    return Number.isFinite(at) && at >= sevenDaysAgo;
+  });
+
+  if (!visibleBroadcasts.length) {
+    box.innerHTML = `<div class="muted">최근 7일 방송이 없습니다.</div>`;
     return;
   }
 
-  box.innerHTML = broadcasts.map(b => {
+  box.innerHTML = visibleBroadcasts.map(b => {
     const timer = b.broadcastTimerData || {};
     const live = b.broadcastLiveData || {};
     const status = live.status || (live.live ? 'live' : 'ready');
