@@ -3036,7 +3036,7 @@ async function readServiceDonationAuto(slug) {
     firstEnabled: v.firstEnabled !== false,
     secondEnabled: v.secondEnabled !== false,
     accountDonorsEnabled: v.accountDonorsEnabled === true,
-    firstTemplate: String(v.firstTemplate || '💸{후원자}업({금액}) → {분배}'),
+    firstTemplate: String(v.firstTemplate || '💸{후원자}업({방식} {금액}) → {분배}'),
     secondTemplate: String(v.secondTemplate || '💰누적 {누적}'),
     statusSelections: selections.length ? selections : ['cumulative'],
     statusAccountDonors: v.statusAccountDonors === true,
@@ -3057,7 +3057,7 @@ async function updateServiceDonationAuto(slug, input) {
     firstEnabled: input?.firstEnabled !== undefined ? input.firstEnabled !== false : prev.firstEnabled,
     secondEnabled: input?.secondEnabled !== undefined ? input.secondEnabled !== false : prev.secondEnabled,
     accountDonorsEnabled: input?.accountDonorsEnabled !== undefined ? input.accountDonorsEnabled === true : prev.accountDonorsEnabled,
-    firstTemplate: String(input?.firstTemplate ?? prev.firstTemplate ?? '💸{후원자}업({금액}) → {분배}').trim(),
+    firstTemplate: String(input?.firstTemplate ?? prev.firstTemplate ?? '💸{후원자}업({방식} {금액}) → {분배}').trim(),
     secondTemplate: String(input?.secondTemplate ?? prev.secondTemplate ?? '💰누적 {누적}').trim(),
     statusSelections: selections?.length ? selections : ['cumulative'],
     statusAccountDonors: input?.statusAccountDonors !== undefined ? input.statusAccountDonors === true : prev.statusAccountDonors,
@@ -3134,20 +3134,25 @@ function splitStatusLine(prefix, parts, maxChars = 190) {
 }
 
 function buildCumulativeChatMessages(settings, donations) {
-  const totals = new Map();
+  const order = Array.isArray(settings?.creators)
+    ? settings.creators.map(normName).filter(Boolean)
+    : [];
+  const totals = new Map(order.map(name => [name, 0]));
+
   for (const d of donations || []) {
     const c = normName(d.creator ?? d.creator_name);
     const a = aggregateWon(Number(d.totalAmount ?? d.total_amount ?? d.amount ?? 0));
-    if (c && a) totals.set(c, (totals.get(c) || 0) + a);
+    if (!c) continue;
+    totals.set(c, (totals.get(c) || 0) + a);
   }
-  const order = Array.isArray(settings?.creators) ? settings.creators.map(normName) : [];
-  const entries = [...totals].sort((a,b) => {
-    const ai=order.indexOf(a[0]), bi=order.indexOf(b[0]);
-    if (ai >= 0 || bi >= 0) return (ai < 0 ? 999 : ai) - (bi < 0 ? 999 : bi);
-    return b[1]-a[1];
-  });
+
+  const extras = [...totals.keys()].filter(name => !order.includes(name));
+  const orderedNames = [...order, ...extras.sort((a,b) => (totals.get(b)||0) - (totals.get(a)||0))];
   const hearts = ['💗','💙','💛','💜','💚','🧡','🤍','🩵'];
-  return splitStatusLine('💰누적', entries.map(([c,a], i) => `${hearts[i % hearts.length]}${c}(${displayManText(a)})`));
+  return splitStatusLine(
+    '💰누적',
+    orderedNames.map((c, i) => `${hearts[i % hearts.length]}${c}(${displayManText(totals.get(c) || 0)})`)
+  );
 }
 
 function buildAccountDonorChatMessages(donations) {
@@ -4166,7 +4171,7 @@ async function maybeSendDonationYoutubeChat(ctx, settings, donor, accountTotal, 
     const legacySecond = !savedSecond
       || savedSecond === '{누적}'
       || savedSecond === '현재 누적후원현황 {누적}';
-    const firstTemplate = legacyFirst ? '💸{후원자}업({금액}) → {분배}' : savedFirst;
+    const firstTemplate = legacyFirst || savedFirst === '💸{후원자}업({금액}) → {분배}' ? '💸{후원자}업({방식} {금액}) → {분배}' : savedFirst;
     const secondTemplate = legacySecond ? '💰누적 {누적}' : savedSecond;
     const firstMessage = fill(firstTemplate, values).trim();
     const secondMessage = fill(secondTemplate, values).trim();

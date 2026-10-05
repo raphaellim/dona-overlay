@@ -63,3 +63,17 @@ https://dona-overlay-production.up.railway.app/summary.html?station=duugi
 
 후원자 전체이력:
 https://dona-overlay-production.up.railway.app/donor_history.html?station=duugi
+
+
+[자동 후원 문구 v2]
+기존: 💸용깡업(4) → 빵떠기2·화지2
+변경: 💸용깡업(계좌 4) → 빵떠기2·화지2
+투네: 💸용깡업(투네 4) → 빵떠기2·화지2
+혼합: 💸용깡업(계좌+투네 4) → 빵떠기2·화지2
+
+
+[누적채팅 v3]
+- 크리에이터 설정 순서 그대로 출력
+- 0원인 크리에이터도 생략하지 않음
+예: 💰누적 💗빵떠기(10)·💙화지(0)·💛국고(0)·💜ㅇㄹ(3)
+- 자동채팅/수동 현재현황 전송 둘 다 동일 적용
