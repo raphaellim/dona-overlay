@@ -3110,7 +3110,14 @@ function buildAccountDonorEntries(donations) {
     if (!map.has(donor)) map.set(donor, 0);
     map.set(donor, map.get(donor) + account);
   }
-  return [...map].map(([donor, amount]) => ({ donor, amount, amountText: displayManText(amount) }));
+  return [...map]
+    .map(([donor, amount]) => ({
+      donor,
+      amount,
+      amountText: displayManText(amount),
+      diamond: amount >= 100000
+    }))
+    .sort((a,b) => b.amount - a.amount || a.donor.localeCompare(b.donor, 'ko'));
 }
 
 function splitStatusLine(prefix, parts, maxChars = 190) {
@@ -3156,7 +3163,13 @@ function buildCumulativeChatMessages(settings, donations) {
 }
 
 function buildAccountDonorChatMessages(donations) {
-  return splitStatusLine('🏦계좌', buildAccountDonorEntries(donations).map(x => `${x.donor}(${x.amountText})`));
+  const entries = buildAccountDonorEntries(donations);
+  const diamond = entries.filter(x => x.diamond).map(x => `${x.donor}(${x.amountText})`);
+  const normal = entries.filter(x => !x.diamond).map(x => `${x.donor}(${x.amountText})`);
+  const parts = [];
+  if (diamond.length) parts.push(`💎${diamond.join('·')}`);
+  if (normal.length) parts.push(normal.join('·'));
+  return splitStatusLine('🏦계좌', parts, 190);
 }
 
 async function sendExactMessages(slug, videoId, accountId, messages) {
@@ -4255,53 +4268,6 @@ app.post('/api/station/toonie-widget', async (req, res) => {
     toonieCollector?.sync();
     res.json({ ok: true, enabled: !!widgetUrl });
   } catch (e) { res.status(500).json({ error: e.message || '투네 위젯 설정 저장 실패' }); }
-});
-
-// ===============================
-// Nightbot 엔화 → 원화 환율 계산
-// 사용 예: !엔 1000
-// ===============================
-app.get("/exchange/jpy", async (req, res) => {
-  try {
-    let amount = String(req.query.amount || "")
-      .replace(/,/g, "")
-      .trim();
-
-    amount = Number(amount);
-
-    if (!amount || amount <= 0) {
-      return res
-        .type("text/plain")
-        .send("사용법: !엔 1000");
-    }
-
-    const response = await fetch(
-      "https://api.frankfurter.dev/v2/rate/jpy/krw"
-    );
-
-    if (!response.ok) {
-      throw new Error("환율 API 오류");
-    }
-
-    const data = await response.json();
-
-    const rate = Number(data.rate);
-    const krw = Math.round(amount * rate);
-
-    const yenText = amount.toLocaleString("ko-KR");
-    const wonText = krw.toLocaleString("ko-KR");
-
-    res
-      .type("text/plain")
-      .send(`💴 ${yenText}엔 ≈ ${wonText}원 🇰🇷`);
-  } catch (error) {
-    console.error("환율 계산 오류:", error);
-
-    res
-      .status(500)
-      .type("text/plain")
-      .send("환율 정보를 불러오지 못했습니다.");
-  }
 });
 
 // 휴대폰 은행 알림 또는 투네이션 위젯 수집기에서 전달하는 자동 후원.

@@ -24,11 +24,15 @@ function statusMessages(summary,selected){
     messages.push(parts.length?`💰누적 ${parts.join('·')}`:'💰누적 0');
   }
   if($('selD').checked){
-    const donors=Array.isArray(summary?.accountDonors)?summary.accountDonors:[];
-    const parts=donors
+    const donors=(Array.isArray(summary?.accountDonors)?summary.accountDonors:[])
       .filter(x=>Number(x.amount||0)>0)
-      .map(x=>`${x.donor}(${x.amountText||manText(x.amount)})`);
-    messages.push(parts.length?`🏦계좌 ${parts.join('·')}`:'🏦계좌 0');
+      .sort((a,b)=>Number(b.amount||0)-Number(a.amount||0)||String(a.donor||'').localeCompare(String(b.donor||''),'ko'));
+    const diamond=donors.filter(x=>Number(x.amount||0)>=100000).map(x=>`${x.donor}(${x.amountText||manText(x.amount)})`);
+    const normal=donors.filter(x=>Number(x.amount||0)<100000).map(x=>`${x.donor}(${x.amountText||manText(x.amount)})`);
+    const groups=[];
+    if(diamond.length)groups.push(`💎${diamond.join('·')}`);
+    if(normal.length)groups.push(normal.join('·'));
+    messages.push(groups.length?`🏦계좌 ${groups.join(' | ')}`:'🏦계좌 0');
   }
   const side=[];
   if(selected.includes('preset')){
