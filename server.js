@@ -4257,6 +4257,53 @@ app.post('/api/station/toonie-widget', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message || '투네 위젯 설정 저장 실패' }); }
 });
 
+// ===============================
+// Nightbot 엔화 → 원화 환율 계산
+// 사용 예: !엔 1000
+// ===============================
+app.get("/exchange/jpy", async (req, res) => {
+  try {
+    let amount = String(req.query.amount || "")
+      .replace(/,/g, "")
+      .trim();
+
+    amount = Number(amount);
+
+    if (!amount || amount <= 0) {
+      return res
+        .type("text/plain")
+        .send("사용법: !엔 1000");
+    }
+
+    const response = await fetch(
+      "https://api.frankfurter.dev/v2/rate/jpy/krw"
+    );
+
+    if (!response.ok) {
+      throw new Error("환율 API 오류");
+    }
+
+    const data = await response.json();
+
+    const rate = Number(data.rate);
+    const krw = Math.round(amount * rate);
+
+    const yenText = amount.toLocaleString("ko-KR");
+    const wonText = krw.toLocaleString("ko-KR");
+
+    res
+      .type("text/plain")
+      .send(`💴 ${yenText}엔 ≈ ${wonText}원 🇰🇷`);
+  } catch (error) {
+    console.error("환율 계산 오류:", error);
+
+    res
+      .status(500)
+      .type("text/plain")
+      .send("환율 정보를 불러오지 못했습니다.");
+  }
+});
+
 // 휴대폰 은행 알림 또는 투네이션 위젯 수집기에서 전달하는 자동 후원.
 // AUTO_DONATION_TOKEN은 방송국별로 별도 발급하고 HTTPS 요청 헤더에만 넣습니다.
 app.post('/api/auto-donations/:source', async (req, res) => {
