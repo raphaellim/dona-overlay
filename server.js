@@ -3145,16 +3145,20 @@ function buildCumulativeChatMessages(settings, donations) {
     ? settings.creators.map(normName).filter(Boolean)
     : [];
   const totals = new Map(order.map(name => [name, 0]));
+  const extras = [];
 
   for (const d of donations || []) {
     const c = normName(d.creator ?? d.creator_name);
     const a = aggregateWon(Number(d.totalAmount ?? d.total_amount ?? d.amount ?? 0));
     if (!c) continue;
+    if (!totals.has(c)) {
+      totals.set(c, 0);
+      extras.push(c); // 금액순 정렬 금지: 최초 등장 순서 유지
+    }
     totals.set(c, (totals.get(c) || 0) + a);
   }
 
-  const extras = [...totals.keys()].filter(name => !order.includes(name));
-  const orderedNames = [...order, ...extras.sort((a,b) => (totals.get(b)||0) - (totals.get(a)||0))];
+  const orderedNames = [...order, ...extras];
   const hearts = ['💗','💙','💛','💜','💚','🧡','🤍','🩵'];
   return splitStatusLine(
     '💰누적',

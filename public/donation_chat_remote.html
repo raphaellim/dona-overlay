@@ -19,7 +19,14 @@ function statusMessages(summary,selected){
   const creators=Array.isArray(summary?.creators)?summary.creators:[];
   if(selected.includes('cumulative')){
     const hearts=['💗','💙','💛','💜','💚','🧡','🤍','🩵'];
-    const parts=creators
+    const configured=Array.isArray(summary?.settings?.creators)?summary.settings.creators.map(x=>String(x||'').trim()).filter(Boolean):[];
+    const byName=new Map(creators.map(x=>[String(x.creator||'').trim(),x]));
+    const extras=creators.filter(x=>!configured.includes(String(x.creator||'').trim()));
+    const ordered=[
+      ...configured.map(name=>byName.get(name)||{creator:name,total:0,totalText:'0'}),
+      ...extras
+    ];
+    const parts=ordered
       .map((x,i)=>`${hearts[i%hearts.length]}${x.creator}(${x.totalText||manText(x.total)||'0'})`);
     messages.push(parts.length?`💰누적 ${parts.join('·')}`:'💰누적 0');
   }

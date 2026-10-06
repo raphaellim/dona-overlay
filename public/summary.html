@@ -50,6 +50,13 @@
   .money-total{font-size:15px;color:#fff}
   .subtle{color:#64748b;font-size:12px}
   .refresh-state{color:#94a3b8;font-size:12px;font-weight:800}
+  .settlement-controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .settlement-controls select{min-width:105px}
+  .tax-toggle{display:inline-flex;align-items:center;gap:7px;padding:8px 10px;border:1px solid #334155;border-radius:10px;background:#070b12;color:#dbeafe;font-size:13px;font-weight:900}
+  .tax-toggle input{width:17px;height:17px;accent-color:#2563eb}
+  .settlement-table select{min-width:88px;padding:7px 8px}
+  .settlement-final{font-weight:950;color:#86efac}
+  .settlement-tax{color:#fca5a5}
   @media(max-width:980px){.grid,.detail-grid{grid-template-columns:1fr}.kpi-grid{grid-template-columns:1fr 1fr}.top{align-items:flex-start;flex-direction:column}}
   @media(max-width:560px){.kpi-grid{grid-template-columns:1fr}.wrap{padding:12px}.title{font-size:25px}}
 </style>
@@ -96,6 +103,29 @@
       </table></div>
     </section>
   </div>
+
+  <section class="card" id="settlementCard">
+    <h2>
+      <span>정산 계산</span>
+      <span class="settlement-controls">
+        <label class="hint">전체 비율</label>
+        <select id="settlementAllRatio" onchange="applySettlementRatioAll(this.value)">
+          <option value="9:1">9:1</option>
+          <option value="8:2" selected>8:2</option>
+          <option value="7:3">7:3</option>
+          <option value="6:4">6:4</option>
+        </select>
+        <label class="tax-toggle"><input id="settlementTax" type="checkbox" checked onchange="renderSettlement()">3.3% 공제</label>
+      </span>
+    </h2>
+    <p class="hint">앞 숫자가 크리에이터 정산 비율입니다. 예: 8:2 = 합산금액의 80% 정산. 3.3% 공제는 크리에이터 몫에서 차감합니다.</p>
+    <div class="table-wrap">
+      <table class="table settlement-table">
+        <thead><tr><th>크리에이터</th><th class="num">합산금액</th><th>정산비율</th><th class="num">비율 적용액</th><th class="num">3.3% 공제</th><th class="num">최종 정산</th></tr></thead>
+        <tbody id="settlementRows"></tbody>
+      </table>
+    </div>
+  </section>
 
   <div class="detail-grid">
     <section class="card">
@@ -352,6 +382,64 @@ function renderFundingSummary(){
   }).join('');
 }
 
+function settlementStoreKey(name){
+  const station = new URLSearchParams(location.search).get('station') || localStorage.getItem('STATION_SLUG') || 'default';
+  return `settlementRatio:${station}:${name}`;
+}
+function settlementRatioValue(label){
+  const m=String(label||'8:2').match(/^(\d+):(\d+)$/);
+  if(!m)return .8;
+  const a=Number(m[1]),b=Number(m[2]),sum=a+b;
+  return sum>0?a/sum:.8;
+}
+function settlementWon(n){
+  return `${Math.trunc(Number(n||0)).toLocaleString('ko-KR')}원`;
+}
+function getCreatorSettlementRatio(name){
+  const saved=localStorage.getItem(settlementStoreKey(name));
+  return ['9:1','8:2','7:3','6:4'].includes(saved)?saved:'8:2';
+}
+function setCreatorSettlementRatio(name,value){
+  if(!['9:1','8:2','7:3','6:4'].includes(value))return;
+  localStorage.setItem(settlementStoreKey(name),value);
+  renderSettlement();
+}
+function applySettlementRatioAll(value){
+  for(const c of (summary?.creators||[])){
+    localStorage.setItem(settlementStoreKey(c.creator),value);
+  }
+  renderSettlement();
+}
+function renderSettlement(){
+  const box=$('#settlementRows');
+  if(!box)return;
+  const creators=Array.isArray(summary?.creators)?summary.creators:[];
+  const taxOn=$('#settlementTax')?.checked!==false;
+  if(!creators.length){
+    box.innerHTML='<tr><td colspan="6" class="empty-row">정산할 크리에이터가 없습니다.</td></tr>';
+    return;
+  }
+  box.innerHTML=creators.map(c=>{
+    const ratio=getCreatorSettlementRatio(c.creator);
+    const gross=Math.max(0,Number(c.total||0));
+    const share=Math.floor(gross*settlementRatioValue(ratio));
+    const tax=taxOn?Math.floor(share*0.033):0;
+    const final=Math.max(0,share-tax);
+    return `<tr>
+      <td><b>${esc(c.creator)}</b></td>
+      <td class="num">${settlementWon(gross)}</td>
+      <td>
+        <select onchange="setCreatorSettlementRatio('${escAttr(c.creator)}',this.value)">
+          ${['9:1','8:2','7:3','6:4'].map(v=>`<option value="${v}" ${v===ratio?'selected':''}>${v}</option>`).join('')}
+        </select>
+      </td>
+      <td class="num">${settlementWon(share)}</td>
+      <td class="num settlement-tax">${taxOn?'-'+settlementWon(tax):'0원'}</td>
+      <td class="num settlement-final">${settlementWon(final)}</td>
+    </tr>`;
+  }).join('');
+}
+
 function renderTopStats(){
   const creators = Array.isArray(summary?.creators) ? summary.creators : [];
   const donors = Array.isArray(summary?.donors) ? summary.donors : [];
@@ -423,6 +511,7 @@ async function load(forceFunding=false){
     sel.innerHTML = names.map(n => `<option value="${escAttr(n)}" ${n===selectedCreator?'selected':''}>${esc(n)}</option>`).join('');
 
     renderTopStats();
+    renderSettlement();
     renderCreatorDetail();
     renderFundingSummary();
     renderAllRows();
