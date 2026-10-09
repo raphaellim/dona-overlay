@@ -1,6 +1,4 @@
-// Optional server-side Toonation widget collector. Requires Playwright Chromium.
-const crypto = require('crypto');
-
+const crypto=require('crypto');
 function validWidgetUrl(value) {
   try {
     const u = new URL(String(value || '').trim());
@@ -9,73 +7,38 @@ function validWidgetUrl(value) {
   } catch { return ''; }
 }
 
-function parseAlert(text) {
-  const clean = String(text || '').replace(/\s+/g, ' ').trim();
-  if (!clean || /테스트/i.test(clean)) return null;
-  const match = clean.match(/(.{1,100}?)님(?:이)?\s*([\d,]+)\s*캐시/);
-  if (!match) return null;
-  const donor = match[1].trim().replace(/^(?:VIP|[♛♚👑]\s*)+/, '').trim();
-  const amount = Number(match[2].replace(/,/g, ''));
-  if (!donor || !Number.isSafeInteger(amount) || amount <= 0 || amount > 1e9) return null;
-  return { donor, amount, message: clean.slice(0, 300), signature: clean };
+
+function parsePacket(payload){
+ let event;try{event=JSON.parse(String(payload));}catch{return null;}
+ const c=event?.content;if(!c||typeof c!=='object')return null;
+ const donor=String(c.name||'익명의 후원자').trim()||'익명의 후원자',title=String(c.title_info?.name||'').trim(),amount=Number(c.amount),message=String(c.message||'');
+ if(/테스트/i.test(donor+' '+title+' '+message)||!Number.isSafeInteger(amount)||amount<=0||amount>1e9)return null;
+ return {donor,title,amount,message,replay:Number(event.replay||0)!==0};
 }
-
-function startToonieCollector({ listSources, port, token }) {
-  const sources = new Map();
-  let browser = null;
-  let playwright;
-  try { playwright = require('playwright'); }
-  catch { console.warn('Toonie collector disabled: install Playwright and Chromium.'); return; }
-  if (!token) { console.warn('Toonie collector disabled: AUTO_DONATION_TOKEN missing.'); return; }
-
-  async function closeSource(slug) {
-    const old = sources.get(slug);
-    sources.delete(slug);
-    if (old) { clearInterval(old.timer); await old.page.close().catch(() => {}); }
-  }
-  async function openSource(slug, url) {
-    if (!browser) browser = await playwright.chromium.launch({ headless: true, args: ['--no-sandbox'] });
-    const page = await browser.newPage({ javaScriptEnabled: true });
-    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
-    const state = { page, url, last: '', lastAt: 0, busy: false, timer: null };
-    state.timer = setInterval(async () => {
-      if (state.busy) return;
-      state.busy = true;
-      try {
-        const text = await page.evaluate(() => document.body?.innerText || '');
-        const event = parseAlert(text);
-        if (!event) { if (!String(text || '').trim()) state.last = ''; return; }
-        const now = Date.now();
-        if (event.signature === state.last && now - state.lastAt < 60000) return;
-        state.last = event.signature; state.lastAt = now;
-        const eventId = `widget:${crypto.randomUUID()}`;
-        const response = await fetch(`http://127.0.0.1:${port}/api/auto-donations/toonie`, {
-          method: 'POST', headers: { 'content-type': 'application/json', 'x-auto-donation-token': token },
-          body: JSON.stringify({ station: slug, eventId, donor: event.donor, amount: event.amount,
-            message: event.message, receivedAt: new Date(now).toISOString() })
-        });
-        if (!response.ok) console.warn('Toonie registration failed:', slug, response.status);
-      } catch (error) {
-        console.warn('Toonie widget read failed:', slug, error.message);
-      } finally { state.busy = false; }
-    }, 700);
-    sources.set(slug, state);
-  }
-  async function sync() {
-    try {
-      const wanted = new Map((await listSources()).map(x => [x.slug, validWidgetUrl(x.url)]).filter(x => x[1]));
-      for (const [slug, old] of sources) if (wanted.get(slug) !== old.url) await closeSource(slug);
-      for (const [slug, url] of wanted) if (!sources.has(slug)) {
-        try { await openSource(slug, url); }
-        catch (error) { console.warn('Toonie widget connect failed:', slug, error.message); }
-      }
-    } catch (error) { console.warn('Toonie source sync failed:', error.message); }
-  }
-  let syncing = false;
-  const reconcile = async () => { if (syncing) return; syncing = true; try { await sync(); } finally { syncing = false; } };
-  setTimeout(reconcile, 3000);
-  setInterval(reconcile, 30000);
-  return { sync: reconcile, status: slug => sources.has(slug) ? 'connected' : 'disconnected' };
+function startToonieCollector({listSources,port,token}){
+ const sources=new Map();let browser,syncing=false;
+ if(!token){console.warn('Toonie collector disabled: AUTO_DONATION_TOKEN missing');return null;}
+ const {chromium}=require('playwright');
+ async function close(slug){const state=sources.get(slug);sources.delete(slug);if(state)await state.context.close().catch(()=>{});}
+ async function open(slug,url){
+ if(!browser||!browser.isConnected())browser=await chromium.launch({headless:true,args:['--no-sandbox']});
+ const context=await browser.newContext(),page=await context.newPage();
+ const state={context,url,status:'connecting',pending:[],sending:false};sources.set(slug,state);
+ async function drain(){if(state.sending)return;state.sending=true;try{while(state.pending.length){const response=await fetch(`http://127.0.0.1:${port}/api/toonie-candidates`,{method:'POST',headers:{'content-type':'application/json','x-auto-donation-token':token},body:JSON.stringify(state.pending[0]),signal:AbortSignal.timeout(10000)});if(!response.ok){console.warn('Toonie queue save failed',slug,response.status);break;}state.pending.shift();}}catch(e){console.warn('Toonie queue save failed',slug,e.message);}finally{state.sending=false;}}
+ state.drain=drain;
+ page.on('websocket',ws=>{
+ if(!/^wss:\/\/(?:ws\.toon\.at|toon\.at)(?::\d+)?\//.test(ws.url()))return;
+ state.status='connected';ws.on('close',()=>{state.status='disconnected';});ws.on('socketerror',()=>{state.status='disconnected';});
+ ws.on('framereceived',frame=>{const parsed=parsePacket(frame.payload);if(!parsed)return;state.pending.push({...parsed,station:slug,eventId:'widget:'+crypto.randomUUID(),receivedAt:new Date().toISOString()});drain();});
+ });
+ try{await page.goto(url,{waitUntil:'domcontentloaded',timeout:30000});}catch(e){await close(slug);throw e;}
+ }
+ async function sync(){if(syncing)return;syncing=true;try{
+ const wanted=new Map((await listSources()).map(x=>[x.slug,validWidgetUrl(x.url)]).filter(x=>x[1]));
+ for(const [slug,state]of sources){await state.drain();if(wanted.get(slug)!==state.url||state.status==='disconnected')await close(slug);}
+ for(const [slug,url]of wanted)if(!sources.has(slug)){try{await open(slug,url);}catch(e){console.warn('Toonie widget connect failed',slug,e.message);}}
+ }catch(e){console.warn('Toonie sync failed',e.message);}finally{syncing=false;}}
+ setTimeout(sync,3000);setInterval(sync,15000);
+ return {sync,status:slug=>sources.get(slug)?.status||'disconnected'};
 }
-
-module.exports = { validWidgetUrl, parseAlert, startToonieCollector };
+module.exports={validWidgetUrl,parsePacket,startToonieCollector};

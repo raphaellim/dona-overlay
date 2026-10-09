@@ -9,6 +9,8 @@ RUN echo "BUILD_ID=$BUILD_ID"
 
 COPY package*.json ./
 RUN npm install --omit=dev
+ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+RUN npx playwright install --with-deps chromium
 
 COPY . .
 
