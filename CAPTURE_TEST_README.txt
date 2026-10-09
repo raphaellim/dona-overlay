@@ -1,21 +1,43 @@
-계좌·투네 수집 테스트 패치 (업로드한 dona-overlay-main1009.zip 기준)
+방송국별 토큰 + 계좌/투네 서버 전송
 
-먼저 public/collection-test-preview.html을 브라우저로 열면 예시 화면을 볼 수 있습니다. 예시는 실제 후원이 아닙니다.
+1. 서버 패치
+server-patch/dona-overlay-main 안 파일을 현재 프로젝트에 덮어쓰기.
+Supabase SQL Editor에서 sql/station_collection_tokens.sql 실행.
+이전 수집 테스트 SQL을 아직 실행하지 않았다면 sql/capture_test.sql도 실행.
+Railway 재배포. AUTO_DONATION_TOKEN은 새 수집 API에서 더 이상 사용하지 않습니다.
 
-설치:
-1. ZIP 안 dona-overlay-main의 파일을 현재 서버 프로젝트에 덮어씁니다.
-2. Supabase SQL Editor에서 sql/capture_test.sql 실행.
-3. Railway 변수 AUTO_DONATION_TOKEN을 휴대폰 앱 값과 동일하게 설정.
-4. Railway 변수 TOONIE_COLLECTOR_ENABLED=1 설정. Dockerfile 빌드로 배포하면 Chromium을 설치합니다.
-5. 배포 후 관리자 로그인하고 https://dona-overlay-production.up.railway.app/collection-test.html?station=duugi 접속.
-6. 투네 alertbox 주소 저장. connected 상태에서 새 후원 또는 재생을 보내 확인합니다. 테스트 문구가 들어간 것은 제외.
-7. 휴대폰 앱 서버 https://dona-overlay-production.up.railway.app / station duugi / 은행 선택 / 알림 접근 허용 / 수집 활성화 후 새 입금 알림 확인.
+2. 토큰 발급
+https://dona-overlay-production.up.railway.app/collection-test.html?station=duugi
+방송국 관리자로 로그인하고 토큰 발급 / 재발급 클릭.
+토큰은 발급 직후 한 번만 확인/복사 가능합니다. 브라우저 저장소에 보관하지 않습니다.
+재발급하면 기존 토큰 즉시 무효. 은행 앱과 Java 설정 모두 변경 필요.
+이 토큰은 duugi 수집 전용입니다. 다른 방송국으로 보내면 401.
+DB에는 SHA-256 해시만 저장. 공개하면 안 됩니다.
 
-테스트 페이지는 별도 donation_capture_candidates 테이블에만 저장합니다. 후원 합산·채팅·오버레이 등록은 하지 않습니다. 승인 기능은 다음 단계입니다. 기존 /api/auto-donations/:source의 직접 자동등록은 409로 차단했습니다. 수동 등록 기능은 기존대로 동작합니다.
-삭제는 대기 목록에서 숨기는 처리입니다. 서버 DB 기록은 남습니다.
-칭호와 후원자 이름을 따로 저장하고 함께 표시합니다. 은행 알림 원문·계좌번호·잔액은 서버로 보내지 않습니다.
-투네 eventId는 수신마다 생성한 로컬 ID이며 실제 거래 ID가 아닙니다. 재생은 별도 건으로 들어오고 표시됩니다. 같은 후원 재생의 중복 판단은 사람이 해야 합니다.
-수신 시각은 서버가 위젯 프레임을 받은 시각입니다. 과거 후원 일시가 아닙니다.
-연결 상태는 위젯 웹소켓 생성/종료 기준이며 실제 저장 성공 여부는 목록으로 확인하세요. 데이터 형식이 변경되면 파서 보완이 필요합니다. 저장 실패건은 프로세스 메모리에서 재시도하므로 서버 재시작이나 연결 재생성 때 소실될 수 있습니다.
-은행 앱 상태는 별도 heartbeat가 없으므로 마지막 수집 내역으로 확인합니다. 페이지는 최신 대기 100건씩 표시합니다.
-Node 문법 및 후원자/칭호/100원/익명/테스트 제외/토큰/관리자 권한/대기 저장 검증 통과. Railway 배포 및 실알림 수신, 화면 실기기 검증은 아직 수행하지 않았습니다.
+3. 은행 앱
+수집 토큰 칸에 발급한 새 토큰 입력 → 설정 저장 → 대기 내역 재전송.
+서버 https://dona-overlay-production.up.railway.app / 방송국 duugi.
+APK 재빌드는 필요 없음. 계좌 앱의 AUTO_DONATION_TOKEN 표시는 예전 안내 문구이므로 방송국 전용 토큰을 입력하세요.
+
+4. 투네 Java
+동봉한 toonation-java-example 폴더를 사용하거나 기존 프로젝트에 src/Main.java와 ServerSender.java 교체.
+프로젝트 폴더 PowerShell에서:
+$env:DONATION_SERVER_URL="https://dona-overlay-production.up.railway.app"
+$env:DONATION_STATION="duugi"
+$env:STATION_COLLECTION_TOKEN=Read-Host "방송국 수집 토큰 붙여넣기"
+$env:TOONIE_WIDGET_URL=Read-Host "투네 alertbox 주소 붙여넣기"
+mvn compile exec:java
+
+Java는 실제 수신 데이터를 /api/toonie-candidates로 전송. 실패 시 toonie-pending 폴더에 파일 보관, 5초마다 재시도. 서버 재시작이나 Java 재시작 후에도 파일이 남으면 재전송. 전송 대상 도메인/방송국 변경 시 별도 폴더를 사용하므로 다른 방송국으로 기존 데이터가 전송되지 않습니다. 폴더에 후원자/메시지 포함이므로 개인 PC에 보관하세요. 실행 프로젝트 작업폴더를 동일하게 유지하세요.
+콘솔 '투네 서버 확인 대기 저장 완료' 후 웹페이지 새로고침.
+로컬 미리보기 http://127.0.0.1:8765도 유지.
+Java8 호환 소스. Maven 전체 빌드와 실제 Java→Railway 통신은 이 환경에서 검증하지 못했습니다.
+
+5. 중복 수집 방지
+Java로 투네를 수집하면 Railway TOONIE_COLLECTOR_ENABLED=0.
+Railway 자체 수집을 사용할 때만 1. 두 수집기를 동시에 켜면 같은 후원이 두 번 들어올 수 있습니다.
+서버 자체 위젯 수집은 토큰 없이 서버 내부 함수로 대기 저장합니다. 외부 API 인증을 우회하는 공개 경로는 없습니다.
+Java 이벤트 ID는 수신마다 만드는 로컬 ID이며 실제 거래 ID가 아닙니다. 재생도 별도 건 표시.
+합산/채팅/오버레이 자동등록은 하지 않습니다. 수집 내역은 확인 대기만 저장. 승인 기능은 후속 단계.
+
+검증: Node 문법, 방송국 간 인증 차단, 이전 공용 토큰 거절, 관리자만 발급, 해시 저장, 토큰 교체 후 무효, 내부 수집 저장 검증 통과. 실제 Railway 배포/알림 수신은 사용자가 배포 후 확인 필요.

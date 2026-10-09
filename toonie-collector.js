@@ -15,16 +15,15 @@ function parsePacket(payload){
  if(/테스트/i.test(donor+' '+title+' '+message)||!Number.isSafeInteger(amount)||amount<=0||amount>1e9)return null;
  return {donor,title,amount,message,replay:Number(event.replay||0)!==0};
 }
-function startToonieCollector({listSources,port,token}){
+function startToonieCollector({listSources,ingest}){
  const sources=new Map();let browser,syncing=false;
- if(!token){console.warn('Toonie collector disabled: AUTO_DONATION_TOKEN missing');return null;}
  const {chromium}=require('playwright');
  async function close(slug){const state=sources.get(slug);sources.delete(slug);if(state)await state.context.close().catch(()=>{});}
  async function open(slug,url){
  if(!browser||!browser.isConnected())browser=await chromium.launch({headless:true,args:['--no-sandbox']});
  const context=await browser.newContext(),page=await context.newPage();
  const state={context,url,status:'connecting',pending:[],sending:false};sources.set(slug,state);
- async function drain(){if(state.sending)return;state.sending=true;try{while(state.pending.length){const response=await fetch(`http://127.0.0.1:${port}/api/toonie-candidates`,{method:'POST',headers:{'content-type':'application/json','x-auto-donation-token':token},body:JSON.stringify(state.pending[0]),signal:AbortSignal.timeout(10000)});if(!response.ok){console.warn('Toonie queue save failed',slug,response.status);break;}state.pending.shift();}}catch(e){console.warn('Toonie queue save failed',slug,e.message);}finally{state.sending=false;}}
+ async function drain(){if(state.sending)return;state.sending=true;try{while(state.pending.length){await ingest(state.pending[0]);state.pending.shift();}}catch(e){console.warn('Toonie queue save failed',slug,e.message);}finally{state.sending=false;}}
  state.drain=drain;
  page.on('websocket',ws=>{
  if(!/^wss:\/\/(?:ws\.toon\.at|toon\.at)(?::\d+)?\//.test(ws.url()))return;

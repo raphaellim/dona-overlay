@@ -4274,7 +4274,7 @@ app.post('/api/station/toonie-widget', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message || '투네 위젯 설정 저장 실패' }); }
 });
 
-require('./capture-test')(app,{supabase,getStation,getStationContext,managerAllowed});
+const collectionCapture=require('./capture-test')(app,{supabase,getStation,getStationContext,managerAllowed,stationAllowed});
 
 // 휴대폰 은행 알림 또는 투네이션 위젯 수집기에서 전달하는 자동 후원.
 // AUTO_DONATION_TOKEN은 방송국별로 별도 발급하고 HTTPS 요청 헤더에만 넣습니다.
@@ -4735,7 +4735,6 @@ setTimeout(runDonationStatusScheduler, 15000);
 httpServer.listen(PORT, () => {
   console.log(`Donation multi-station server running on port ${PORT}`);
   if (['1','true'].includes(String(process.env.TOONIE_COLLECTOR_ENABLED).toLowerCase())) {
-    toonieCollector = startToonieCollector({ listSources: listToonieSources, port: PORT,
-      token: process.env.AUTO_DONATION_TOKEN });
+    toonieCollector = startToonieCollector({ listSources: listToonieSources, ingest: collectionCapture.ingestToonie });
   }
 });
