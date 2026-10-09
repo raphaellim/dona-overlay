@@ -26,5 +26,5 @@ module.exports=function(app,{supabase,getStation,getStationContext,managerAllowe
  app.get('/api/'+source+'-candidates',async(req,res)=>{try{const ctx=await auth(req,res);if(!ctx)return;const {data,error}=await supabase.from('donation_capture_candidates').select('*').eq('station_id',ctx.station.id).eq('source',source).eq('status','pending').order('received_at',{ascending:false}).limit(100);if(error)throw error;res.json({candidates:data||[]});}catch(e){res.status(500).json({error:e.message});}});
  app.post('/api/'+source+'-candidates/:id/dismiss',async(req,res)=>{try{const ctx=await auth(req,res);if(!ctx)return;const {data,error}=await supabase.from('donation_capture_candidates').update({status:'dismissed'}).eq('station_id',ctx.station.id).eq('source',source).eq('id',req.params.id).eq('status','pending').select('id').maybeSingle();if(error)throw error;if(!data)return res.status(409).json({error:'이미 삭제됨'});res.json({ok:true});}catch(e){res.status(500).json({error:e.message});}});
  }
- return {ingestToonie:async b=>{const station=await getStation(String(b.station||''));if(!station)throw new Error('방송국 없음');return save('toonie',b,station);}};
+ return {saveAccount:(b,station)=>save('account',b,station),ingestToonie:async b=>{const station=await getStation(String(b.station||''));if(!station)throw new Error('방송국 없음');return save('toonie',b,station);}};
 };

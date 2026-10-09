@@ -1541,6 +1541,7 @@ const MASTER_HTML = new Set([
 ]);
 
 const STATION_HTML = new Set([
+  '/bank-device-control.html',
   '/creator_index.html',
   '/admin.html',
   '/control.html',
@@ -1648,6 +1649,7 @@ async function accessGuard(req, res, next) {
       }
 
       if (STATION_HTML.has(pathOnly)) {
+        if (pathOnly === '/bank-device-control.html' && !isMasterRequest(req) && !station.station_admin_password) return res.status(403).send('방송국 관리자 비밀번호를 설정한 후 기기 관리에 접속하세요.');
         if (await stationAllowed(req, station)) return next();
         return htmlRedirect(res, loginRedirectUrl('/station_login.html', station.slug, req, pathOnly));
       }
@@ -4275,6 +4277,7 @@ app.post('/api/station/toonie-widget', async (req, res) => {
 });
 
 const collectionCapture=require('./capture-test')(app,{supabase,getStation,getStationContext,managerAllowed,stationAllowed});
+require('./bank-devices')(app,{supabase,getStation,getStationContext,stationAllowed,isMasterRequest,saveAccount:collectionCapture.saveAccount});
 
 // 휴대폰 은행 알림 또는 투네이션 위젯 수집기에서 전달하는 자동 후원.
 // AUTO_DONATION_TOKEN은 방송국별로 별도 발급하고 HTTPS 요청 헤더에만 넣습니다.
