@@ -239,6 +239,7 @@
 <div class="bottom"><button class="btn gray" onclick="openOverlay()">오버레이</button><button class="btn blue" onclick="openSummary()">합산</button><button class="btn cyan" onclick="loadAll(true)">갱신</button><button class="btn pink" onclick="switchTab('donation')">후원입력</button></div>
 <div id="toast" class="toast"></div>
 <div id="errorBg" class="modal-bg"><div class="modal"><h3>오류 ALERT</h3><pre id="errorText"></pre><button class="btn red" onclick="closeError()">확인</button></div></div>
+<script src="/collection-socket.js"></script>
 <script>
 const qs=new URLSearchParams(location.search);let STATION=qs.get('station')||qs.get('slug')||localStorage.getItem('station_slug')||localStorage.getItem('STATION_SLUG')||'';if(STATION){localStorage.setItem('station_slug',STATION);localStorage.setItem('STATION_SLUG',STATION);}
 let settings={},station=null,active=null,currentRole='guest',rouletteSelectedId=localStorage.getItem(`creator_roulette_${STATION||'current'}`)||'';
@@ -380,16 +381,13 @@ async function maybeAutoAdvanceRoulette(){
   }
 }
 function startRouletteAutoRefresh(){
-  clearInterval(startRouletteAutoRefresh._timer);
-  startRouletteAutoRefresh._timer=setInterval(()=>{
-    const r=settings?.roulette||{};
-    const rouletteTabActive=$('#roulette')?.classList.contains('active');
-    const hasRunning=!!(r.current&&r.current.runId);
-    const hasQueue=Array.isArray(r.queue)&&r.queue.length>0;
-    if(hasRunning&&hasQueue) maybeAutoAdvanceRoulette();
-    if(rouletteTabActive||hasRunning||hasQueue) refreshRouletteOnly();
-  },800);
+ clearInterval(startRouletteAutoRefresh._timer);
+ if(startRouletteAutoRefresh._bound)return;startRouletteAutoRefresh._bound=true;
+ const refresh=()=>refreshRouletteOnly();
+ window.addEventListener('collection:changed',refresh);window.addEventListener('collection:connected',refresh);
+ // Server schedules roulette progression; clients no longer poll or race to advance.
 }
+
 async function saveNotice(turnOn){try{settings.overlaySections=settings.overlaySections||{};if(turnOn)settings.overlaySections.notice=true;const body={noticeTitle:norm($('#noticeTitle').value)||'공지',notice:String($('#noticeText').value||''),overlaySections:settings.overlaySections,...authBody()};await api('/api/settings',{method:'POST',body:JSON.stringify(body)});showSuccess(turnOn?'공지 저장 + ON 완료':'공지 저장 완료');await loadAll(false)}catch(e){handleError('공지',e)}}
 async function noticeOffAndSave(){try{settings.overlaySections=settings.overlaySections||{};settings.overlaySections.notice=false;await api('/api/settings',{method:'POST',body:JSON.stringify({overlaySections:settings.overlaySections,...authBody()})});showSuccess('공지 OFF 저장 완료');await loadAll(false)}catch(e){handleError('공지 OFF',e)}}
 async function saveDisplay(){try{await api('/api/settings',{method:'POST',body:JSON.stringify({overlaySections:settings.overlaySections,...authBody()})});showSuccess('노출 저장 완료');await loadAll(false)}catch(e){handleError('노출',e)}}
@@ -456,5 +454,6 @@ init();
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init); else init();
 })();
 </script>
+<script src="/integrated-collection.js"></script>
 </body>
 </html>

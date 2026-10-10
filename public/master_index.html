@@ -37,6 +37,7 @@ body{background:#070b12;color:#e5e7eb}.wrap{max-width:1180px}.hero{display:grid;
     <div id="stations" class="station-list"><div class="muted">불러오는 중...</div></div>
   </section>
 </div>
+<script src="/collection-socket.js"></script>
 <script src="/common.js"></script>
 <script>
 async function masterApi(url,opt={}){opt.headers={...(opt.headers||{}),'Content-Type':'application/json'};const pw=localStorage.getItem('MASTER_PW')||'';if(pw)opt.headers['x-admin-password']=pw;const r=await fetch(url,opt);const j=await r.json().catch(()=>({}));if(!r.ok){if(r.status===401){location.href='/admin_login.html?next='+encodeURIComponent('/master_index.html');return new Promise(()=>{});}throw new Error(j.error||'요청 실패');}return j;}

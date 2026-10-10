@@ -623,6 +623,7 @@ body{padding-bottom:80px}
   </div>
 </div>
 
+<script src="/collection-socket.js"></script>
 <script src="/common.js"></script>
 <script>
 
@@ -1444,7 +1445,7 @@ async function deleteDonation(id){
 }
 
 init();
-setInterval(loadManualSoundQueue, 2500);
+window.addEventListener('collection:changed',loadManualSoundQueue);window.addEventListener('collection:connected',loadManualSoundQueue);
 </script>
 <script>
 (function preserveStationLinks(){
@@ -1477,5 +1478,6 @@ setInterval(loadManualSoundQueue, 2500);
   b.textContent='PC 간소 입력';
   document.body.appendChild(b);
 })();</script>
+<script src="/integrated-collection.js"></script>
 </body>
 </html>

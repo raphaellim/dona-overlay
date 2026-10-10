@@ -1,0 +1,12 @@
+const assert=require('node:assert/strict'),fs=require('node:fs');
+const {PGlite}=require('@electric-sql/pglite');
+(async()=>{const db=new PGlite();await db.exec(`create role anon;create role authenticated;create role service_role;create table stations(id uuid primary key);create table broadcasts(id uuid primary key,station_id uuid,is_active boolean);`);
+const schema=fs.readFileSync(__dirname+'/../sql/schema.sql','utf8');const start=schema.indexOf('create table if not exists donations (');await db.exec(schema.slice(start,schema.indexOf('\n);',start)+4));
+await db.exec(fs.readFileSync(__dirname+'/../sql/capture_test.sql','utf8'));await db.exec(fs.readFileSync(__dirname+'/../sql/websocket_review.sql','utf8'));if(fs.existsSync(__dirname+'/../sql/integrated_control.sql'))await db.exec(fs.readFileSync(__dirname+'/../sql/integrated_control.sql','utf8'));
+const station='00000000-0000-0000-0000-000000000001',broadcast='00000000-0000-0000-0000-000000000002',id='00000000-0000-0000-0000-000000000003';
+await db.query('insert into stations values($1)',[station]);await db.query('insert into broadcasts values($1,$2,true)',[broadcast,station]);await db.query("insert into donation_capture_candidates(id,station_id,broadcast_id,source,event_id,donor,amount,received_at)values($1,$2,$3,'toonie','e','열려',100,now())",[id,station,broadcast]);
+const row={station_id:station,broadcast_id:broadcast,donor:'열려',creator:'빵떠기',process_type:'후원',account_amount:0,toonie_amount:100,total_amount:100,display_amount:'0.01',smoke:0,nosmoke:0,eat:0,noeat:0,checks:[],result_label:'후원',memo:''};
+const apply=r=>db.query('select apply_collection_candidate($1,$2,$3,$4) as result',[id,station,broadcast,JSON.stringify(r)]);
+await assert.rejects(apply([{...row,total_amount:200}]),/총액과 분배 불일치/);assert.equal((await db.query('select count(*) as n from donations')).rows[0].n,0);
+const r=(await apply([row])).rows[0].result;assert.equal(r.ok,true);assert.equal(r.donations[0].total_amount,100);assert.equal((await apply([row])).rows[0].result.duplicate,true);assert.equal((await db.query('select count(*) as n from donations')).rows[0].n,1);assert.equal((await db.query('select status from donation_capture_candidates')).rows[0].status,'applied');
+await db.close();console.log('PASS PostgreSQL: exact 100 won, mismatch rollback, atomic split/status and duplicate retry');})().catch(e=>{console.error(e);process.exit(1)});

@@ -34,6 +34,7 @@ body{background:#070b12;color:#e5e7eb}.wrap{max-width:1220px}.dash{display:grid;
     <div class="card"><h2>배포 안내</h2><div class="resultBox">크리에이터/매니저 모두 /station_login.html</div><p class="muted">공통 로그인에서 역할만 선택하면 각자 인덱스로 이동합니다. 이제 외부 안내 링크가 단순해집니다.</p></div>
   </section>
 </div>
+<script src="/collection-socket.js"></script>
 <script src="/common.js"></script>
 <script>
 let station=null, active=null;function slug(){return encodeURIComponent(station?.slug||getStation());}function setHref(id,path){const el=document.getElementById(id);if(el)el.href=path+'?station='+slug();}

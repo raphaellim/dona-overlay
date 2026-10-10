@@ -154,6 +154,7 @@
   </section>
 </main>
 <div class="toast" id="toast"></div>
+<script src="/collection-socket.js"></script>
 <script>
 const PARAMS=new URLSearchParams(location.search);
 const STATION=PARAMS.get('station')||localStorage.getItem('STATION_SLUG')||'default';
@@ -231,5 +232,6 @@ function bindInputs(){['donor','accountTotal','toonieTotal','processType'].forEa
 async function init(){setupTabs();bindInputs();try{await loadSettings();setInterval(renderMissionTimer,1000);if(isFullAdminRole()){hideLoginGate();return}const savedPw=getSavedBroadcastPassword();if(active?.id&&savedPw){try{await api('/api/broadcast-login',{method:'POST',body:JSON.stringify({broadcastId:active.id,password:savedPw})});mobileAuth={broadcastId:active.id,password:savedPw};hideLoginGate();await loadSettings(false);return}catch(e){clearSavedBroadcastPassword();mobileAuth={broadcastId:'',password:''}}}if(currentRole==='broadcast_manager'){hideLoginGate()}else showLoginGate()}catch(e){alert(e.message);showLoginGate()}}
 init();
 </script>
+<script src="/integrated-collection.js"></script>
 </body>
 </html>

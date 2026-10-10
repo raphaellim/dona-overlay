@@ -360,6 +360,6 @@
     // 메인 오버레이 WebSocket 이벤트가 들어올 때만 확인합니다.
     // 연결 장애 시에만 저빈도 폴링으로 복구합니다.
     window.addEventListener('overlay:roulette-changed', poll);
-    setInterval(()=>{ if(!window.__overlaySocketConnected) poll(); }, 15000);
+    window.addEventListener('collection:connected',poll);
   });
 })();

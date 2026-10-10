@@ -15,7 +15,8 @@ const { validWidgetUrl, startToonieCollector } = require('./toonie-collector');
 const app = express();
 const httpServer = http.createServer(app);
 const io = new Server(httpServer, {
-  transports: ['websocket', 'polling'],
+  transports: ['websocket'],
+  destroyUpgrade: false,
   pingInterval: 25000,
   pingTimeout: 20000,
   perMessageDeflate: false
@@ -55,9 +56,21 @@ app.use((req, res, next) => {
   // 파일 업로드/삭제 자체는 오버레이 상태값을 바꾸지 않습니다.
   // 큰 파일 업로드 직후 불필요한 overlay-state 재조회가 겹치지 않도록 제외합니다.
   if (req.path.startsWith('/api/media')) return next();
+  const originalJson=res.json.bind(res);
+  res.json=function(body){
+    if(body?.ok&&method==='POST'&&['/api/donations','/api/donations/batch'].includes(req.path)){
+      const rows=body.donations||(body.donation?[body.donation]:[]);
+      const visible=rows.filter(r=>!r.silentAlert&&Number(r.totalAmount||0)>0);
+      if(visible.length)setImmediate(()=>collectionWs.notify(getStationSlug(req),'alert',{id:'manual:'+visible.map(r=>r.id).join(':'),donationIds:visible.map(r=>r.id),source:visible.some(r=>r.accountAmount>0)?'account':'toonie',donor:visible[0].donor,title:visible[0].title||'',vip:visible[0].vip||'',amount:visible.reduce((n,r)=>n+r.totalAmount,0),message:visible[0].message||'',receivedAt:visible[0].createdAt,rows:visible.map(r=>({creator:r.creator,amount:r.totalAmount}))}));
+    }
+    return originalJson(body);
+  };
+
   res.on('finish', () => {
     if (res.statusCode < 200 || res.statusCode >= 300) return;
+    if(['/api/bank-devices/sync','/api/collection-ws-auth','/api/bank-device-candidates','/api/account-candidates','/api/toonie-candidates'].includes(req.path))return;
     const slug = getStationSlug(req);
+    if(typeof collectionWs!=='undefined')collectionWs.notify(slug,req.path.startsWith('/api/roulette')?'roulette':req.path.startsWith('/api/sound-events')?'sound':'state');
     io.to(realtimeRoom(slug)).emit('overlay:changed', {
       type: req.path.startsWith('/api/roulette') ? 'roulette' :
         req.path.startsWith('/api/sound-events') ? 'sound' : 'state',
@@ -219,7 +232,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads'), {
   immutable: true,
   etag: true
 }));
-app.use(express.static('public'));
+app.use(express.static(path.join(__dirname,'public')));
 
 function defaultPresets() {
   return [
@@ -1561,6 +1574,7 @@ const CREATOR_REMOTE_HTML = new Set([
 // 모바일 운영 페이지는 같은 파일을 권한별 모드로 사용합니다.
 // station_admin/master: 전체 기능, broadcast_manager: 당일 입력/수정 제한모드.
 const MANAGER_HTML = new Set([
+  '/collection-review.html',
   '/manager_index.html',
   '/m_admin.html',
   '/m_control.html',
@@ -1630,7 +1644,8 @@ async function accessGuard(req, res, next) {
       }
 
       // overlay는 관리자 로그인 여부와 상관없이 방송국 토큰이 있어야만 접근 허용
-      if (pathOnly === '/overlay.html' || pathOnly === '/overlay2.html') {
+      if (['/overlay.html','/overlay2.html','/overlay2_fixed.html','/overlay_luxury_api.html','/overlay_shorts.html','/donation-alert.html'].includes(pathOnly)) {
+        if(pathOnly==='/donation-alert.html'&&req.query.demo==='1')return next();
         if (await stationTokenAllowed(req, station)) return next();
         return res.status(403).send('오버레이 토큰이 필요합니다.');
       }
@@ -1837,8 +1852,8 @@ function makeDonationRow(body, settings, stationId, broadcastId) {
   const donor = normName(body.donor);
   const creator = normName(body.creator);
   const processType = resolveDonationProcessType(body, settings);
-  const accountAmount = toWon(body.accountAmount);
-  const toonieAmount = toWon(body.toonieAmount);
+  const accountAmount = body.exactWon === true ? Math.trunc(Number(body.accountAmount)||0) : toWon(body.accountAmount);
+  const toonieAmount = body.exactWon === true ? Math.trunc(Number(body.toonieAmount)||0) : toWon(body.toonieAmount);
   const total = accountAmount + toonieAmount;
 
   if (!donor) throw new Error('도네이터명을 입력하세요.');
@@ -1893,6 +1908,7 @@ function dbRowToDonation(row) {
     broadcastId: row.broadcast_id,
     createdAt: row.created_at,
     donor: row.donor,
+    captureId:meta.captureId||'',title:meta.title||'',vip:meta.vip||'',receivedAt:meta.receivedAt||row.created_at,message:meta.message||'',
     creator: row.creator,
     processType: row.process_type,
     accountAmount: row.account_amount || 0,
@@ -4020,6 +4036,7 @@ function buildOverlayState(settings, donations) {
   const recentDonations = (donations || []).slice(-160).map(d => ({
     id: d.id,
     createdAt: d.createdAt,
+    captureId:d.captureId,title:d.title,vip:d.vip,receivedAt:d.receivedAt,message:d.message,
     donor: d.donor,
     creator: d.creator,
     processType: d.processType,
@@ -4276,8 +4293,14 @@ app.post('/api/station/toonie-widget', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message || '투네 위젯 설정 저장 실패' }); }
 });
 
-const collectionCapture=require('./capture-test')(app,{supabase,getStation,getStationContext,managerAllowed,stationAllowed});
-require('./bank-devices')(app,{supabase,getStation,getStationContext,stationAllowed,isMasterRequest,saveAccount:collectionCapture.saveAccount});
+const collectionWs=require('./collection-ws')(httpServer,{port:()=>httpServer.address()?.port||PORT});
+const notifyCollection=(slug,type,payload)=>{collectionWs.notify(slug,type,payload);if(type==='state')io.to(realtimeRoom(slug)).emit('overlay:changed',{type:'state',at:Date.now()});};
+const collectionReview=require('./collection-review')(app,{supabase,getStationContext,managerAllowed,stationAllowed,ensureActiveBroadcast,readEffectiveSettings,saveEffectiveSettings,makeDonationRow,inputAllowedForActiveBroadcast,notify:notifyCollection,afterApply:async(ctx,settings,candidate,routing,rows)=>{
+ notifyCollection(ctx.station.slug,'alert',{id:candidate.id,donationIds:rows.map(r=>r.id),source:candidate.source,donor:routing.donor,title:candidate.title,vip:candidate.vip,amount:candidate.amount,message:candidate.message,receivedAt:candidate.received_at,rows:routing.rows});
+ try{if(routing.fundingId){const current=await readEffectiveSettings(ctx.station.slug,ctx.active.id),fundingData=normalizeFundingData(current.fundingData),item=fundingData.items.find(f=>f.id===routing.fundingId);if(item){item.current=Number(item.current||0)+Math.floor(Number(candidate.amount)/10000);await saveSharedStationSettings(ctx.station.slug,{fundingData});}}nightbotChat.enqueue(ctx.station.slug,rows,settings.nightbotChat);await maybeSendDonationYoutubeChat(ctx,settings,routing.donor,candidate.source==='account'?candidate.amount:0,candidate.source==='toonie'?candidate.amount:0,rows);await maybeStartAutoRoulette(ctx,candidate.amount,routing.donor,routing);}catch(e){console.error('수집 후원 부가 전송 실패:',e.message);}
+}});
+const collectionCapture=require('./capture-test')(app,{supabase,getStation,getStationContext,managerAllowed,stationAllowed,review:collectionReview,notify:notifyCollection});
+require('./bank-devices')(app,{supabase,getStation,getStationContext,stationAllowed,isMasterRequest,saveAccount:collectionCapture.saveAccount,changed:()=>collectionWs.devicesChanged()});
 
 // 휴대폰 은행 알림 또는 투네이션 위젯 수집기에서 전달하는 자동 후원.
 // AUTO_DONATION_TOKEN은 방송국별로 별도 발급하고 HTTPS 요청 헤더에만 넣습니다.

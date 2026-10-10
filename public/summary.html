@@ -194,8 +194,9 @@
   </section>
 </div>
 
+<script src="/collection-socket.js"></script>
 <script src="/common.js"></script>
-<script src="/socket.io/socket.io.js"></script>
+
 <script>
 let summary = null;
 let selectedCreator = '';
@@ -668,9 +669,9 @@ $('#donorSearch')?.addEventListener('input', ()=>{
 
 function initRealtimeSummary(){
   try{
-    if(typeof io !== 'function') return;
+    if(typeof collectionIO !== 'function') return;
     const station = new URLSearchParams(location.search).get('station') || localStorage.getItem('STATION_SLUG') || 'default';
-    const socket = io({transports:['websocket','polling']});
+    const socket = collectionIO({transports:['websocket']});
     socket.on('connect', ()=>socket.emit('station:join',{station}));
     socket.on('overlay:changed', ()=>load(false));
     window.addEventListener('beforeunload', ()=>socket.disconnect(), {once:true});
@@ -680,7 +681,7 @@ function initRealtimeSummary(){
 load(true);
 initRealtimeSummary();
 // WebSocket 누락/절전 복귀 대비용 저빈도 안전 동기화. 중복 요청은 load()에서 차단합니다.
-fallbackTimer=setInterval(()=>load(false),30000);
+window.addEventListener('collection:connected',()=>load(false));
 document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) load(false); });
 window.addEventListener('beforeunload', ()=>{ if(fallbackTimer) clearInterval(fallbackTimer); clearTimeout(donorSearchTimer); }, {once:true});
 </script>

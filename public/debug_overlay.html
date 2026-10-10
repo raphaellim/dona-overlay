@@ -5,6 +5,7 @@
 <body>
 <h1>Overlay Debug</h1>
 <pre id="out">loading...</pre>
+<script src="/collection-socket.js"></script>
 <script>
 Promise.all([
   fetch('/api/settings',{cache:'no-store'}).then(r=>r.json()),

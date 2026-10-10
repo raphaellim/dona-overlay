@@ -23,6 +23,7 @@ body{background:#070b12;color:#e5e7eb}.wrap{max-width:980px}.quick-grid{display:
   </section>
   <section class="card"><h2>권한 안내</h2><p class="muted">매니저는 당일 방송 비밀번호 기준으로 접속합니다. 방송국 전체 설정/방송 생성/토큰 관리는 크리에이터 인덱스에서 처리합니다.</p></section>
 </div>
+<script src="/collection-socket.js"></script>
 <script src="/common.js"></script>
 <script>
 let station=null,active=null;function qs(){return '?station='+encodeURIComponent(station?.slug||getStation());}function setHref(id,path){const el=document.getElementById(id);if(el)el.href=path+qs();}

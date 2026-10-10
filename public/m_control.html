@@ -232,6 +232,7 @@
 <style>.roulette-quick-link{position:fixed;right:14px;bottom:14px;z-index:99999;padding:10px 14px;border-radius:999px;background:linear-gradient(90deg,#ff4fa3,#5ee7ff);color:#fff!important;font-weight:1000;text-decoration:none;box-shadow:0 0 18px rgba(255,79,163,.35)}</style>
 </head>
 <body><a class="roulette-quick-link" href="/m_roulette.html">🎰 룰렛</a>
+<script src="/collection-socket.js"></script>
 <script>(function(){var a=document.querySelector('.roulette-quick-link');if(!a)return;var st=new URLSearchParams(location.search).get('station')||localStorage.getItem('STATION_SLUG')||'default';a.href=a.getAttribute('href')+'?station='+encodeURIComponent(st);})();</script>
 <div class="top"><div class="title">모바일 방송 설정</div><div id="info" class="sub">불러오는 중...</div><div class="manager-note">방송매니저 제한모드: 당일 입력/노출/공지/펀딩/노래방 수정만 가능합니다. 합산/방송생성/목록설정은 숨김 처리됩니다.</div><div class="nav"><a id="mAdmin">모바일 입력</a><a id="mMedia">미디어 업로드</a><a id="overlay" target="_blank">오버레이</a></div></div>
 <div class="tabs"><button class="tab active" data-tab="display">표시</button><button class="tab" data-tab="creator">크리에이터</button><button class="tab" data-tab="preset">프리셋</button><button class="tab" data-tab="notice">공지</button><button class="tab" data-tab="funding">펀딩</button><button class="tab" data-tab="karaoke">노래방</button><button class="tab" data-tab="sound">사운드</button></div>
@@ -334,4 +335,5 @@ async function load(){settings=await api('/api/settings');currentRole=settings.r
 })();
 </script>
 
+<script src="/integrated-collection.js"></script>
 </body></html>

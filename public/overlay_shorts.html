@@ -2493,7 +2493,10 @@ body.shorts-mode #overlayAlertRoot{display:none!important;}
 
 </style>
   <link rel="stylesheet" href="/assets/css/roulette-overlay.css">
-</head>
+<style>
+#optionAlert.option-alert{background:transparent!important;border:0!important;box-shadow:none!important;text-align:center!important;font-weight:900!important;line-height:1.35!important;text-shadow:2px 2px 0 #111,-2px -2px 0 #111,2px -2px 0 #111,-2px 2px 0 #111,0 3px 5px #111!important;color:#fff!important}
+#optionAlert .donation-new-source{color:#44ef81}#optionAlert .donation-new-title{color:#edb94a}#optionAlert .donation-new-name,#optionAlert .donation-new-money{color:#ffad33}#optionAlert .donation-new-badge{background:#c4ffff;color:#087c82;text-shadow:none;font-size:.6em;padding:4px 10px;border-radius:30px}#optionAlert .donation-new-message{font-size:.9em;white-space:pre-wrap;overflow-wrap:anywhere}#optionAlert .donation-new-targets{font-size:.65em;margin-top:8px}
+</style></head>
 
 <body class="theme-gold shorts-mode">
   <div id="overlayIdleScreen" class="overlay-idle-screen">시스템설정</div>
@@ -2556,7 +2559,8 @@ body.shorts-mode #overlayAlertRoot{display:none!important;}
   <div id="debugPanel"
     style="position:fixed;left:10px;bottom:10px;width:520px;max-width:calc(100vw - 20px);max-height:320px;overflow:auto;background:rgba(0,0,0,.88);color:#00ff66;font-size:12px;font-family:Consolas,monospace;padding:10px;border:1px solid #00ff66;z-index:9999999;display:none;pointer-events:auto;white-space:pre-wrap">
   </div>
-  <script src="/socket.io/socket.io.js"></script>
+  <script src="/collection-socket.js"></script>
+
   <script>
     if (new URLSearchParams(location.search).get("debug") === "1") { console.log("[overlay-debug] overlay.html loaded", location.href); }
     let latestSettingsForTimer = null;
@@ -3690,96 +3694,17 @@ body.shorts-mode #overlayAlertRoot{display:none!important;}
       }
 
       function makeDonationAlertHtml(row) {
-        const groupRows = Array.isArray(row.alertGroupRows) && row.alertGroupRows.length ? row.alertGroupRows : [row];
-        const isGrouped = groupRows.length > 1;
-        const donor = escapeHtml(row.donor || groupRows[0]?.donor || "익명");
-
-        const accountAmount = num(row.accountAmount ?? row.account_amount);
-        const toonieAmount = num(row.toonieAmount ?? row.toonie_amount);
-        const totalAmount = num(row.totalAmount ?? row.total_amount ?? accountAmount + toonieAmount);
-
-        const baseSource =
-          accountAmount > 0 && toonieAmount > 0 ? "계좌/투네" :
-            accountAmount > 0 ? "계좌" :
-              toonieAmount > 0 ? "투네" :
-                (row.sourceType || row.source_type || "계좌");
-
-        let processLabel = String(row.processType || row.process_type || "").trim();
-
-        // 룰렛 제목이 없는 값은 후원으로 처리
-        if (
-          !processLabel ||
-          processLabel === "룰렛" ||
-          processLabel === "룰렛+" ||
-          processLabel === "룰렛-" ||
-          processLabel === "roulette"
-        ) {
-          processLabel = "후원";
-        }
-
-        // 룰렛+룰렛, 룰렛+룰렛+시그 같은 중복 정리
-        processLabel = processLabel.replace(/^룰렛\+룰렛\+?/, "룰렛+");
-        processLabel = processLabel.replace(/^룰렛\+룰렛$/, "룰렛");
-
-        // 그래도 룰렛 제목이 없으면 후원 처리
-        if (processLabel === "룰렛" || processLabel === "룰렛+" || processLabel === "룰렛-") {
-          processLabel = "후원";
-        }
-
-        // 표시용 변환: 룰렛+시그 → 룰렛-시그
-        processLabel = processLabel.replace(/^룰렛\+/, "룰렛-");
-
-        const sourceLabel = escapeHtml(`(${baseSource})${processLabel}`);
-
-        let optionText = "";
-        const checks = Array.isArray(row.checks) ? row.checks : [];
-
-        if (checks.length) {
-          const ch = checks[checks.length - 1];
-          const sign = ch.side === "minus" ? "-" : "+";
-          const cls = ch.side === "minus" ? "alert-minus" : "alert-plus";
-          const name = escapeHtml(ch.name || "옵션");
-          const count = Math.abs(num(ch.count || 1));
-          optionText = `<span class="${cls}">${name}${sign}${count}</span>`;
-        }
-
-        if (isGrouped) {
-          const creatorLines = groupRows.map(r => {
-            const creator = escapeHtml(r.creator || "익명");
-            const amount = escapeHtml(formatCreatorManAmount(donationWon(r)));
-            return `<span class="alert-target alert-split-chip">${creator} ${amount}</span>`;
-          }).join("");
-
-          return `
-    <div class="alert-up-line alert-donor-total-line">
-      <span class="alert-donor blink-donor">${donor}</span>
-      <span class="alert-amount alert-total-amount">${displayAmount(totalAmount)}원</span>
-    </div>
-    <div class="alert-creator-line alert-split-line">
-      ${creatorLines}
-    </div>
-    <div class="alert-line2">
-      <span class="alert-source">${sourceLabel}</span>
-      ${optionText}
-    </div>
-  `;
-        }
-
-        const creator = escapeHtml(groupRows[0]?.creator || row.creator || "익명");
-        const creatorAmount = escapeHtml(formatCreatorManAmount(donationWon(groupRows[0] || row)));
-        return `
-    <div class="alert-up-line alert-donor-total-line">
-      <span class="alert-donor blink-donor">${donor}</span>
-      <span class="alert-amount alert-total-amount">${displayAmount(totalAmount)}원</span>
-    </div>
-    <div class="alert-creator-line alert-split-line">
-      <span class="alert-target alert-split-chip">${creator} ${creatorAmount}</span>
-    </div>
-    <div class="alert-line2">
-      <span class="alert-source">${sourceLabel}</span>
-      ${optionText}
-    </div>
-  `;
+        const rows=Array.isArray(row.alertGroupRows)&&row.alertGroupRows.length?row.alertGroupRows:[row];
+        const total=Number(row.totalAmount??row.total_amount??rows.reduce((n,r)=>n+donationWon(r),0));
+        const source=Number(row.accountAmount??row.account_amount)>0?'계좌':'투네';
+        const at=row.receivedAt||row.createdAt||row.created_at;
+        const seconds=Math.max(0,Math.floor((Date.now()-Date.parse(at))/1000));
+        const age=seconds<1?'방금 전':seconds<60?seconds+'초 전':Math.floor(seconds/60)+'분 전';
+        const esc=escapeHtml;
+        return `<div class="donation-new-head"><span class="donation-new-source">[${source}]</span> <span data-donation-at="${esc(at||'')}">[${age}]</span> ${row.vip?`<span class="donation-new-badge">${esc(row.vip)}</span>`:''} <span class="donation-new-title">${esc(row.title||'')}</span></div>
+        <div><span class="donation-new-name">${esc(row.donor||'익명')}</span>님 <span class="donation-new-money">${total.toLocaleString('ko-KR')}</span>원 후원!</div>
+        <div>후원 감사합니다!</div><div class="donation-new-message">${esc(row.message||'')}</div>
+        <div class="donation-new-targets">${rows.map(r=>esc(r.creator||'')+' '+donationWon(r).toLocaleString('ko-KR')+'원').join(' · ')}</div>`;
       }
       function pickSoundFileForDonation(row) {
         if (soundRulesCache && soundRulesCache.enabled === false) return "";
@@ -4350,21 +4275,10 @@ function updateBroadcastTimer() {
 
       let socketDisconnectedAt = Date.now();
       let lastFallbackRefreshAt = Date.now();
-      setInterval(() => {
-        if (window.__overlaySocketConnected) return;
-        const now = Date.now();
-        const disconnectedFor = now - socketDisconnectedAt;
-        const fallbackInterval = disconnectedFor < 60000
-          ? 15000
-          : (disconnectedFor < 300000 ? 30000 : 60000);
-        if (now - lastFallbackRefreshAt < fallbackInterval) return;
-        lastFallbackRefreshAt = now;
-        refresh();
-        checkManualSoundEvents();
-      }, 5000);
 
-      const socket = window.io ? window.io({
-        transports: ['websocket', 'polling'],
+
+      const socket = window.collectionIO ? window.collectionIO({
+        transports: ['websocket'],
         reconnection: true,
         reconnectionDelay: 1000,
         reconnectionDelayMax: 10000
@@ -4421,6 +4335,6 @@ function updateBroadcastTimer() {
 
 <script>try{if(new URLSearchParams(location.search).get("bg")==="1") document.body.classList.add("test-bg");}catch(e){}</script>
 
-</body>
+<script>setInterval(()=>document.querySelectorAll('[data-donation-at]').forEach(e=>{const s=Math.max(0,Math.floor((Date.now()-Date.parse(e.dataset.donationAt))/1000));e.textContent='['+(s<1?'방금 전':s<60?s+'초 전':Math.floor(s/60)+'분 전')+']';}),1000);</script></body>
 
 </html>

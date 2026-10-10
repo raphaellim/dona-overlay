@@ -29,6 +29,7 @@
   </div>
   <section class="card"><h2>서버 미디어</h2><div id="mediaGrid" class="media-grid"><div class="muted">불러오는 중...</div></div></section>
 </div>
+<script src="/collection-socket.js"></script>
 <script src="/common.js"></script>
 <script>
 const STATION=(new URLSearchParams(location.search).get('station')||localStorage.getItem('STATION_SLUG')||'default');localStorage.setItem('STATION_SLUG',STATION);let settings=null;let media=[];
