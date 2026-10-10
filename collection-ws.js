@@ -3,6 +3,7 @@ const {WebSocketServer,WebSocket}=require('ws');
 const http=require('http');
 // Same-origin WebSocket transport. API handlers retain their existing cookie/token authorization.
 module.exports=function(server,{port}){
+ const deploymentVersion=require('crypto').randomBytes(16).toString('hex');
  const wss=new WebSocketServer({noServer:true,maxPayload:65536,perMessageDeflate:false});
  server.on('upgrade',(req,socket,head)=>{if(req.url.split('?')[0]!=='/ws/collection')return;
   try{if(req.headers.origin&&new URL(req.headers.origin).host!==req.headers.host){socket.destroy();return;}}catch{socket.destroy();return;}
@@ -24,7 +25,7 @@ module.exports=function(server,{port}){
        if(!req.headers.origin)throw Error('웹 Origin 필요');
        const station=String(m.station||'default'),authPath='/api/settings?station='+encodeURIComponent(station)+'&token='+encodeURIComponent(String(m.token||''));
        const access=await invoke(req,authPath,'GET');if(access.status!==200){send(ws,{type:'auth-error',code:access.status});ws.close(1008,'login required');return;}
-       ws.auth={kind:'web',station};send(ws,{type:'ready'});
+       ws.auth={kind:'web',station};send(ws,{type:'ready',deploymentVersion});
      }else if(['device','toonie','account'].includes(m.kind)){
        const token=String(m.token||'');if(token.length<32||token.length>200)throw Error('연결 토큰 확인 필요');
        const state=await invoke(req,m.kind==='device'?'/api/bank-devices/sync':'/api/collection-ws-auth','POST',{station:m.station,source:m.kind},{[m.kind==='device'?'x-bank-device-token':'x-auto-donation-token']:token});

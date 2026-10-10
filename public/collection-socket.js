@@ -3,13 +3,24 @@
  if(params.get('demo')==='1')return;
  let socket,ready=false,retry=1000,seq=0,connectPromise,resolveConnect,rejectConnect,timer;
  const pending=new Map();
+ const autoUpdate=/\/(?:overlay[^/]*|summary[^/]*|donation-alert)\.html$/i.test(location.pathname);
+ let loadedDeployment=null;
+ function checkDeployment(version){
+  if(!autoUpdate||!version)return false;
+  const key='overlay-deployment:'+location.origin+location.pathname;
+  let previous=loadedDeployment;try{previous=previous||sessionStorage.getItem(key);sessionStorage.setItem(key,version);}catch{}
+  loadedDeployment=version;
+  if(previous&&previous!==version){const url=new URL(location.href);url.searchParams.set('v',version);location.replace(url.href);return true;}
+  return false;
+ }
+
  function connect(){if(socket&&(socket.readyState===0||socket.readyState===1))return;
   connectPromise=new Promise((resolve,reject)=>{resolveConnect=resolve;rejectConnect=reject;});connectPromise.catch(()=>{});
   socket=new WebSocket((location.protocol==='https:'?'wss:':'ws:')+'//'+location.host+'/ws/collection');
   const timeout=setTimeout(()=>{rejectConnect(Error('웹소켓 연결 지연'));socket.close();},15000);
   socket.onopen=()=>socket.send(JSON.stringify({type:'auth',kind:'web',station,token:params.get('token')||''}));
   socket.onmessage=e=>{let m;try{m=JSON.parse(e.data);}catch{return;}
-   if(m.type==='ready'){clearTimeout(timeout);ready=true;retry=1000;resolveConnect();window.dispatchEvent(new CustomEvent('collection:connected'));}
+   if(m.type==='ready'){clearTimeout(timeout);if(checkDeployment(m.deploymentVersion))return;ready=true;retry=1000;resolveConnect();window.dispatchEvent(new CustomEvent('collection:connected'));}
    if(m.type==='response'){const p=pending.get(m.id);if(p){clearTimeout(p.timeout);pending.delete(m.id);p.resolve(new Response(m.body||'',{status:m.status||500,headers:{'content-type':m.contentType||'application/json'}}));}}
    if(m.type==='changed')window.dispatchEvent(new CustomEvent('collection:changed',{detail:m}));
   };
