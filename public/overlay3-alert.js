@@ -6,9 +6,19 @@ const queue=new DonationAlertQueue({show(r){current=r;$('source').textContent=r.
  timer=setTimeout(()=>queue.end(),config.duration*1000);
 },hide(){clearTimeout(timer);$('alert').classList.remove('show');current=null;if(audio){audio.pause();audio.removeAttribute('src');audio.load();audio=null;}}});
 
-function placeAlert(){}
 const panel=document.getElementById('overlayPanel'),account=document.getElementById('accountBox');
-if(panel&&account)panel.insertBefore($('alert'),account.nextSibling);
+let lastAccountHeight=36;
+function placeAlert(){
+ if(!panel)return;
+ const a=account?.getBoundingClientRect(),p=panel.getBoundingClientRect();
+ if(a&&a.height>0&&getComputedStyle(account).display!=='none')lastAccountHeight=a.bottom-p.top;
+ const el=$('alert');el.style.setProperty('--o3-popup-top',(lastAccountHeight+2)+'px');
+}
+if(panel)panel.append($('alert'));
+placeAlert();window.addEventListener('resize',placeAlert);
+if(typeof ResizeObserver==='function'){const ro=new ResizeObserver(placeAlert);if(account)ro.observe(account);if(panel)ro.observe(panel);}
+if(account)new MutationObserver(placeAlert).observe(account,{attributes:true});
+
 function updateAge(){if(!current)return;const time=Date.parse(current.receivedAt),s=Number.isFinite(time)?Math.max(0,Math.floor((Date.now()-time)/1000)):0;$('age').textContent='['+(s<60?s+'초 전':Math.floor(s/60)+'분 전')+']';}
 async function load(){try{const response=await fetch('/api/alert-config?'+q);if(!response.ok)throw Error('알림 설정 조회 실패');config=await response.json();window.overlay3Targets=config.targets||[];window.dispatchEvent(new Event('overlay3:targets'));queue.configure(config);const r=await fetch('/api/settings?'+q);if(r.ok)settings=await r.json();status();}catch(e){queue.configure({...config,playback:{known:false,busy:true}});$('status').textContent=e.message;}}
 function status(){$('status').textContent=queue.blocked()?'투네 재생 상태 미확인/재생 중 · 계좌 대기 '+queue.queue.length+'건':'알림 연결됨 · 대기 '+queue.queue.length+'건';}

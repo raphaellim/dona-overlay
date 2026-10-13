@@ -1212,6 +1212,18 @@ body,#overlayPanel{font-family:'Noto Sans KR','맑은 고딕',sans-serif!importa
 #allowanceBox{--section-color:#f1ce79!important}
 #allowanceBox .allowance-row{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:8px!important;margin:0!important;padding:0!important;border:0!important;font-size:20px!important;line-height:27px!important;font-weight:800!important}
 #allowanceBox .allowance-positive{color:#ffe39d!important}#allowanceBox .allowance-negative{color:#ff9fbb!important}
+
+/* ALERT popup: out of document flow */
+#v5Alert-alert{position:absolute!important;left:0!important;top:var(--o3-popup-top,40px)!important;right:0!important;width:100%!important;z-index:2147483000!important;background:rgba(10,22,30,.94)!important;border:1px solid #8de6ef88!important;border-radius:9px!important;padding:5px 8px!important;box-shadow:0 4px 14px #0005!important}
+#v5Alert-alert::before{left:0!important;background:#8de6ef!important}
+#overlayPanel,#overlayPanel.v5-combined{overflow:visible!important}
+
+#v5Alert-alert .v5Alert-star{display:block!important;color:#ffe3a1!important;font-size:20px!important;z-index:3!important;pointer-events:none!important}
+#v5Alert-alert.show .v5Alert-star{animation:v5AlertTwinkle 1.2s 3}
+#v5Alert-alert.show .v5Alert-star:nth-of-type(2){animation-delay:.2s}
+#v5Alert-alert.show .v5Alert-star:nth-of-type(3){animation-delay:.4s}
+#v5Alert-alert.show .v5Alert-star:nth-of-type(4){animation-delay:.6s}
+@media(prefers-reduced-motion:reduce){#v5Alert-alert.show .v5Alert-star{animation:none!important}}
 </style><script>const EFFECT_RULES={star:100000,diamond:300000};if(new URLSearchParams(location.search).get("demo")==="1")window.overlay3Targets=[{name:"국고",group:"other"}];function makeRow(donor){const amount=Number(donor.amount)||0;const tier=amount>=EFFECT_RULES.diamond?'diamond':amount>=EFFECT_RULES.star?'star':'';
  const row=document.createElement('div');row.className='row active '+tier;
  const badge=document.createElement('span');badge.className='badge';badge.setAttribute('aria-hidden','true');
