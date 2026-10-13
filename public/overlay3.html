@@ -1202,6 +1202,8 @@ body,#overlayPanel{font-family:'Noto Sans KR','맑은 고딕',sans-serif!importa
 .o3-funding-bar{height:5px;background:#ffffff18;border-radius:9px;margin-top:3px;overflow:hidden}
 .o3-funding-bar i{display:block;height:100%;background:#7de0c2;border-radius:9px;transition:width .3s}
 .o3-funding-detail{font-size:16px!important;line-height:20px;color:#c0cedc;font-weight:700;margin-top:2px}
+
+#overlayPanel>#karaokeBox{overflow:visible!important}
 </style><script>const EFFECT_RULES={star:100000,diamond:300000};if(new URLSearchParams(location.search).get("demo")==="1")window.overlay3Targets=[{name:"국고",group:"other"}];function makeRow(donor){const amount=Number(donor.amount)||0;const tier=amount>=EFFECT_RULES.diamond?'diamond':amount>=EFFECT_RULES.star?'star':'';
  const row=document.createElement('div');row.className='row active '+tier;
  const badge=document.createElement('span');badge.className='badge';badge.setAttribute('aria-hidden','true');
