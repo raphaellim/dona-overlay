@@ -1192,6 +1192,16 @@ body,#overlayPanel{font-family:'Noto Sans KR','맑은 고딕',sans-serif!importa
 /* 제목 옆 구분선: 통합박스 예제와 동일 */
 #overlayPanel .notice-title,#overlayPanel .funding-title,#overlayPanel .karaoke-title,#overlayPanel .creator-title{display:flex!important;align-items:center!important;gap:6px!important;width:100%!important;min-width:0!important}
 #overlayPanel .notice-title::after,#overlayPanel .funding-title::after,#overlayPanel .karaoke-title::after,#overlayPanel .creator-title::after{content:""!important;display:block!important;position:static!important;flex:1 1 18px!important;min-width:18px!important;height:1px!important;margin:0!important;padding:0!important;border:0!important;background:linear-gradient(90deg,rgba(255,255,255,.4),rgba(255,255,255,.08))!important;box-shadow:none!important}
+
+#overlayPanel .notice-title::after,#overlayPanel .funding-title::after,#overlayPanel .karaoke-title::after,#overlayPanel .creator-title::after{display:none!important;content:none!important}
+.o3-heading-label{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.o3-heading-line{display:block!important;flex:1 0 18px!important;height:1px!important;min-width:18px!important;background:linear-gradient(90deg,#ffffff66,#ffffff14)!important}
+#overlayPanel .funding-value{display:block!important;line-height:1.2!important}
+.o3-funding-money{display:flex;align-items:baseline;justify-content:space-between;gap:6px;font-size:22px;line-height:28px;font-weight:800;white-space:nowrap;font-variant-numeric:tabular-nums}
+.o3-funding-money strong{color:#fff!important}.o3-funding-money span{color:#afc1d1!important;font-size:20px}
+.o3-funding-bar{height:5px;background:#ffffff18;border-radius:9px;margin-top:3px;overflow:hidden}
+.o3-funding-bar i{display:block;height:100%;background:#7de0c2;border-radius:9px;transition:width .3s}
+.o3-funding-detail{font-size:16px!important;line-height:20px;color:#c0cedc;font-weight:700;margin-top:2px}
 </style><script>const EFFECT_RULES={star:100000,diamond:300000};if(new URLSearchParams(location.search).get("demo")==="1")window.overlay3Targets=[{name:"국고",group:"other"}];function makeRow(donor){const amount=Number(donor.amount)||0;const tier=amount>=EFFECT_RULES.diamond?'diamond':amount>=EFFECT_RULES.star?'star':'';
  const row=document.createElement('div');row.className='row active '+tier;
  const badge=document.createElement('span');badge.className='badge';badge.setAttribute('aria-hidden','true');
@@ -1432,8 +1442,9 @@ body,#overlayPanel{font-family:'Noto Sans KR','맑은 고딕',sans-serif!importa
         settings: {
           ...defaultSettings,
           broadcastLiveData: {live:true},
+          fundingData:{items:[{title:"방송 미션 펀딩",current:620000,target:1000000},{title:"다음 미션",current:10000,target:50000}]},
           notice: "오늘 룰 확인하고 후원해주세요",
-          overlaySections: { account: true, notice: true, creators: true, media: true }
+          overlaySections: { account: true, notice: true, creators: true, funding:true, karaoke:true, media: true }
         },
         accountDonors: [{ donor: "열려", amount: 36000 }, { donor: "이잉", amount: 123400 }],
         creators: [{creator:"빵떠기",total:619600},{creator:"또영이",total:362000},{creator:"국고",total:30000}],
@@ -1761,81 +1772,28 @@ body,#overlayPanel{font-family:'Noto Sans KR','맑은 고딕',sans-serif!importa
         }
       }
 
+      let o3FundingTimer=null,o3FundingSignature='',o3FundingIndex=0;
+      function o3Heading(el,text){if(!el)return;const label=document.createElement('span');label.className='o3-heading-label';label.textContent=String(text||'');const line=document.createElement('span');line.className='o3-heading-line';line.setAttribute('aria-hidden','true');el.replaceChildren(label,line);}
+      function syncO3Headings(){for(const id of ['noticeBox','karaokeBox','creatorBox']){const el=document.querySelector('#'+id+' .notice-title,#'+id+' .karaoke-title,#'+id+' .creator-title');if(el&&!el.querySelector('.o3-heading-line'))o3Heading(el,el.textContent);}}
       function renderFunding(settings) {
-        if (!$fundingBox) return;
-
-        const items = (settings?.fundingData?.items || [])
-          .filter(f => f.enabled !== false);
-
-        const valueEl = $fundingBox.querySelector(".funding-value");
-        if (!valueEl) return;
-
-        const rowHtml = (f) => {
-          const cur = Number(f.current || 0);
-          const target = Number(f.target || 0);
-          const pct = target > 0 ? Math.min(100, Math.round(cur / target * 100)) : 0;
-
-          return `
-      <div class="funding-line">
-        <span>${escapeHtml(f.title)}</span>
-        <b>${cur}/${target}</b>
-        <em style="width:${pct}%"></em>
-      </div>
-    `;
+        if(!$fundingBox)return;
+        const items=(settings?.fundingData?.items||[]).filter(f=>f.enabled!==false);
+        const sig=JSON.stringify(items),el=$fundingBox.querySelector('.funding-value'),heading=$fundingBox.querySelector('.funding-title');
+        if(!el)return;
+        if(sig===o3FundingSignature&&el.querySelector('.o3-funding'))return;
+        o3FundingSignature=sig;clearInterval(o3FundingTimer);o3FundingTimer=null;o3FundingIndex=0;
+        const draw=()=>{
+          const f=items[o3FundingIndex%Math.max(1,items.length)];
+          o3Heading(heading,f?.title||'방송 미션 펀딩');
+          if(!f){el.innerHTML='<div class="o3-funding"><div class="o3-funding-detail">등록된 펀딩 없음</div></div>';return;}
+          const current=Math.max(0,num(f.current)),goal=Math.max(0,num(f.target));
+          const percent=goal>0?Math.max(0,current/goal*100):0,bar=Math.min(100,percent),left=Math.max(0,goal-current);
+          el.innerHTML='<div class="o3-funding"><div class="o3-funding-money"><strong>'+escapeHtml(displayAmount(current))+'원</strong><span>/ '+escapeHtml(displayAmount(goal))+'원</span></div><div class="o3-funding-bar" role="progressbar" aria-label="'+escapeHtml(f.title||'펀딩')+'" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+bar+'"><i style="width:'+bar+'%"></i></div><div class="o3-funding-detail">'+(goal>0?'달성률 '+Math.round(percent)+'% · '+(current>=goal?'목표 달성':'목표까지 '+escapeHtml(displayAmount(left))+'원'):'목표 미설정')+(items.length>1?' · '+(o3FundingIndex%items.length+1)+'/'+items.length:'')+'</div></div>';
         };
-
-        if (!items.length) {
-          valueEl.innerHTML = `<div class="funding-line">등록된 펀딩 없음</div>`;
-          return;
-        }
-
-        if (items.length === 1) {
-          valueEl.innerHTML = rowHtml(items[0]);
-          return;
-        }
-
-        valueEl.innerHTML = `
-    <div class="funding-roller">
-      <div class="funding-track" id="fundingTrack">
-        ${items.concat(items[0]).map(rowHtml).join("")}
-      </div>
-    </div>
-  `;
-
-        const track = valueEl.querySelector("#fundingTrack");
-        const rows = Array.from(track.children);
-
-        fundingRollIndex = fundingRollIndex % items.length;
-
-        const moveToIndex = (index, useTransition = true) => {
-          const row = rows[index];
-          const y = row ? row.offsetTop : 0;
-
-          if (useTransition) {
-            track.classList.remove("no-transition");
-          } else {
-            track.classList.add("no-transition");
-          }
-
-          track.style.transform = `translate3d(0, ${-y}px, 0)`;
-        };
-
-        moveToIndex(fundingRollIndex, false);
-
-        setTimeout(() => {
-          fundingRollIndex += 1;
-          moveToIndex(fundingRollIndex, true);
-
-          if (fundingRollIndex === items.length) {
-            setTimeout(() => {
-              fundingRollIndex = 0;
-              moveToIndex(0, false);
-              track.offsetHeight;
-              track.classList.remove("no-transition");
-            }, 460);
-          }
-        }, 2600);
+        draw();if(items.length>1)o3FundingTimer=setInterval(()=>{if(!document.hidden&&getComputedStyle($fundingBox).display!=='none'){o3FundingIndex++;draw();}},4000);
       }
+      window.addEventListener('pagehide',()=>{clearInterval(o3FundingTimer);o3FundingTimer=null;o3FundingSignature='';});
+      window.addEventListener('pageshow',()=>{if(latestSettingsForTimer)renderFunding(latestSettingsForTimer);});
 
       function timerBaseMs(settings) {
         const t = settings?.broadcastTimerData || {};
@@ -2948,7 +2906,7 @@ function updateBroadcastTimer() {
         cacheSoundRules(settings);
         enabledPresets = getEnabledPresets(settings);
         const creatorTitle=document.querySelector('#creatorBox .creator-title');
-        if(creatorTitle)creatorTitle.textContent=settings.title||'방송인 후원 순위';
+        if(creatorTitle)o3Heading(creatorTitle,settings.title||'방송인 후원 순위');
         const creators = data.creators && data.creators.length ? data.creators : zeroCreatorsFromSettings(settings);
 
         const signature = JSON.stringify({
@@ -2981,6 +2939,7 @@ function updateBroadcastTimer() {
           renderAllowance(settings);
           renderAccountRoller(data.accountDonors);
           renderCreators(creators);
+          syncO3Headings();
         }
 
         // 펀딩은 2개 이상일 때 주기적으로 한 줄 롤링되어야 하므로
