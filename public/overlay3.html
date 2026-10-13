@@ -1173,6 +1173,21 @@ body,#overlayPanel{font-family:'Noto Sans KR','맑은 고딕',sans-serif!importa
 #v5Alert-alert{font-family:'Noto Sans KR','맑은 고딕',sans-serif!important;background:#47c5dd0b!important;border:0!important;border-top:1px solid #87d8e76b!important;border-bottom:1px solid #87d8e76b!important;border-radius:0!important;padding:5px 2px 5px 6px!important}
 #v5Alert-alert::before{content:"";position:absolute;left:-7px;top:5px;bottom:5px;width:3px;border-radius:3px;background:#8de6ef}
 #v5Alert-comment,#v5Alert-split{font-weight:700}
+
+/* legacy pseudo-element dimensions must not cover creator rows */
+#overlayPanel>.overlay-box::before,#v5Alert-alert::before{content:""!important;position:absolute!important;display:block!important;width:3px!important;min-width:3px!important;max-width:3px!important;height:auto!important;left:-7px!important;right:auto!important;top:5px!important;bottom:5px!important;margin:0!important;padding:0!important;border:0!important;font-size:0!important;line-height:0!important;box-shadow:none!important;pointer-events:none!important;z-index:0!important}
+#overlayPanel .overlay-box>*{position:relative;z-index:1}
+#overlayPanel,#overlayPanel *{text-shadow:none!important;-webkit-text-stroke:0!important}
+#overlayPanel .notice-title,#overlayPanel .funding-title,#overlayPanel .karaoke-title,#overlayPanel .creator-title{color:var(--section-color)!important;font-size:19px!important;line-height:23px!important}
+#overlayPanel .notice-title::before,#overlayPanel .funding-title::before,#overlayPanel .karaoke-title::before{content:none!important}
+#overlayPanel .notice-text,#overlayPanel .notice-line{font-weight:800!important}
+#overlayPanel .funding-line,#overlayPanel .funding-roller{background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;padding:0!important}
+#overlayPanel .karaoke-coin-ticker{background:transparent!important;border:0!important;margin-top:2px!important;border-radius:0!important}
+#overlayPanel .queue-empty{padding:2px 0!important;font-size:16px!important;opacity:1!important}
+#overlayPanel .karaoke-current b,#overlayPanel .karaoke-reserve-title{font-size:18px!important;color:#a9cfff!important}
+#overlayPanel .karaoke-notice{color:#fff!important}
+#overlayPanel .o3-rank,#overlayPanel .o3-other,#overlayPanel .o3-options{color:#fff!important}
+#overlayPanel .o3-rank-money,#overlayPanel .o3-other{color:#fff0b6!important}
 </style><script>const EFFECT_RULES={star:100000,diamond:300000};if(new URLSearchParams(location.search).get("demo")==="1")window.overlay3Targets=[{name:"국고",group:"other"}];function makeRow(donor){const amount=Number(donor.amount)||0;const tier=amount>=EFFECT_RULES.diamond?'diamond':amount>=EFFECT_RULES.star?'star':'';
  const row=document.createElement('div');row.className='row active '+tier;
  const badge=document.createElement('span');badge.className='badge';badge.setAttribute('aria-hidden','true');

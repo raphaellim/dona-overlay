@@ -60,3 +60,5 @@ public/console.js는 기존 내비게이션 수정 포함 버전에서 스타일
 creator_index.html의 오버레이 링크는 overlay3로 연결합니다.
 station_style.html은 console.html로 이동하는 호환 페이지로 교체합니다.
 이 ZIP의 모든 파일을 같은 경로로 덮어쓰세요.
+
+표시 수정: 기존 크리에이터 ::before 너비/글자/여백 제거, 색상 표식 3px 고정. 기존 텍스트 그림자 및 펀딩/노래방 내부 배경 제거.
