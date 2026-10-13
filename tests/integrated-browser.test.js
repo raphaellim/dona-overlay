@@ -1,3 +1,4 @@
+// Historical V4 fixture. Run the V5 console and alert browser tests for new screens.
 const path=require('path');const projectRoot=path.resolve(__dirname,'..');
 const express=require('express'),http=require('http'),assert=require('node:assert/strict');const {chromium}=require('playwright');
 (async()=>{const app=express();app.use(express.json());let rules={mode:'collab',broadcastId:'b',targets:[{id:'t1',name:'빵떠기',group:'streamer',active:true,aliases:['떠기']},{id:'t2',name:'또영이',group:'streamer',active:true,aliases:['또영']},{id:'t3',name:'C',group:'streamer',active:true,aliases:[]},{id:'t4',name:'국고',group:'other',active:true,aliases:[]}]};let approved=false,manual=0,actualAmount=60000;

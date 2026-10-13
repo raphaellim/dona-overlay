@@ -21,8 +21,9 @@ const io = new Server(httpServer, {
   pingTimeout: 20000,
   perMessageDeflate: false
 });
+io.use((socket,next)=>next(new Error('Use authenticated /ws/collection transport')));
 const PORT = process.env.PORT || 3000;
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '1234';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '';
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -44,7 +45,7 @@ io.on('connection', (socket) => {
 app.get('/api/build-check', (req, res) => {
   res.json({
     ok: true,
-    build: '2026-10-01-oauth-patch'
+    build: '2026-10-13-unified-v5'
   });
 });
 
@@ -224,6 +225,10 @@ const supabase = SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY
 
 app.use(cors());
 app.use(express.json({ limit: '20mb' }));
+let operatorAccounts;
+app.use(async(req,res,next)=>{try{req.namedActor=await operatorAccounts.loadActor(req);if(req.namedActor&&!['/api/operator-login','/api/logout'].includes(req.path)){const st=await getStation(req);if(!st||st.id!==req.namedActor.stationId)return res.status(403).json({error:'다른 방송국 접근 차단'});}next();}catch(e){res.status(503).json({error:'계정 인증 확인 실패 · SQL 설치와 DB 연결을 확인하세요'});}});
+app.use(require('./operator-guard')({supabase,getStationContext,stationAllowed,isMasterRequest}));
+operatorAccounts=require('./operator-accounts')(app,{supabase,getStation,getStationContext,stationAllowed,parseCookies});
 app.use(accessGuard);
 // 업로드 파일명은 timestamp+random으로 유일하므로 장기 브라우저 캐시가 안전합니다.
 // OBS/Prism 재연결 때 같은 슬라이드를 다시 내려받아 API 대역폭을 뺏는 것을 줄입니다.
@@ -1104,8 +1109,8 @@ function clearCookie(res, name) {
 
 function isMasterRequest(req) {
   const cookies = parseCookies(req);
-  const pw = req.headers['x-admin-password'] || req.body?.password || req.query?.password || cookies.admin_password;
-  return pw === ADMIN_PASSWORD;
+  const pw = req.headers['x-admin-password'] || cookies.admin_password;
+  return !!ADMIN_PASSWORD && pw === ADMIN_PASSWORD;
 }
 
 function getStationSlug(req) {
@@ -1228,13 +1233,10 @@ async function stationAllowed(req, station) {
   const given =
   req.headers['x-station-password'] ||
   req.headers['X-Station-Password'] ||
-  req.body?.stationPassword ||
-  req.body?.password ||
-  req.query?.stationPassword ||
-  req.query?.password;
+  req.body?.stationPassword || req.query?.stationPassword;
   const pw = String(station.station_admin_password || '');
 
-  if (!pw) return true;
+  if (!pw) return false;
   if (cookieSlug === slug && cookiePw === pw) return true;
   if (given && String(given) === pw) return true;
   return false;
@@ -1371,6 +1373,9 @@ async function setActiveBroadcast(stationId, id) {
 
 async function broadcastPasswordAllowed(req, broadcast) {
   if (!broadcast) return false;
+  if(req.namedActor)return req.namedActor.stationId===broadcast.station_id;
+  return false; // V5: 공용 방송 비밀번호로 운영 권한을 부여하지 않습니다.
+
   if (!String(broadcast.broadcast_password || '')) return true;
 
   const cookies = parseCookies(req);
@@ -1566,6 +1571,10 @@ const STATION_HTML = new Set([
   '/media_manager.html',
   '/m_media_manager.html',
   '/roulette.html',
+  '/collection-test.html',
+  '/youtube_chat_service.html',
+  '/donation_chat_remote.html',
+  '/donor_history.html',
   '/youtube_chat_remote.html'
 ]);
 
@@ -1577,8 +1586,10 @@ const CREATOR_REMOTE_HTML = new Set([
 // 모바일 운영 페이지는 같은 파일을 권한별 모드로 사용합니다.
 // station_admin/master: 전체 기능, broadcast_manager: 당일 입력/수정 제한모드.
 const MANAGER_HTML = new Set([
+  '/console.html',
   '/collection-review.html',
   '/manager_index.html',
+  '/creator_input.html',
   '/m_admin.html',
   '/m_control.html',
   '/m_roulette.html'
@@ -1662,7 +1673,7 @@ async function accessGuard(req, res, next) {
       if (MANAGER_HTML.has(pathOnly)) {
         // 모바일 운영 페이지는 방송국관리자/크리에이터 또는 당일 방송매니저만 접근합니다.
         // 로그인 없이 셸이 먼저 열리면 페이지 안에서 재로그인 루프가 생길 수 있어 서버에서 먼저 분기합니다.
-        if (await stationAllowed(req, station) || await broadcastPasswordAllowed(req, active)) return next();
+        if (await managerAllowed(req, station, active)) return next();
         return htmlRedirect(res, loginRedirectUrl('/station_login.html?role=manager', station.slug, req, pathOnly));
       }
 
@@ -1686,7 +1697,7 @@ async function accessGuard(req, res, next) {
       // overlay.html은 방송국 token으로 내부 API를 조회해야 화면 데이터가 표시됩니다.
       if (typeof stationTokenAllowed === 'function' && await stationTokenAllowed(req, station)) return next();
 
-      if (pathOnly === '/api/settings' && await managerAllowed(req, station, active)) return next();
+      if (pathOnly === '/api/settings'){if(await managerAllowed(req,station,active))return next();return res.status(403).json({error:'방송국 로그인 또는 오버레이 토큰 필요'});}
 
       if (await viewerAllowed(req, station, active)) return next();
       return res.status(403).json({ error: '시청 권한이 없습니다.' });
@@ -1851,12 +1862,13 @@ function resolveDonationProcessType(body, settings) {
   return raw;
 }
 
+function exactWonInput(value){const n=Number(value??0);if(!Number.isSafeInteger(n)||n<0)throw Error('금액은 0 이상 원 단위 정수여야 합니다.');return n;}
 function makeDonationRow(body, settings, stationId, broadcastId) {
   const donor = normName(body.donor);
   const creator = normName(body.creator);
   const processType = resolveDonationProcessType(body, settings);
-  const accountAmount = body.exactWon === true ? Math.trunc(Number(body.accountAmount)||0) : toWon(body.accountAmount);
-  const toonieAmount = body.exactWon === true ? Math.trunc(Number(body.toonieAmount)||0) : toWon(body.toonieAmount);
+  const accountAmount = body.exactWon === true ? exactWonInput(body.accountAmount) : toWon(body.accountAmount);
+  const toonieAmount = body.exactWon === true ? exactWonInput(body.toonieAmount) : toWon(body.toonieAmount);
   const total = accountAmount + toonieAmount;
 
   if (!donor) throw new Error('도네이터명을 입력하세요.');
@@ -2112,7 +2124,8 @@ function buildSummary(settings, donations, broadcast, station) {
 /* 로그인 */
 app.post('/api/admin-login', (req, res) => {
   const pw = String(req.body?.password || '');
-  if (pw !== ADMIN_PASSWORD) return res.status(401).json({ error: '최고관리자 비밀번호가 틀렸습니다.' });
+  if (!ADMIN_PASSWORD || pw !== ADMIN_PASSWORD) return res.status(401).json({ error: '최고관리자 비밀번호가 틀렸습니다.' });
+  clearCookie(res,'operator_session');
   setCookie(res, 'admin_password', pw, 60 * 60 * 24);
   res.json({ ok: true });
 });
@@ -2125,10 +2138,11 @@ app.post('/api/station-login', async (req, res) => {
     if (!station) return res.status(404).json({ error: '방송국을 찾을 수 없습니다.' });
 
     const pw = String(req.body?.password || '');
-    if (String(station.station_admin_password || '') && pw !== String(station.station_admin_password || '')) {
+    if (!String(station.station_admin_password || '') || pw !== String(station.station_admin_password || '')) {
       return res.status(401).json({ error: '방송국 관리자 비밀번호가 틀렸습니다.' });
     }
 
+    clearCookie(res,'operator_session');
     setCookie(res, 'station_slug', station.slug, 60 * 60 * 24);
     setCookie(res, 'station_admin_password', pw, 60 * 60 * 24);
     res.json({ ok: true, station: stationToClient(station) });
@@ -2138,6 +2152,7 @@ app.post('/api/station-login', async (req, res) => {
 });
 
 app.post('/api/broadcast-login', async (req, res) => {
+  return res.status(410).json({error:'매니저 개인 계정으로 로그인하세요.'});
   try {
     if (!requireDb(res)) return;
     const ctx = await getStationContext(req, res);
@@ -2184,7 +2199,9 @@ app.post('/api/viewer-login', async (req, res) => {
   }
 });
 
-app.post('/api/logout', (req, res) => {
+app.post('/api/logout', async(req, res) => {
+  try{await operatorAccounts.revoke(req);}catch(e){return res.status(503).json({error:'로그아웃 세션 폐기 실패. 다시 시도하세요.'});}
+  clearCookie(res,'operator_session');
   clearCookie(res, 'admin_password');
   clearCookie(res, 'station_slug');
   clearCookie(res, 'station_admin_password');
@@ -4296,7 +4313,10 @@ app.post('/api/station/toonie-widget', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message || '투네 위젯 설정 저장 실패' }); }
 });
 
+app.get('/api/overlay-link-token',async(req,res)=>{try{const ctx=await getStationContext(req,res);if(!ctx)return;if(!await stationAllowed(req,ctx.station))return res.status(403).json({error:'관리자 전용'});res.set('Cache-Control','no-store');res.json({token:ctx.station.overlay_token});}catch(e){res.status(500).json({error:e.message});}});
+const alertCoordinator=require('./alert-coordinator')(app,{supabase,getStationContext,stationAllowed,stationTokenAllowed,readEffectiveSettings});
 const collectionWs=require('./collection-ws')(httpServer,{port:()=>httpServer.address()?.port||PORT});
+alertCoordinator.onChange(slug=>collectionWs.notify(slug,'playback'));
 const notifyCollection=(slug,type,payload)=>{collectionWs.notify(slug,type,payload);if(type==='state')io.to(realtimeRoom(slug)).emit('overlay:changed',{type:'state',at:Date.now()});};
 const collectionReview=require('./collection-review')(app,{supabase,getStationContext,managerAllowed,stationAllowed,ensureActiveBroadcast,readEffectiveSettings,saveEffectiveSettings,makeDonationRow,inputAllowedForActiveBroadcast,notify:notifyCollection,afterApply:async(ctx,settings,candidate,routing,rows)=>{
  notifyCollection(ctx.station.slug,'alert',{id:candidate.id,donationIds:rows.map(r=>r.id),source:candidate.source,donor:routing.donor,title:candidate.title,vip:candidate.vip,amount:candidate.amount,message:candidate.message,receivedAt:candidate.received_at,rows:routing.rows});
@@ -4382,8 +4402,9 @@ app.post('/api/donations/batch', async (req, res) => {
     const settings = await readEffectiveSettings(ctx.station.slug, ctx.active.id);
     const donor = normName(req.body.donor);
     const processType = normName(req.body.processType) || '후원';
-    const accountTotal = toWon(req.body.accountTotal ?? req.body.accountAmountTotal ?? req.body.accountAmount);
-    const toonieTotal = toWon(req.body.toonieTotal ?? req.body.toonationTotal ?? req.body.toonieAmountTotal ?? req.body.toonieAmount);
+    const exactInput=v=>req.body.exactWon===true?exactWonInput(v):toWon(v);
+    const accountTotal = exactInput(req.body.accountTotal ?? req.body.accountAmountTotal ?? req.body.accountAmount);
+    const toonieTotal = exactInput(req.body.toonieTotal ?? req.body.toonationTotal ?? req.body.toonieAmountTotal ?? req.body.toonieAmount);
     const grandTotal = accountTotal + toonieTotal;
     const inputRows = Array.isArray(req.body.rows) ? req.body.rows : [];
 
@@ -4391,7 +4412,7 @@ app.post('/api/donations/batch', async (req, res) => {
     if (grandTotal <= 0) return res.status(400).json({ error: '상단 계좌금액 또는 투네금액을 입력하세요.' });
 
     const validRows = inputRows
-      .map(r => ({ creator: normName(r.creator), amount: toWon(r.amount ?? r.totalAmount ?? r.value), memo: String(r.memo || req.body.memo || '').trim() }))
+      .map(r => ({ creator: normName(r.creator), amount: exactInput(r.amount ?? r.totalAmount ?? r.value), memo: String(r.memo || req.body.memo || '').trim() }))
       .filter(r => r.creator && r.amount > 0);
 
     if (!validRows.length) return res.status(400).json({ error: '크리에이터별 금액을 1개 이상 입력하세요.' });
@@ -4419,6 +4440,7 @@ app.post('/api/donations/batch', async (req, res) => {
       const tooniePart = r.amount - accountPart;
 
       return makeDonationRow({
+        exactWon:true,
         donor,
         creator: r.creator,
         processType,
@@ -4608,9 +4630,10 @@ app.put('/api/donations/:id', async (req, res) => {
 
     const prev = dbRowToDonation(old.data);
     const body = req.body || {};
-    const accountAmount = body.accountAmount !== undefined ? toWon(body.accountAmount) : Number(prev.accountAmount || 0);
-    const toonieAmount = body.toonieAmount !== undefined ? toWon(body.toonieAmount) : Number(prev.toonieAmount || 0);
+    const accountAmount = body.accountAmount !== undefined ? (body.exactWon===true?exactWonInput(body.accountAmount):toWon(body.accountAmount)) : Number(prev.accountAmount || 0);
+    const toonieAmount = body.toonieAmount !== undefined ? (body.exactWon===true?exactWonInput(body.toonieAmount):toWon(body.toonieAmount)) : Number(prev.toonieAmount || 0);
     const nextRow = makeDonationRow({
+      exactWon:true,
       donor: body.donor !== undefined ? body.donor : prev.donor,
       creator: body.creator !== undefined ? body.creator : prev.creator,
       processType: body.processType !== undefined ? body.processType : prev.processType,
@@ -4624,6 +4647,7 @@ app.put('/api/donations/:id', async (req, res) => {
       editedAt: new Date().toISOString()
     }, settings, ctx.station.id, prev.broadcastId || ctx.active.id);
 
+    nextRow.checks=[...(nextRow.checks||[]),...(old.data.checks||[]).filter(x=>x.meta&&x.captureId)];
     const { data, error } = await supabase.from('donations')
       .update({
         donor: nextRow.donor,

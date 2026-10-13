@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ko">
-<head>
+<head><script>if(new URLSearchParams(location.search).get("embedded")!=="1"){const u=new URL("/console.html",location.origin);u.searchParams.set("station",new URLSearchParams(location.search).get("station")||"default");u.searchParams.set("tab","overlay");location.replace(u.href);}</script>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>모바일 미디어 관리</title>
 <link rel="stylesheet" href="/app.css">
@@ -51,5 +51,5 @@ async function loadAll(){settings=await apiX('/api/settings?_ts='+Date.now());in
 ['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('drag')}));['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('drag')}));drop.addEventListener('drop',e=>{fileInput.files=e.dataTransfer.files});
 loadAll().catch(e=>alert(e.message));
 </script>
-</body>
+<script src="/embedded-navigation.js"></script></body>
 </html>

@@ -1,0 +1,2 @@
+const {PGlite}=require('@electric-sql/pglite'),fs=require('fs');
+(async()=>{const db=new PGlite();await db.exec('create role anon;create role authenticated;create table public.stations(id uuid primary key);');await db.exec(fs.readFileSync('sql/unified_v5.sql','utf8'));await db.exec(fs.readFileSync('sql/unified_v5.sql','utf8'));console.log('PASS V5 SQL: schema, constraints, RLS, repeat migration');await db.close();})().catch(e=>{console.error(e);process.exitCode=1;});

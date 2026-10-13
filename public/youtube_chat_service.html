@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ko">
-<head>
+<head><script>if(new URLSearchParams(location.search).get("embedded")!=="1"){const u=new URL("/console.html",location.origin);u.searchParams.set("station",new URLSearchParams(location.search).get("station")||"default");u.searchParams.set("tab","settings");location.replace(u.href);}</script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>운영용 채팅 리모컨</title>
@@ -167,5 +167,5 @@
   const params=new URLSearchParams(location.search);if(params.has('auth')){$('result').textContent=params.get('auth')==='ok'?'계정 연결이 완료되었습니다.':'계정 연결에 실패했습니다.';history.replaceState(null,'',location.pathname+'?station='+encodeURIComponent(station))}
   loadAccounts();
 </script>
-</body>
+<script src="/embedded-navigation.js"></script></body>
 </html>

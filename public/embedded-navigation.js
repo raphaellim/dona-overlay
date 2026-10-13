@@ -1,0 +1,1 @@
+(()=>{if(new URLSearchParams(location.search).get('embedded')!=='1')return;const style=document.createElement('style');style.textContent='.nav,.links,.top>.actions{display:none!important}body{padding-top:8px!important}';document.head.append(style);})();

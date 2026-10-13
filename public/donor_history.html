@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ko">
-<head>
+<head><script>if(new URLSearchParams(location.search).get("embedded")!=="1"){const u=new URL("/console.html",location.origin);u.searchParams.set("station",new URLSearchParams(location.search).get("station")||"default");u.searchParams.set("tab","history");location.replace(u.href);}</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>후원자 전체 이력</title>
@@ -158,5 +158,5 @@ $('#refresh').onclick=load;
 })();
 load().catch(e=>{$('#donorRows').innerHTML=`<tr><td colspan="6" class="empty">${esc(e.message)}</td></tr>`});
 </script>
-</body>
+<script src="/embedded-navigation.js"></script></body>
 </html>

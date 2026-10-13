@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ko">
-<head>
+<head><script>if(new URLSearchParams(location.search).get("embedded")!=="1"){const u=new URL("/console.html",location.origin);u.searchParams.set("station",new URLSearchParams(location.search).get("station")||"default");u.searchParams.set("tab","donations");location.replace(u.href);}</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>후원 입력</title>
@@ -1479,5 +1479,5 @@ window.addEventListener('collection:changed',loadManualSoundQueue);window.addEve
   document.body.appendChild(b);
 })();</script>
 <script src="/integrated-collection.js"></script>
-</body>
+<script src="/embedded-navigation.js"></script></body>
 </html>

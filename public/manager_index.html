@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ko">
-<head>
+<head><script>if(new URLSearchParams(location.search).get("embedded")!=="1"){const u=new URL("/console.html",location.origin);u.searchParams.set("station",new URLSearchParams(location.search).get("station")||"default");u.searchParams.set("tab","operate");location.replace(u.href);}</script>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>매니저 인덱스</title>
 <link rel="stylesheet" href="/app.css">
@@ -30,5 +30,5 @@ let station=null,active=null;function qs(){return '?station='+encodeURIComponent
 async function load(){try{const data=await api('/api/station-info');station=data.station;active=data.active;document.getElementById('title').textContent=(station?.name||getStation())+' 매니저 인덱스';document.getElementById('info').textContent='현재 방송: '+(active?.title||'없음')+' / 방송국 코드: '+(station?.slug||getStation());setHref('mAdmin','/m_admin.html');setHref('mControl','/m_control.html');setHref('mRoulette','/m_roulette.html');setHref('summary','/summary.html');}catch(e){document.getElementById('info').textContent='로그인이 필요합니다.';}}
 load();
 </script>
-</body>
+<script src="/embedded-navigation.js"></script></body>
 </html>

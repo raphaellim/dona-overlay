@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ko">
-<head>
+<head><script>if(new URLSearchParams(location.search).get("embedded")!=="1"){const u=new URL("/console.html",location.origin);u.searchParams.set("station",new URLSearchParams(location.search).get("station")||"default");u.searchParams.set("tab","operate");location.replace(u.href);}</script>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>크리에이터 인덱스</title>
 <link rel="stylesheet" href="/app.css">
@@ -42,5 +42,5 @@ async function load(){try{const data=await api('/api/station-info');station=data
 async function copyOverlay(){const v=document.getElementById('overlayUrl').value;if(!v)return alert('오버레이 URL을 불러오지 못했습니다.');await navigator.clipboard.writeText(v);alert('오버레이 URL 복사 완료');}
 load();
 </script>
-</body>
+<script src="/embedded-navigation.js"></script></body>
 </html>

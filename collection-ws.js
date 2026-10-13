@@ -14,7 +14,7 @@ module.exports=function(server,{port}){
   const r=http.request({host:'127.0.0.1',port:typeof port==='function'?port():port,path,method,headers:{host:req.headers.host,cookie:req.headers.cookie||'',origin:req.headers.origin||'',...headers,'content-type':'application/json','content-length':Buffer.byteLength(bytes)}},res=>{let text='',size=0;res.on('data',chunk=>{size+=chunk.length;if(size>4e6){r.destroy(Error('응답 크기 초과'));return;}text+=chunk;});res.on('end',()=>resolve({status:res.statusCode,body:text,contentType:res.headers['content-type']}));});r.setTimeout(15000,()=>r.destroy(Error('서버 응답 지연')));r.on('error',reject);r.end(bytes);
  });}
  wss.on('connection',(ws,req)=>{
-  ws.alive=true;ws.auth=null;ws.chain=Promise.resolve();let count=0,windowAt=Date.now(),queued=0;
+  ws.alive=true;ws.request=req;ws.auth=null;ws.chain=Promise.resolve();let count=0,windowAt=Date.now(),queued=0;
   const deadline=setTimeout(()=>ws.close(1008,'authentication required'),10000);
   ws.on('pong',()=>ws.alive=true);ws.on('close',()=>clearTimeout(deadline));
   ws.on('message',raw=>{if(Date.now()-windowAt>10000){windowAt=Date.now();count=0;}if(++count>120||++queued>32){ws.close(1008,'rate limit');return;}
@@ -25,7 +25,7 @@ module.exports=function(server,{port}){
        if(!req.headers.origin)throw Error('웹 Origin 필요');
        const station=String(m.station||'default'),authPath='/api/settings?station='+encodeURIComponent(station)+'&token='+encodeURIComponent(String(m.token||''));
        const access=await invoke(req,authPath,'GET');if(access.status!==200){send(ws,{type:'auth-error',code:access.status});ws.close(1008,'login required');return;}
-       ws.auth={kind:'web',station};send(ws,{type:'ready',deploymentVersion});
+       ws.auth={kind:'web',station,authPath};send(ws,{type:'ready',deploymentVersion});
      }else if(['device','toonie','account'].includes(m.kind)){
        const token=String(m.token||'');if(token.length<32||token.length>200)throw Error('연결 토큰 확인 필요');
        const state=await invoke(req,m.kind==='device'?'/api/bank-devices/sync':'/api/collection-ws-auth','POST',{station:m.station,source:m.kind},{[m.kind==='device'?'x-bank-device-token':'x-auto-donation-token']:token});
@@ -38,7 +38,7 @@ module.exports=function(server,{port}){
       const path=String(m.path||''),method=String(m.method||'GET').toUpperCase();
       if(!/^\/api\/[A-Za-z0-9_/?=&%.:+-]+$/.test(path)||!['GET','POST','PUT','PATCH','DELETE'].includes(method)||/\/(?:auth|login|logout)|callback|pair$/.test(path))throw Error('지원하지 않는 요청');
       const h={};for(const key of ['x-station-slug','x-overlay-token','x-station-token','x-broadcast-password'])if(m.headers?.[key])h[key]=String(m.headers[key]).slice(0,300);
-      const result=await invoke(req,path,method,m.body,h);send(ws,{type:'response',id:m.id,...result});return;
+      const target=new URL(path,'http://localhost');if(target.searchParams.has('station')&&target.searchParams.get('station')!==ws.auth.station)throw Error('다른 방송국 요청 차단');if(m.body?.station&&m.body.station!==ws.auth.station)throw Error('다른 방송국 요청 차단');target.searchParams.set('station',ws.auth.station);h['x-station-slug']=ws.auth.station;const result=await invoke(req,target.pathname+target.search,method,m.body,h);send(ws,{type:'response',id:m.id,...result});return;
     }
     if(m.type==='status'&&ws.auth.kind==='device'){const result=await invoke(req,'/api/bank-devices/sync','POST',m.body||{},{'x-bank-device-token':ws.auth.token});const config=JSON.parse(result.body);send(ws,{type:result.status===200?'config':'auth-error',code:result.status,config,error:config.error});if(result.status!==200)ws.close(1008,'device revoked');return;}
     if(m.type==='event'&&ws.auth.kind!=='web'){
@@ -51,7 +51,7 @@ module.exports=function(server,{port}){
  });
  const timer=setInterval(()=>{for(const ws of wss.clients){if(!ws.alive){ws.terminate();continue;}ws.alive=false;ws.ping();}},60000);timer.unref();server.on('close',()=>{clearInterval(timer);wss.close();});
  return {
-  notify(station,type,payload){for(const ws of wss.clients)if(ws.auth?.kind==='web'&&ws.auth.station===station)send(ws,{type:'changed',topic:type,payload:type==='alert'?payload:undefined});},
+  async notify(station,type,payload){for(const ws of wss.clients)if(ws.auth?.kind==='web'&&ws.auth.station===station){try{const access=await invoke(ws.request,ws.auth.authPath,'GET');if(access.status!==200){ws.close(1008,'access revoked');continue;}send(ws,{type:'changed',topic:type,payload:type==='alert'?payload:undefined});}catch{ws.close(1011,'auth unavailable');}}},
   async devicesChanged(){for(const ws of wss.clients)if(ws.auth?.kind==='device'){try{const result=await invoke({headers:{host:'localhost'}},'/api/bank-devices/sync','POST',{}, {'x-bank-device-token':ws.auth.token});const config=JSON.parse(result.body);if(result.status===200){ws.auth.station=config.station;send(ws,{type:'config',config});}else{send(ws,{type:'auth-error',code:result.status,error:config.error});ws.close(1008,'device revoked');}}catch{}}}
  };
 };

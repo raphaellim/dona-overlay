@@ -3766,6 +3766,7 @@ body.shorts-mode #overlayAlertRoot{display:none!important;}
 
 
       function playAlertQueue() {
+  if(window.UNIFIED_ALERTS!==false){alertQueue=[];return;}
         if (alertShowing || !alertQueue.length) return;
 
         alertShowing = true;
@@ -4335,6 +4336,6 @@ function updateBroadcastTimer() {
 
 <script>try{if(new URLSearchParams(location.search).get("bg")==="1") document.body.classList.add("test-bg");}catch(e){}</script>
 
-<script>setInterval(()=>document.querySelectorAll('[data-donation-at]').forEach(e=>{const s=Math.max(0,Math.floor((Date.now()-Date.parse(e.dataset.donationAt))/1000));e.textContent='['+(s<1?'방금 전':s<60?s+'초 전':Math.floor(s/60)+'분 전')+']';}),1000);</script></body>
+<script>setInterval(()=>document.querySelectorAll('[data-donation-at]').forEach(e=>{const s=Math.max(0,Math.floor((Date.now()-Date.parse(e.dataset.donationAt))/1000));e.textContent='['+(s<1?'방금 전':s<60?s+'초 전':Math.floor(s/60)+'분 전')+']';}),1000);</script><script src="/overlay-display.js"></script></body>
 
 </html>

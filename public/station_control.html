@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ko">
-<head>
+<head><script>if(new URLSearchParams(location.search).get("embedded")!=="1"){const u=new URL("/console.html",location.origin);u.searchParams.set("station",new URLSearchParams(location.search).get("station")||"default");u.searchParams.set("tab","operate");location.replace(u.href);}</script>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>방송국 컨트롤</title>
 <link rel="stylesheet" href="/app.css">
@@ -376,5 +376,5 @@ load();
   a.textContent='인덱스';
   document.body.appendChild(a);
 })();</script>
-</body>
+<script src="/embedded-navigation.js"></script></body>
 </html>
