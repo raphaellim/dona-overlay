@@ -1236,6 +1236,10 @@ body,#overlayPanel{font-family:'Noto Sans KR','맑은 고딕',sans-serif!importa
 #v5Alert-comment{flex:0 1 auto!important;min-height:0!important;font-size:20px!important;line-height:24px!important;max-height:48px!important;white-space:normal!important;display:-webkit-box!important;-webkit-line-clamp:2!important;-webkit-box-orient:vertical!important;overflow:hidden!important}
 #v5Alert-split{flex:0 1 auto!important;min-height:0!important;font-size:16px!important;line-height:21px!important;max-height:42px!important;white-space:normal!important;overflow-wrap:anywhere!important}
 #v5Alert-comment:empty,#v5Alert-split:empty{display:none!important}
+
+#overlayPanel>#broadcastTimerBox:not(.hidden){display:flex!important;visibility:visible!important;opacity:1!important;height:auto!important;min-height:30px!important;max-height:none!important;overflow:visible!important}
+#broadcastTimerBox .timer-label{font-family:'Jua',sans-serif!important;font-size:19px!important}
+#broadcastTimerBox .timer-value{font-size:25px!important;line-height:30px!important;font-weight:800!important;font-variant-numeric:tabular-nums!important}
 </style><script>const EFFECT_RULES={star:100000,diamond:300000};if(new URLSearchParams(location.search).get("demo")==="1")window.overlay3Targets=[{name:"국고",group:"other"}];function makeRow(donor){const amount=Number(donor.amount)||0;const tier=amount>=EFFECT_RULES.diamond?'diamond':amount>=EFFECT_RULES.star?'star':'';
  const row=document.createElement('div');row.className='row active '+tier;
  const badge=document.createElement('span');badge.className='badge';badge.setAttribute('aria-hidden','true');
@@ -2178,7 +2182,7 @@ if (amountNum >= 1000000) vipClass = " vip-account vip-100";
 else if (amountNum >= 500000) vipClass = " vip-account vip-50";
 else if (amountNum >= 300000) vipClass = " vip-account vip-30";
 else if (amountNum >= 100000) vipClass = " vip-account vip-10";
-          return window.overlay3MakeRow({name:donor,amount:Number(rawAmount)}).outerHTML.replace('class="row active ' , 'class="roller-item row active ');
+          return window.overlay3MakeRow({name:Array.from(donor).slice(0,4).join(''),amount:Number(rawAmount)}).outerHTML.replace('class="row active ' , 'class="roller-item row active ');
         };
 
         const moveToIndex = (index, useTransition = true) => {
@@ -3072,6 +3076,6 @@ function updateBroadcastTimer() {
 
 <script>try{if(new URLSearchParams(location.search).get("bg")==="1") document.body.classList.add("test-bg");}catch(e){}</script>
 
-<script>setInterval(()=>document.querySelectorAll('[data-donation-at]').forEach(e=>{const s=Math.max(0,Math.floor((Date.now()-Date.parse(e.dataset.donationAt))/1000));e.textContent='['+(s<1?'방금 전':s<60?s+'초 전':Math.floor(s/60)+'분 전')+']';}),1000);</script><script src="/overlay-display.js"></script><script src="/alert-queue.js"></script><script src="/overlay3-alert.js"></script></body>
+<script>setInterval(()=>document.querySelectorAll('[data-donation-at]').forEach(e=>{const s=Math.max(0,Math.floor((Date.now()-Date.parse(e.dataset.donationAt))/1000));e.textContent='['+(s<1?'방금 전':s<60?s+'초 전':Math.floor(s/60)+'분 전')+']';}),1000);</script><script src="/overlay3-display.js"></script><script src="/alert-queue.js"></script><script src="/overlay3-alert.js"></script></body>
 
 </html>

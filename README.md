@@ -74,3 +74,7 @@ ALERT 팝업: 계좌 아래 위치에 absolute로 표시합니다. 계좌 숨김
 타이머: 계좌 위 맨 윗줄. 설정 수신 즉시 화면 계산, 웹소켓 변경 처리의 120ms 대기 제거, 로컬 시간 계산 250ms 간격(추가 네트워크 요청 없음).
 
 타이머/큰 팝업: 타이머 즉시 반영 및 ALERT 높이 180px, 이름29px/금액32px, 줄 분리. 직전 패치에서 public/overlay3.html 교체. 팝업 전환 이전 버전이면 overlay3-alert.js도 교체.
+
+타이머 숨김 충돌 수정: overlay3-display.js 추가, 타이머는 선택/슬라이드 목록과 독립적으로 컨트롤 overlaySections.broadcastTimer ON/OFF를 따릅니다. overlay3.html 및 overlay3-display.js 두 파일을 교체/추가하세요.
+
+후원 콘솔 단일화: 기본 후원 화면에서 수동 입력/승인 대기·보류/최근 입력을 동시 표시. 분배 수정·승인은 대화상자. 계좌 롤링 이름만 4글자로 줄이고 원본 데이터/ALERT 이름은 유지. 적용 파일 public/console.js 및 public/overlay3.html.
