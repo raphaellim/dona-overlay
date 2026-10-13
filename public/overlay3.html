@@ -1204,6 +1204,14 @@ body,#overlayPanel{font-family:'Noto Sans KR','맑은 고딕',sans-serif!importa
 .o3-funding-detail{font-size:16px!important;line-height:20px;color:#c0cedc;font-weight:700;margin-top:2px}
 
 #overlayPanel>#karaokeBox{overflow:visible!important}
+
+.o3-creator-inline{display:flex;align-items:baseline;gap:5px;min-width:0;flex-wrap:wrap}
+.o3-creator-inline .o3-options{display:inline-flex;gap:6px;font-size:16px!important;line-height:21px!important;white-space:nowrap}
+.o3-creator-inline .creator-align-opt{font-size:16px!important}
+#overlayPanel .o3-other{font-size:16px!important;line-height:21px!important;font-weight:700!important;color:#c0cedc!important}
+#allowanceBox{--section-color:#f1ce79!important}
+#allowanceBox .allowance-row{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:8px!important;margin:0!important;padding:0!important;border:0!important;font-size:20px!important;line-height:27px!important;font-weight:800!important}
+#allowanceBox .allowance-positive{color:#ffe39d!important}#allowanceBox .allowance-negative{color:#ff9fbb!important}
 </style><script>const EFFECT_RULES={star:100000,diamond:300000};if(new URLSearchParams(location.search).get("demo")==="1")window.overlay3Targets=[{name:"국고",group:"other"}];function makeRow(donor){const amount=Number(donor.amount)||0;const tier=amount>=EFFECT_RULES.diamond?'diamond':amount>=EFFECT_RULES.star?'star':'';
  const row=document.createElement('div');row.className='row active '+tier;
  const badge=document.createElement('span');badge.className='badge';badge.setAttribute('aria-hidden','true');
@@ -1248,10 +1256,11 @@ body,#overlayPanel{font-family:'Noto Sans KR','맑은 고딕',sans-serif!importa
         <section class="overlay-box notice-box hidden" id="noticeBox">
           <div class="notice-title" id="noticeTitleText">공지</div>
           <div class="notice-text" id="noticeText"></div>
-          <div class="allowance-row" id="allowanceRow">현재용돈 : 0원</div>
+          
         </section>
 
-        <section class="overlay-box karaoke-box hidden" id="karaokeBox">
+        <section class="overlay-box hidden" id="allowanceBox"><div class="allowance-row" id="allowanceRow">현재용돈 : 0원</div></section>
+<section class="overlay-box karaoke-box hidden" id="karaokeBox">
           <div class="karaoke-title" id="karaokeTitleText">노래방 공지 알림판</div>
           <div class="karaoke-notice" id="karaokeNoticeText">노래문의필수</div>
           <div class="karaoke-current" id="karaokeCurrentText">진행중-</div>
@@ -1444,9 +1453,10 @@ body,#overlayPanel{font-family:'Noto Sans KR','맑은 고딕',sans-serif!importa
         settings: {
           ...defaultSettings,
           broadcastLiveData: {live:true},
+          allowanceData:{balance:30000},
           fundingData:{items:[{title:"방송 미션 펀딩",current:620000,target:1000000},{title:"다음 미션",current:10000,target:50000}]},
           notice: "오늘 룰 확인하고 후원해주세요",
-          overlaySections: { account: true, notice: true, creators: true, funding:true, karaoke:true, media: true }
+          overlaySections: { account: true, notice: true, creators: true, funding:true, karaoke:true, allowance:true, media: true }
         },
         accountDonors: [{ donor: "열려", amount: 36000 }, { donor: "이잉", amount: 123400 }],
         creators: [{creator:"빵떠기",total:619600},{creator:"또영이",total:362000},{creator:"국고",total:30000}],
@@ -2105,10 +2115,12 @@ body,#overlayPanel{font-family:'Noto Sans KR','맑은 고딕',sans-serif!importa
   const sections = getOverlaySections(settings);
 
   if (sections.allowance !== true) {
+    document.getElementById("allowanceBox")?.classList.add("hidden");
     el.classList.add("hidden");
     return;
   }
 
+  document.getElementById("allowanceBox")?.classList.remove("hidden");
   el.classList.remove("hidden");
 
   const balance = Number(
@@ -2262,7 +2274,7 @@ const rows=allRows.filter(r=>!others.has(normalizeName(r.creator||r.name||''))).
             return `<span class="creator-align-opt ${signClass(value)}">${escapeHtml(label)}</span>`;
           }).join("");
 
-          return '<article><div class="o3-rank"><em>'+(rank+1)+'</em><span class="o3-rank-name">'+escapeHtml(rawName)+'</span>'+totalHtml+'</div>'+(optionHtml?'<div class="o3-options">'+optionHtml+'</div>':'')+'</article>';
+          return '<article><div class="o3-rank"><em>'+(rank+1)+'</em><div class="o3-creator-inline"><span class="o3-rank-name">'+escapeHtml(rawName)+'</span>'+(optionHtml?'<span class="o3-options">'+optionHtml+'</span>':'')+'</div>'+totalHtml+'</div></article>';
         }).join("")+(otherRows.length?'<div class="o3-other">'+otherRows.map(r=>escapeHtml(normalizeName(r.creator||r.name))+'('+escapeHtml(displayAmount(totalOf(r)))+'원)').join(' · ')+'</div>':'');
       }
 
