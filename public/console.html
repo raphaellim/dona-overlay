@@ -1,1 +1,27 @@
-<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>방송국 운영</title><link rel="stylesheet" href="/console.css"></head><body><header><strong id="stationName">방송국 운영</strong><span id="identity"></span><button id="logout">로그아웃</button></header><nav id="tabs"></nav><main><div id="error" role="status"></div><div id="subnav"></div><section id="content"></section></main><script src="/collection-socket.js"></script><script src="/console.js"></script></body></html>
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#0c1220">
+  <title>방송국 운영 콘솔</title>
+  <link rel="stylesheet" href="/console.css?v=20261013-ui">
+</head>
+<body>
+  <a class="skip-link" href="#content">작업 영역으로 이동</a>
+  <header>
+    <div class="brand-mark" aria-hidden="true">ON</div>
+    <div class="brand-copy"><span class="eyebrow">방송 운영 콘솔</span><strong id="stationName">방송국 운영</strong></div>
+    <span id="identity"></span>
+    <button id="logout" type="button">로그아웃</button>
+  </header>
+  <nav id="tabs" aria-label="주 메뉴"></nav>
+  <main>
+    <div id="error" role="status" aria-live="polite"></div>
+    <div id="subnav" aria-label="상세 메뉴"></div>
+    <section id="content" aria-label="운영 작업 영역"></section>
+  </main>
+  <script src="/collection-socket.js"></script>
+  <script src="/console.js"></script>
+</body>
+</html>
