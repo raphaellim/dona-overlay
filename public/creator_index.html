@@ -24,13 +24,12 @@ body{background:#070b12;color:#e5e7eb}.wrap{max-width:1220px}.dash{display:grid;
       <a id="pcSetting" class="quick" href="/control.html"><b>PC 설정</b><span>오버레이, 공지, 프리셋, 사운드, 노래방 설정</span></a>
       <a id="summary" class="quick" href="/summary.html"><b>합산/정산</b><span>크리에이터별/도네이터별 합계 확인</span></a>
       <a id="roulette" class="quick" href="/roulette.html"><b>룰렛 관리</b><span>참여형 룰렛 리스트와 수동 실행 관리</span></a>
-      <a id="style" class="quick" href="/station_style.html"><b>스타일</b><span>방송국별 컬러/화면 스타일 조정</span></a>
       <a id="media" class="quick" href="/media_manager.html"><b>미디어</b><span>이미지/영상 업로드와 롤링 미디어 관리</span></a>
       <a id="mAdmin" class="quick" href="/m_admin.html"><b>모바일 입력</b><span>휴대폰에서 간단 입력/수정</span></a>
     </div>
   </section>
   <section class="dash">
-    <div class="card"><h2>오버레이 링크</h2><p class="muted">OBS/Prism에는 토큰 포함 URL을 사용합니다.</p><div class="copybox"><input id="overlayUrl" class="input" readonly><button class="btn blue" onclick="copyOverlay()">복사</button></div><a id="overlayTest" class="btn green" style="margin-top:8px" target="_blank" href="/overlay.html">오버레이 테스트</a></div>
+    <div class="card"><h2>오버레이 링크</h2><p class="muted">OBS/Prism에는 토큰 포함 URL을 사용합니다.</p><div class="copybox"><input id="overlayUrl" class="input" readonly><button class="btn blue" onclick="copyOverlay()">복사</button></div><a id="overlayTest" class="btn green" style="margin-top:8px" target="_blank" href="/overlay3.html">오버레이 테스트</a></div>
     <div class="card"><h2>배포 안내</h2><div class="resultBox">크리에이터/매니저 모두 /station_login.html</div><p class="muted">공통 로그인에서 역할만 선택하면 각자 인덱스로 이동합니다. 이제 외부 안내 링크가 단순해집니다.</p></div>
   </section>
 </div>
@@ -38,7 +37,7 @@ body{background:#070b12;color:#e5e7eb}.wrap{max-width:1220px}.dash{display:grid;
 <script src="/common.js"></script>
 <script>
 let station=null, active=null;function slug(){return encodeURIComponent(station?.slug||getStation());}function setHref(id,path){const el=document.getElementById(id);if(el)el.href=path+'?station='+slug();}
-async function load(){try{const data=await api('/api/station-info');station=data.station;active=data.active;document.getElementById('title').textContent=(station?.name||getStation())+' 크리에이터 인덱스';document.getElementById('info').textContent='방송국 코드: '+(station?.slug||getStation())+' / 현재 방송: '+(active?.title||'없음');['stationControl:/station_control.html','pcInput:/admin.html','mCreator:/m_creator.html','pcSetting:/control.html','summary:/summary.html','roulette:/roulette.html','style:/station_style.html','media:/media_manager.html','mAdmin:/m_admin.html'].forEach(x=>{const [id,path]=x.split(':');setHref(id,path)});const overlay=station?.overlayToken?`${location.origin}/overlay.html?station=${encodeURIComponent(station.slug)}&token=${encodeURIComponent(station.overlayToken)}`:'';document.getElementById('overlayUrl').value=overlay;document.getElementById('overlayTest').href=overlay+'&monitor=1&v='+Date.now();}catch(e){document.getElementById('info').textContent='로그인이 필요합니다.';}}
+async function load(){try{const data=await api('/api/station-info');station=data.station;active=data.active;document.getElementById('title').textContent=(station?.name||getStation())+' 크리에이터 인덱스';document.getElementById('info').textContent='방송국 코드: '+(station?.slug||getStation())+' / 현재 방송: '+(active?.title||'없음');['stationControl:/station_control.html','pcInput:/admin.html','mCreator:/m_creator.html','pcSetting:/control.html','summary:/summary.html','roulette:/roulette.html','media:/media_manager.html','mAdmin:/m_admin.html'].forEach(x=>{const [id,path]=x.split(':');setHref(id,path)});const overlay=station?.overlayToken?`${location.origin}/overlay3.html?station=${encodeURIComponent(station.slug)}&token=${encodeURIComponent(station.overlayToken)}`:'';document.getElementById('overlayUrl').value=overlay;document.getElementById('overlayTest').href=overlay+'&monitor=1&v='+Date.now();}catch(e){document.getElementById('info').textContent='로그인이 필요합니다.';}}
 async function copyOverlay(){const v=document.getElementById('overlayUrl').value;if(!v)return alert('오버레이 URL을 불러오지 못했습니다.');await navigator.clipboard.writeText(v);alert('오버레이 URL 복사 완료');}
 load();
 </script>

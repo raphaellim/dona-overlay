@@ -1077,7 +1077,9 @@ body.test-bg{
 <style>
 #optionAlert.option-alert{background:transparent!important;border:0!important;box-shadow:none!important;text-align:center!important;font-weight:900!important;line-height:1.35!important;text-shadow:2px 2px 0 #111,-2px -2px 0 #111,2px -2px 0 #111,-2px 2px 0 #111,0 3px 5px #111!important;color:#fff!important}
 #optionAlert .donation-new-source{color:#44ef81}#optionAlert .donation-new-title{color:#edb94a}#optionAlert .donation-new-name,#optionAlert .donation-new-money{color:#ffad33}#optionAlert .donation-new-badge{background:#c4ffff;color:#087c82;text-shadow:none;font-size:.6em;padding:4px 10px;border-radius:30px}#optionAlert .donation-new-message{font-size:.9em;white-space:pre-wrap;overflow-wrap:anywhere}#optionAlert .donation-new-targets{font-size:.65em;margin-top:8px}
-</style><style>
+</style><style id="overlay3Design">
+@import url('https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@500;600;700;800&display=swap');
+
 *{box-sizing:border-box}body{margin:0;padding:24px;background:transparent;color:#fff;font-family:system-ui,sans-serif}.box{width:min(360px,100%);padding:15px;background:rgba(14,19,31,.92);border:1px solid #b49b59;border-radius:14px}.heading{text-align:center;font-size:18px;color:#f1ce79;font-weight:800;margin-bottom:12px}.viewport{height:64px;overflow:hidden;position:relative}.row{height:64px;display:grid;grid-template-columns:minmax(0,1fr) 52px 105px;gap:8px;align-items:center;padding:0 5px}.name{line-height:32px;font-size:19px;font-weight:800;text-overflow:ellipsis;overflow:hidden;white-space:nowrap}.amount{line-height:32px;text-align:right;font-size:17px;font-weight:800;font-variant-numeric:tabular-nums}.badge{position:relative;width:52px;height:52px;display:grid;place-items:center;overflow:visible;line-height:0;flex-shrink:0}.icon{width:52px;height:52px;display:grid;place-items:center;line-height:0}.icon svg{width:46px;height:46px;display:block}.star .icon{color:#ffd96a}.diamond .icon{font-size:22px}.star .icon{filter:drop-shadow(0 0 7px #ffbe4580)}.diamond .icon{filter:drop-shadow(0 0 9px #35caff99)}.star .name{color:#ffe39d;text-shadow:0 0 8px #ffbd4670}.diamond .name{color:#baf1ff;text-shadow:0 0 9px #4ed6ff80}.star .name,.diamond .name{background-size:240% 100%;background-position:100% 0;-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:none;animation:nameShine 1.8s ease-in-out 2}.star .name{background-image:linear-gradient(110deg,#ffe39d 35%,#fff2cd 50%,#ffe39d 65%)}.diamond .name{background-image:linear-gradient(110deg,#baf1ff 35%,#e3faff 50%,#baf1ff 65%)}@keyframes nameShine{to{background-position:0 0}}.star .amount{color:#ffdc86}.diamond .amount{color:#83e5ff}.spark{position:absolute;width:7px;height:7px;background:#fff4cf;clip-path:polygon(50% 0,63% 37%,100% 50%,63% 63%,50% 100%,37% 63%,0 50%,37% 37%);opacity:0;pointer-events:none}.spark.a{top:0;right:1px}.spark.b{bottom:1px;left:1px}.diamond .spark{background:#e2fbff}.active .spark{animation:twinkle 1.1s ease-in-out 2}.active .spark.b{animation-delay:.3s}@keyframes twinkle{0%,100%{opacity:0;transform:scale(.5)}50%{opacity:1;transform:scale(1.15)}}.row.enter{animation:enter .3s ease-out}.row.exit{animation:exit .25s ease-in forwards}@keyframes enter{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}@keyframes exit{to{opacity:0;transform:translateY(-12px)}}.tools{width:min(360px,100%);margin-top:14px;font-size:13px;color:#9bacbf;background:#151e2e;padding:12px;border-radius:10px}button{background:#f0cd77;border:0;border-radius:7px;padding:8px 12px;cursor:pointer;font-weight:700;margin-top:8px}.overlay .tools{display:none}@media(prefers-reduced-motion:reduce){.active .spark,.row.enter,.row.exit,.star .name,.diamond .name{animation:none}}
 
 /* 기존 통합 오버레이 계좌 줄에 맞춘 컴팩트 배치 */
@@ -1123,7 +1125,55 @@ body{padding:0!important;background:transparent!important}
 .v5Alert-message .amount{font-size:23px!important}
 #v5Alert-comment{font-size:16px!important;line-height:20px!important;max-height:20px!important;white-space:nowrap!important;text-overflow:ellipsis}
 #v5Alert-split{font-size:13px!important;line-height:17px!important;max-height:17px!important;color:#b7dbdf!important;white-space:nowrap!important;text-overflow:ellipsis}
-</style><script>const EFFECT_RULES={star:100000,diamond:300000};function makeRow(donor){const amount=Number(donor.amount)||0;const tier=amount>=EFFECT_RULES.diamond?'diamond':amount>=EFFECT_RULES.star?'star':'';
+
+/* compact v2: 글자 확대, 대기 ALERT 여백 제거 */
+#overlayPanel{gap:3px!important;max-width:calc(100vw - 12px)!important}
+#overlayPanel>.overlay-box{padding:3px 7px!important;border-radius:9px!important}
+#accountBox{padding:3px 7px!important}
+.account-row{height:36px!important;gap:3px!important}
+.roller{height:36px!important}
+.roller-item.row{height:36px!important;min-height:36px!important}
+.roller-item .name{font-size:26px!important;line-height:34px!important}
+.roller-item .amount{font-size:23px!important;line-height:34px!important}
+.account-title::before{font-size:21px!important}
+.notice-title,.funding-title,.karaoke-title,.creator-title{font-size:18px!important;line-height:22px!important;margin:0!important}
+.notice-text,.notice-line{font-size:23px!important;line-height:1.12!important}
+.creator-align-main{font-size:26px!important;padding-right:3px!important}
+.creator-align-total{font-size:.9em!important;margin-left:4px!important}
+.creator-align-opt{font-size:20px!important}
+.creator-align-line{gap:4px!important}
+.creator-item{padding:2px 0!important;margin:0!important}
+.creator-list,.creator-content{gap:2px!important;margin-top:0!important}
+.funding-value{font-size:24px!important}
+.karaoke-current,.karaoke-notice{font-size:22px!important;margin-top:2px!important}
+.karaoke-reserve-title,.karaoke-song-row{margin-top:2px!important;font-size:20px!important}
+.allowance-row{margin-top:2px!important;padding-top:2px!important;font-size:20px!important}
+#v5Alert-alert{height:auto!important;min-height:0!important;padding:4px 7px!important;gap:2px!important;border-radius:9px!important;display:none!important}
+#v5Alert-alert.show{display:flex!important}
+.v5Alert-message .name{font-size:27px!important}
+.v5Alert-message .amount{font-size:25px!important}
+#v5Alert-comment{font-size:19px!important;line-height:23px!important;max-height:23px!important}
+#v5Alert-split{font-size:16px!important;line-height:20px!important;max-height:20px!important}
+
+body,#overlayPanel{font-family:'Noto Sans KR','맑은 고딕',sans-serif!important}
+#overlayPanel,#overlayPanel.v5-combined{gap:0!important;padding:0 7px!important;border:1px solid #91a0b477!important;border-radius:11px!important;background:rgba(10,15,24,.65)!important;box-shadow:none!important;overflow:hidden!important}
+#overlayPanel>.overlay-box{padding:5px 2px 5px 6px!important;background:transparent!important;border:0!important;border-top:1px solid #71849c77!important;border-radius:0!important;position:relative!important;--section-color:#f1ce79}
+#overlayPanel>#accountBox{border-top:0!important}
+#overlayPanel>.overlay-box::before{content:"";position:absolute;left:-7px;top:5px;bottom:5px;width:3px;border-radius:3px;background:var(--section-color)}
+#noticeBox{--section-color:#e5bdff!important}#creatorBox{--section-color:#ffd783!important}#fundingBox{--section-color:#7de0c2!important}#karaokeBox{--section-color:#a9cfff!important}
+.notice-title,.funding-title,.karaoke-title,.creator-title,.account-title::before{font-family:'Jua','맑은 고딕',sans-serif!important;font-weight:700!important;letter-spacing:0!important;color:var(--section-color,#f1ce79)!important}
+.name,.amount,.notice-text,.notice-line,.funding-value{font-family:'Noto Sans KR','맑은 고딕',sans-serif!important;font-weight:800!important;letter-spacing:-.025em!important}
+#creatorList{display:block!important}
+.o3-rank{display:grid;grid-template-columns:19px minmax(0,1fr) auto;gap:4px;align-items:center;padding:2px 0;border-bottom:1px solid #ffffff12;line-height:30px;font-weight:800}
+.o3-rank em{font-size:17px;font-style:normal;color:#ffd777}
+.o3-rank-name{font-size:25px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.o3-rank-money{font-size:23px;color:#fff0b6;white-space:nowrap;font-variant-numeric:tabular-nums}
+.o3-options{font-size:16px;line-height:20px;display:flex;gap:8px;flex-wrap:wrap}
+.o3-other{font-size:25px;font-weight:800;line-height:1.2;color:#fff0b6;overflow-wrap:anywhere;padding-top:3px}
+#v5Alert-alert{font-family:'Noto Sans KR','맑은 고딕',sans-serif!important;background:#47c5dd0b!important;border:0!important;border-top:1px solid #87d8e76b!important;border-bottom:1px solid #87d8e76b!important;border-radius:0!important;padding:5px 2px 5px 6px!important}
+#v5Alert-alert::before{content:"";position:absolute;left:-7px;top:5px;bottom:5px;width:3px;border-radius:3px;background:#8de6ef}
+#v5Alert-comment,#v5Alert-split{font-weight:700}
+</style><script>const EFFECT_RULES={star:100000,diamond:300000};if(new URLSearchParams(location.search).get("demo")==="1")window.overlay3Targets=[{name:"국고",group:"other"}];function makeRow(donor){const amount=Number(donor.amount)||0;const tier=amount>=EFFECT_RULES.diamond?'diamond':amount>=EFFECT_RULES.star?'star':'';
  const row=document.createElement('div');row.className='row active '+tier;
  const badge=document.createElement('span');badge.className='badge';badge.setAttribute('aria-hidden','true');
  const icon=document.createElement('span');icon.className='icon';if(tier==='diamond')icon.innerHTML='<svg viewBox="0 1 24 24" aria-hidden="true"><path fill="#72d8ff" d="M6 4h12l5 6-11 12L1 10z"/><path fill="#c5f2ff" d="M6 4l6 6H1zm12 0l-6 6h11z"/><path fill="#39aee9" d="M1 10h11v12zm11 0h11L12 22z"/><path fill="#91e9ff" d="M6 4h12l-6 6z"/></svg>';else if(tier==='star')icon.innerHTML='<svg viewBox="0 -0.5 24 24" aria-hidden="true"><path fill="#ffd96a" d="M12 2l3.1 6.3 6.9 1-5 4.9 1.2 6.8-6.2-3.2L5.8 21 7 14.2l-5-4.9 6.9-1z"/></svg>';badge.append(icon);
@@ -1181,7 +1231,7 @@ body{padding:0!important;background:transparent!important}
 
 
 
-        <section class="overlay-box creator-box" id="creatorBox">
+        <section class="overlay-box creator-box" id="creatorBox"><div class="creator-title">방송인 후원 순위</div>
           <div class="creator-list" id="creatorList"></div>
         </section>
       </div>
@@ -1203,6 +1253,7 @@ body{padding:0!important;background:transparent!important}
     let mission30SoundPlayed = false;
     let missionCountdownLastSec = null;
     (() => {
+      window.addEventListener('overlay3:targets',()=>refresh());
       const API_SUMMARY = "/api/overlay-state";
       const API_SUMMARY_FALLBACK = "/api/summary";
       const API_SETTINGS = "/api/settings";
@@ -1366,7 +1417,7 @@ body{padding:0!important;background:transparent!important}
           overlaySections: { account: true, notice: true, creators: true, media: true }
         },
         accountDonors: [{ donor: "열려", amount: 36000 }, { donor: "이잉", amount: 123400 }],
-        creators: [],
+        creators: [{creator:"빵떠기",total:619600},{creator:"또영이",total:362000},{creator:"국고",total:30000}],
         donations: []
       };
 
@@ -2168,18 +2219,15 @@ else if (amountNum >= 100000) vipClass = " vip-account vip-10";
     .map((name, idx) => [normalizeName(name), idx])
 );
 
-const rows = (Array.isArray(creators) ? creators : [])
-  .slice()
-  .sort((a, b) => {
-    const an = normalizeName(a.creator || a.name || "");
-    const bn = normalizeName(b.creator || b.name || "");
-    return (creatorOrder.get(an) ?? 9999) - (creatorOrder.get(bn) ?? 9999);
-  })
-  .slice(0, 5);
+const totalOf=r=>num(r.total??r.totalAmount??r.total_amount??r.amount??0);
+const others=new Set((window.overlay3Targets||[]).filter(t=>t.group==='other').map(t=>normalizeName(t.name)));
+const allRows=Array.isArray(creators)?creators:[];
+const otherRows=allRows.filter(r=>others.has(normalizeName(r.creator||r.name||'')));
+const rows=allRows.filter(r=>!others.has(normalizeName(r.creator||r.name||''))).slice().sort((a,b)=>totalOf(b)-totalOf(a)||(creatorOrder.get(normalizeName(a.creator||a.name))??9999)-(creatorOrder.get(normalizeName(b.creator||b.name))??9999));
         const visiblePresets = (enabledPresets || []).filter(p => p.enabled !== false);
         const showDonation = (typeof showCreatorDonations === "undefined") ? true : showCreatorDonations;
 
-        if (!rows.length) {
+        if (!rows.length && !otherRows.length) {
           $list.innerHTML = "";
           return;
         }
@@ -2223,30 +2271,20 @@ const rows = (Array.isArray(creators) ? creators : [])
           return "muted";
         }
 
-        $list.innerHTML = rows.map(row => {
+        $list.innerHTML = rows.map((row,rank) => {
           const rawName = normalizeName(row.creator || row.name || "익명");
           const shortName = Array.from(rawName).slice(0, 4).join("") || "익명";
           const total = displayManAmount(row.total ?? row.totalAmount ?? row.total_amount ?? row.amount ?? 0);
 
-          const totalHtml = showDonation
-            ? `<span class="creator-align-total">(${escapeHtml(total)})</span>`
-            : "";
-
+          const totalHtml=showDonation?'<strong class="o3-rank-money">'+escapeHtml(displayAmount(totalOf(row)))+'원</strong>':'';
           const optionHtml = visiblePresets.map(preset => {
             const value = presetNetValue(row, preset);
             const label = signedText(presetShortName(preset), value);
             return `<span class="creator-align-opt ${signClass(value)}">${escapeHtml(label)}</span>`;
           }).join("");
 
-          return `
-        <article class="creator-item creator-align-item ${showDonation ? "with-total" : "no-total"}">
-          <div class="creator-align-line" style="--preset-count:${visiblePresets.length || 1}">
-            <span class="creator-align-main">${escapeHtml(shortName)}${totalHtml}</span>
-            <span class="creator-align-options">${optionHtml}</span>
-          </div>
-        </article>
-      `;
-        }).join("");
+          return '<article><div class="o3-rank"><em>'+(rank+1)+'</em><span class="o3-rank-name">'+escapeHtml(rawName)+'</span>'+totalHtml+'</div>'+(optionHtml?'<div class="o3-options">'+optionHtml+'</div>':'')+'</article>';
+        }).join("")+(otherRows.length?'<div class="o3-other">'+otherRows.map(r=>escapeHtml(normalizeName(r.creator||r.name))+'('+escapeHtml(displayAmount(totalOf(r)))+'원)').join(' · ')+'</div>':'');
       }
 
       function donationWon(row) {
@@ -2886,10 +2924,12 @@ function updateBroadcastTimer() {
         document.body.classList.toggle("broadcast-not-live", !isLive);
         const idle = document.getElementById("overlayIdleScreen");
         if (idle) idle.textContent = liveData.status === "ended" ? "방송 종료" : "시스템설정";
-        applyStationStyle(settings);
-        applyLuxuryTheme(settings);
+        // Overlay3 uses the approved fixed design; style-page overrides are not applied.
+
         cacheSoundRules(settings);
         enabledPresets = getEnabledPresets(settings);
+        const creatorTitle=document.querySelector('#creatorBox .creator-title');
+        if(creatorTitle)creatorTitle.textContent=settings.title||'방송인 후원 순위';
         const creators = data.creators && data.creators.length ? data.creators : zeroCreatorsFromSettings(settings);
 
         const signature = JSON.stringify({
