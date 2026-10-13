@@ -1188,6 +1188,10 @@ body,#overlayPanel{font-family:'Noto Sans KR','맑은 고딕',sans-serif!importa
 #overlayPanel .karaoke-notice{color:#fff!important}
 #overlayPanel .o3-rank,#overlayPanel .o3-other,#overlayPanel .o3-options{color:#fff!important}
 #overlayPanel .o3-rank-money,#overlayPanel .o3-other{color:#fff0b6!important}
+
+/* 제목 옆 구분선: 통합박스 예제와 동일 */
+#overlayPanel .notice-title,#overlayPanel .funding-title,#overlayPanel .karaoke-title,#overlayPanel .creator-title{display:flex!important;align-items:center!important;gap:6px!important;width:100%!important;min-width:0!important}
+#overlayPanel .notice-title::after,#overlayPanel .funding-title::after,#overlayPanel .karaoke-title::after,#overlayPanel .creator-title::after{content:""!important;display:block!important;position:static!important;flex:1 1 18px!important;min-width:18px!important;height:1px!important;margin:0!important;padding:0!important;border:0!important;background:linear-gradient(90deg,rgba(255,255,255,.4),rgba(255,255,255,.08))!important;box-shadow:none!important}
 </style><script>const EFFECT_RULES={star:100000,diamond:300000};if(new URLSearchParams(location.search).get("demo")==="1")window.overlay3Targets=[{name:"국고",group:"other"}];function makeRow(donor){const amount=Number(donor.amount)||0;const tier=amount>=EFFECT_RULES.diamond?'diamond':amount>=EFFECT_RULES.star?'star':'';
  const row=document.createElement('div');row.className='row active '+tier;
  const badge=document.createElement('span');badge.className='badge';badge.setAttribute('aria-hidden','true');
