@@ -19,23 +19,23 @@ function startToonieCollector({listSources,ingest}){
  const sources=new Map();let browser,syncing=false;
  const {chromium}=require('playwright');
  async function close(slug){const state=sources.get(slug);sources.delete(slug);if(state)await state.context.close().catch(()=>{});}
- async function open(slug,url){
+ async function open(slug,url,session){
  if(!browser||!browser.isConnected())browser=await chromium.launch({headless:true,args:['--no-sandbox']});
  const context=await browser.newContext(),page=await context.newPage();
- const state={context,url,status:'connecting',pending:[],sending:false};sources.set(slug,state);
+ const state={context,url,sessionKey:session.broadcastId+'|'+session.startedAt,status:'connecting',pending:[],sending:false};sources.set(slug,state);
  async function drain(){if(state.sending)return;state.sending=true;try{while(state.pending.length){await ingest(state.pending[0]);state.pending.shift();}}catch(e){console.warn('Toonie queue save failed',slug,e.message);}finally{state.sending=false;}}
  state.drain=drain;
  page.on('websocket',ws=>{
  if(!/^wss:\/\/(?:ws\.toon\.at|toon\.at)(?::\d+)?\//.test(ws.url()))return;
  state.status='connected';ws.on('close',()=>{state.status='disconnected';});ws.on('socketerror',()=>{state.status='disconnected';});
- ws.on('framereceived',frame=>{const parsed=parsePacket(frame.payload);if(!parsed)return;state.pending.push({...parsed,station:slug,eventId:'widget:'+crypto.randomUUID(),receivedAt:new Date().toISOString()});drain();});
+ ws.on('framereceived',frame=>{const parsed=parsePacket(frame.payload);if(!parsed)return;state.pending.push({...parsed,station:slug,broadcastId:session.broadcastId,eventId:'widget:'+crypto.randomUUID(),receivedAt:new Date().toISOString()});drain();});
  });
  try{await page.goto(url,{waitUntil:'domcontentloaded',timeout:30000});}catch(e){await close(slug);throw e;}
  }
  async function sync(){if(syncing)return;syncing=true;try{
- const wanted=new Map((await listSources()).map(x=>[x.slug,validWidgetUrl(x.url)]).filter(x=>x[1]));
- for(const [slug,state]of sources){await state.drain();if(wanted.get(slug)!==state.url||state.status==='disconnected')await close(slug);}
- for(const [slug,url]of wanted)if(!sources.has(slug)){try{await open(slug,url);}catch(e){console.warn('Toonie widget connect failed',slug,e.message);}}
+ const wanted=new Map((await listSources()).map(x=>[x.slug,{...x,url:validWidgetUrl(x.url)}]).filter(x=>x[1].url));
+ for(const [slug,state]of sources){const target=wanted.get(slug);if(!target||target.url!==state.url||target.broadcastId+'|'+target.startedAt!==state.sessionKey||state.status==='disconnected'){state.pending.length=0;await close(slug);}else await state.drain();}
+ for(const [slug,session]of wanted)if(!sources.has(slug)){try{await open(slug,session.url,session);}catch(e){console.warn('Toonie widget connect failed',slug,e.message);}}
  }catch(e){console.warn('Toonie sync failed',e.message);}finally{syncing=false;}}
  setTimeout(sync,3000);setInterval(sync,15000);
  return {sync,status:slug=>sources.get(slug)?.status||'disconnected'};

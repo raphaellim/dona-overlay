@@ -16,7 +16,7 @@ module.exports=function(app,d){
   // A new broadcast always starts in review mode, even if a legacy station was solo.
   if(!data)c.mode='collab';return {...c,broadcastId:active.id};
  }
- async function prepare(source,b,station){const active=await ensureActiveBroadcast(station.id),cfg=await config(station,active);const routing=classify({...b,source},cfg);return {routing,broadcast_id:active.id,status:routing.state==='hold'?'hold':'pending'};}
+ async function prepare(source,b,station,boundActive){const active=boundActive||await ensureActiveBroadcast(station.id),cfg=await config(station,active);const routing=classify({...b,source},cfg);return {routing,broadcast_id:active.id,status:routing.state==='hold'?'hold':'pending'};}
  async function apply(candidate,ctx,routing){
   if(candidate.broadcast_id!==ctx.active.id)throw Error('이전 방송에서 수집된 내역 · 해당 방송으로 전환하여 확인하세요');
   if(!await inputAllowedForActiveBroadcast(ctx))throw Error('방송시작 상태에서만 반영 가능');

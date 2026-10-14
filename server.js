@@ -799,7 +799,8 @@ function normalizeBroadcastLiveData(raw) {
     status,
     live: status === 'live' || value.live === true,
     startedAt: value.startedAt ? String(value.startedAt) : '',
-    endedAt: value.endedAt ? String(value.endedAt) : ''
+    endedAt: value.endedAt ? String(value.endedAt) : '',
+    collectionStartedAt: value.collectionStartedAt ? String(value.collectionStartedAt) : ''
   };
 }
 
@@ -2432,6 +2433,9 @@ app.post('/api/broadcasts/:id/activate', async (req, res) => {
     if (!allowed) return res.status(401).json({ error: '방송국 관리자 권한이 필요합니다.' });
 
     const data = await setActiveBroadcast(station.id, req.params.id);
+    const current=await readEffectiveSettings(station.slug,data.id);
+    await saveEffectiveSettings(station.slug,data.id,{broadcastLiveData:{...current.broadcastLiveData,collectionStartedAt:new Date().toISOString()}});
+    toonieCollector?.sync();
 
     // 해당 방송 비밀번호로 활성화했다면 쿠키도 저장
     const given = req.body?.broadcastPassword || req.body?.password || req.query?.broadcastPassword || req.query?.password;
@@ -3608,7 +3612,7 @@ app.post('/api/broadcast-timer/start', async (req, res) => {
     const activeBroadcast = await setActiveBroadcast(ctx.station.id, broadcastId);
 
     const current = await readEffectiveSettings(ctx.station.slug, broadcastId);
-    const broadcastLiveData = normalizeBroadcastLiveData({ status: 'live', live: true, startedAt: new Date().toISOString(), endedAt: '' });
+    const broadcastLiveData = normalizeBroadcastLiveData({ status: 'live', live: true, startedAt: new Date().toISOString(), collectionStartedAt:new Date().toISOString(), endedAt: '' });
     await saveEffectiveSettings(ctx.station.slug, broadcastId, { ...current, broadcastLiveData });
 
     const given = req.body?.broadcastPassword || req.body?.password || req.query?.broadcastPassword || req.query?.password;
@@ -3616,6 +3620,7 @@ app.post('/api/broadcast-timer/start', async (req, res) => {
       setCookie(res, `broadcast_pw_${target.id}`, String(given), 60 * 60 * 24);
     }
 
+    toonieCollector?.sync();
     res.json({ ok: true, broadcastId, active: broadcastToClient(activeBroadcast), broadcastLiveData });
   } catch (e) {
     res.status(500).json({ error: e.message || '방송 시작 실패' });
@@ -3650,6 +3655,7 @@ app.post('/api/broadcast-timer/end', async (req, res) => {
       setCookie(res, `broadcast_pw_${target.id}`, String(given), 60 * 60 * 24);
     }
 
+    toonieCollector?.sync();
     res.json({ ok: true, broadcastId, broadcastLiveData });
   } catch (e) {
     res.status(500).json({ error: e.message || '방송 종료 실패' });
@@ -4322,7 +4328,7 @@ const collectionReview=require('./collection-review')(app,{supabase,getStationCo
  notifyCollection(ctx.station.slug,'alert',{id:candidate.id,donationIds:rows.map(r=>r.id),source:candidate.source,donor:routing.donor,title:candidate.title,vip:candidate.vip,amount:candidate.amount,message:candidate.message,receivedAt:candidate.received_at,rows:routing.rows});
  try{if(routing.fundingId){const current=await readEffectiveSettings(ctx.station.slug,ctx.active.id),fundingData=normalizeFundingData(current.fundingData),item=fundingData.items.find(f=>f.id===routing.fundingId);if(item){item.current=Number(item.current||0)+Math.floor(Number(candidate.amount)/10000);await saveSharedStationSettings(ctx.station.slug,{fundingData});}}nightbotChat.enqueue(ctx.station.slug,rows,settings.nightbotChat);await maybeSendDonationYoutubeChat(ctx,settings,routing.donor,candidate.source==='account'?candidate.amount:0,candidate.source==='toonie'?candidate.amount:0,rows);await maybeStartAutoRoulette(ctx,candidate.amount,routing.donor,routing);}catch(e){console.error('수집 후원 부가 전송 실패:',e.message);}
 }});
-const collectionCapture=require('./capture-test')(app,{supabase,getStation,getStationContext,managerAllowed,stationAllowed,review:collectionReview,notify:notifyCollection});
+const collectionCapture=require('./capture-test')(app,{supabase,getStation,getStationContext,managerAllowed,stationAllowed,review:collectionReview,notify:notifyCollection,ensureActiveBroadcast,readEffectiveSettings});
 require('./bank-devices')(app,{supabase,getStation,getStationContext,stationAllowed,isMasterRequest,saveAccount:collectionCapture.saveAccount,changed:()=>collectionWs.devicesChanged()});
 
 // 휴대폰 은행 알림 또는 투네이션 위젯 수집기에서 전달하는 자동 후원.
@@ -4719,7 +4725,9 @@ async function listToonieSources() {
     .in('id', sources.map(x => x.station_id));
   if (stationError) throw stationError;
   const byId = new Map((stations || []).map(x => [x.id, x.slug]));
-  return sources.filter(x => byId.has(x.station_id)).map(x => ({ slug: byId.get(x.station_id), url: x.widget_url }));
+  const liveSources=[];
+  for(const source of sources){const slug=byId.get(source.station_id);if(!slug)continue;const active=await ensureActiveBroadcast(source.station_id);const settings=await readEffectiveSettings(slug,active.id);const live=settings.broadcastLiveData;if(live?.live===true&&live.status==='live')liveSources.push({slug,url:source.widget_url,broadcastId:active.id,startedAt:live.collectionStartedAt||live.startedAt});}
+  return liveSources;
 }
 
 // 선택 현황 주기 자동전송.
