@@ -57,7 +57,17 @@ async function refreshWorkspaceLists(generation=navigationVersion){
 const workspaceStyle=document.createElement('style');workspaceStyle.textContent='.donation-workspace{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}.donation-workspace>section{min-width:0}.workspace-history{grid-column:1/-1}#reviewPane,#recentPane{max-height:55vh;overflow:auto}#candidateDialog{width:min(620px,95vw);max-height:90vh;overflow:auto;border:1px solid #526782;border-radius:12px;background:#152031;color:#fff}#candidateDialog::backdrop{background:#0009}@media(max-width:800px){.donation-workspace{grid-template-columns:1fr}.workspace-history{grid-column:auto}}';document.head.append(workspaceStyle);
 
 const PAGE_META={home:['운영 홈','방송에 필요한 작업을 한곳에서 시작하세요.'],donations:['후원 관리','수동 입력, 자동 수집 승인, 최근 내역을 한 화면에서 관리하세요.'],operate:['방송 운영','현재 방송과 참여자를 선택하고 타이머·룰렛을 실행하세요.'],overlay:['오버레이','기본 오버레이3의 표시 항목과 알림·미디어를 설정하세요.'],history:['내역·정산','후원 내역과 작업 기록을 확인하세요.'],settings:['연결·설정','매니저 계정, 은행 기기, 투네와 외부 채팅을 연결하세요.']};
-function setPageIntro(key){const meta=PAGE_META[key]||PAGE_META.home;$('pageTitle').textContent=meta[0];$('pageDescription').textContent=meta[1];$('pageEyebrow').textContent=key==='home'?'BROADCAST WORKSPACE':'방송국 운영';}
+function setPageIntro(key){
+ // Older console HTML can remain open across a deployment; upgrade its heading in place.
+ if(!$('pageTitle')||!$('pageDescription')||!$('pageEyebrow')){
+  const main=document.querySelector('main');if(!main)return;
+  let intro=main.querySelector('.page-intro');if(!intro){intro=document.createElement('section');intro.className='page-intro';main.insertBefore(intro,$('subnav')||$('content')||null);}
+  intro.innerHTML='<div><span id="pageEyebrow" class="eyebrow"></span><h1 id="pageTitle"></h1><p id="pageDescription"></p></div><span class="workspace-badge">방송국 전용 공간</span>';
+  document.body.classList.add('console-app');
+ }
+ const meta=PAGE_META[key]||PAGE_META.home;
+ for(const [id,value]of [['pageTitle',meta[0]],['pageDescription',meta[1]],['pageEyebrow',key==='home'?'BROADCAST WORKSPACE':'방송국 운영']]){const el=$(id);if(el)el.textContent=value;}
+}
 function jumpTo(key,sub=''){const btn=[...$('tabs').children].find(b=>b.dataset.tab===key);if(!btn)return;btn.click();if(sub){const timer=setInterval(()=>{if(tab!==key){clearInterval(timer);return;}const target=[...$('subnav').children].find(b=>b.textContent===sub);if(target){clearInterval(timer);target.click();}},50);setTimeout(()=>clearInterval(timer),3000);}}
 async function home(generation=navigationVersion){
  const admin=user.role==='station_admin';
