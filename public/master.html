@@ -121,7 +121,7 @@ async function regen(id){
   try{await masterApi('/api/stations/'+id+'/token',{method:'POST'}); alert('토큰 재생성 완료'); await load();}catch(e){alert(e.message)}
 }
 async function copyOverlay(slug,token){
-  const url=`${location.origin}/overlay.html?station=${encodeURIComponent(slug)}&token=${encodeURIComponent(token)}`;
+  const url=`${location.origin}/overlay3.html?station=${encodeURIComponent(slug)}&token=${encodeURIComponent(token)}`;
   await navigator.clipboard.writeText(url);
   alert('복사 완료');
 }

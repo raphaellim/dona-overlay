@@ -81,7 +81,7 @@
       <a href="/creator_detail.html">크리에이터 전체</a>
       <a href="/donor_history.html">후원자 전체이력</a>
       <a href="/donations.html">전체 입력</a>
-      <a href="/overlay.html" target="_blank">OBS화면</a>
+      <a href="/overlay3.html" target="_blank">OBS화면</a>
     </div>
   </div>
 
@@ -703,7 +703,7 @@ window.addEventListener('beforeunload', ()=>{ if(fallbackTimer) clearInterval(fa
 
 <script>(function(){
   var path=location.pathname;
-  if(path==='/overlay.html') return;
+  if(path==='/overlay3.html') return;
   var st=new URLSearchParams(location.search).get('station')||localStorage.getItem('STATION_SLUG')||'default';
   var a=document.createElement('a');
   a.className='quick-index-link';

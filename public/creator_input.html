@@ -654,7 +654,7 @@ async function loadAll(showToast){
 }
 function switchTab(id){$$('.tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===id));$$('.panel').forEach(p=>p.classList.toggle('active',p.id===id));if(id==='roulette')refreshRouletteOnly()}
 $('#tabs').addEventListener('click',e=>{const b=e.target.closest('.tab');if(b)switchTab(b.dataset.tab)});
-function openOverlay(){const token=settings?.station?.overlayToken||station?.overlayToken||'';if(!token)return showError('오버레이',Object.assign(new Error('방송매니저 권한에서는 오버레이 토큰을 볼 수 없습니다.'),{status:'FORBIDDEN'}));window.open(`/overlay.html?station=${encodeURIComponent(STATION)}&token=${encodeURIComponent(token)}&monitor=1&v=${Date.now()}`,'_blank')}
+function openOverlay(){const token=settings?.station?.overlayToken||station?.overlayToken||'';if(!token)return showError('오버레이',Object.assign(new Error('방송매니저 권한에서는 오버레이 토큰을 볼 수 없습니다.'),{status:'FORBIDDEN'}));window.open(`/overlay3.html?station=${encodeURIComponent(STATION)}&token=${encodeURIComponent(token)}&monitor=1&v=${Date.now()}`,'_blank')}
 function openSummary(){window.open(`/summary.html?station=${encodeURIComponent(STATION)}&v=${Date.now()}`,'_blank')}
 function bindMissionInputs(){['missionLabel','missionMode','missionTimeoutMin','missionTargetAt'].forEach(id=>{const el=$('#'+id);if(el&&!el.dataset.boundMission){el.dataset.boundMission='1';el.addEventListener('input',()=>setMissionDirty(true));el.addEventListener('change',()=>{setMissionDirty(true);renderMissionModeHelp()});}})}
 async function init(){try{hideLoginGate();await loadAll(false);bindMissionInputs();startRouletteAutoRefresh();startMissionClock();hideLoginGate();await loadRecent()}catch(e){hideLoginGate();showError('초기 로딩',e)}}

@@ -30,7 +30,7 @@ body{background:#070b12;color:#e5e7eb}.wrap{max-width:1220px;margin:0 auto;paddi
       <a id="styleLink" target="_blank" href="/station_style.html">스타일</a>
       <a id="mediaLink" target="_blank" href="/media_manager.html">미디어</a>
       <a id="mMediaLink" target="_blank" href="/m_media_manager.html">모바일 미디어</a>
-      <a id="overlayLink" target="_blank" href="/overlay.html">오버레이 TEST</a>
+      <a id="overlayLink" target="_blank" href="/overlay3.html">오버레이 TEST</a>
     </div>
   </div>
   <div class="grid">
@@ -113,7 +113,7 @@ function setLinks(){
 
   const overlayLink = document.getElementById('overlayLink');
   if (overlayLink && station?.overlayToken) {
-    overlayLink.href = `/overlay.html?station=${encodeURIComponent(station.slug)}&token=${encodeURIComponent(station.overlayToken)}&monitor=1&v=${Date.now()}`;
+    overlayLink.href = `/overlay3.html?station=${encodeURIComponent(station.slug)}&token=${encodeURIComponent(station.overlayToken)}&monitor=1&v=${Date.now()}`;
   }
 }
 
@@ -368,7 +368,7 @@ load();
 
 <script>(function(){
   var path=location.pathname;
-  if(path==='/overlay.html') return;
+  if(path==='/overlay3.html') return;
   var st=new URLSearchParams(location.search).get('station')||localStorage.getItem('STATION_SLUG')||'default';
   var a=document.createElement('a');
   a.className='quick-index-link';

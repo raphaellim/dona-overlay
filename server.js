@@ -1658,7 +1658,7 @@ async function accessGuard(req, res, next) {
       }
 
       // overlay는 관리자 로그인 여부와 상관없이 방송국 토큰이 있어야만 접근 허용
-      if (['/overlay.html','/overlay2.html','/overlay2_fixed.html','/overlay_luxury_api.html','/overlay_shorts.html','/donation-alert.html'].includes(pathOnly)) {
+      if (['/overlay.html','/overlay3.html','/overlay2.html','/overlay2_fixed.html','/overlay_luxury_api.html','/overlay_shorts.html','/donation-alert.html'].includes(pathOnly)) {
         if(pathOnly==='/donation-alert.html'&&req.query.demo==='1')return next();
         if (await stationTokenAllowed(req, station)) return next();
         return res.status(403).send('오버레이 토큰이 필요합니다.');
