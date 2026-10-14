@@ -4087,6 +4087,12 @@ function buildOverlayState(settings, donations) {
   };
 }
 
+
+async function readAccountReceipts(stationId,broadcastId){
+ const out=[];for(let offset=0;;offset+=1000){const {data,error}=await supabase.from('donation_capture_candidates').select('id,source,status,donor,amount,received_at,routing,title,message').eq('station_id',stationId).eq('broadcast_id',broadcastId).eq('source','account').contains('routing',{receiptFirst:true}).neq('status','dismissed').order('received_at').order('id').range(offset,offset+999);if(error)throw error;out.push(...(data||[]));if((data||[]).length<1000)return out;}
+}
+async function readAccountLedger(stationId,broadcastId,donations){return require('./account-receipts').ledgerRows(donations,await readAccountReceipts(stationId,broadcastId));}
+
 app.get('/api/overlay-state', async (req, res) => {
   try {
     if (!requireDb(res)) return;
@@ -4105,7 +4111,7 @@ app.get('/api/overlay-state', async (req, res) => {
     ]);
 
     res.set('Cache-Control', 'no-store');
-    res.json(buildOverlayState(settings, donations));
+    const state=buildOverlayState(settings,donations);const receipts=await readAccountReceipts(ctx.station.id,broadcastId);const ledger=require('./account-receipts').ledgerRows(donations,receipts);state.accountDonors=require('./account-receipts').donorRows(ledger,{normalize:normName,aggregate:aggregateWon,format:displayManText}).slice(0,10);state.donations.push(...receipts.filter(r=>r.status!=='dismissed').slice(-160).map(r=>({id:'receipt:'+r.id,captureId:r.id,createdAt:r.received_at,receivedAt:r.received_at,donor:r.routing.receiptDonor||r.donor,creator:'',accountAmount:Number(r.amount),toonieAmount:0,totalAmount:Number(r.amount),title:r.title||'',message:r.message||'',silentAlert:false,receiptOnly:true})));res.json(state);
   } catch (e) {
     console.error('[api/overlay-state]', e);
     res.status(500).json({ error: e.message || '오버레이 상태 조회 실패' });
@@ -4193,7 +4199,7 @@ app.get('/api/summary', async (req, res) => {
   }
 });
 
-async function maybeSendDonationYoutubeChat(ctx, settings, donor, accountTotal, toonieTotal, createdRows) {
+async function maybeSendDonationYoutubeChat(ctx, settings, donor, accountTotal, toonieTotal, createdRows, options={}) {
   try {
     const cfg = await readServiceDonationAuto(ctx.station.slug);
     if (!cfg.enabled || !cfg.liveUrl || !cfg.accountId || !youtubeChatService.configured()) return;
@@ -4212,7 +4218,7 @@ async function maybeSendDonationYoutubeChat(ctx, settings, donor, accountTotal, 
 
     const donations = await readDonations(ctx.station.id, ctx.active.id);
     const cumulativeMessages = buildCumulativeChatMessages(settings, donations);
-    const accountDonorMessages = buildAccountDonorChatMessages(donations);
+    const accountDonorMessages = buildAccountDonorChatMessages(await readAccountLedger(ctx.station.id,ctx.active.id,donations));
 
     const fill = (tpl, values) => String(tpl || '').replace(/\{(후원자|금액|방식|분배|누적)\}/g, (_, key) => values[key] ?? '');
     const cumulativeInline = cumulativeMessages.length ? cumulativeMessages[0].replace(/^💰누적\s*/, '') : '';
@@ -4235,12 +4241,12 @@ async function maybeSendDonationYoutubeChat(ctx, settings, donor, accountTotal, 
       || savedSecond === '현재 누적후원현황 {누적}';
     const firstTemplate = legacyFirst || savedFirst === '💸{후원자}업({금액}) → {분배}' ? '💸{후원자}업({방식} {금액}) → {분배}' : savedFirst;
     const secondTemplate = legacySecond ? '💰누적 {누적}' : savedSecond;
-    const firstMessage = fill(firstTemplate, values).trim();
+    const firstMessage = fill(options.receiptOnly?(legacyFirst||savedFirst==='💸{후원자}업({금액}) → {분배}'||savedFirst==='💸{후원자}업({방식} {금액}) → {분배}'?'💸{후원자}업({방식} {금액})':firstTemplate):firstTemplate, values).replace(/\s*→\s*$/,'').trim();
     const secondMessage = fill(secondTemplate, values).trim();
 
     const messages = [];
     if (cfg.firstEnabled !== false && firstMessage) messages.push(firstMessage);
-    if (cfg.secondEnabled !== false) {
+    if (cfg.secondEnabled !== false && !options.receiptOnly) {
       if (secondMessage && Array.from(secondMessage).length <= 200 && cumulativeMessages.length <= 1) messages.push(secondMessage);
       else messages.push(...cumulativeMessages);
     }
@@ -4325,10 +4331,13 @@ const collectionWs=require('./collection-ws')(httpServer,{port:()=>httpServer.ad
 alertCoordinator.onChange(slug=>collectionWs.notify(slug,'playback'));
 const notifyCollection=(slug,type,payload)=>{collectionWs.notify(slug,type,payload);if(type==='state')io.to(realtimeRoom(slug)).emit('overlay:changed',{type:'state',at:Date.now()});};
 const collectionReview=require('./collection-review')(app,{supabase,getStationContext,managerAllowed,stationAllowed,ensureActiveBroadcast,readEffectiveSettings,saveEffectiveSettings,makeDonationRow,inputAllowedForActiveBroadcast,notify:notifyCollection,afterApply:async(ctx,settings,candidate,routing,rows)=>{
- notifyCollection(ctx.station.slug,'alert',{id:candidate.id,donationIds:rows.map(r=>r.id),source:candidate.source,donor:routing.donor,title:candidate.title,vip:candidate.vip,amount:candidate.amount,message:candidate.message,receivedAt:candidate.received_at,rows:routing.rows});
- try{if(routing.fundingId){const current=await readEffectiveSettings(ctx.station.slug,ctx.active.id),fundingData=normalizeFundingData(current.fundingData),item=fundingData.items.find(f=>f.id===routing.fundingId);if(item){item.current=Number(item.current||0)+Math.floor(Number(candidate.amount)/10000);await saveSharedStationSettings(ctx.station.slug,{fundingData});}}nightbotChat.enqueue(ctx.station.slug,rows,settings.nightbotChat);await maybeSendDonationYoutubeChat(ctx,settings,routing.donor,candidate.source==='account'?candidate.amount:0,candidate.source==='toonie'?candidate.amount:0,rows);await maybeStartAutoRoulette(ctx,candidate.amount,routing.donor,routing);}catch(e){console.error('수집 후원 부가 전송 실패:',e.message);}
+ if(!candidate.routing?.receiptFirst)notifyCollection(ctx.station.slug,'alert',{id:candidate.id,donationIds:rows.map(r=>r.id),source:candidate.source,donor:routing.donor,title:candidate.title,vip:candidate.vip,amount:candidate.amount,message:candidate.message,receivedAt:candidate.received_at,rows:routing.rows});
+ try{if(routing.fundingId){const current=await readEffectiveSettings(ctx.station.slug,ctx.active.id),fundingData=normalizeFundingData(current.fundingData),item=fundingData.items.find(f=>f.id===routing.fundingId);if(item){item.current=Number(item.current||0)+Math.floor(Number(candidate.amount)/10000);await saveSharedStationSettings(ctx.station.slug,{fundingData});}}if(!candidate.routing?.receiptFirst){nightbotChat.enqueue(ctx.station.slug,rows,settings.nightbotChat);await maybeSendDonationYoutubeChat(ctx,settings,routing.donor,candidate.source==='account'?candidate.amount:0,candidate.source==='toonie'?candidate.amount:0,rows);}await maybeStartAutoRoulette(ctx,candidate.amount,routing.donor,routing);}catch(e){console.error('수집 후원 부가 전송 실패:',e.message);}
 }});
-const collectionCapture=require('./capture-test')(app,{supabase,getStation,getStationContext,managerAllowed,stationAllowed,review:collectionReview,notify:notifyCollection,ensureActiveBroadcast,readEffectiveSettings});
+const collectionCapture=require('./capture-test')(app,{supabase,getStation,getStationContext,managerAllowed,stationAllowed,review:collectionReview,notify:notifyCollection,ensureActiveBroadcast,readEffectiveSettings,afterReceive:async(ctx,settings,candidate)=>{
+ notifyCollection(ctx.station.slug,'state');notifyCollection(ctx.station.slug,'alert',{id:candidate.id,receiptOnly:true,source:'account',donor:candidate.routing.receiptDonor||candidate.donor,title:candidate.title,vip:candidate.vip,amount:candidate.amount,message:candidate.message,receivedAt:candidate.received_at,rows:[]});
+ await maybeSendDonationYoutubeChat(ctx,settings,candidate.routing.receiptDonor||candidate.donor,candidate.amount,0,[],{receiptOnly:true});
+}});
 require('./bank-devices')(app,{supabase,getStation,getStationContext,stationAllowed,isMasterRequest,saveAccount:collectionCapture.saveAccount,changed:()=>collectionWs.devicesChanged()});
 
 // 휴대폰 은행 알림 또는 투네이션 위젯 수집기에서 전달하는 자동 후원.
@@ -4753,7 +4762,7 @@ async function sendScheduledDonationStatus(station, active, cfg) {
     messages.push(...buildCumulativeChatMessages(settings, donations));
   }
   if (cfg.statusAccountDonors === true) {
-    messages.push(...buildAccountDonorChatMessages(donations));
+    messages.push(...buildAccountDonorChatMessages(await readAccountLedger(station.id,active.id,donations)));
   }
 
   // 프리셋/용돈은 기존 수동 전송 UI의 계산방식을 그대로 유지하고,

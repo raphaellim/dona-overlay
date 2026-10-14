@@ -1,5 +1,5 @@
 const crypto=require('crypto');
-module.exports=function(app,{supabase,getStation,getStationContext,managerAllowed,stationAllowed,review,notify,ensureActiveBroadcast,readEffectiveSettings}){
+module.exports=function(app,{supabase,getStation,getStationContext,managerAllowed,stationAllowed,review,notify,ensureActiveBroadcast,readEffectiveSettings,afterReceive}){
  const auth=async(req,res)=>{const ctx=await getStationContext(req,res);if(!ctx)return null;if(!await managerAllowed(req,ctx.station,ctx.active)){res.status(401).json({error:'방송국 관리자 또는 방송매니저로 로그인하세요.'});return null;}return ctx;};
  const hash=value=>crypto.createHash('sha256').update(value).digest('hex');
  const admin=async(req,res)=>{const ctx=await getStationContext(req,res);if(!ctx)return null;if(!await stationAllowed(req,ctx.station)){res.status(403).json({error:'방송국 관리자 권한 필요'});return null;}return ctx;};
@@ -20,7 +20,7 @@ module.exports=function(app,{supabase,getStation,getStationContext,managerAllowe
  const refreshed=await readEffectiveSettings(station.slug,active.id);const stopReason=require('./collection-window').captureReason(refreshed.broadcastLiveData,b,active.id);if(stopReason)return {ok:true,skipped:true,reason:stopReason};
  const payload={station_id:station.id,source,event_id:eventId,donor,amount,title:String(b.title||'').slice(0,100),message:String(b.message||'').slice(0,1000),vip:String(b.vip||'').slice(0,80),bank:String(b.bank||'').slice(0,30),creator:String(b.creator||'').slice(0,100),received_at:at.toISOString(),replay:!!b.replay,...prepared};
  const {data:inserted,error}=await supabase.from('donation_capture_candidates').insert(payload).select().single();
- if(error){if(error.code==='23505'){const {data:existing,error:lookupError}=await supabase.from('donation_capture_candidates').select('*').eq('station_id',station.id).eq('source',source).eq('event_id',eventId).single();if(lookupError)throw lookupError;await review.auto(existing,station);return {ok:true,duplicate:true};}throw error;}await review.auto(inserted,station);notify(station.slug,'candidates');return {ok:true,pending:true};
+ if(error){if(error.code==='23505'){const {data:existing,error:lookupError}=await supabase.from('donation_capture_candidates').select('*').eq('station_id',station.id).eq('source',source).eq('event_id',eventId).single();if(lookupError)throw lookupError;await review.auto(existing,station);return {ok:true,duplicate:true};}throw error;}if(inserted.routing?.receiptFirst&&afterReceive){try{await afterReceive({station,active},settings,inserted);}catch(e){console.error('입금 알림 전송 실패:',e.message);}}await review.auto(inserted,station);notify(station.slug,'candidates');return {ok:true,pending:true};
  }
  for(const source of ['account','toonie']){
  app.post('/api/'+source+'-candidates',async(req,res)=>{try{

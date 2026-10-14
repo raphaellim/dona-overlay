@@ -2573,6 +2573,8 @@ const rows=allRows.filter(r=>!others.has(normalizeName(r.creator||r.name||''))).
       }
 
       function checkLatestOptionAlert(donations) {
+        // V5 queue is the single owner of automatic donation alerts.
+        if(window.DonationAlertQueue)return;
         const rows = (donations || [])
           .slice()
           .sort((a, b) => new Date(a.createdAt || a.created_at || 0) - new Date(b.createdAt || b.created_at || 0));
