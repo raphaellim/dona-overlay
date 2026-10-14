@@ -39,8 +39,10 @@
  window.fetch=async(input,options={})=>{
   const request=input instanceof Request?input:null,url=new URL(request?request.url:String(input),location.href);
   if(url.origin!==location.origin||!url.pathname.startsWith('/api/')||/\/auth|\/login|\/logout|callback|\/media|\/upload/.test(url.pathname)||options.body instanceof FormData||options.body instanceof Blob)return nativeFetch(input,options);
-  if(!ready){connect();await connectPromise;}
   const method=(options.method||request?.method||'GET').toUpperCase(),headers=Object.fromEntries(new Headers(options.headers||request?.headers||{}));
+  // Console reads use authenticated same-origin HTTP, independent of the serialized RPC write queue.
+  if(method==='GET'&&(location.pathname==='/console.html'||params.get('embedded')==='1'))return nativeFetch(input,options);
+  if(!ready){connect();await connectPromise;}
   let body=options.body;if(body===undefined&&request&&!['GET','HEAD'].includes(method))body=await request.clone().text();
   if(body){try{body=JSON.parse(body);}catch{return nativeFetch(input,options);}}
   const id=String(++seq);return new Promise((resolve,reject)=>{const timeout=setTimeout(()=>{pending.delete(id);reject(Error('서버 응답 지연 · 저장 결과 확인 필요'));},20000);pending.set(id,{resolve,reject,timeout});socket.send(JSON.stringify({type:'rpc',id,path:url.pathname+url.search,method,headers,body}));});

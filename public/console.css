@@ -15,3 +15,5 @@
 .console-app #tabs button{flex-shrink:0}
 @media(max-width:900px){.login-page main.login-layout{padding-inline:26px}}
 @media(max-width:760px){.login-page main.login-layout{max-width:530px;padding:30px 18px}.console-app #tabs{overflow-x:auto}.console-app #tabs button{flex:0 0 auto}.quick-actions button{word-break:keep-all}}
+.console-loading{min-height:140px;display:flex;align-items:center;gap:13px;flex-wrap:wrap}.console-loading p{width:100%;margin:0;color:#a9bbd4}.loading-dot{width:11px;height:11px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 7px #71e4c416;animation:consolePulse 1s infinite alternate}@keyframes consolePulse{to{opacity:.4}}@media(prefers-reduced-motion:reduce){.loading-dot{animation:none}}
+#targets .target-row{display:grid;grid-template-columns:19px minmax(80px,1fr) 135px minmax(100px,1fr);gap:9px}#targets .target-row input,#targets .target-row select{width:100%;min-width:0;padding:9px;font-size:14px}@media(max-width:650px){#targets .target-row{grid-template-columns:19px minmax(0,1fr) 115px}#targets .target-row input:last-child{grid-column:2 / 4}}
