@@ -1229,10 +1229,10 @@ body,#overlayPanel{font-family:'Noto Sans KR','맑은 고딕',sans-serif!importa
 #v5Alert-alert{height:180px!important;min-height:180px!important;max-height:180px!important;padding:9px 12px!important;justify-content:center!important;gap:4px!important;overflow:hidden!important}
 .v5Alert-label{flex:0 0 18px!important;line-height:18px!important;font-size:13px!important}
 .v5Alert-message{flex:0 0 auto!important;max-height:none!important;line-height:1!important}
-.v5Alert-message>.row{height:auto!important;display:grid!important;grid-template-columns:minmax(0,1fr) 36px!important;gap:0 6px!important;align-items:center!important}
-.v5Alert-message .name{font-size:29px!important;line-height:34px!important;text-align:left!important;min-width:0!important}
-.v5Alert-message .badge{width:36px!important;height:36px!important;justify-self:end!important}
-.v5Alert-message .amount{grid-column:1 / -1!important;justify-self:start!important;text-align:left!important;font-size:32px!important;line-height:38px!important}
+.v5Alert-message>.row{height:auto!important;display:grid!important;grid-template-columns:minmax(0,1fr) 28px max-content!important;gap:0 6px!important;align-items:center!important}
+.v5Alert-message .name{font-size:24px!important;line-height:32px!important;text-align:left!important;min-width:0!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+.v5Alert-message .badge{width:28px!important;height:28px!important;justify-self:center!important}
+.v5Alert-message .amount{grid-column:auto!important;justify-self:end!important;text-align:right!important;font-size:24px!important;line-height:32px!important;white-space:nowrap!important}
 #v5Alert-comment{flex:0 1 auto!important;min-height:0!important;font-size:20px!important;line-height:24px!important;max-height:48px!important;white-space:normal!important;display:-webkit-box!important;-webkit-line-clamp:2!important;-webkit-box-orient:vertical!important;overflow:hidden!important}
 #v5Alert-split{flex:0 1 auto!important;min-height:0!important;font-size:16px!important;line-height:21px!important;max-height:42px!important;white-space:normal!important;overflow-wrap:anywhere!important}
 #v5Alert-comment:empty,#v5Alert-split:empty{display:none!important}
@@ -1246,7 +1246,7 @@ body,#overlayPanel{font-family:'Noto Sans KR','맑은 고딕',sans-serif!importa
  const icon=document.createElement('span');icon.className='icon';if(tier==='diamond')icon.innerHTML='<svg viewBox="0 1 24 24" aria-hidden="true"><path fill="#72d8ff" d="M6 4h12l5 6-11 12L1 10z"/><path fill="#c5f2ff" d="M6 4l6 6H1zm12 0l-6 6h11z"/><path fill="#39aee9" d="M1 10h11v12zm11 0h11L12 22z"/><path fill="#91e9ff" d="M6 4h12l-6 6z"/></svg>';else if(tier==='star')icon.innerHTML='<svg viewBox="0 -0.5 24 24" aria-hidden="true"><path fill="#ffd96a" d="M12 2l3.1 6.3 6.9 1-5 4.9 1.2 6.8-6.2-3.2L5.8 21 7 14.2l-5-4.9 6.9-1z"/></svg>';badge.append(icon);
  if(tier){for(const side of ['a','b']){const spark=document.createElement('span');spark.className='spark '+side;badge.append(spark);}}
  const name=document.createElement('span');name.className='name';name.textContent=donor.name;name.title=donor.name;
- const total=document.createElement('span');total.className='amount';total.textContent=amount.toLocaleString('ko-KR')+'원';
+ const total=document.createElement('span');total.className='amount';total.textContent=amount.toLocaleString('ko-KR')+'';
  row.append(name,badge,total);return row;
 };window.overlay3MakeRow=makeRow;</script></head>
 
@@ -1287,7 +1287,7 @@ body,#overlayPanel{font-family:'Noto Sans KR','맑은 고딕',sans-serif!importa
           
         </section>
 
-        <section class="overlay-box hidden" id="allowanceBox"><div class="allowance-row" id="allowanceRow">현재용돈 : 0원</div></section>
+        <section class="overlay-box hidden" id="allowanceBox"><div class="allowance-row" id="allowanceRow">현재용돈 : 0</div></section>
 <section class="overlay-box karaoke-box hidden" id="karaokeBox">
           <div class="karaoke-title" id="karaokeTitleText">노래방 공지 알림판</div>
           <div class="karaoke-notice" id="karaokeNoticeText">노래문의필수</div>
@@ -1828,7 +1828,7 @@ body,#overlayPanel{font-family:'Noto Sans KR','맑은 고딕',sans-serif!importa
           if(!f){el.innerHTML='<div class="o3-funding"><div class="o3-funding-detail">등록된 펀딩 없음</div></div>';return;}
           const current=Math.max(0,num(f.current)),goal=Math.max(0,num(f.target));
           const percent=goal>0?Math.max(0,current/goal*100):0,bar=Math.min(100,percent),left=Math.max(0,goal-current);
-          el.innerHTML='<div class="o3-funding"><div class="o3-funding-money"><strong>'+escapeHtml(displayAmount(current))+'원</strong><span>/ '+escapeHtml(displayAmount(goal))+'원</span></div><div class="o3-funding-bar" role="progressbar" aria-label="'+escapeHtml(f.title||'펀딩')+'" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+bar+'"><i style="width:'+bar+'%"></i></div><div class="o3-funding-detail">'+(goal>0?'달성률 '+Math.round(percent)+'% · '+(current>=goal?'목표 달성':'목표까지 '+escapeHtml(displayAmount(left))+'원'):'목표 미설정')+(items.length>1?' · '+(o3FundingIndex%items.length+1)+'/'+items.length:'')+'</div></div>';
+          el.innerHTML='<div class="o3-funding"><div class="o3-funding-money"><strong>'+escapeHtml(displayAmount(current))+'</strong><span>/ '+escapeHtml(displayAmount(goal))+'</span></div><div class="o3-funding-bar" role="progressbar" aria-label="'+escapeHtml(f.title||'펀딩')+'" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+bar+'"><i style="width:'+bar+'%"></i></div><div class="o3-funding-detail">'+(goal>0?'달성률 '+Math.round(percent)+'% · '+(current>=goal?'목표 달성':'목표까지 '+escapeHtml(displayAmount(left))+''):'목표 미설정')+(items.length>1?' · '+(o3FundingIndex%items.length+1)+'/'+items.length:'')+'</div></div>';
         };
         draw();if(items.length>1)o3FundingTimer=setInterval(()=>{if(!document.hidden&&getComputedStyle($fundingBox).display!=='none'){o3FundingIndex++;draw();}},4000);
       }
@@ -2163,7 +2163,7 @@ body,#overlayPanel{font-family:'Noto Sans KR','맑은 고딕',sans-serif!importa
   else if (balance < 0) colorClass = "allowance-negative";
 
   const sign = balance < 0 ? "-" : "";
-  el.innerHTML = `현재용돈 : <span class="${colorClass}">${sign}${displayAmount(Math.abs(balance))}원</span>`;
+  el.innerHTML = `현재용돈 : <span class="${colorClass}">${sign}${displayAmount(Math.abs(balance))}</span>`;
 }
 
       function renderAccountRoller(items) {
@@ -2295,7 +2295,7 @@ const rows=allRows.filter(r=>!others.has(normalizeName(r.creator||r.name||''))).
           const shortName = Array.from(rawName).slice(0, 4).join("") || "익명";
           const total = displayManAmount(row.total ?? row.totalAmount ?? row.total_amount ?? row.amount ?? 0);
 
-          const totalHtml=showDonation?'<strong class="o3-rank-money">'+escapeHtml(displayAmount(totalOf(row)))+'원</strong>':'';
+          const totalHtml=showDonation?'<strong class="o3-rank-money">'+escapeHtml(displayAmount(totalOf(row)))+'</strong>':'';
           const optionHtml = visiblePresets.map(preset => {
             const value = presetNetValue(row, preset);
             const label = signedText(presetShortName(preset), value);
@@ -2303,7 +2303,7 @@ const rows=allRows.filter(r=>!others.has(normalizeName(r.creator||r.name||''))).
           }).join("");
 
           return '<article><div class="o3-rank"><em>'+(rank+1)+'</em><div class="o3-creator-inline"><span class="o3-rank-name">'+escapeHtml(rawName)+'</span>'+(optionHtml?'<span class="o3-options">'+optionHtml+'</span>':'')+'</div>'+totalHtml+'</div></article>';
-        }).join("")+(otherRows.length?'<div class="o3-other">'+otherRows.map(r=>escapeHtml(normalizeName(r.creator||r.name))+'('+escapeHtml(displayAmount(totalOf(r)))+'원)').join(' · ')+'</div>':'');
+        }).join("")+(otherRows.length?'<div class="o3-other">'+otherRows.map(r=>escapeHtml(normalizeName(r.creator||r.name))+'('+escapeHtml(displayAmount(totalOf(r)))+')').join(' · ')+'</div>':'');
       }
 
       function donationWon(row) {
@@ -2417,9 +2417,9 @@ const rows=allRows.filter(r=>!others.has(normalizeName(r.creator||r.name||''))).
         const age=seconds<1?'방금 전':seconds<60?seconds+'초 전':Math.floor(seconds/60)+'분 전';
         const esc=escapeHtml;
         return `<div class="donation-new-head"><span class="donation-new-source">[${source}]</span> <span data-donation-at="${esc(at||'')}">[${age}]</span> ${row.vip?`<span class="donation-new-badge">${esc(row.vip)}</span>`:''} <span class="donation-new-title">${esc(row.title||'')}</span></div>
-        <div><span class="donation-new-name">${esc(row.donor||'익명')}</span>님 <span class="donation-new-money">${total.toLocaleString('ko-KR')}</span>원 후원!</div>
+        <div><span class="donation-new-name">${esc(row.donor||'익명')}</span>님 <span class="donation-new-money">${total.toLocaleString('ko-KR')}</span> 후원!</div>
         <div>후원 감사합니다!</div><div class="donation-new-message">${esc(row.message||'')}</div>
-        <div class="donation-new-targets">${rows.map(r=>esc(r.creator||'')+' '+donationWon(r).toLocaleString('ko-KR')+'원').join(' · ')}</div>`;
+        <div class="donation-new-targets">${rows.map(r=>esc(r.creator||'')+' '+donationWon(r).toLocaleString('ko-KR')+'').join(' · ')}</div>`;
       }
       function pickSoundFileForDonation(row) {
         if (soundRulesCache && soundRulesCache.enabled === false) return "";

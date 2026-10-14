@@ -1199,7 +1199,7 @@ body.broadcast-not-live *{animation-play-state:paused!important}
         <section class="overlay-box notice-box hidden" id="noticeBox">
           <div class="notice-title" id="noticeTitleText">공지</div>
           <div class="notice-text" id="noticeText"></div>
-          <div class="allowance-row" id="allowanceRow">현재용돈 : 0원</div>
+          <div class="allowance-row" id="allowanceRow">현재용돈 : 0</div>
         </section>
 
         <section class="overlay-box karaoke-box hidden" id="karaokeBox">
@@ -2107,7 +2107,7 @@ body.broadcast-not-live *{animation-play-state:paused!important}
   else if (balance < 0) colorClass = "allowance-negative";
 
   const sign = balance < 0 ? "-" : "";
-  el.innerHTML = `현재용돈 : <span class="${colorClass}">${sign}${displayAmount(Math.abs(balance))}원</span>`;
+  el.innerHTML = `현재용돈 : <span class="${colorClass}">${sign}${displayAmount(Math.abs(balance))}</span>`;
 }
 
       function renderAccountRoller(items) {
@@ -2374,9 +2374,9 @@ const rows = (Array.isArray(creators) ? creators : [])
         const age=seconds<1?'방금 전':seconds<60?seconds+'초 전':Math.floor(seconds/60)+'분 전';
         const esc=escapeHtml;
         return `<div class="donation-new-head"><span class="donation-new-source">[${source}]</span> <span data-donation-at="${esc(at||'')}">[${age}]</span> ${row.vip?`<span class="donation-new-badge">${esc(row.vip)}</span>`:''} <span class="donation-new-title">${esc(row.title||'')}</span></div>
-        <div><span class="donation-new-name">${esc(row.donor||'익명')}</span>님 <span class="donation-new-money">${total.toLocaleString('ko-KR')}</span>원 후원!</div>
+        <div><span class="donation-new-name">${esc(row.donor||'익명')}</span>님 <span class="donation-new-money">${total.toLocaleString('ko-KR')}</span> 후원!</div>
         <div>후원 감사합니다!</div><div class="donation-new-message">${esc(row.message||'')}</div>
-        <div class="donation-new-targets">${rows.map(r=>esc(r.creator||'')+' '+donationWon(r).toLocaleString('ko-KR')+'원').join(' · ')}</div>`;
+        <div class="donation-new-targets">${rows.map(r=>esc(r.creator||'')+' '+donationWon(r).toLocaleString('ko-KR')+'').join(' · ')}</div>`;
       }
       function pickSoundFileForDonation(row) {
         if (soundRulesCache && soundRulesCache.enabled === false) return "";
