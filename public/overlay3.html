@@ -1087,6 +1087,15 @@ body.test-bg{
 #overlayPanel #allowanceBox .allowance-row{font-size:23.4px!important;line-height:33.8px!important;gap:15.6px!important}
 #overlayPanel #allowanceBox .solo-preset{font-size:22.1px!important;line-height:33.8px!important}
 
+
+/* v6.14.2 account row: fixed icon slot, balanced breathing room. */
+#overlayPanel #accountBox .roller-item.row{display:grid!important;grid-template-columns:minmax(0,4em) 26px minmax(0,1fr)!important;align-items:center!important;column-gap:12px!important;justify-content:normal!important;padding:0 2px!important;font-size:21px!important}
+#overlayPanel #accountBox .roller-item .name{width:100%!important;min-width:0!important;font-size:21px!important;line-height:34px!important;text-align:center!important;overflow:hidden!important;white-space:nowrap!important;text-overflow:ellipsis!important}
+#overlayPanel #accountBox .roller-item .badge{width:26px!important;height:30px!important;justify-self:center!important;margin:0!important;flex:none!important}
+#overlayPanel #accountBox .roller-item .icon{width:26px!important;height:30px!important}
+#overlayPanel #accountBox .roller-item .icon svg{width:24px!important;height:24px!important}
+#overlayPanel #accountBox .roller-item .amount{min-width:0!important;font-size:22px!important;line-height:34px!important;text-align:right!important;white-space:nowrap!important;font-variant-numeric:tabular-nums!important;letter-spacing:-.04em!important}
+
 </style>
   <link rel="stylesheet" href="/assets/css/roulette-overlay.css">
 <style>
@@ -1297,7 +1306,7 @@ body,#overlayPanel{font-family:'Noto Sans KR','맑은 고딕',sans-serif!importa
 </style><script>const EFFECT_RULES={star:100000,diamond:300000};if(new URLSearchParams(location.search).get("demo")==="1")window.overlay3Targets=[{name:"국고",group:"other"}];function makeRow(donor){const amount=Number(donor.amount)||0;const tier=amount>=EFFECT_RULES.diamond?'diamond':amount>=EFFECT_RULES.star?'star':'';
  const row=document.createElement('div');row.className='row active '+tier;
  const badge=document.createElement('span');badge.className='badge';badge.setAttribute('aria-hidden','true');
- const icon=document.createElement('span');icon.className='icon';if(tier==='diamond')icon.innerHTML='<svg viewBox="0 1 24 24" aria-hidden="true"><path fill="#72d8ff" d="M6 4h12l5 6-11 12L1 10z"/><path fill="#c5f2ff" d="M6 4l6 6H1zm12 0l-6 6h11z"/><path fill="#39aee9" d="M1 10h11v12zm11 0h11L12 22z"/><path fill="#91e9ff" d="M6 4h12l-6 6z"/></svg>';else if(tier==='star')icon.innerHTML='<svg viewBox="0 -0.5 24 24" aria-hidden="true"><path fill="#ffd96a" d="M12 2l3.1 6.3 6.9 1-5 4.9 1.2 6.8-6.2-3.2L5.8 21 7 14.2l-5-4.9 6.9-1z"/></svg>';badge.append(icon);
+ const icon=document.createElement('span');icon.className='icon';if(tier==='diamond')icon.innerHTML='<svg viewBox="0 1 24 24" aria-hidden="true"><path fill="#72d8ff" d="M6 4h12l5 6-11 12L1 10z"/><path fill="#c5f2ff" d="M6 4l6 6H1zm12 0l-6 6h11z"/><path fill="#39aee9" d="M1 10h11v12zm11 0h11L12 22z"/><path fill="#91e9ff" d="M6 4h12l-6 6z"/></svg>';else if(tier==='star')icon.innerHTML='<svg viewBox="0 -0.5 24 24" aria-hidden="true"><path fill="#ffd96a" d="M12 2l3.1 6.3 6.9 1-5 4.9 1.2 6.8-6.2-3.2L5.8 21 7 14.2l-5-4.9 6.9-1z"/></svg>';else icon.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#4DE2B1" d="M12 21S2 14.7 2 7.8A5.3 5.3 0 0 1 12 5a5.3 5.3 0 0 1 10 2.8C22 14.7 12 21 12 21Z"/></svg>';badge.append(icon);
  if(tier){for(const side of ['a','b']){const spark=document.createElement('span');spark.className='spark '+side;badge.append(spark);}}
  const name=document.createElement('span');name.className='name';name.textContent=donor.name;name.title=donor.name;
  const total=document.createElement('span');total.className='amount';total.textContent=amount.toLocaleString('ko-KR')+'';
