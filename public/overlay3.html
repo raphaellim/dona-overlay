@@ -1249,8 +1249,8 @@ body,#overlayPanel{font-family:'Noto Sans KR','맑은 고딕',sans-serif!importa
 #overlayPanel #allowanceBox .allowance-negative{color:#ff9fbb!important}
 #overlayPanel #creatorBox{--section-color:#FF79BD!important}
 #overlayPanel #creatorBox .o3-rank-money{color:#FFB3D6!important}
-#overlayPanel #creatorBox .o3-rank-name{display:inline-flex!important;justify-content:space-between!important;flex:0 0 4em!important;width:4em!important;min-width:4em!important;max-width:4em!important;letter-spacing:0!important;text-overflow:clip!important}
-#overlayPanel #creatorBox .o3-rank-name span{flex:0 0 1em;text-align:center}
+#overlayPanel #creatorBox .o3-rank-name{display:inline-block!important;flex:0 0 4em!important;width:4em!important;min-width:4em!important;max-width:4em!important;font-size:21px!important;line-height:28px!important;text-align:center!important;letter-spacing:0!important;white-space:nowrap!important;text-overflow:clip!important}
+#overlayPanel #creatorBox .o3-rank-name span{display:inline!important}
 </style><script>const EFFECT_RULES={star:100000,diamond:300000};if(new URLSearchParams(location.search).get("demo")==="1")window.overlay3Targets=[{name:"국고",group:"other"}];function makeRow(donor){const amount=Number(donor.amount)||0;const tier=amount>=EFFECT_RULES.diamond?'diamond':amount>=EFFECT_RULES.star?'star':'';
  const row=document.createElement('div');row.className='row active '+tier;
  const badge=document.createElement('span');badge.className='badge';badge.setAttribute('aria-hidden','true');
@@ -1261,7 +1261,7 @@ body,#overlayPanel{font-family:'Noto Sans KR','맑은 고딕',sans-serif!importa
  row.append(name,badge,total);return row;
 };window.overlay3MakeRow=makeRow;
 window.overlay3MaskAccountName=value=>{const letters=Array.from(String(value||'익명').trim());if(letters.length>1)letters[1]='*';return letters.slice(0,4).join('');};
-window.overlay3CreatorName=value=>{const letters=Array.from(String(value||'익명').trim()).slice(0,4);const name=document.createElement('span');name.className='o3-rank-name';name.setAttribute('aria-label',letters.join(''));for(const letter of letters){const cell=document.createElement('span');cell.textContent=letter;name.append(cell);}return name.outerHTML;};</script></head>
+window.overlay3CreatorName=value=>{const text=Array.from(String(value||'익명').trim()).slice(0,4).join('');const name=document.createElement('span');name.className='o3-rank-name';name.textContent=text;return name.outerHTML;};</script></head>
 
 <body class="theme-gold">
   <div id="overlayIdleScreen" class="overlay-idle-screen">시스템설정</div>
