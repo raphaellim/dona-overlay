@@ -3083,7 +3083,8 @@ async function readServiceDonationAuto(slug) {
     statusSelections: selections.length ? selections : ['cumulative'],
     statusAccountDonors: v.statusAccountDonors === true,
     repeatEnabled: v.repeatEnabled === true,
-    repeatMinutes: Math.max(1, Number(v.repeatMinutes || 10))
+    repeatMinutes: Math.max(1, Number(v.repeatMinutes || 10)),
+    ...require('./scheduled-chat').normalize(v)
   };
 }
 
@@ -3104,7 +3105,8 @@ async function updateServiceDonationAuto(slug, input) {
     statusSelections: selections?.length ? selections : ['cumulative'],
     statusAccountDonors: input?.statusAccountDonors !== undefined ? input.statusAccountDonors === true : prev.statusAccountDonors,
     repeatEnabled: input?.repeatEnabled !== undefined ? input.repeatEnabled === true : prev.repeatEnabled,
-    repeatMinutes: Math.max(1, Number(input?.repeatMinutes ?? prev.repeatMinutes ?? 10))
+    repeatMinutes: Math.max(1, Number(input?.repeatMinutes ?? prev.repeatMinutes ?? 10)),
+    ...require('./scheduled-chat').normalize({...prev,...input})
   };
 
   if (value.firstTemplate.length > 180 || value.secondTemplate.length > 180) {
@@ -3113,16 +3115,16 @@ async function updateServiceDonationAuto(slug, input) {
   if (value.enabled && !value.firstEnabled && !value.secondEnabled && !value.accountDonorsEnabled) {
     throw new Error('후원내역, 누적현황, 계좌후원자 중 하나 이상 켜주세요.');
   }
-  if ((value.enabled || value.repeatEnabled) && !value.liveUrl) {
+  if ((value.enabled || value.repeatEnabled || value.phraseEnabled) && !value.liveUrl) {
     throw new Error('자동 채팅에 사용할 라이브 주소를 입력하세요.');
   }
-  if ((value.enabled || value.repeatEnabled) && !value.accountId) {
+  if ((value.enabled || value.repeatEnabled || value.phraseEnabled) && !value.accountId) {
     throw new Error('자동 채팅에 사용할 계정을 선택하세요.');
   }
   if (value.liveUrl) {
     let u;
     try { u = new URL(value.liveUrl); } catch (_) { throw new Error('유효한 유튜브 라이브 주소를 입력하세요.'); }
-    if (!/youtube\.com$|youtu\.be$/i.test(u.hostname.replace(/^www\./,''))) {
+    if (!/(^|\.)youtube\.com$|^youtu\.be$/i.test(u.hostname.replace(/^www\./,''))) {
       throw new Error('유튜브 라이브 주소를 입력하세요.');
     }
   }
@@ -4334,6 +4336,7 @@ const collectionReview=require('./collection-review')(app,{supabase,getStationCo
  if(!candidate.routing?.receiptFirst)notifyCollection(ctx.station.slug,'alert',{id:candidate.id,donationIds:rows.map(r=>r.id),source:candidate.source,donor:routing.donor,title:candidate.title,vip:candidate.vip,amount:candidate.amount,message:candidate.message,receivedAt:candidate.received_at,rows:routing.rows});
  try{if(routing.fundingId){const current=await readEffectiveSettings(ctx.station.slug,ctx.active.id),fundingData=normalizeFundingData(current.fundingData),item=fundingData.items.find(f=>f.id===routing.fundingId);if(item){item.current=Number(item.current||0)+(routing.fundingExactWon===true?Number(candidate.amount)/10000:Math.floor(Number(candidate.amount)/10000));await saveSharedStationSettings(ctx.station.slug,{fundingData});}}if(!candidate.routing?.receiptFirst){nightbotChat.enqueue(ctx.station.slug,rows,settings.nightbotChat);await maybeSendDonationYoutubeChat(ctx,settings,routing.donor,candidate.source==='account'?candidate.amount:0,candidate.source==='toonie'?candidate.amount:0,rows);}await maybeStartAutoRoulette(ctx,candidate.amount,routing.donor,routing);}catch(e){console.error('수집 후원 부가 전송 실패:',e.message);}
 }});
+require('./broadcast-finance')(app,{supabase,getStationContext,stationAllowed,dbRowToDonation,readEffectiveSettings});
 const collectionCapture=require('./capture-test')(app,{supabase,getStation,getStationContext,managerAllowed,stationAllowed,review:collectionReview,notify:notifyCollection,ensureActiveBroadcast,readEffectiveSettings,afterReceive:async(ctx,settings,candidate)=>{
  notifyCollection(ctx.station.slug,'state');notifyCollection(ctx.station.slug,'alert',{id:candidate.id,receiptOnly:true,source:'account',donor:candidate.routing.receiptDonor||candidate.donor,title:candidate.title,vip:candidate.vip,amount:candidate.amount,message:candidate.message,receivedAt:candidate.received_at,rows:[]});
  await maybeSendDonationYoutubeChat(ctx,settings,candidate.routing.receiptDonor||candidate.donor,candidate.amount,0,[],{receiptOnly:true});
@@ -4773,22 +4776,32 @@ async function sendScheduledDonationStatus(station, active, cfg) {
   await sendExactMessages(station.slug, videoId, cfg.accountId, messages);
 }
 
+const runPhraseScheduler=require('./scheduled-chat').createScheduler({
+ getCurrent:async station=>{const cfg=await readServiceDonationAuto(station.slug);if(!youtubeChatService.configured())return null;const active=await ensureActiveBroadcast(station.id),settings=await readEffectiveSettings(station.slug,active.id);return {cfg,active,live:settings.broadcastLiveData};},
+ claim:async(station,active,key,slot)=>{const {error}=await supabase.from('broadcast_chat_schedule_claims').insert({station_id:station.id,broadcast_id:active.id,schedule_key:key,slot});if(error?.code==='23505')return false;if(error)throw Error('지정 문구 예약 저장 실패. sql/06-broadcast-finance.sql 실행을 확인하세요: '+error.message);return true;},
+ send:async(station,cfg,message)=>sendExactMessages(station.slug,youtubeVideoId(cfg.liveUrl),cfg.accountId,[message])
+});
+let donationStatusSchedulerRunning=false;
 async function runDonationStatusScheduler() {
-  if (!supabase) return;
+  if (!supabase || donationStatusSchedulerRunning) return;
+  donationStatusSchedulerRunning=true;
   try {
     const { data: stations, error } = await supabase.from('stations').select('id,slug');
     if (error) throw error;
+    await runPhraseScheduler(stations||[]);
     const now = Date.now();
     pruneDonationStatusState(now);
     for (const station of stations || []) {
       try {
         const cfg = await readServiceDonationAuto(station.slug);
         if (!cfg.repeatEnabled || !cfg.liveUrl || !cfg.accountId || !youtubeChatService.configured()) continue;
-        const key = `${station.slug}:${cfg.accountId}:${cfg.liveUrl}`;
+        const active = await ensureActiveBroadcast(station.id);
+        const liveSettings=await readEffectiveSettings(station.slug,active.id);
+        if(!require('./scheduled-chat').liveWindow(liveSettings.broadcastLiveData))continue;
+        const key = `${station.slug}:${active.id}:${cfg.accountId}:${cfg.liveUrl}`;
         const interval = Math.max(1, Number(cfg.repeatMinutes || 10)) * 60 * 1000;
         const last = Number(donationStatusLastSent.get(key) || 0);
         if (last && now - last < interval) continue;
-        const active = await ensureActiveBroadcast(station.id);
         await sendScheduledDonationStatus(station, active, cfg);
         donationStatusLastSent.set(key, now);
       } catch (e) {
@@ -4797,7 +4810,7 @@ async function runDonationStatusScheduler() {
     }
   } catch (e) {
     console.error('[youtube donation repeat scheduler]', e?.message || e);
-  }
+  } finally {donationStatusSchedulerRunning=false;}
 }
 
 const donationStatusScheduler = setInterval(runDonationStatusScheduler, 60 * 1000);
