@@ -1240,6 +1240,20 @@ body,#overlayPanel{font-family:'Noto Sans KR','맑은 고딕',sans-serif!importa
 #overlayPanel>#broadcastTimerBox:not(.hidden){display:flex!important;visibility:visible!important;opacity:1!important;height:auto!important;min-height:30px!important;max-height:none!important;overflow:visible!important}
 #broadcastTimerBox .timer-label{font-family:'Jua',sans-serif!important;font-size:19px!important}
 #broadcastTimerBox .timer-value{font-size:25px!important;line-height:30px!important;font-weight:800!important;font-variant-numeric:tabular-nums!important}
+/* 계좌: 골드 */
+#overlayPanel #accountBox {--section-color: #FFD166 !important;}
+
+/* 현재용돈: 민트 */
+#overlayPanel #allowanceBox {--section-color: #4DE2B1 !important;}
+#overlayPanel #allowanceRow,#overlayPanel #allowanceBox .allowance-positive {color: #4DE2B1 !important;}
+
+/* 크리에이터 누적현황: 핑크 */
+#overlayPanel #creatorBox {
+  --section-color: #FF79BD !important;
+}
+#overlayPanel #creatorBox .o3-rank-money {
+  color: #FFB3D6 !important;
+}
 </style><script>const EFFECT_RULES={star:100000,diamond:300000};if(new URLSearchParams(location.search).get("demo")==="1")window.overlay3Targets=[{name:"국고",group:"other"}];function makeRow(donor){const amount=Number(donor.amount)||0;const tier=amount>=EFFECT_RULES.diamond?'diamond':amount>=EFFECT_RULES.star?'star':'';
  const row=document.createElement('div');row.className='row active '+tier;
  const badge=document.createElement('span');badge.className='badge';badge.setAttribute('aria-hidden','true');
