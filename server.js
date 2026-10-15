@@ -1134,6 +1134,7 @@ function withSettingsMutation(task) {
   return run;
 }
 
+const donorIdentity=require('./donor-identity').create({supabase,withSettingsMutation});
 const nightbotChat = createNightbotChat({ supabase, withSettingsMutation });
 const youtubeChat = createYoutubeChat({ supabase, withSettingsMutation });
 // 운영용 API와 인증 정보는 테스트용 채팅 페이지와 분리합니다.
@@ -3024,6 +3025,8 @@ async function youtubeChatAdmin(req, res) {
   }
   return ctx;
 }
+app.get('/api/donor-identities',async(req,res)=>{try{const ctx=await youtubeChatAdmin(req,res);if(!ctx)return;res.set('Cache-Control','no-store');res.json({entries:await donorIdentity.list(ctx.station.slug)});}catch(e){res.status(400).json({error:e.message});}});
+app.put('/api/donor-identities',async(req,res)=>{try{const ctx=await youtubeChatAdmin(req,res);if(!ctx)return;res.json({ok:true,entries:await donorIdentity.save(ctx.station.slug,req.body.entries)});}catch(e){res.status(400).json({error:e.message});}});
 app.get('/api/youtube-chat/accounts', async (req, res) => {
   try { const ctx = await youtubeChatAdmin(req, res); if (ctx) res.json({ configured: await youtubeChat.configured(ctx.station.slug), accounts: await youtubeChat.accounts(ctx.station.slug), options: await youtubeChat.options(ctx.station.slug) }); }
   catch (e) { res.status(500).json({ error: e.message }); }
@@ -4124,7 +4127,7 @@ app.get('/api/overlay-state', async (req, res) => {
     ]);
 
     res.set('Cache-Control', 'no-store');
-    const state=buildOverlayState(settings,donations);const receipts=await readAccountReceipts(ctx.station.id,broadcastId);const ledger=require('./account-receipts').ledgerRows(donations,receipts);state.accountDonors=require('./account-receipts').donorRows(ledger,{normalize:normName,aggregate:aggregateWon,format:displayManText}).slice(0,10);state.donations.push(...receipts.filter(r=>r.status!=='dismissed').slice(-160).map(r=>({id:'receipt:'+r.id,captureId:r.id,createdAt:r.received_at,receivedAt:r.received_at,donor:r.routing.receiptDonor||r.donor,creator:'',accountAmount:Number(r.amount),toonieAmount:0,totalAmount:Number(r.amount),title:r.title||'',message:r.message||'',silentAlert:false,receiptOnly:true})));res.json(state);
+    const state=buildOverlayState(settings,donations);const receipts=await readAccountReceipts(ctx.station.id,broadcastId);const ledger=require('./account-receipts').ledgerRows(donations,receipts);state.accountDonors=require('./account-receipts').donorRows(ledger,{normalize:normName,aggregate:aggregateWon,format:displayManText}).slice(0,10);state.donations.push(...receipts.filter(r=>r.status!=='dismissed').slice(-160).map(r=>({id:'receipt:'+r.id,captureId:r.id,createdAt:r.received_at,receivedAt:r.received_at,donor:r.routing.receiptDonor||r.donor,creator:'',accountAmount:Number(r.amount),toonieAmount:0,totalAmount:Number(r.amount),title:r.title||'',message:r.message||'',silentAlert:false,receiptOnly:true})));res.json(await donorIdentity.state(ctx.station.slug,state));
   } catch (e) {
     console.error('[api/overlay-state]', e);
     res.status(500).json({ error: e.message || '오버레이 상태 조회 실패' });
@@ -4217,6 +4220,7 @@ async function maybeSendDonationYoutubeChat(ctx, settings, donor, accountTotal, 
     const cfg = await readServiceDonationAuto(ctx.station.slug);
     if (!cfg.enabled || !cfg.liveUrl || !cfg.accountId || !await youtubeChatService.configured(ctx.station.slug)) return;
 
+    if(accountTotal>0)donor=(await donorIdentity.names(ctx.station.slug))(donor);
     const videoId = youtubeVideoId(cfg.liveUrl);
     const grandTotal = Number(accountTotal || 0) + Number(toonieTotal || 0);
     const source = accountTotal > 0 && toonieTotal > 0 ? '계좌+투네' : accountTotal > 0 ? '계좌' : '투네';
@@ -4231,7 +4235,7 @@ async function maybeSendDonationYoutubeChat(ctx, settings, donor, accountTotal, 
 
     const donations = await readDonations(ctx.station.id, ctx.active.id);
     const cumulativeMessages = buildCumulativeChatMessages(settings, donations);
-    const accountDonorMessages = buildAccountDonorChatMessages(await readAccountLedger(ctx.station.id,ctx.active.id,donations));
+    const accountDonorMessages = buildAccountDonorChatMessages(await donorIdentity.accountRows(ctx.station.slug,await readAccountLedger(ctx.station.id,ctx.active.id,donations)));
 
     const fill = (tpl, values) => String(tpl || '').replace(/\{(후원자|금액|방식|분배|누적)\}/g, (_, key) => values[key] ?? '');
     const cumulativeInline = cumulativeMessages.length ? cumulativeMessages[0].replace(/^💰누적\s*/, '') : '';
@@ -4341,6 +4345,8 @@ app.post('/api/station/toonie-widget', async (req, res) => {
 app.get('/api/overlay-link-token',async(req,res)=>{try{const ctx=await getStationContext(req,res);if(!ctx)return;if(!await stationAllowed(req,ctx.station))return res.status(403).json({error:'관리자 전용'});res.set('Cache-Control','no-store');res.json({token:ctx.station.overlay_token});}catch(e){res.status(500).json({error:e.message});}});
 const alertCoordinator=require('./alert-coordinator')(app,{supabase,getStationContext,stationAllowed,stationTokenAllowed,readEffectiveSettings,saveEffectiveSettings,getCollectionConfig:ctx=>collectionReview.config(ctx.station,ctx.active)});
 const collectionWs=require('./collection-ws')(httpServer,{port:()=>httpServer.address()?.port||PORT});
+const identityNotify=collectionWs.notify.bind(collectionWs);
+collectionWs.notify=(slug,type,payload)=>{if(type!=='alert'||payload?.source!=='account')return identityNotify(slug,type,payload);return donorIdentity.names(slug).then(name=>identityNotify(slug,type,{...payload,donor:name(payload.donor),donorDisplayResolved:true})).catch(e=>console.error('[donor identity] alert suppressed:',e.message));};
 alertCoordinator.onChange(slug=>collectionWs.notify(slug,'playback'));
 const notifyCollection=(slug,type,payload)=>{collectionWs.notify(slug,type,payload);if(type==='state')io.to(realtimeRoom(slug)).emit('overlay:changed',{type:'state',at:Date.now()});};
 const collectionReview=require('./collection-review')(app,{supabase,getStationContext,managerAllowed,stationAllowed,ensureActiveBroadcast,readEffectiveSettings,saveEffectiveSettings,makeDonationRow,inputAllowedForActiveBroadcast,notify:notifyCollection,calcCheck,afterApply:async(ctx,settings,candidate,routing,rows)=>{
@@ -4779,7 +4785,7 @@ async function sendScheduledDonationStatus(station, active, cfg) {
     messages.push(...buildCumulativeChatMessages(settings, donations));
   }
   if (cfg.statusAccountDonors === true) {
-    messages.push(...buildAccountDonorChatMessages(await readAccountLedger(station.id,active.id,donations)));
+    messages.push(...buildAccountDonorChatMessages(await donorIdentity.accountRows(station.slug,await readAccountLedger(station.id,active.id,donations))));
   }
 
   // 프리셋/용돈은 기존 수동 전송 UI의 계산방식을 그대로 유지하고,

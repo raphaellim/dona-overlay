@@ -1121,6 +1121,11 @@ body.test-bg{
 #overlayPanel .o3-funding-label span{color:#b4ecdb!important;font-size:19px!important;font-weight:800!important}
 #overlayPanel .o3-funding-detail{font-size:15px!important;line-height:21px!important;margin-top:3px!important;color:#b7c4cf!important}
 
+
+#overlayPanel #accountBox .roller-item .name{display:flex!important;justify-content:center!important;align-items:center!important;overflow:visible!important;letter-spacing:0!important}
+#overlayPanel #accountBox .account-glyph{display:inline-block;width:1em;flex:0 0 1em;text-align:center;font-size:inherit}
+#overlayPanel #accountBox .account-mask-heart{font-size:.8em;width:1.25em;flex-basis:1.25em}
+
 </style>
   <link rel="stylesheet" href="/assets/css/roulette-overlay.css">
 <style>
@@ -1333,11 +1338,11 @@ body,#overlayPanel{font-family:'Noto Sans KR','맑은 고딕',sans-serif!importa
  const badge=document.createElement('span');badge.className='badge';badge.setAttribute('aria-hidden','true');
  const icon=document.createElement('span');icon.className='icon';if(tier==='diamond')icon.innerHTML='<svg viewBox="0 1 24 24" aria-hidden="true"><path fill="#72d8ff" d="M6 4h12l5 6-11 12L1 10z"/><path fill="#c5f2ff" d="M6 4l6 6H1zm12 0l-6 6h11z"/><path fill="#39aee9" d="M1 10h11v12zm11 0h11L12 22z"/><path fill="#91e9ff" d="M6 4h12l-6 6z"/></svg>';else if(tier==='star')icon.innerHTML='<svg viewBox="0 -0.5 24 24" aria-hidden="true"><path fill="#ffd96a" d="M12 2l3.1 6.3 6.9 1-5 4.9 1.2 6.8-6.2-3.2L5.8 21 7 14.2l-5-4.9 6.9-1z"/></svg>';else icon.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#4DE2B1" d="M12 21S2 14.7 2 7.8A5.3 5.3 0 0 1 12 5a5.3 5.3 0 0 1 10 2.8C22 14.7 12 21 12 21Z"/></svg>';badge.append(icon);
  if(tier){for(const side of ['a','b']){const spark=document.createElement('span');spark.className='spark '+side;badge.append(spark);}}
- const name=document.createElement('span');name.className='name';name.textContent=donor.name;name.title=donor.name;
+ const name=document.createElement('span');name.className='name';name.title=donor.name;for(const letter of Array.from(String(donor.name))){const glyph=document.createElement('span');glyph.className='account-glyph'+(letter==='♥'?' account-mask-heart':'');glyph.textContent=letter;name.append(glyph);}const length=Array.from(String(donor.name)).length;if(length>4)name.style.setProperty('font-size',Math.max(12,26*4/length)+'px','important');
  const total=document.createElement('span');total.className='amount';total.textContent=amount.toLocaleString('ko-KR')+'';
  row.append(badge,name,total);return row;
 };window.overlay3MakeRow=makeRow;
-window.overlay3MaskAccountName=value=>{const letters=Array.from(String(value||'익명').trim());if(letters.length>1)letters[1]='*';return letters.slice(0,4).join('');};
+window.overlay3MaskAccountName=value=>{const letters=Array.from(String(value||'익명').trim());if(letters.length>1)letters[1]='♥';return letters.join('');};
 window.overlay3CreatorName=value=>{const text=Array.from(String(value||'익명').trim()).slice(0,4).join('');const name=document.createElement('span');name.className='o3-rank-name';name.textContent=text;return name.outerHTML;};</script></head>
 
 <body class="theme-gold">
@@ -2260,7 +2265,7 @@ if (amountNum >= 1000000) vipClass = " vip-account vip-100";
 else if (amountNum >= 500000) vipClass = " vip-account vip-50";
 else if (amountNum >= 300000) vipClass = " vip-account vip-30";
 else if (amountNum >= 100000) vipClass = " vip-account vip-10";
-          return window.overlay3MakeRow({name:window.overlay3MaskAccountName(donor),amount:Number(rawAmount)}).outerHTML.replace('class="row active ' , 'class="roller-item row active ');
+          return window.overlay3MakeRow({name:item.donorDisplayResolved?donor:window.overlay3MaskAccountName(donor),amount:Number(rawAmount)}).outerHTML.replace('class="row active ' , 'class="roller-item row active ');
         };
 
         const moveToIndex = (index, useTransition = true) => {
