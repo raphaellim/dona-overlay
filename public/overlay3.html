@@ -1126,6 +1126,13 @@ body.test-bg{
 #overlayPanel #accountBox .account-glyph{display:inline-block;width:1em;flex:0 0 1em;text-align:center;font-size:inherit}
 #overlayPanel #accountBox .account-mask-heart{font-size:.8em;width:1.25em;flex-basis:1.25em}
 
+
+/* v6.15.1: reserve more room for amounts and Prism crop safety. */
+#overlayPanel #accountBox .roller-item.row{grid-template-columns:20px minmax(0,104px) minmax(0,1fr)!important;column-gap:6px!important;padding:0 7px 0 0!important}
+#overlayPanel #accountBox .roller-item .badge,#overlayPanel #accountBox .roller-item .icon{width:20px!important;height:28px!important}
+#overlayPanel #accountBox .roller-item .icon svg{width:19px!important;height:22px!important}
+#overlayPanel #accountBox .roller-item .amount{padding-right:2px!important;box-sizing:border-box!important;overflow:visible!important}
+
 </style>
   <link rel="stylesheet" href="/assets/css/roulette-overlay.css">
 <style>
@@ -1339,7 +1346,7 @@ body,#overlayPanel{font-family:'Noto Sans KR','맑은 고딕',sans-serif!importa
  const icon=document.createElement('span');icon.className='icon';if(tier==='diamond')icon.innerHTML='<svg viewBox="0 1 24 24" aria-hidden="true"><path fill="#72d8ff" d="M6 4h12l5 6-11 12L1 10z"/><path fill="#c5f2ff" d="M6 4l6 6H1zm12 0l-6 6h11z"/><path fill="#39aee9" d="M1 10h11v12zm11 0h11L12 22z"/><path fill="#91e9ff" d="M6 4h12l-6 6z"/></svg>';else if(tier==='star')icon.innerHTML='<svg viewBox="0 -0.5 24 24" aria-hidden="true"><path fill="#ffd96a" d="M12 2l3.1 6.3 6.9 1-5 4.9 1.2 6.8-6.2-3.2L5.8 21 7 14.2l-5-4.9 6.9-1z"/></svg>';else icon.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#4DE2B1" d="M12 21S2 14.7 2 7.8A5.3 5.3 0 0 1 12 5a5.3 5.3 0 0 1 10 2.8C22 14.7 12 21 12 21Z"/></svg>';badge.append(icon);
  if(tier){for(const side of ['a','b']){const spark=document.createElement('span');spark.className='spark '+side;badge.append(spark);}}
  const name=document.createElement('span');name.className='name';name.title=donor.name;for(const letter of Array.from(String(donor.name))){const glyph=document.createElement('span');glyph.className='account-glyph'+(letter==='♥'?' account-mask-heart':'');glyph.textContent=letter;name.append(glyph);}const length=Array.from(String(donor.name)).length;if(length>4)name.style.setProperty('font-size',Math.max(12,26*4/length)+'px','important');
- const total=document.createElement('span');total.className='amount';total.textContent=amount.toLocaleString('ko-KR')+'';
+ const total=document.createElement('span');total.className='amount';total.textContent=amount.toLocaleString('ko-KR')+'';total.dataset.baseSize=String(total.textContent.length>9?25*9/total.textContent.length:25);total.style.setProperty('font-size',total.dataset.baseSize+'px','important');
  row.append(badge,name,total);return row;
 };window.overlay3MakeRow=makeRow;
 window.overlay3MaskAccountName=value=>{const letters=Array.from(String(value||'익명').trim());if(letters.length>1)letters[1]='♥';return letters.join('');};
@@ -3158,6 +3165,13 @@ function updateBroadcastTimer() {
 
 <script>try{if(new URLSearchParams(location.search).get("bg")==="1") document.body.classList.add("test-bg");}catch(e){}</script>
 
-<script>setInterval(()=>document.querySelectorAll('[data-donation-at]').forEach(e=>{const s=Math.max(0,Math.floor((Date.now()-Date.parse(e.dataset.donationAt))/1000));e.textContent='['+(s<1?'방금 전':s<60?s+'초 전':Math.floor(s/60)+'분 전')+']';}),1000);</script><script src="/overlay3-display.js?v=20261015-v613"></script><script src="/alert-queue.js"></script><script src="/overlay3-alert.js?v=20261015-v6111"></script></body>
+<script>setInterval(()=>document.querySelectorAll('[data-donation-at]').forEach(e=>{const s=Math.max(0,Math.floor((Date.now()-Date.parse(e.dataset.donationAt))/1000));e.textContent='['+(s<1?'방금 전':s<60?s+'초 전':Math.floor(s/60)+'분 전')+']';}),1000);</script><script src="/overlay3-display.js?v=20261015-v613"></script><script src="/alert-queue.js"></script><script src="/overlay3-alert.js?v=20261015-v6111"></script>
+<script>
+(()=>{const track=document.getElementById('rollerTrack'),box=document.getElementById('accountBox');if(!track||!box)return;let frame=0;
+function schedule(){if(frame)return;frame=requestAnimationFrame(()=>{frame=0;for(const amount of track.querySelectorAll('.amount')){let size=Number(amount.dataset.baseSize)||25;amount.style.setProperty('font-size',size+'px','important');while(amount.clientWidth>0&&amount.scrollWidth>amount.clientWidth&&size>14){size-=.5;amount.style.setProperty('font-size',size+'px','important');}}});}
+new MutationObserver(schedule).observe(track,{childList:true,subtree:true,characterData:true});if(window.ResizeObserver)new ResizeObserver(schedule).observe(box);document.fonts?.ready.then(schedule);window.addEventListener('resize',schedule);schedule();
+})();
+</script>
+</body>
 
 </html>
