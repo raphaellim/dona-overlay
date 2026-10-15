@@ -35,9 +35,10 @@ function shuffle(values) {
 
 function createYoutubeChat({ supabase, withSettingsMutation, env = process.env, fetchImpl = fetch, namespace = '' }) {
   const states = new Map();
+  const stationOAuth = namespace === 'service';
   const storeKey = slug => namespace ? `${namespace}:${slug}` : slug;
   const key = () => crypto.createHash('sha256').update(env.YOUTUBE_CHAT_ENCRYPTION_KEY).digest();
-  const configured = () => !!(env.YOUTUBE_CLIENT_ID && env.YOUTUBE_CLIENT_SECRET && env.YOUTUBE_REDIRECT_URI && env.YOUTUBE_CHAT_ENCRYPTION_KEY);
+  async function configured(slug) {try {await clientConfig(slug);return true;}catch (_) {return false;}}
   const seal = value => {
     const iv = crypto.randomBytes(12), cipher = crypto.createCipheriv('aes-256-gcm', key(), iv);
     const body = Buffer.concat([cipher.update(JSON.stringify(value)), cipher.final()]);
@@ -66,6 +67,35 @@ function createYoutubeChat({ supabase, withSettingsMutation, env = process.env, 
       return result;
     });
   }
+  function requireSlug(slug) {if(typeof slug !== 'string' || !slug.trim())throw new Error('방송국을 선택하세요.');return slug;}
+  async function clientConfig(slug) {
+    if(!env.YOUTUBE_CHAT_ENCRYPTION_KEY || !env.YOUTUBE_REDIRECT_URI)throw new Error('서버의 OAuth 암호화 키·콜백 주소 설정이 필요합니다.');
+    if(!stationOAuth) {
+      if(!env.YOUTUBE_CLIENT_ID || !env.YOUTUBE_CLIENT_SECRET)throw new Error('YouTube OAuth 설정이 필요합니다.');
+      return {clientId:env.YOUTUBE_CLIENT_ID,clientSecret:env.YOUTUBE_CLIENT_SECRET,redirectUri:env.YOUTUBE_REDIRECT_URI,revision:'legacy'};
+    }
+    requireSlug(slug);const store=await readStore();const encrypted=Object.hasOwn(store.$oauthClients||{},storeKey(slug))?store.$oauthClients[storeKey(slug)]:null;
+    if(!encrypted)throw new Error('이 방송국의 Google Cloud OAuth 설정을 먼저 저장하세요.');
+    const value=open(encrypted);
+    if(!value.clientId || !value.clientSecret || !value.revision)throw new Error('방송국 OAuth 설정을 다시 저장하세요.');
+    return {...value,redirectUri:env.YOUTUBE_REDIRECT_URI};
+  }
+  async function updateOAuth(slug,input) {
+    if(!stationOAuth)throw new Error('운영채팅 전용 설정입니다.');requireSlug(slug);
+    if(!env.YOUTUBE_CHAT_ENCRYPTION_KEY || !env.YOUTUBE_REDIRECT_URI)throw new Error('서버 OAuth 암호화 키·콜백 주소 설정이 필요합니다.');
+    const clientId=String(input?.clientId||'').trim(),secret=String(input?.clientSecret||'').trim();
+    if(clientId.length>300 || !/^[a-zA-Z0-9._-]+\.apps\.googleusercontent\.com$/.test(clientId))throw new Error('Google OAuth 클라이언트 ID를 확인하세요.');
+    if(secret.length>2000)throw new Error('클라이언트 보안 비밀번호를 확인하세요.');
+    await changeStore(slug,(_,store)=>{
+      if(!store.$oauthClients || typeof store.$oauthClients!=='object')store.$oauthClients={};
+      const old=Object.hasOwn(store.$oauthClients,storeKey(slug))?open(store.$oauthClients[storeKey(slug)]):null;
+      const clientSecret=secret || (old?.clientId===clientId?old.clientSecret:'');
+      if(!clientSecret)throw new Error('클라이언트 보안 비밀번호를 입력하세요.');
+      const changed=!old || old.clientId!==clientId || old.clientSecret!==clientSecret;
+      store.$oauthClients[storeKey(slug)]=seal({clientId,clientSecret,revision:changed?crypto.randomUUID():old.revision});
+    });
+    return oauthInfo(slug);
+  }
   async function google(url, options = {}) {
     const response = await fetchImpl(url, { ...options, signal: AbortSignal.timeout(12000) });
     const result = await response.json().catch(() => ({}));
@@ -76,16 +106,17 @@ function createYoutubeChat({ supabase, withSettingsMutation, env = process.env, 
     }
     return result;
   }
-  async function token(form) {
-    return google('https://oauth2.googleapis.com/token', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ client_id: env.YOUTUBE_CLIENT_ID, client_secret: env.YOUTUBE_CLIENT_SECRET, ...form }) });
+  async function token(form,config) {
+    return google('https://oauth2.googleapis.com/token', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ client_id: config.clientId, client_secret: config.clientSecret, ...form }) });
   }
   // Railway/Render처럼 OAuth 왕복 중 인스턴스가 재시작될 수 있는 환경에서는
   // state를 메모리 Map에만 저장하면 callback에서 '인증 요청이 만료'가 발생할 수 있습니다.
   // 암호화된 stateless state에 방송국/만료시각/namespace를 넣어 callback이 다른 인스턴스로
   // 들어와도 검증할 수 있게 합니다. 기존 메모리 state도 호환용으로 유지합니다.
-  function makeOAuthState(slug) {
+  function makeOAuthState(slug,revision) {
     const payload = {
       type: 'youtube-oauth-state-v1',
+      revision,
       slug: String(slug || 'default'),
       namespace: String(namespace || ''),
       expires: Date.now() + 10 * 60 * 1000,
@@ -101,7 +132,7 @@ function createYoutubeChat({ supabase, withSettingsMutation, env = process.env, 
       if (payload?.type !== 'youtube-oauth-state-v1') return null;
       if (String(payload.namespace || '') !== String(namespace || '')) return null;
       if (!payload.slug || Number(payload.expires || 0) < Date.now()) return null;
-      return { slug: String(payload.slug), expires: Number(payload.expires) };
+      return { slug: String(payload.slug), expires: Number(payload.expires), revision:payload.revision };
     } catch (_) {
       // 구버전 state(메모리 Map) 호환
       const pending = states.get(raw);
@@ -109,33 +140,33 @@ function createYoutubeChat({ supabase, withSettingsMutation, env = process.env, 
       return pending || null;
     }
   }
-  function oauthInfo() {
-    return {
-      configured: configured(),
-      namespace: String(namespace || ''),
-      clientId: String(env.YOUTUBE_CLIENT_ID || ''),
-      redirectUri: String(env.YOUTUBE_REDIRECT_URI || '')
-    };
+  async function oauthInfo(slug) {
+    let config;try{config=await clientConfig(slug);}catch(_){}
+    return {configured:!!config,namespace:String(namespace||''),stationScoped:stationOAuth,
+      clientId:config?.clientId||'',hasClientSecret:!!config?.clientSecret,redirectUri:String(env.YOUTUBE_REDIRECT_URI||'')};
   }
-  function begin(slug) {
-    if (!configured()) throw new Error('YouTube OAuth 환경변수 4개를 먼저 등록하세요.');
-    const state = makeOAuthState(slug);
-    const url = new URL('https://accounts.google.com/o/oauth2/v2/auth');
-    url.search = new URLSearchParams({ client_id: env.YOUTUBE_CLIENT_ID, redirect_uri: env.YOUTUBE_REDIRECT_URI, response_type: 'code', scope: 'https://www.googleapis.com/auth/youtube.force-ssl', access_type: 'offline', prompt: 'consent select_account', state }).toString();
+  async function begin(slug) {
+    const config=await clientConfig(slug);
+    const state=makeOAuthState(slug,config.revision);
+    const url=new URL('https://accounts.google.com/o/oauth2/v2/auth');
+    url.search=new URLSearchParams({client_id:config.clientId,redirect_uri:config.redirectUri,response_type:'code',scope:'https://www.googleapis.com/auth/youtube.force-ssl',access_type:'offline',prompt:'consent select_account',state}).toString();
     return url.toString();
   }
   async function finish(state, code) {
     const pending = readOAuthState(state);
     if (!pending || pending.expires < Date.now() || !code) throw new Error('인증 요청이 만료되었습니다. 다시 연결하세요.');
-    const credentials = await token({ code, redirect_uri: env.YOUTUBE_REDIRECT_URI, grant_type: 'authorization_code' });
+    const config=await clientConfig(pending.slug);
+    if(stationOAuth && pending.revision!==config.revision)throw new Error('Google Cloud 설정이 변경되었습니다. 다시 연결하세요.');
+    const credentials = await token({ code, redirect_uri: config.redirectUri, grant_type: 'authorization_code' },config);
     if (!credentials.refresh_token) throw new Error('오프라인 승인 정보를 받지 못했습니다. Google 계정에서 권한을 확인하고 다시 승인하세요.');
     const channels = await google('https://www.googleapis.com/youtube/v3/channels?part=snippet&mine=true', { headers: { Authorization: `Bearer ${credentials.access_token}` } });
     const channel = channels.items?.[0];
     if (!channel?.id) throw new Error('해당 Google 계정에 YouTube 채널이 없습니다.');
-    await changeStore(pending.slug, accounts => {
+    await changeStore(pending.slug, (accounts,store) => {
+      if(stationOAuth && open(store.$oauthClients[storeKey(pending.slug)]).revision!==config.revision)throw new Error('OAuth 설정이 변경되었습니다. 다시 연결하세요.');
       const old = accounts.findIndex(a => a.id === channel.id);
       const previous = old >= 0 ? accounts[old] : {};
-      const account = { id: channel.id, name: channel.snippet?.title || channel.id, suffixMode: modeOf(previous), manualSuffix: manualOf(previous), secret: seal({ refreshToken: credentials.refresh_token, accessToken: credentials.access_token, expiresAt: Date.now() + credentials.expires_in * 1000 }) };
+      const account = { id: channel.id, name: channel.snippet?.title || channel.id, suffixMode: modeOf(previous), manualSuffix: manualOf(previous), secret: seal({ oauthRevision:config.revision, refreshToken: credentials.refresh_token, accessToken: credentials.access_token, expiresAt: Date.now() + credentials.expires_in * 1000 }) };
       if (old >= 0) accounts[old] = account; else accounts.push(account);
     });
     return pending.slug;
@@ -228,16 +259,18 @@ function createYoutubeChat({ supabase, withSettingsMutation, env = process.env, 
     return accounts(slug);
   }
   async function access(slug, account) {
+    const config=await clientConfig(slug);
     const auth = open(account.secret);
+    if(stationOAuth && auth.oauthRevision!==config.revision)throw new Error('방송국 전용 Google Cloud 설정으로 계정을 다시 연결하세요.');
     if (auth.expiresAt > Date.now() + 60000 && auth.accessToken) return auth.accessToken;
     let fresh;
-    try { fresh = await token({ grant_type: 'refresh_token', refresh_token: auth.refreshToken }); }
+    try { fresh = await token({ grant_type: 'refresh_token', refresh_token: auth.refreshToken },config); }
     catch (e) {
       if (/expired|revoked|invalid_grant/i.test(String(e.message||''))) throw new Error('YouTube 인증이 만료되었거나 취소되었습니다. 이 계정을 다시 연결하세요.');
       throw e;
     }
     if (!fresh.access_token) throw new Error('YouTube 계정 재인증이 필요합니다.');
-    const nextAuth = { refreshToken: fresh.refresh_token || auth.refreshToken, accessToken: fresh.access_token, expiresAt: Date.now() + Number(fresh.expires_in || 3600) * 1000 };
+    const nextAuth = { oauthRevision:config.revision, refreshToken: fresh.refresh_token || auth.refreshToken, accessToken: fresh.access_token, expiresAt: Date.now() + Number(fresh.expires_in || 3600) * 1000 };
     const nextSecret = seal(nextAuth);
     await changeStore(slug, accounts => { const item = accounts.find(x => x.id === account.id); if (item) item.secret = nextSecret; });
     account.secret = nextSecret;
@@ -285,6 +318,6 @@ function createYoutubeChat({ supabase, withSettingsMutation, env = process.env, 
     }
     return { results };
   }
-  return { configured, oauthInfo, begin, finish, accounts, options, updateOptions, donationAuto, updateDonationAuto, sendExact, update, updateAll, resolve, send };
+  return { configured, oauthInfo, updateOAuth, begin, finish, accounts, options, updateOptions, donationAuto, updateDonationAuto, sendExact, update, updateAll, resolve, send };
 }
 module.exports = { createYoutubeChat };

@@ -3025,7 +3025,7 @@ async function youtubeChatAdmin(req, res) {
   return ctx;
 }
 app.get('/api/youtube-chat/accounts', async (req, res) => {
-  try { const ctx = await youtubeChatAdmin(req, res); if (ctx) res.json({ configured: youtubeChat.configured(), accounts: await youtubeChat.accounts(ctx.station.slug), options: await youtubeChat.options(ctx.station.slug) }); }
+  try { const ctx = await youtubeChatAdmin(req, res); if (ctx) res.json({ configured: await youtubeChat.configured(ctx.station.slug), accounts: await youtubeChat.accounts(ctx.station.slug), options: await youtubeChat.options(ctx.station.slug) }); }
   catch (e) { res.status(500).json({ error: e.message }); }
 });
 app.patch('/api/youtube-chat/options', async (req, res) => {
@@ -3033,7 +3033,7 @@ app.patch('/api/youtube-chat/options', async (req, res) => {
   catch (e) { res.status(400).json({ error: e.message }); }
 });
 app.get('/api/youtube-chat/auth', async (req, res) => {
-  try { const ctx = await youtubeChatAdmin(req, res); if (ctx) res.redirect(youtubeChat.begin(ctx.station.slug)); }
+  try { const ctx = await youtubeChatAdmin(req, res); if (ctx) res.redirect(await youtubeChat.begin(ctx.station.slug)); }
   catch (e) { res.status(400).type('text/plain').send(e.message); }
 });
 app.get('/api/youtube-chat/callback', async (req, res) => {
@@ -3236,7 +3236,7 @@ async function sendExactMessages(slug, videoId, accountId, messages) {
 
 // 별도의 OAuth 프로젝트와 계정 저장 공간을 쓰는 운영용 채팅 페이지입니다.
 app.get('/api/youtube-chat-service/accounts', async (req, res) => {
-  try { const ctx = await youtubeChatAdmin(req, res); if (ctx) res.json({ configured: youtubeChatService.configured(), accounts: await youtubeChatService.accounts(ctx.station.slug), options: await youtubeChatService.options(ctx.station.slug) }); }
+  try { const ctx = await youtubeChatAdmin(req, res); if (ctx) res.json({ configured: await youtubeChatService.configured(ctx.station.slug), accounts: await youtubeChatService.accounts(ctx.station.slug), options: await youtubeChatService.options(ctx.station.slug) }); }
   catch (e) { res.status(500).json({ error: e.message }); }
 });
 app.get('/api/youtube-chat-service/donation-auto', async (req, res) => {
@@ -3251,10 +3251,17 @@ app.patch('/api/youtube-chat-service/options', async (req, res) => {
   try { const ctx = await youtubeChatAdmin(req, res); if (ctx) res.json({ options: await youtubeChatService.updateOptions(ctx.station.slug, req.body) }); }
   catch (e) { res.status(400).json({ error: e.message }); }
 });
+// station-google-oauth-v1: encrypted per-station Cloud client settings.
+app.patch('/api/youtube-chat-service/oauth-config', async (req, res) => {
+  try { const ctx = await youtubeChatAdmin(req, res); if (!ctx) return;
+    res.set('Cache-Control','no-store');
+    res.json(await youtubeChatService.updateOAuth(ctx.station.slug, req.body));
+  } catch (e) { res.status(400).json({ error: e.message }); }
+});
 app.get('/api/youtube-chat-service/oauth-info', async (req, res) => {
   try {
     const ctx = await youtubeChatAdmin(req, res);
-    if (ctx) res.json(youtubeChatService.oauthInfo());
+    if (ctx) res.json(await youtubeChatService.oauthInfo(ctx.station.slug));
   } catch (e) { res.status(400).json({ error: e.message }); }
 });
 app.get('/api/youtube-chat-service/auth', async (req, res) => {
@@ -3268,7 +3275,7 @@ app.get('/api/youtube-chat-service/auth', async (req, res) => {
       secure: true,
       maxAge: 10 * 60 * 1000
     });
-    res.redirect(youtubeChatService.begin(ctx.station.slug));
+    res.redirect(await youtubeChatService.begin(ctx.station.slug));
   }
   catch (e) { res.status(400).type('text/plain').send(e.message); }
 });
@@ -4208,7 +4215,7 @@ app.get('/api/summary', async (req, res) => {
 async function maybeSendDonationYoutubeChat(ctx, settings, donor, accountTotal, toonieTotal, createdRows, options={}) {
   try {
     const cfg = await readServiceDonationAuto(ctx.station.slug);
-    if (!cfg.enabled || !cfg.liveUrl || !cfg.accountId || !youtubeChatService.configured()) return;
+    if (!cfg.enabled || !cfg.liveUrl || !cfg.accountId || !await youtubeChatService.configured(ctx.station.slug)) return;
 
     const videoId = youtubeVideoId(cfg.liveUrl);
     const grandTotal = Number(accountTotal || 0) + Number(toonieTotal || 0);
@@ -4782,7 +4789,7 @@ async function sendScheduledDonationStatus(station, active, cfg) {
 }
 
 const runPhraseScheduler=require('./scheduled-chat').createScheduler({
- getCurrent:async station=>{const cfg=await readServiceDonationAuto(station.slug);if(!youtubeChatService.configured())return null;const active=await ensureActiveBroadcast(station.id),settings=await readEffectiveSettings(station.slug,active.id);return {cfg,active,live:settings.broadcastLiveData};},
+ getCurrent:async station=>{const cfg=await readServiceDonationAuto(station.slug);if(!await youtubeChatService.configured(station.slug))return null;const active=await ensureActiveBroadcast(station.id),settings=await readEffectiveSettings(station.slug,active.id);return {cfg,active,live:settings.broadcastLiveData};},
  claim:async(station,active,key,slot)=>{const {error}=await supabase.from('broadcast_chat_schedule_claims').insert({station_id:station.id,broadcast_id:active.id,schedule_key:key,slot});if(error?.code==='23505')return false;if(error)throw Error('지정 문구 예약 저장 실패. sql/06-broadcast-finance.sql 실행을 확인하세요: '+error.message);return true;},
  send:async(station,cfg,message)=>sendExactMessages(station.slug,youtubeVideoId(cfg.liveUrl),cfg.accountId,[message])
 });
@@ -4799,7 +4806,7 @@ async function runDonationStatusScheduler() {
     for (const station of stations || []) {
       try {
         const cfg = await readServiceDonationAuto(station.slug);
-        if (!cfg.repeatEnabled || !cfg.liveUrl || !cfg.accountId || !youtubeChatService.configured()) continue;
+        if (!cfg.repeatEnabled || !cfg.liveUrl || !cfg.accountId || !await youtubeChatService.configured(station.slug)) continue;
         const active = await ensureActiveBroadcast(station.id);
         const liveSettings=await readEffectiveSettings(station.slug,active.id);
         if(!require('./scheduled-chat').liveWindow(liveSettings.broadcastLiveData))continue;

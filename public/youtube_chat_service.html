@@ -128,7 +128,7 @@
   async function loadDonationAuto(){
     try{const data=await request('/donation-auto');const a=data.auto||{};$('donationAutoEnabled').checked=!!a.enabled;$('donationAutoUrl').value=a.liveUrl||$('liveUrl').value||'';$('donationFirstEnabled').checked=a.firstEnabled!==false;$('donationSecondEnabled').checked=a.secondEnabled!==false;$('donationFirstTemplate').value=a.firstTemplate||'{후원자} {금액} {방식} → {분배} {프리셋}';$('donationSecondTemplate').value=a.secondTemplate||'현재 누적후원현황 {누적}';renderDonationAutoAccounts(a.accountId||'');$('phraseEnabled').checked=!!a.phraseEnabled;$('phraseMinutes').value=a.phraseMinutes||10;$('phraseMessages').value=(a.phraseMessages||[]).join('\n');$('donationAutoStatus').textContent='후원 '+(a.enabled?'ON':'OFF')+' / 지정 문구 '+(a.phraseEnabled?'ON':'OFF')}catch(e){$('donationAutoStatus').textContent=errorText(e)}
   }
-  async function loadAccounts(){try{const data=await request('/accounts');accounts=(data.accounts||[]).map(a=>({...a,selected:true}));savedOptions=data.options||{};$('varietyMode').checked=savedOptions.varietyMode!==false;$('emojiPool').value=savedOptions.emojiPool||'';serverReady=!!data.configured;$('connection').textContent=serverReady?'운영 서버 연결됨':'운영용 OAuth 설정 필요';$('setupNote').textContent='운영용 OAuth 환경변수 4개를 Render에 등록하고, 이 운영 페이지에서 계정을 새로 연결하세요.';$('setupNote').hidden=serverReady}catch(e){serverReady=false;$('connection').textContent='서버 연동 필요';$('setupNote').hidden=false}render();await loadDonationAuto()}
+  async function loadAccounts(){try{const data=await request('/accounts');accounts=(data.accounts||[]).map(a=>({...a,selected:true}));savedOptions=data.options||{};$('varietyMode').checked=savedOptions.varietyMode!==false;$('emojiPool').value=savedOptions.emojiPool||'';serverReady=!!data.configured;$('connection').textContent=serverReady?'운영 서버 연결됨':'운영용 OAuth 설정 필요';$('setupNote').textContent='이 방송국의 Google Cloud API 연결에서 OAuth 정보를 저장한 뒤 구글 계정을 연결하세요.';$('setupNote').hidden=serverReady}catch(e){serverReady=false;$('connection').textContent='서버 연동 필요';$('setupNote').hidden=false}render();await loadDonationAuto()}
   $('saveOptions').onclick=async()=>{
     if(optionPending)return;
     const payload={randomOrder:true,varietyMode:$('varietyMode').checked,emojiPool:$('emojiPool').value.trim()};
@@ -164,7 +164,7 @@
       $('result').textContent=`${accounts.length}개 계정에 전체 설정을 적용했습니다.`;$('result').className='result ok';
     }catch(e){$('result').textContent=errorText(e);$('result').className='result error'}finally{button.disabled=false}
   };
-  $('addAccount').onclick=()=>{if(!serverReady){$('result').textContent='계정을 연결하려면 서버의 Google 인증 기능을 먼저 설정하세요.';$('result').className='result error';return}location.href=api+'/auth?station='+encodeURIComponent(station)};
+  $('addAccount').onclick=()=>{if(!serverReady){$('result').textContent='이 방송국의 Google Cloud API 연결을 먼저 설정하세요.';$('result').className='result error';return}location.href=api+'/auth?station='+encodeURIComponent(station)};
   $('connect').onclick=async()=>{saveDraft();chatId='';$('liveStatus').textContent='방송 확인 중…';try{const data=await request('/resolve',{method:'POST',body:JSON.stringify({url:$('liveUrl').value.trim()})});chatId=data.liveChatId;$('liveStatus').textContent=`채팅 가능 · ${data.title||'라이브 방송'}`}catch(e){$('liveStatus').textContent=errorText(e)}};
   async function sendMessages(chosen){if(busy)return;const message=$('message').value.trim();if(!message||!chosen.length||!chatId){$('result').textContent='방송을 확인하고 공용 멘트와 계정을 선택하세요.';$('result').className='result error';return}busy=true;$('sendSelected').disabled=true;$('result').textContent='전송 중…';$('result').className='result';try{if(optionPending)await optionPending;await Promise.all(chosen.map(a=>a.pending).filter(Boolean));if(chosen.some(a=>a.saveError))throw new Error('개별 멘트 저장에 실패했습니다. 다시 입력하세요.');const data=await request('/send',{method:'POST',body:JSON.stringify({url:$('liveUrl').value.trim(),accountIds:chosen.map(a=>a.id),message})});const outcomes=data.results||[];$('result').textContent=outcomes.length?outcomes.map(x=>`${x.name||x.accountId}: ${x.ok?'전송 완료 · '+x.text:x.error||'실패'}`).join('\n'):'전송 요청이 완료되었습니다.';$('result').className=outcomes.some(x=>!x.ok)?'result error':'result ok'}catch(e){$('result').textContent=errorText(e);$('result').className='result error'}finally{busy=false;$('sendSelected').disabled=false}}
   $('sendSelected').onclick=()=>sendMessages(accounts.filter(a=>a.selected!==false&&a.connected!==false));
@@ -172,5 +172,5 @@
   const params=new URLSearchParams(location.search);if(params.has('auth')){$('result').textContent=params.get('auth')==='ok'?'계정 연결이 완료되었습니다.':'계정 연결에 실패했습니다.';history.replaceState(null,'',location.pathname+'?station='+encodeURIComponent(station))}
   loadAccounts();
 </script>
-<script src="/embedded-navigation.js"></script></body>
+<script src="/embedded-navigation.js"></script><script src="/station-google-oauth.js"></script></body>
 </html>
