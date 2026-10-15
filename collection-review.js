@@ -51,5 +51,5 @@ module.exports=function(app,d){
   const sum=routing.rows.reduce((n,r)=>n+r.amount,0);if(sum!==Number(row.amount)){routing.state='hold';routing.reason=`실제 ${row.amount}원 · 분배 ${sum}원 · 차액 ${Number(row.amount)-sum}원`;}
   const {error:updateError}=await supabase.from('donation_capture_candidates').update({routing,status:routing.state==='hold'?'hold':'pending'}).eq('id',row.id).in('status',['pending','hold']);if(updateError)throw updateError;notify(ctx.station.slug,'candidates');res.json({ok:true});
  }catch(e){res.status(400).json({error:e.message});}});
- return {prepare,auto};
+ return {prepare,auto,config};
 };

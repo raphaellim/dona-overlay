@@ -917,6 +917,7 @@ function normalizeOverlaySections(raw, base) {
     account: value.account !== false,
     notice: value.notice === true,
      allowance: value.allowance === true,
+    presets: value.presets === true,
     creators: value.creators !== false,
     creatorDonations: value.creatorDonations !== false,
     karaoke: value.karaoke === true,
@@ -3478,6 +3479,7 @@ app.post('/api/settings', async (req, res) => {
       await saveSharedStationSettings(ctx.station.slug, sharedUpdates);
       await saveEffectiveSettings(ctx.station.slug, ctx.active.id, updates);
     }
+    if(has('overlaySections'))await require('./overlay-preferences').syncLegacy({supabase,ctx,sections:body.overlaySections});
     const effective = await readEffectiveSettings(ctx.station.slug, ctx.active.id);
 
     const broadcastClient = {
@@ -4330,7 +4332,7 @@ app.post('/api/station/toonie-widget', async (req, res) => {
 });
 
 app.get('/api/overlay-link-token',async(req,res)=>{try{const ctx=await getStationContext(req,res);if(!ctx)return;if(!await stationAllowed(req,ctx.station))return res.status(403).json({error:'관리자 전용'});res.set('Cache-Control','no-store');res.json({token:ctx.station.overlay_token});}catch(e){res.status(500).json({error:e.message});}});
-const alertCoordinator=require('./alert-coordinator')(app,{supabase,getStationContext,stationAllowed,stationTokenAllowed,readEffectiveSettings});
+const alertCoordinator=require('./alert-coordinator')(app,{supabase,getStationContext,stationAllowed,stationTokenAllowed,readEffectiveSettings,saveEffectiveSettings,getCollectionConfig:ctx=>collectionReview.config(ctx.station,ctx.active)});
 const collectionWs=require('./collection-ws')(httpServer,{port:()=>httpServer.address()?.port||PORT});
 alertCoordinator.onChange(slug=>collectionWs.notify(slug,'playback'));
 const notifyCollection=(slug,type,payload)=>{collectionWs.notify(slug,type,payload);if(type==='state')io.to(realtimeRoom(slug)).emit('overlay:changed',{type:'state',at:Date.now()});};
