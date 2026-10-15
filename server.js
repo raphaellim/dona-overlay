@@ -4330,9 +4330,9 @@ const alertCoordinator=require('./alert-coordinator')(app,{supabase,getStationCo
 const collectionWs=require('./collection-ws')(httpServer,{port:()=>httpServer.address()?.port||PORT});
 alertCoordinator.onChange(slug=>collectionWs.notify(slug,'playback'));
 const notifyCollection=(slug,type,payload)=>{collectionWs.notify(slug,type,payload);if(type==='state')io.to(realtimeRoom(slug)).emit('overlay:changed',{type:'state',at:Date.now()});};
-const collectionReview=require('./collection-review')(app,{supabase,getStationContext,managerAllowed,stationAllowed,ensureActiveBroadcast,readEffectiveSettings,saveEffectiveSettings,makeDonationRow,inputAllowedForActiveBroadcast,notify:notifyCollection,afterApply:async(ctx,settings,candidate,routing,rows)=>{
+const collectionReview=require('./collection-review')(app,{supabase,getStationContext,managerAllowed,stationAllowed,ensureActiveBroadcast,readEffectiveSettings,saveEffectiveSettings,makeDonationRow,inputAllowedForActiveBroadcast,notify:notifyCollection,calcCheck,afterApply:async(ctx,settings,candidate,routing,rows)=>{
  if(!candidate.routing?.receiptFirst)notifyCollection(ctx.station.slug,'alert',{id:candidate.id,donationIds:rows.map(r=>r.id),source:candidate.source,donor:routing.donor,title:candidate.title,vip:candidate.vip,amount:candidate.amount,message:candidate.message,receivedAt:candidate.received_at,rows:routing.rows});
- try{if(routing.fundingId){const current=await readEffectiveSettings(ctx.station.slug,ctx.active.id),fundingData=normalizeFundingData(current.fundingData),item=fundingData.items.find(f=>f.id===routing.fundingId);if(item){item.current=Number(item.current||0)+Math.floor(Number(candidate.amount)/10000);await saveSharedStationSettings(ctx.station.slug,{fundingData});}}if(!candidate.routing?.receiptFirst){nightbotChat.enqueue(ctx.station.slug,rows,settings.nightbotChat);await maybeSendDonationYoutubeChat(ctx,settings,routing.donor,candidate.source==='account'?candidate.amount:0,candidate.source==='toonie'?candidate.amount:0,rows);}await maybeStartAutoRoulette(ctx,candidate.amount,routing.donor,routing);}catch(e){console.error('수집 후원 부가 전송 실패:',e.message);}
+ try{if(routing.fundingId){const current=await readEffectiveSettings(ctx.station.slug,ctx.active.id),fundingData=normalizeFundingData(current.fundingData),item=fundingData.items.find(f=>f.id===routing.fundingId);if(item){item.current=Number(item.current||0)+(routing.fundingExactWon===true?Number(candidate.amount)/10000:Math.floor(Number(candidate.amount)/10000));await saveSharedStationSettings(ctx.station.slug,{fundingData});}}if(!candidate.routing?.receiptFirst){nightbotChat.enqueue(ctx.station.slug,rows,settings.nightbotChat);await maybeSendDonationYoutubeChat(ctx,settings,routing.donor,candidate.source==='account'?candidate.amount:0,candidate.source==='toonie'?candidate.amount:0,rows);}await maybeStartAutoRoulette(ctx,candidate.amount,routing.donor,routing);}catch(e){console.error('수집 후원 부가 전송 실패:',e.message);}
 }});
 const collectionCapture=require('./capture-test')(app,{supabase,getStation,getStationContext,managerAllowed,stationAllowed,review:collectionReview,notify:notifyCollection,ensureActiveBroadcast,readEffectiveSettings,afterReceive:async(ctx,settings,candidate)=>{
  notifyCollection(ctx.station.slug,'state');notifyCollection(ctx.station.slug,'alert',{id:candidate.id,receiptOnly:true,source:'account',donor:candidate.routing.receiptDonor||candidate.donor,title:candidate.title,vip:candidate.vip,amount:candidate.amount,message:candidate.message,receivedAt:candidate.received_at,rows:[]});
@@ -4415,6 +4415,7 @@ app.post('/api/donations/batch', async (req, res) => {
     if (!await inputAllowedForActiveBroadcast(ctx)) return res.status(403).json({ error: '방송시작 상태에서만 입력할 수 있습니다.' });
 
     const settings = await readEffectiveSettings(ctx.station.slug, ctx.active.id);
+    const selectedPresets=require('./donation-options').presetSelections(settings,req.body);
     const donor = normName(req.body.donor);
     const processType = normName(req.body.processType) || '후원';
     const exactInput=v=>req.body.exactWon===true?exactWonInput(v):toWon(v);
@@ -4443,6 +4444,7 @@ app.post('/api/donations/batch', async (req, res) => {
     const fundingItemForRows = fundingIdForRows
       ? (settings.fundingData?.items || []).find(f => String(f.id) === fundingIdForRows)
       : null;
+    if(fundingIdForRows&&(!fundingItemForRows||fundingItemForRows.enabled===false))return res.status(400).json({error:'활성 펀딩을 선택하세요.'});
     const fundingTitleForRows = String(fundingItemForRows?.title || '').trim();
     const fundingBatchId = fundingIdForRows
       ? `fundbatch_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`
@@ -4454,7 +4456,7 @@ app.post('/api/donations/batch', async (req, res) => {
       remainAccount -= accountPart;
       const tooniePart = r.amount - accountPart;
 
-      return makeDonationRow({
+      return require('./donation-options').applyPresets(makeDonationRow({
         exactWon:true,
         donor,
         creator: r.creator,
@@ -4468,7 +4470,7 @@ app.post('/api/donations/batch', async (req, res) => {
         fundingBatchId,
         fundingTitle: fundingTitleForRows,
         sourceType: fundingIdForRows ? 'batch' : ''
-      }, settings, ctx.station.id, ctx.active.id);
+      }, settings, ctx.station.id, ctx.active.id),selectedPresets,r.amount,settings,calcCheck);
     });
 
     const { data, error } = await supabase.from('donations').insert(created).select();
@@ -4482,7 +4484,7 @@ app.post('/api/donations/batch', async (req, res) => {
       const fundingData = normalizeFundingData(current.fundingData);
       const item = fundingData.items.find(f => f.id === fundingId);
       if (item) {
-        let units = Math.trunc(Number(req.body.fundingUnits || 0));
+        let units = req.body.fundingExactWon===true?grandTotal/10000:Math.trunc(Number(req.body.fundingUnits || 0));
         if (!units || units < 0) units = Math.floor(grandTotal / 10000);
         if (units > 0) {
           item.current = Number(item.current || 0) + units;
