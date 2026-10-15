@@ -1,3 +1,8 @@
+/* Source/name/amount use the current donation amount, independently of ledger totals. */
+#v5Alert-alert[data-amount-tier="mint"],#alert[data-amount-tier="mint"]{--donation-text-gradient:linear-gradient(100deg,#65d9b1,#a4f8d8,#65d9b1);--donation-text-color:#75e8c3}
+#v5Alert-alert[data-amount-tier="gold"],#alert[data-amount-tier="gold"]{--donation-text-gradient:linear-gradient(100deg,#efbd52,#ffe6a1,#efbd52);--donation-text-color:#ffd166}
+#v5Alert-alert[data-amount-tier="rainbow"],#alert[data-amount-tier="rainbow"]{--donation-text-color:#b7a0ff}
+#v5Alert-source,#v5Alert-alert .v5Alert-message .name,#v5Alert-alert .v5Alert-message .amount,#alert #source,#alert #donor,#alert #amount{color:var(--donation-text-color,#fff)!important}
 /* v6.10: centered readable text, rainbow letters only; original stars remain. */
 #overlayPanel #v5Alert-alert{
  height:auto!important;min-height:190px!important;max-height:none!important;
@@ -42,7 +47,7 @@
 @supports ((-webkit-background-clip:text) or (background-clip:text)){
  #v5Alert-source,#v5Alert-alert .v5Alert-message .name,#v5Alert-alert .v5Alert-message .amount,
  #alert #source,#alert #donor,#alert #amount{
-  background-image:linear-gradient(100deg,#ff7b8b,#ffc66b,#fff89b,#7ff4b0,#74e2ff,#b7a0ff,#ff97e0,#ff7b8b)!important;
+  background-image:var(--donation-text-gradient,linear-gradient(100deg,#ff7b8b,#ffc66b,#fff89b,#7ff4b0,#74e2ff,#b7a0ff,#ff97e0,#ff7b8b))!important;
   background-size:300% 100%!important;background-clip:text!important;-webkit-background-clip:text!important;
   color:transparent!important;-webkit-text-fill-color:transparent!important;
   -webkit-text-stroke:.35px rgba(0,0,0,.75)!important;text-shadow:none!important;

@@ -1251,6 +1251,27 @@ body,#overlayPanel{font-family:'Noto Sans KR','맑은 고딕',sans-serif!importa
 #overlayPanel #creatorBox .o3-rank-money{color:#FFB3D6!important}
 #overlayPanel #creatorBox .o3-rank-name{display:inline-block!important;flex:0 0 4em!important;width:4em!important;min-width:4em!important;max-width:4em!important;font-size:21px!important;line-height:28px!important;text-align:center!important;letter-spacing:0!important;white-space:nowrap!important;text-overflow:clip!important}
 #overlayPanel #creatorBox .o3-rank-name span{display:inline!important}
+
+/* v6.11 account ledger: monochrome shine, highest tier rainbow */
+#overlayPanel #accountBox .name,#overlayPanel #accountBox .amount{color:#75e8c3!important}
+#overlayPanel #accountBox .star .name,#overlayPanel #accountBox .star .amount{color:#ffd166!important}
+#overlayPanel #accountBox .diamond .name,#overlayPanel #accountBox .diamond .amount{color:#b7a0ff!important}
+@supports ((-webkit-background-clip:text) or (background-clip:text)){
+ #overlayPanel #accountBox .name,#overlayPanel #accountBox .amount{
+  background-image:linear-gradient(100deg,#65d9b1,#a4f8d8,#65d9b1)!important;
+  background-size:300% 100%!important;background-clip:text!important;-webkit-background-clip:text!important;
+  color:transparent!important;-webkit-text-fill-color:transparent!important;
+  text-shadow:none!important;animation:accountTierFlow 3s linear infinite!important;
+ }
+ #overlayPanel #accountBox .star .name,#overlayPanel #accountBox .star .amount{
+  background-image:linear-gradient(100deg,#efbd52,#ffe6a1,#efbd52)!important;
+ }
+ #overlayPanel #accountBox .diamond .name,#overlayPanel #accountBox .diamond .amount{
+  background-image:linear-gradient(100deg,#ff7b8b,#ffc66b,#fff89b,#7ff4b0,#74e2ff,#b7a0ff,#ff97e0,#ff7b8b)!important;
+ }
+}
+@keyframes accountTierFlow{from{background-position:0% 50%}to{background-position:100% 50%}}
+@media(prefers-reduced-motion:reduce){#overlayPanel #accountBox .name,#overlayPanel #accountBox .amount{animation:none!important}}
 </style><script>const EFFECT_RULES={star:100000,diamond:300000};if(new URLSearchParams(location.search).get("demo")==="1")window.overlay3Targets=[{name:"국고",group:"other"}];function makeRow(donor){const amount=Number(donor.amount)||0;const tier=amount>=EFFECT_RULES.diamond?'diamond':amount>=EFFECT_RULES.star?'star':'';
  const row=document.createElement('div');row.className='row active '+tier;
  const badge=document.createElement('span');badge.className='badge';badge.setAttribute('aria-hidden','true');
@@ -3091,6 +3112,6 @@ function updateBroadcastTimer() {
 
 <script>try{if(new URLSearchParams(location.search).get("bg")==="1") document.body.classList.add("test-bg");}catch(e){}</script>
 
-<script>setInterval(()=>document.querySelectorAll('[data-donation-at]').forEach(e=>{const s=Math.max(0,Math.floor((Date.now()-Date.parse(e.dataset.donationAt))/1000));e.textContent='['+(s<1?'방금 전':s<60?s+'초 전':Math.floor(s/60)+'분 전')+']';}),1000);</script><script src="/overlay3-display.js"></script><script src="/alert-queue.js"></script><script src="/overlay3-alert.js?v=20261015-v610"></script></body>
+<script>setInterval(()=>document.querySelectorAll('[data-donation-at]').forEach(e=>{const s=Math.max(0,Math.floor((Date.now()-Date.parse(e.dataset.donationAt))/1000));e.textContent='['+(s<1?'방금 전':s<60?s+'초 전':Math.floor(s/60)+'분 전')+']';}),1000);</script><script src="/overlay3-display.js"></script><script src="/alert-queue.js"></script><script src="/overlay3-alert.js?v=20261015-v6111"></script></body>
 
 </html>
