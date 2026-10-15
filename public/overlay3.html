@@ -1272,6 +1272,13 @@ body,#overlayPanel{font-family:'Noto Sans KR','맑은 고딕',sans-serif!importa
 }
 @keyframes accountTierFlow{from{background-position:0% 50%}to{background-position:100% 50%}}
 @media(prefers-reduced-motion:reduce){#overlayPanel #accountBox .name,#overlayPanel #accountBox .amount{animation:none!important}}
+
+/* Solo: independently selected allowance and preset counts share one line. */
+#overlayPanel #allowanceBox .allowance-row{justify-content:center!important;gap:12px!important;flex-wrap:nowrap!important;font-size:18px!important;line-height:26px!important}
+.solo-allowance,.solo-preset{display:inline-flex;align-items:center;gap:4px;white-space:nowrap;font-variant-numeric:tabular-nums}
+#allowanceBox .solo-preset.positive{color:#92e5cf!important}#allowanceBox .solo-preset.negative{color:#ff9fbb!important}
+#allowanceBox .solo-preset{font-size:17px!important}
+#overlayPanel #allowanceBox[data-solo-empty="1"]{display:none!important}
 </style><script>const EFFECT_RULES={star:100000,diamond:300000};if(new URLSearchParams(location.search).get("demo")==="1")window.overlay3Targets=[{name:"국고",group:"other"}];function makeRow(donor){const amount=Number(donor.amount)||0;const tier=amount>=EFFECT_RULES.diamond?'diamond':amount>=EFFECT_RULES.star?'star':'';
  const row=document.createElement('div');row.className='row active '+tier;
  const badge=document.createElement('span');badge.className='badge';badge.setAttribute('aria-hidden','true');
@@ -1346,12 +1353,13 @@ window.overlay3CreatorName=value=>{const text=Array.from(String(value||'익명')
   <div id="debugPanel"
     style="position:fixed;left:10px;bottom:10px;width:520px;max-width:calc(100vw - 20px);max-height:320px;overflow:auto;background:rgba(0,0,0,.88);color:#00ff66;font-size:12px;font-family:Consolas,monospace;padding:10px;border:1px solid #00ff66;z-index:9999999;display:none;pointer-events:auto;white-space:pre-wrap">
   </div>
+  <script src="/overlay3-presets.js?v=20261015-v612"></script>
   <script src="/collection-socket.js"></script>
 
   <script>
     if (new URLSearchParams(location.search).get("debug") === "1") { console.log("[overlay-debug] overlay.html loaded", location.href); }
     let latestSettingsForTimer = null;
-    let showCreatorDonations = true;
+    let showCreatorDonations = true;let latestOverlayCreators=[];
     let mission30SoundPlayed = false;
     let missionCountdownLastSec = null;
     (() => {
@@ -2171,34 +2179,11 @@ window.overlay3CreatorName=value=>{const text=Array.from(String(value||'익명')
 
 
    function renderAllowance(settings) {
-  const el = document.getElementById("allowanceRow");
-  if (!el) return;
-
-  const sections = getOverlaySections(settings);
-
-  if (sections.allowance !== true) {
-    document.getElementById("allowanceBox")?.classList.add("hidden");
-    el.classList.add("hidden");
-    return;
-  }
-
-  document.getElementById("allowanceBox")?.classList.remove("hidden");
-  el.classList.remove("hidden");
-
-  const balance = Number(
-  settings?.allowanceData?.balance ??
-  settings?.allowance?.balance ??
-  settings?.stationSettings?._shared?.allowanceData?.balance ??
-  0
-);
-
-  let colorClass = "";
-  if (balance > 0) colorClass = "allowance-positive";
-  else if (balance < 0) colorClass = "allowance-negative";
-
-  const sign = balance < 0 ? "-" : "";
-  el.innerHTML = `현재용돈 : <span class="${colorClass}">${sign}${displayAmount(Math.abs(balance))}</span>`;
+ const el=document.getElementById('allowanceRow'),box=document.getElementById('allowanceBox');if(!el||!box)return;
+ const input={settings,creators:latestOverlayCreators,config:window.overlay3Presentation};
+ const html=window.Overlay3Presets.markup(input);box.dataset.soloEmpty=html?'0':'1';el.innerHTML=html;el.classList.toggle('hidden',!html);box.classList.toggle('hidden',!html);
 }
+window.addEventListener('overlay3:presentation',()=>{if(!latestSettingsForTimer)return;renderAllowance(latestSettingsForTimer);renderCreators(latestOverlayCreators);});
 
       function renderAccountRoller(items) {
         rollingItems = items && items.length ? items : [{ donor: "-", amount: 0 }];
@@ -2277,20 +2262,17 @@ const others=new Set((window.overlay3Targets||[]).filter(t=>t.group==='other').m
 const allRows=Array.isArray(creators)?creators:[];
 const otherRows=allRows.filter(r=>others.has(normalizeName(r.creator||r.name||'')));
 const rows=allRows.filter(r=>!others.has(normalizeName(r.creator||r.name||''))).slice().sort((a,b)=>totalOf(b)-totalOf(a)||(creatorOrder.get(normalizeName(a.creator||a.name))??9999)-(creatorOrder.get(normalizeName(b.creator||b.name))??9999));
-        const visiblePresets = (enabledPresets || []).filter(p => p.enabled !== false);
-        const showDonation = (typeof showCreatorDonations === "undefined") ? true : showCreatorDonations;
+        const presentation=window.overlay3Presentation;
+        const showPresets=(!presentation||presentation.selectedSections?.includes('presets'))&&!window.Overlay3Presets.isSolo(presentation,creators);
+        const visiblePresets = showPresets?(enabledPresets || []).filter(p => p.enabled !== false):[];
+        const showDonation = (!presentation||presentation.selectedSections?.includes('creators'))&&showCreatorDonations;
 
         if (!rows.length && !otherRows.length) {
           $list.innerHTML = "";
           return;
         }
 
-        function presetShortName(preset) {
-          const plus = String(preset?.plusName || preset?.title || "옵션").trim();
-          if (plus === "흡연") return "흡";
-          if (plus === "먹어") return "먹";
-          return plus.length > 2 ? plus.slice(0, 2) : plus;
-        }
+        function presetShortName(preset) {return window.Overlay3Presets.icon(preset);}
 
         function presetNetValue(row, preset) {
           const nets = Array.isArray(row.presetNets) ? row.presetNets : [];
@@ -3009,7 +2991,7 @@ function updateBroadcastTimer() {
 
         if (signature !== lastSignature) {
           lastSignature = signature;
-          latestSettingsForTimer = settings;
+          latestSettingsForTimer = settings;latestOverlayCreators=creators;
           updateBroadcastTimer();
           applySections(settings);
           renderNotice(settings);
@@ -3112,6 +3094,6 @@ function updateBroadcastTimer() {
 
 <script>try{if(new URLSearchParams(location.search).get("bg")==="1") document.body.classList.add("test-bg");}catch(e){}</script>
 
-<script>setInterval(()=>document.querySelectorAll('[data-donation-at]').forEach(e=>{const s=Math.max(0,Math.floor((Date.now()-Date.parse(e.dataset.donationAt))/1000));e.textContent='['+(s<1?'방금 전':s<60?s+'초 전':Math.floor(s/60)+'분 전')+']';}),1000);</script><script src="/overlay3-display.js"></script><script src="/alert-queue.js"></script><script src="/overlay3-alert.js?v=20261015-v6111"></script></body>
+<script>setInterval(()=>document.querySelectorAll('[data-donation-at]').forEach(e=>{const s=Math.max(0,Math.floor((Date.now()-Date.parse(e.dataset.donationAt))/1000));e.textContent='['+(s<1?'방금 전':s<60?s+'초 전':Math.floor(s/60)+'분 전')+']';}),1000);</script><script src="/overlay3-display.js?v=20261015-v612"></script><script src="/alert-queue.js"></script><script src="/overlay3-alert.js?v=20261015-v6111"></script></body>
 
 </html>
