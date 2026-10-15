@@ -1096,6 +1096,31 @@ body.test-bg{
 #overlayPanel #accountBox .roller-item .icon svg{width:24px!important;height:24px!important}
 #overlayPanel #accountBox .roller-item .amount{min-width:0!important;font-size:22px!important;line-height:34px!important;text-align:right!important;white-space:nowrap!important;font-variant-numeric:tabular-nums!important;letter-spacing:-.04em!important}
 
+
+/* v6.14.3: badge first, restore larger account text. */
+#overlayPanel #accountBox .roller-item.row{grid-template-columns:26px minmax(0,104px) minmax(0,1fr)!important;column-gap:9px!important;font-size:26px!important}
+#overlayPanel #accountBox .roller-item .badge{grid-column:1!important;grid-row:1!important}
+#overlayPanel #accountBox .roller-item .name{grid-column:2!important;grid-row:1!important;font-size:26px!important;line-height:36px!important;text-align:center!important}
+#overlayPanel #accountBox .roller-item .amount{grid-column:3!important;grid-row:1!important;font-size:25px!important;line-height:36px!important;text-align:right!important}
+#overlayPanel #accountBox .roller-item.row{height:40px!important;min-height:40px!important}
+#overlayPanel #accountBox .account-row,#overlayPanel #accountBox .roller{height:40px!important;min-height:40px!important}
+
+
+/* v6.14.4 notice: four compact readable rows. */
+#overlayPanel #noticeBox .notice-text{--notice-row-height:27px;height:108px!important;min-height:108px!important;max-height:108px!important}
+#overlayPanel #noticeBox .notice-roll-window{height:108px!important}
+#overlayPanel #noticeBox .notice-line{height:27px!important;min-height:27px!important;max-height:27px!important;flex:0 0 27px!important;line-height:27px!important;font-size:20px!important}
+#overlayPanel #noticeBox .notice-text:not(.rolling) .notice-line:nth-child(4){display:block!important}
+
+
+/* v6.14.5 funding: match the transparent overlay sections. */
+#overlayPanel .o3-funding-meter{border:0!important;border-bottom:1px solid #7de0c250!important;border-radius:3px!important;background:rgba(255,255,255,.035)!important;min-height:38px!important;margin-top:3px!important;box-shadow:none!important}
+#overlayPanel .o3-funding-fill{background:linear-gradient(90deg,rgba(125,224,194,.08),rgba(125,224,194,.22))!important;border-right:1px solid #7de0c280!important}
+#overlayPanel .o3-funding-label{padding:6px 7px!important;font-size:20px!important;line-height:26px!important;text-shadow:0 1px 2px #000!important}
+#overlayPanel .o3-funding-label strong{color:#f2f6fa!important;font-weight:800!important}
+#overlayPanel .o3-funding-label span{color:#b4ecdb!important;font-size:19px!important;font-weight:800!important}
+#overlayPanel .o3-funding-detail{font-size:15px!important;line-height:21px!important;margin-top:3px!important;color:#b7c4cf!important}
+
 </style>
   <link rel="stylesheet" href="/assets/css/roulette-overlay.css">
 <style>
@@ -1310,7 +1335,7 @@ body,#overlayPanel{font-family:'Noto Sans KR','맑은 고딕',sans-serif!importa
  if(tier){for(const side of ['a','b']){const spark=document.createElement('span');spark.className='spark '+side;badge.append(spark);}}
  const name=document.createElement('span');name.className='name';name.textContent=donor.name;name.title=donor.name;
  const total=document.createElement('span');total.className='amount';total.textContent=amount.toLocaleString('ko-KR')+'';
- row.append(name,badge,total);return row;
+ row.append(badge,name,total);return row;
 };window.overlay3MakeRow=makeRow;
 window.overlay3MaskAccountName=value=>{const letters=Array.from(String(value||'익명').trim());if(letters.length>1)letters[1]='*';return letters.slice(0,4).join('');};
 window.overlay3CreatorName=value=>{const text=Array.from(String(value||'익명').trim()).slice(0,4).join('');const name=document.createElement('span');name.className='o3-rank-name';name.textContent=text;return name.outerHTML;};</script></head>
@@ -2052,7 +2077,7 @@ window.overlay3CreatorName=value=>{const text=Array.from(String(value||'익명')
         // Avoid restarting the hold whenever the overlay receives an unchanged state.
         if(noticeStepSignature===lineHtml)return;
         noticeStepSignature=lineHtml;stopNoticeSteps();
-        if (lines.length > 3) {
+        if (lines.length > 4) {
           textEl.classList.add("rolling");
           textEl.innerHTML='<div class="notice-roll-window"><div class="notice-roll-track">'+lineHtml+lineHtml+'</div></div>';
           const track=textEl.querySelector('.notice-roll-track');let index=0;
