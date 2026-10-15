@@ -1240,20 +1240,17 @@ body,#overlayPanel{font-family:'Noto Sans KR','맑은 고딕',sans-serif!importa
 #overlayPanel>#broadcastTimerBox:not(.hidden){display:flex!important;visibility:visible!important;opacity:1!important;height:auto!important;min-height:30px!important;max-height:none!important;overflow:visible!important}
 #broadcastTimerBox .timer-label{font-family:'Jua',sans-serif!important;font-size:19px!important}
 #broadcastTimerBox .timer-value{font-size:25px!important;line-height:30px!important;font-weight:800!important;font-variant-numeric:tabular-nums!important}
-/* 계좌: 골드 */
-#overlayPanel #accountBox {--section-color: #FFD166 !important;}
 
-/* 현재용돈: 민트 */
-#overlayPanel #allowanceBox {--section-color: #4DE2B1 !important;}
-#overlayPanel #allowanceRow,#overlayPanel #allowanceBox .allowance-positive {color: #4DE2B1 !important;}
-
-/* 크리에이터 누적현황: 핑크 */
-#overlayPanel #creatorBox {
-  --section-color: #FF79BD !important;
-}
-#overlayPanel #creatorBox .o3-rank-money {
-  color: #FFB3D6 !important;
-}
+/* v6.8: distinct sections and fixed four-character creator name columns */
+#overlayPanel #accountBox{--section-color:#FFD166!important}
+#overlayPanel #accountBox .account-title::before{color:#FFD166!important;-webkit-text-fill-color:#FFD166!important}
+#overlayPanel #allowanceBox{--section-color:#4DE2B1!important}
+#overlayPanel #allowanceRow,#overlayPanel #allowanceBox .allowance-positive{color:#4DE2B1!important}
+#overlayPanel #allowanceBox .allowance-negative{color:#ff9fbb!important}
+#overlayPanel #creatorBox{--section-color:#FF79BD!important}
+#overlayPanel #creatorBox .o3-rank-money{color:#FFB3D6!important}
+#overlayPanel #creatorBox .o3-rank-name{display:inline-flex!important;justify-content:space-between!important;flex:0 0 4em!important;width:4em!important;min-width:4em!important;max-width:4em!important;letter-spacing:0!important;text-overflow:clip!important}
+#overlayPanel #creatorBox .o3-rank-name span{flex:0 0 1em;text-align:center}
 </style><script>const EFFECT_RULES={star:100000,diamond:300000};if(new URLSearchParams(location.search).get("demo")==="1")window.overlay3Targets=[{name:"국고",group:"other"}];function makeRow(donor){const amount=Number(donor.amount)||0;const tier=amount>=EFFECT_RULES.diamond?'diamond':amount>=EFFECT_RULES.star?'star':'';
  const row=document.createElement('div');row.className='row active '+tier;
  const badge=document.createElement('span');badge.className='badge';badge.setAttribute('aria-hidden','true');
@@ -1262,7 +1259,9 @@ body,#overlayPanel{font-family:'Noto Sans KR','맑은 고딕',sans-serif!importa
  const name=document.createElement('span');name.className='name';name.textContent=donor.name;name.title=donor.name;
  const total=document.createElement('span');total.className='amount';total.textContent=amount.toLocaleString('ko-KR')+'';
  row.append(name,badge,total);return row;
-};window.overlay3MakeRow=makeRow;</script></head>
+};window.overlay3MakeRow=makeRow;
+window.overlay3MaskAccountName=value=>{const letters=Array.from(String(value||'익명').trim());if(letters.length>1)letters[1]='*';return letters.slice(0,4).join('');};
+window.overlay3CreatorName=value=>{const letters=Array.from(String(value||'익명').trim()).slice(0,4);const name=document.createElement('span');name.className='o3-rank-name';name.setAttribute('aria-label',letters.join(''));for(const letter of letters){const cell=document.createElement('span');cell.textContent=letter;name.append(cell);}return name.outerHTML;};</script></head>
 
 <body class="theme-gold">
   <div id="overlayIdleScreen" class="overlay-idle-screen">시스템설정</div>
@@ -2196,7 +2195,7 @@ if (amountNum >= 1000000) vipClass = " vip-account vip-100";
 else if (amountNum >= 500000) vipClass = " vip-account vip-50";
 else if (amountNum >= 300000) vipClass = " vip-account vip-30";
 else if (amountNum >= 100000) vipClass = " vip-account vip-10";
-          return window.overlay3MakeRow({name:Array.from(donor).slice(0,4).join(''),amount:Number(rawAmount)}).outerHTML.replace('class="row active ' , 'class="roller-item row active ');
+          return window.overlay3MakeRow({name:window.overlay3MaskAccountName(donor),amount:Number(rawAmount)}).outerHTML.replace('class="row active ' , 'class="roller-item row active ');
         };
 
         const moveToIndex = (index, useTransition = true) => {
@@ -2316,7 +2315,7 @@ const rows=allRows.filter(r=>!others.has(normalizeName(r.creator||r.name||''))).
             return `<span class="creator-align-opt ${signClass(value)}">${escapeHtml(label)}</span>`;
           }).join("");
 
-          return '<article><div class="o3-rank"><em>'+(rank+1)+'</em><div class="o3-creator-inline"><span class="o3-rank-name">'+escapeHtml(rawName)+'</span>'+(optionHtml?'<span class="o3-options">'+optionHtml+'</span>':'')+'</div>'+totalHtml+'</div></article>';
+          return '<article><div class="o3-rank"><em>'+(rank+1)+'</em><div class="o3-creator-inline">'+window.overlay3CreatorName(rawName)+(optionHtml?'<span class="o3-options">'+optionHtml+'</span>':'')+'</div>'+totalHtml+'</div></article>';
         }).join("")+(otherRows.length?'<div class="o3-other">'+otherRows.map(r=>escapeHtml(normalizeName(r.creator||r.name))+'('+escapeHtml(displayAmount(totalOf(r)))+')').join(' · ')+'</div>':'');
       }
 
