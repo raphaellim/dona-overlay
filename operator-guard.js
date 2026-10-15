@@ -4,12 +4,12 @@ module.exports=d=>async(req,res,next)=>{try{
  if(!req.path.startsWith('/api/'))return next();
  if(!['POST','PUT','PATCH','DELETE'].includes(req.method))return next();
  if(req.headers.origin){try{if(new URL(req.headers.origin).host!==req.headers.host)return res.status(403).json({error:'다른 사이트에서의 변경 요청 차단'});}catch{return res.status(403).json({error:'Origin 오류'});}}
- const tracked=/^\/api\/(donations(?:\/|$)|manual-entry(?:\/|$)|collection-candidates|(?:account|toonie)-candidates\/|settings(?:\/|$)|mission-timer|roulette|operators|broadcasts|station\/collection-rules|alert-config|overlay-display)/.test(req.path);
+ const tracked=/^\/api\/(donations(?:\/|$)|manual-entry(?:\/|$)|allowance(?:\/|$)|collection-candidates|(?:account|toonie)-candidates\/|settings(?:\/|$)|mission-timer|roulette|operators|broadcasts|station\/collection-rules|alert-config|overlay-display)/.test(req.path);
  if(!tracked)return next();
  const ctx=await getStationContext(req,res);if(!ctx)return;const admin=await stationAllowed(req,ctx.station),actor=req.namedActor;
  if(!admin){if(!actor||actor.stationId!==ctx.station.id)return res.status(403).json({error:'해당 방송국 로그인 필요'});
  let permission=null;
- if(req.path==='/api/manual-entry')permission='input';
+ if(req.path==='/api/manual-entry'||/^\/api\/allowance\//.test(req.path))permission='input';
  else if(/^\/api\/donations/.test(req.path))permission=req.method==='DELETE'?'delete':req.method==='PUT'||req.method==='PATCH'?'edit':'input';
  else if(/\/approve$/.test(req.path))permission='approve';else if(/\/edit$/.test(req.path))permission='edit';else if(/\/dismiss$/.test(req.path))permission='delete';else if(/^\/api\/(mission-timer|roulette)/.test(req.path))permission='operate';
  if(!permission||!actor.permissions[permission])return res.status(403).json({error:'이 작업 권한이 없습니다.'});

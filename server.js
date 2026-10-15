@@ -2853,7 +2853,8 @@ app.post('/api/allowance/adjust', async (req, res) => {
     const allowanceData = normalizeAllowanceData(current.allowanceData);
     const directionRaw = String(req.body?.direction || req.body?.type || 'plus').toLowerCase();
     const direction = directionRaw === 'minus' || directionRaw === '-' || directionRaw === 'subtract' ? 'minus' : 'plus';
-    const amount = Math.max(0, toWon(req.body?.amount ?? req.body?.value ?? req.body?.delta));
+    const amount = req.body?.exactWon===true ? Number(req.body.amount) : Math.max(0, toWon(req.body?.amount ?? req.body?.value ?? req.body?.delta));
+    if(req.body?.exactWon===true&&(!Number.isSafeInteger(amount)||amount<1||amount>1e11))return res.status(400).json({error:'용돈 금액을 원 단위 양의 정수로 입력하세요.'});
     if (amount <= 0) return res.status(400).json({ error: '용돈 금액을 입력하세요.' });
 
     const nextBalance = direction === 'minus'
