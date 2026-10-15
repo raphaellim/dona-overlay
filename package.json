@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node server.js",
     "test": "node --test tests/unified-v5.test.js tests/routing.test.js tests/websocket.test.js tests/approval.test.js tests/integrated-rules.test.js tests/sql-v5.test.js tests/collection-window.test.js tests/account-receipts.test.js tests/donation-options.test.js tests/finance.test.js tests/scheduled-chat.test.js",
-    "test:browser": "node --test --test-concurrency=1 tests/console-browser.test.js tests/alert-browser.test.js tests/console-speed-browser.test.js tests/console-options-browser.test.js tests/finance-browser.test.js",
+    "test:browser": "node --test --test-concurrency=1 tests/console-browser.test.js tests/alert-browser.test.js tests/console-speed-browser.test.js tests/console-options-browser.test.js tests/finance-browser.test.js tests/alert-text-browser.test.js",
     "test:startup": "node tests/startup-v5.test.js"
   },
   "dependencies": {

@@ -1879,11 +1879,12 @@ function makeDonationRow(body, settings, stationId, broadcastId) {
   const check = calcCheck(processType, total, settings);
   const silentAlert = body.silentAlert === true || body.noAlert === true || String(body.alert || '').toLowerCase() === 'false';
   const manualKind = normName(body.manualKind || body.entryKind || '');
-  if (silentAlert || manualKind) {
+  if (silentAlert || manualKind || body.message) {
     check.checks = Array.isArray(check.checks) ? check.checks : [];
     check.checks.push({
       meta: true,
       silentAlert,
+      message: String(body.message || '').slice(0,300),
       manualKind,
       sourceType: normName(body.sourceType || body.source || ''),
       fundingId: String(body.fundingId || '').trim(),
@@ -4468,6 +4469,7 @@ app.post('/api/donations/batch', async (req, res) => {
         accountAmount: accountPart,
         toonieAmount: tooniePart,
         memo: r.memo,
+        message: String(req.body.message ?? req.body.memo ?? '').slice(0,300),
         rouletteRuleId: req.body.rouletteRuleId || '',
         manualKind: fundingIdForRows ? 'funding' : '',
         fundingId: fundingIdForRows,
