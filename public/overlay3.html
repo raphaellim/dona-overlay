@@ -1346,7 +1346,7 @@ body,#overlayPanel{font-family:'Noto Sans KR','맑은 고딕',sans-serif!importa
 #allowanceBox .solo-preset.positive{color:#92e5cf!important}#allowanceBox .solo-preset.negative{color:#ff9fbb!important}
 #allowanceBox .solo-preset{font-size:17px!important}
 #overlayPanel #allowanceBox[data-solo-empty="1"]{display:none!important}
-</style><script>const EFFECT_RULES={star:100000,diamond:300000};if(new URLSearchParams(location.search).get("demo")==="1")window.overlay3Targets=[{name:"국고",group:"other"}];function makeRow(donor){donor={...donor,name:Array.from(String(donor.name||'익명')).slice(0,4).join('')};const amount=Number(donor.amount)||0;const tier=amount>=EFFECT_RULES.diamond?'diamond':amount>=EFFECT_RULES.star?'star':'';
+</style><script>const EFFECT_RULES={star:100000,diamond:300000};if(new URLSearchParams(location.search).get("demo")==="1")window.overlay3Targets=[{name:"국고",group:"other"}];function makeRow(donor){const amount=Number(donor.amount)||0;const tier=amount>=EFFECT_RULES.diamond?'diamond':amount>=EFFECT_RULES.star?'star':'';
  const row=document.createElement('div');row.className='row active '+tier;
  const badge=document.createElement('span');badge.className='badge';badge.setAttribute('aria-hidden','true');
  const icon=document.createElement('span');icon.className='icon';if(tier==='diamond')icon.innerHTML='<svg viewBox="0 1 24 24" aria-hidden="true"><path fill="#72d8ff" d="M6 4h12l5 6-11 12L1 10z"/><path fill="#c5f2ff" d="M6 4l6 6H1zm12 0l-6 6h11z"/><path fill="#39aee9" d="M1 10h11v12zm11 0h11L12 22z"/><path fill="#91e9ff" d="M6 4h12l-6 6z"/></svg>';else if(tier==='star')icon.innerHTML='<svg viewBox="0 -0.5 24 24" aria-hidden="true"><path fill="#ffd96a" d="M12 2l3.1 6.3 6.9 1-5 4.9 1.2 6.8-6.2-3.2L5.8 21 7 14.2l-5-4.9 6.9-1z"/></svg>';else icon.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#4DE2B1" d="M12 21S2 14.7 2 7.8A5.3 5.3 0 0 1 12 5a5.3 5.3 0 0 1 10 2.8C22 14.7 12 21 12 21Z"/></svg>';badge.append(icon);
@@ -1356,7 +1356,7 @@ body,#overlayPanel{font-family:'Noto Sans KR','맑은 고딕',sans-serif!importa
  row.append(badge,name,total);return row;
 };window.overlay3MakeRow=makeRow;
 window.overlay3MaskAccountName=value=>{const letters=Array.from(String(value||'익명').trim());if(letters.length>1)letters[1]='♥';return letters.join('');};
-window.overlay3CreatorName=value=>{const text=Array.from(String(value||'익명').trim()).slice(0,4).join('');const name=document.createElement('span');name.className='o3-rank-name';name.textContent=text;return name.outerHTML;};</script><link rel="stylesheet" href="/overlay3-profiles.css?v=617"></head>
+window.overlay3CreatorName=value=>{const text=Array.from(String(value||'익명').trim()).slice(0,4).join('');const name=document.createElement('span');name.className='o3-rank-name';name.textContent=text;return name.outerHTML;};</script></head>
 
 <body class="theme-gold">
   <div id="overlayIdleScreen" class="overlay-idle-screen">시스템설정</div>
@@ -3171,8 +3171,13 @@ function updateBroadcastTimer() {
 
 <script>try{if(new URLSearchParams(location.search).get("bg")==="1") document.body.classList.add("test-bg");}catch(e){}</script>
 
-<script>setInterval(()=>document.querySelectorAll('[data-donation-at]').forEach(e=>{const s=Math.max(0,Math.floor((Date.now()-Date.parse(e.dataset.donationAt))/1000));e.textContent='['+(s<1?'방금 전':s<60?s+'초 전':Math.floor(s/60)+'분 전')+']';}),1000);</script><script src="/overlay3-profiles.js?v=617"></script><script src="/overlay3-display.js?v=617"></script><script src="/alert-queue.js"></script><script src="/overlay3-alert.js?v=617"></script>
-
+<script>setInterval(()=>document.querySelectorAll('[data-donation-at]').forEach(e=>{const s=Math.max(0,Math.floor((Date.now()-Date.parse(e.dataset.donationAt))/1000));e.textContent='['+(s<1?'방금 전':s<60?s+'초 전':Math.floor(s/60)+'분 전')+']';}),1000);</script><script src="/overlay3-display.js?v=6162"></script><script src="/alert-queue.js"></script><script src="/overlay3-alert.js?v=6165"></script>
+<script>
+(()=>{const track=document.getElementById('rollerTrack'),box=document.getElementById('accountBox');if(!track||!box)return;let frame=0;
+function schedule(){if(frame)return;frame=requestAnimationFrame(()=>{frame=0;for(const amount of track.querySelectorAll('.amount')){let size=Number(amount.dataset.baseSize)||25;amount.style.setProperty('font-size',size+'px','important');while(amount.clientWidth>0&&amount.scrollWidth>amount.clientWidth&&size>14){size-=.5;amount.style.setProperty('font-size',size+'px','important');}}});}
+new MutationObserver(schedule).observe(track,{childList:true,subtree:true,characterData:true});if(window.ResizeObserver)new ResizeObserver(schedule).observe(box);document.fonts?.ready.then(schedule);window.addEventListener('resize',schedule);schedule();
+})();
+</script>
 </body>
 
 </html>
