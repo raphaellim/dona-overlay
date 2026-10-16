@@ -1139,6 +1139,30 @@ body #v5Alert-alert{position:fixed!important;left:var(--o3-popup-left,0px)!impor
 body #v5Alert-alert.show{display:flex!important;flex-direction:column!important;visibility:visible!important;opacity:1!important}
 #overlayPanel,#overlayPanel.v5-combined{background:rgba(10,15,24,var(--overlay-bg-opacity,.65))!important}
 
+
+/* v6.16.5 balanced account/funding alignment only. */
+body #overlayPanel #accountBox .account-row{gap:5px!important}
+body #overlayPanel #accountBox .account-title{width:35px!important;min-width:35px!important;flex-basis:35px!important}
+body #overlayPanel #accountBox .account-title::before{font-size:19px!important;line-height:28px!important}
+body #overlayPanel #accountBox .roller-item.row{grid-template-columns:18px minmax(0,1fr) max-content!important;column-gap:8px!important;padding:0 7px 0 0!important;height:40px!important;min-height:40px!important}
+body #overlayPanel #accountBox .roller-item .badge,body #overlayPanel #accountBox .roller-item .icon{width:18px!important;height:22px!important}
+body #overlayPanel #accountBox .roller-item .icon svg{width:17px!important;height:20px!important}
+body #overlayPanel #accountBox .roller-item .name{display:block!important;width:auto!important;min-width:0!important;font-size:25px!important;line-height:34px!important;text-align:left!important;letter-spacing:-.025em!important;font-weight:800!important;white-space:nowrap!important}
+body #overlayPanel #accountBox .roller-item .name .account-glyph{width:auto!important;display:inline!important;flex:none!important;font-size:inherit!important}
+body #overlayPanel #accountBox .roller-item .name .account-mask-heart{font-size:.82em!important;vertical-align:1px;letter-spacing:0!important;padding:0 .02em!important}
+body #overlayPanel #accountBox .roller-item .amount{font-weight:800!important;line-height:34px!important;text-align:right!important;letter-spacing:-.025em!important}
+body #overlayPanel #fundingBox{padding-top:7px!important;padding-bottom:7px!important}
+body #overlayPanel #fundingBox .funding-title{font-size:18px!important;line-height:24px!important;margin-bottom:5px!important;gap:8px!important;align-items:center!important}
+body #overlayPanel #fundingBox .o3-heading-line{display:none!important}
+body #overlayPanel #fundingBox .funding-page{margin-left:auto;font-size:13px;line-height:20px;color:#a6b6c4;font-weight:600;letter-spacing:0;font-variant-numeric:tabular-nums}
+body #overlayPanel #fundingBox .o3-funding-meter{min-height:0!important;margin:0!important;border:0!important;border-bottom:1px solid #7de0c250!important;border-radius:5px!important;background:#ffffff06!important}
+body #overlayPanel #fundingBox .o3-funding-label{padding:6px 7px!important;gap:10px!important;line-height:29px!important;font-size:21px!important}
+body #overlayPanel #fundingBox .o3-funding-label strong{font-size:21px!important;font-weight:750!important}
+body #overlayPanel #fundingBox .funding-ratio{display:inline-flex;align-items:baseline;gap:3px;white-space:nowrap;font-variant-numeric:tabular-nums}
+body #overlayPanel #fundingBox .funding-ratio b{font-size:22px;font-weight:800;color:#d1f8ec}
+body #overlayPanel #fundingBox .funding-ratio em{font-style:normal;font-size:19px;font-weight:650;color:#b1c9c3}
+body #overlayPanel #fundingBox .o3-funding-detail{display:flex!important;justify-content:space-between!important;gap:8px!important;margin-top:4px!important;padding:0 3px!important;font-size:14px!important;font-weight:600!important;line-height:20px!important;color:#abbac8!important}
+
 </style>
   <link rel="stylesheet" href="/assets/css/roulette-overlay.css">
 <style>
@@ -1933,11 +1957,11 @@ window.overlay3CreatorName=value=>{const text=Array.from(String(value||'익명')
         o3FundingSignature=sig;clearInterval(o3FundingTimer);o3FundingTimer=null;o3FundingIndex=0;
         const draw=()=>{
           const f=items[o3FundingIndex%Math.max(1,items.length)];
-          o3Heading(heading,'펀딩현황');
+          o3Heading(heading,'펀딩현황');if(items.length>1){const page=document.createElement('small');page.className='funding-page';page.textContent=(o3FundingIndex%items.length+1)+' / '+items.length;heading.append(page);}
           if(!f){el.innerHTML='<div class="o3-funding"><div class="o3-funding-detail">등록된 펀딩 없음</div></div>';return;}
           const current=Math.max(0,num(f.current)),goal=Math.max(0,num(f.target));
           const percent=goal>0?Math.max(0,current/goal*100):0,bar=Math.min(100,percent),left=Math.max(0,goal-current);
-          el.innerHTML='<div class="o3-funding"><div class="o3-funding-meter" role="progressbar" aria-label="'+escapeHtml(f.title||'펀딩')+'" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+bar+'"><i class="o3-funding-fill" style="width:'+bar+'%"></i><div class="o3-funding-label"><strong>'+escapeHtml(f.title||'펀딩')+'</strong><span>'+escapeHtml(displayAmount(current))+' / '+escapeHtml(displayAmount(goal))+'</span></div></div><div class="o3-funding-detail">'+(goal>0?'달성률 '+Math.round(percent)+'% · '+(current>=goal?'목표 달성':'목표까지 '+escapeHtml(displayAmount(left))):'목표 미설정')+(items.length>1?' · '+(o3FundingIndex%items.length+1)+'/'+items.length:'')+'</div></div>';
+          el.innerHTML='<div class="o3-funding"><div class="o3-funding-meter" role="progressbar" aria-label="'+escapeHtml(f.title||'펀딩')+'" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+bar+'"><i class="o3-funding-fill" style="width:'+bar+'%"></i><div class="o3-funding-label"><strong>'+escapeHtml(f.title||'펀딩')+'</strong><span class="funding-ratio"><b>'+escapeHtml(displayAmount(current))+'</b><em> / '+escapeHtml(displayAmount(goal))+'</em></span></div></div><div class="o3-funding-detail">'+'<span>'+(goal>0?'달성률 '+Math.round(percent)+'%':'목표 미설정')+'</span><span>'+(goal>0?(current>=goal?'목표 달성':'목표까지 '+escapeHtml(displayAmount(left))):'')+'</span>'+'</div></div>';
         };
         draw();if(items.length>1)o3FundingTimer=setInterval(()=>{if(!document.hidden&&getComputedStyle($fundingBox).display!=='none'){o3FundingIndex++;draw();}},4000);
       }
