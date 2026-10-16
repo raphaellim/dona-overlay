@@ -3171,7 +3171,7 @@ function updateBroadcastTimer() {
 
 <script>try{if(new URLSearchParams(location.search).get("bg")==="1") document.body.classList.add("test-bg");}catch(e){}</script>
 
-<script>setInterval(()=>document.querySelectorAll('[data-donation-at]').forEach(e=>{const s=Math.max(0,Math.floor((Date.now()-Date.parse(e.dataset.donationAt))/1000));e.textContent='['+(s<1?'방금 전':s<60?s+'초 전':Math.floor(s/60)+'분 전')+']';}),1000);</script><script src="/overlay3-display.js?v=616"></script><script src="/alert-queue.js"></script><script src="/overlay3-alert.js?v=616"></script>
+<script>setInterval(()=>document.querySelectorAll('[data-donation-at]').forEach(e=>{const s=Math.max(0,Math.floor((Date.now()-Date.parse(e.dataset.donationAt))/1000));e.textContent='['+(s<1?'방금 전':s<60?s+'초 전':Math.floor(s/60)+'분 전')+']';}),1000);</script><script src="/overlay3-display.js?v=6162"></script><script src="/alert-queue.js"></script><script src="/overlay3-alert.js?v=6162"></script>
 <script>
 (()=>{const track=document.getElementById('rollerTrack'),box=document.getElementById('accountBox');if(!track||!box)return;let frame=0;
 function schedule(){if(frame)return;frame=requestAnimationFrame(()=>{frame=0;for(const amount of track.querySelectorAll('.amount')){let size=Number(amount.dataset.baseSize)||25;amount.style.setProperty('font-size',size+'px','important');while(amount.clientWidth>0&&amount.scrollWidth>amount.clientWidth&&size>14){size-=.5;amount.style.setProperty('font-size',size+'px','important');}}});}
