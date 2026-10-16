@@ -76,3 +76,20 @@ body #v5Alert-alert #v5Alert-comment{font-size:21px!important}
 body #v5Alert-alert #v5Alert-split{font-size:18px!important}
 body #v5Alert-alert #v5Alert-comment:empty,body #v5Alert-alert #v5Alert-split:empty{display:none!important}
 #alert #comment,#alert #split{max-height:none!important;-webkit-line-clamp:unset!important;overflow:visible!important;white-space:pre-wrap!important}
+
+/* v6.16.3 source / donor + amount / allocation + message. */
+body #v5Alert-alert{min-height:160px!important;gap:8px!important;padding:16px 12px!important}
+body #v5Alert-alert .v5Alert-message>.row{display:flex!important;flex-flow:row nowrap!important;align-items:center!important;justify-content:center!important;gap:12px!important;width:100%!important;min-width:0!important;height:auto!important;min-height:42px!important;padding:0!important}
+body #v5Alert-alert .v5Alert-message .name,body #v5Alert-alert .v5Alert-message .amount{flex:0 1 auto!important;width:auto!important;min-width:0!important;white-space:nowrap!important;overflow-wrap:normal!important;word-break:keep-all!important;line-height:1.35!important;text-align:center!important;letter-spacing:0!important}
+body #v5Alert-alert .v5Alert-message .amount{flex:0 0 auto!important}
+body #v5Alert-alert #v5Alert-age{display:none!important}
+body #v5Alert-alert #v5Alert-source{font-size:27px!important;line-height:35px!important}
+
+#alert #age{display:none!important}
+
+/* v6.16.4 wider, centered one-line donor and amount. */
+body #v5Alert-alert{padding:18px 20px!important;min-height:160px!important;gap:9px!important}
+body #v5Alert-alert .v5Alert-message>.row{gap:16px!important;min-height:46px!important}
+body #v5Alert-alert #v5Alert-source{font-size:29px!important;line-height:38px!important;letter-spacing:.03em!important}
+body #v5Alert-alert #v5Alert-split{color:#c6d9e7!important;font-size:18px!important}
+body #v5Alert-alert #v5Alert-comment{color:#fff!important;font-size:22px!important;line-height:1.45!important}
