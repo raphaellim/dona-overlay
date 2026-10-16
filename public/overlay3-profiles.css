@@ -1,0 +1,41 @@
+@font-face{font-family:'Overlay Noto KR';src:url('/fonts/NotoSansKR.woff') format('woff');font-weight:100 900;font-style:normal;font-display:swap}
+html[data-overlay-profile] body,html[data-overlay-profile] #overlayPanel,html[data-overlay-profile] #overlayPanel *,html[data-overlay-profile] body #v5Alert-alert,html[data-overlay-profile] body #v5Alert-alert *{font-family:'Overlay Noto KR','Noto Sans KR',sans-serif!important}
+html[data-overlay-profile] .overlay-stack{width:min(var(--profile-width,380px),calc(100vw - 12px))!important;max-width:calc(100vw - 12px)!important;top:6px!important;right:6px!important;left:auto!important}
+/* OBS/PRISM layout variables: high specificity keeps old themes from adding gaps. */
+html[data-overlay-profile] #overlayPanel{width:min(var(--profile-width,380px),calc(100vw - 12px))!important;max-width:calc(100vw - 12px)!important;box-sizing:border-box!important;padding:0 3px!important;gap:0!important}
+html[data-overlay-profile] #overlayPanel>.overlay-box{padding:var(--profile-padding,2px) 2px!important;margin:0!important;min-height:0!important}
+html[data-overlay-profile] #overlayPanel>.overlay-box::before{left:-3px!important;top:2px!important;bottom:2px!important;width:2px!important}
+html[data-overlay-profile] #overlayPanel #accountBox .account-row{height:var(--profile-row-height,38px)!important;min-height:0!important;gap:3px!important}
+html[data-overlay-profile] #overlayPanel #accountBox .account-title{width:36px!important;min-width:36px!important;flex-basis:36px!important}
+html[data-overlay-profile] #overlayPanel #accountBox .account-title::before{font-size:21px!important}
+html[data-overlay-profile] #overlayPanel #accountBox .roller{height:var(--profile-row-height,38px)!important;min-height:0!important}
+html[data-overlay-profile] #overlayPanel #accountBox .roller-item.row{display:grid!important;grid-template-columns:var(--profile-icon,20px) minmax(0,4em) minmax(0,1fr)!important;font-size:var(--profile-font,29px)!important;height:var(--profile-row-height,38px)!important;min-height:0!important;column-gap:var(--profile-gap,4px)!important;padding:0 5px 0 0!important;box-sizing:border-box!important}
+html[data-overlay-profile] #overlayPanel #accountBox .roller-item .name{font-size:var(--profile-font,29px)!important;line-height:1.15!important;min-width:0!important;overflow:visible!important}
+html[data-overlay-profile] #overlayPanel #accountBox .roller-item .amount{font-size:var(--profile-amount,30px)!important;line-height:1.15!important;min-width:0!important;padding-right:2px!important;letter-spacing:-.025em!important;overflow:visible!important}
+html[data-overlay-profile] #overlayPanel #accountBox .roller-item .badge,html[data-overlay-profile] #overlayPanel #accountBox .roller-item .icon{width:var(--profile-icon,20px)!important;height:var(--profile-icon,20px)!important}
+html[data-overlay-profile] #overlayPanel #accountBox .roller-item .icon svg{width:var(--profile-icon,20px)!important;height:var(--profile-icon,20px)!important}
+html[data-overlay-profile] #overlayPanel .o3-rank{gap:3px!important;padding:1px 0!important;line-height:1.15!important;grid-template-columns:18px minmax(0,1fr) auto!important}
+html[data-overlay-profile] #overlayPanel .o3-rank-name{font-size:var(--profile-font,29px)!important;line-height:1.18!important;width:4em!important;min-width:0!important}
+html[data-overlay-profile] #overlayPanel .o3-rank-money{font-size:var(--profile-amount,30px)!important;line-height:1.18!important;min-width:0!important}
+html[data-overlay-profile] #overlayPanel .o3-creator-inline{gap:3px!important;min-width:0!important;flex-wrap:wrap!important}
+html[data-overlay-profile] #overlayPanel .o3-creator-inline .o3-options{line-height:1.2!important;margin:0!important;gap:4px!important;font-size:18px!important}
+html[data-overlay-profile] #overlayPanel #allowanceBox{padding:var(--profile-padding,2px) 2px!important;min-height:0!important}
+html[data-overlay-profile] #overlayPanel #allowanceBox .allowance-row{gap:var(--profile-gap,4px)!important;font-size:var(--profile-font,29px)!important;line-height:1.2!important;min-height:0!important}
+html[data-overlay-profile] #overlayPanel #allowanceBox .solo-preset{font-size:calc(var(--profile-font,29px)*.85)!important;line-height:1.2!important}
+html[data-overlay-profile] #overlayPanel .o3-funding-meter{min-height:0!important;margin-top:1px!important}
+html[data-overlay-profile] #overlayPanel .o3-funding-label{padding:2px 4px!important;gap:4px!important;font-size:22px!important;line-height:1.2!important}
+html[data-overlay-profile] #overlayPanel .o3-funding-label span{font-size:21px!important}
+html[data-overlay-profile] #overlayPanel .o3-funding-detail{margin-top:1px!important;line-height:1.2!important}
+html[data-overlay-profile] #overlayPanel #noticeBox .notice-line{font-size:var(--profile-notice,21px)!important;height:var(--profile-notice-row,28px)!important;min-height:var(--profile-notice-row,28px)!important;max-height:var(--profile-notice-row,28px)!important;flex-basis:var(--profile-notice-row,28px)!important;line-height:var(--profile-notice-row,28px)!important}
+html[data-overlay-profile] #overlayPanel #noticeBox .notice-text,html[data-overlay-profile] #overlayPanel #noticeBox .notice-roll-window{height:calc(var(--profile-notice-row,28px)*4)!important;min-height:0!important;max-height:calc(var(--profile-notice-row,28px)*4)!important}
+html[data-overlay-profile] #overlayPanel .notice-title,html[data-overlay-profile] #overlayPanel .funding-title,html[data-overlay-profile] #overlayPanel .creator-title,html[data-overlay-profile] #overlayPanel .karaoke-title{margin:0!important;line-height:1.15!important;font-size:19px!important}
+html[data-overlay-profile] body #v5Alert-alert{padding:8px 10px!important;min-height:0!important;height:auto!important;gap:5px!important}
+html[data-overlay-profile] body #v5Alert-alert .v5Alert-message>.row{min-height:0!important;gap:8px!important}
+html[data-overlay-profile] body #v5Alert-alert #v5Alert-source{font-size:28px!important;line-height:1.15!important}
+html[data-overlay-profile] body #v5Alert-alert #v5Alert-comment{line-height:1.25!important}
+
+html[data-overlay-profile] #overlayPanel #noticeBox .notice-text:empty{height:0!important;max-height:0!important}
+html[data-overlay-profile] #overlayPanel .o3-options:empty,html[data-overlay-profile] #overlayPanel .queue-empty:empty{display:none!important}
+html[data-overlay-profile] #overlayPanel .account-title::before{font-family:'Overlay Noto KR','Noto Sans KR',sans-serif!important}
+html[data-overlay-profile] #overlayPanel .solo-preset>span[aria-hidden]{font-family:'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif!important;display:inline-flex;align-items:center;justify-content:center}
+html[data-overlay-profile] #overlayPanel .solo-preset>span[aria-hidden] svg{width:.9em;height:.9em;display:block;flex:none}

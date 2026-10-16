@@ -12,15 +12,15 @@ function placeAlert(){
  if(!panel)return;
  const a=account?.getBoundingClientRect(),p=panel.getBoundingClientRect();
  if(a&&a.height>0&&getComputedStyle(account).display!=='none')lastAccountHeight=a.bottom-p.top;
- const el=$('alert');el.style.setProperty('--o3-popup-top',(Math.max(0,p.top)+lastAccountHeight+2)+'px');const width=Math.min(440,Math.max(1,window.innerWidth-12));const left=Math.max(6,Math.min(p.right-width,window.innerWidth-width-6));el.style.setProperty('--o3-popup-left',left+'px');el.style.setProperty('--o3-popup-width',width+'px');
+ const el=$('alert');el.style.setProperty('--o3-popup-top',(Math.max(0,p.top)+lastAccountHeight+2)+'px');const width=Math.min(window.overlay3Layout?.alertWidth||440,Math.max(1,window.innerWidth-12));const left=Math.max(6,Math.min(p.right-width,window.innerWidth-width-6));el.style.setProperty('--o3-popup-left',left+'px');el.style.setProperty('--o3-popup-width',width+'px');
 }
 document.body.append($('alert'));
 placeAlert();window.addEventListener('resize',placeAlert);
 if(typeof ResizeObserver==='function'){const ro=new ResizeObserver(placeAlert);if(account)ro.observe(account);if(panel)ro.observe(panel);}
 if(account)new MutationObserver(placeAlert).observe(account,{attributes:true});
 
-function fitAlertLine(){const row=document.querySelector('.v5Alert-message>.row');if(!row)return;const name=row.querySelector('.name'),amount=row.querySelector('.amount');let size=34;for(const el of [name,amount])el.style.setProperty('font-size',size+'px','important');while(row.clientWidth>0&&(row.scrollWidth>row.clientWidth||name.scrollWidth>name.clientWidth||amount.scrollWidth>amount.clientWidth)&&size>12){size-=.5;for(const el of [name,amount])el.style.setProperty('font-size',size+'px','important');}}
-window.addEventListener('resize',fitAlertLine);document.fonts?.ready.then(fitAlertLine);
+function fitAlertLine(){const row=document.querySelector('.v5Alert-message>.row');if(!row)return;const name=row.querySelector('.name'),amount=row.querySelector('.amount');let size=window.overlay3Layout?.alertFontSize||34;for(const el of [name,amount])el.style.setProperty('font-size',size+'px','important');while(row.clientWidth>0&&(row.scrollWidth>row.clientWidth||name.scrollWidth>name.clientWidth||amount.scrollWidth>amount.clientWidth)&&size>12){size-=.5;for(const el of [name,amount])el.style.setProperty('font-size',size+'px','important');}}
+window.addEventListener('resize',fitAlertLine);window.addEventListener('overlay3:layout',()=>{placeAlert();fitAlertLine();});document.fonts?.ready.then(fitAlertLine);
 function playAlertSound(){
  if(q.get('mute')==='1')return;
  let file=String(settings.soundRules?.defaultSound||'alert.mp3');if(!/^[a-zA-Z0-9_.-]+\.(mp3|wav|ogg)$/i.test(file))file='alert.mp3';
