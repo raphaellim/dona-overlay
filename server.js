@@ -230,6 +230,8 @@ app.use(async(req,res,next)=>{try{req.namedActor=await operatorAccounts.loadActo
 app.use(require('./operator-guard')({supabase,getStationContext,stationAllowed,isMasterRequest}));
 operatorAccounts=require('./operator-accounts')(app,{supabase,getStation,getStationContext,stationAllowed,parseCookies});
 app.use(accessGuard);
+// 노래대회: 방송국 관리자 권한 / 방송국 토큰 / 별도 DB 저장
+require('./song-contest')(app,{supabase,getStationContext,stationAllowed,stationTokenAllowed});
 // 업로드 파일명은 timestamp+random으로 유일하므로 장기 브라우저 캐시가 안전합니다.
 // OBS/Prism 재연결 때 같은 슬라이드를 다시 내려받아 API 대역폭을 뺏는 것을 줄입니다.
 app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads'), {
