@@ -230,8 +230,6 @@ app.use(async(req,res,next)=>{try{req.namedActor=await operatorAccounts.loadActo
 app.use(require('./operator-guard')({supabase,getStationContext,stationAllowed,isMasterRequest}));
 operatorAccounts=require('./operator-accounts')(app,{supabase,getStation,getStationContext,stationAllowed,parseCookies});
 app.use(accessGuard);
-// 노래대회: 방송국 관리자 권한 / 방송국 토큰 / 별도 DB 저장
-require('./song-contest')(app,{supabase,getStationContext,stationAllowed,stationTokenAllowed});
 // 업로드 파일명은 timestamp+random으로 유일하므로 장기 브라우저 캐시가 안전합니다.
 // OBS/Prism 재연결 때 같은 슬라이드를 다시 내려받아 API 대역폭을 뺏는 것을 줄입니다.
 app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads'), {
@@ -4345,7 +4343,7 @@ app.post('/api/station/toonie-widget', async (req, res) => {
 });
 
 app.get('/api/overlay-link-token',async(req,res)=>{try{const ctx=await getStationContext(req,res);if(!ctx)return;if(!await stationAllowed(req,ctx.station))return res.status(403).json({error:'관리자 전용'});res.set('Cache-Control','no-store');res.json({token:ctx.station.overlay_token});}catch(e){res.status(500).json({error:e.message});}});
-const alertCoordinator=require('./alert-coordinator')(app,{supabase,getStationContext,stationAllowed,stationTokenAllowed,readEffectiveSettings,saveEffectiveSettings,getCollectionConfig:ctx=>collectionReview.config(ctx.station,ctx.active)});
+const alertCoordinator=require('./alert-coordinator')(app,{appearance:require('./overlay-appearance')({supabase,withSettingsMutation}),notifyTest:(slug,payload)=>collectionWs.notify(slug,'alert',payload),supabase,getStationContext,stationAllowed,stationTokenAllowed,readEffectiveSettings,saveEffectiveSettings,getCollectionConfig:ctx=>collectionReview.config(ctx.station,ctx.active)});
 const collectionWs=require('./collection-ws')(httpServer,{port:()=>httpServer.address()?.port||PORT});
 const identityNotify=collectionWs.notify.bind(collectionWs);
 collectionWs.notify=(slug,type,payload)=>{if(type!=='alert'||payload?.source!=='account')return identityNotify(slug,type,payload);return donorIdentity.names(slug).then(name=>identityNotify(slug,type,{...payload,donor:name(payload.donor),donorDisplayResolved:true})).catch(e=>console.error('[donor identity] alert suppressed:',e.message));};

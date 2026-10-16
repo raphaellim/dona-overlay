@@ -1133,6 +1133,12 @@ body.test-bg{
 #overlayPanel #accountBox .roller-item .icon svg{width:19px!important;height:22px!important}
 #overlayPanel #accountBox .roller-item .amount{padding-right:2px!important;box-sizing:border-box!important;overflow:visible!important}
 
+
+/* v6.16 explicit alert visibility and separate background alpha. */
+body #v5Alert-alert{position:fixed!important;left:var(--o3-popup-left,0px)!important;top:var(--o3-popup-top,42px)!important;right:auto!important;width:var(--o3-popup-width,336px)!important;background:rgba(10,22,30,var(--alert-bg-opacity,.94))!important;height:auto!important;min-height:110px!important;max-height:none!important;visibility:hidden!important;display:none!important;opacity:0!important}
+body #v5Alert-alert.show{display:flex!important;flex-direction:column!important;visibility:visible!important;opacity:1!important}
+#overlayPanel,#overlayPanel.v5-combined{background:rgba(10,15,24,var(--overlay-bg-opacity,.65))!important}
+
 </style>
   <link rel="stylesheet" href="/assets/css/roulette-overlay.css">
 <style>
@@ -3165,7 +3171,7 @@ function updateBroadcastTimer() {
 
 <script>try{if(new URLSearchParams(location.search).get("bg")==="1") document.body.classList.add("test-bg");}catch(e){}</script>
 
-<script>setInterval(()=>document.querySelectorAll('[data-donation-at]').forEach(e=>{const s=Math.max(0,Math.floor((Date.now()-Date.parse(e.dataset.donationAt))/1000));e.textContent='['+(s<1?'방금 전':s<60?s+'초 전':Math.floor(s/60)+'분 전')+']';}),1000);</script><script src="/overlay3-display.js?v=20261015-v613"></script><script src="/alert-queue.js"></script><script src="/overlay3-alert.js?v=20261015-v6111"></script>
+<script>setInterval(()=>document.querySelectorAll('[data-donation-at]').forEach(e=>{const s=Math.max(0,Math.floor((Date.now()-Date.parse(e.dataset.donationAt))/1000));e.textContent='['+(s<1?'방금 전':s<60?s+'초 전':Math.floor(s/60)+'분 전')+']';}),1000);</script><script src="/overlay3-display.js?v=616"></script><script src="/alert-queue.js"></script><script src="/overlay3-alert.js?v=616"></script>
 <script>
 (()=>{const track=document.getElementById('rollerTrack'),box=document.getElementById('accountBox');if(!track||!box)return;let frame=0;
 function schedule(){if(frame)return;frame=requestAnimationFrame(()=>{frame=0;for(const amount of track.querySelectorAll('.amount')){let size=Number(amount.dataset.baseSize)||25;amount.style.setProperty('font-size',size+'px','important');while(amount.clientWidth>0&&amount.scrollWidth>amount.clientWidth&&size>14){size-=.5;amount.style.setProperty('font-size',size+'px','important');}}});}
