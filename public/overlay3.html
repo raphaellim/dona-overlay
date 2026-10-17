@@ -1397,7 +1397,9 @@ body,#overlayPanel{font-family:'Noto Sans KR','맑은 고딕',sans-serif!importa
  row.append(badge,name,total);return row;
 };window.overlay3MakeRow=makeRow;
 window.overlay3MaskAccountName=value=>{const letters=Array.from(String(value||'익명').trim());if(letters.length>1)letters[1]='＊';return letters.join('');};
-window.overlay3CreatorName=value=>{const text=Array.from(String(value||'익명').trim()).slice(0,4).join('');const name=document.createElement('span');name.className='o3-rank-name';name.textContent=text;return name.outerHTML;};</script></head>
+window.overlay3CreatorName=value=>{const text=Array.from(String(value||'익명').trim()).slice(0,4).join('');const name=document.createElement('span');name.className='o3-rank-name';name.textContent=text;return name.outerHTML;};</script><style>/* Keep the current row animated; clipped rows do not need painting. */
+#overlayPanel #accountBox .roller-item:not(.perf-visible) .name,#overlayPanel #accountBox .roller-item:not(.perf-visible) .amount{animation-play-state:paused!important}
+</style></head>
 
 <body class="theme-gold">
   <div id="overlayIdleScreen" class="overlay-idle-screen">시스템설정</div>
@@ -1462,7 +1464,7 @@ window.overlay3CreatorName=value=>{const text=Array.from(String(value||'익명')
     style="position:fixed;left:10px;bottom:10px;width:520px;max-width:calc(100vw - 20px);max-height:320px;overflow:auto;background:rgba(0,0,0,.88);color:#00ff66;font-size:12px;font-family:Consolas,monospace;padding:10px;border:1px solid #00ff66;z-index:9999999;display:none;pointer-events:auto;white-space:pre-wrap">
   </div>
   <script src="/overlay3-presets.js?v=20261015-v613"></script>
-  <script src="/collection-socket.js"></script>
+  <script src="/collection-socket.js"></script><script src="/overlay3-performance.js?v=6165p1"></script>
 
   <script>
     if (new URLSearchParams(location.search).get("debug") === "1") { console.log("[overlay-debug] overlay.html loaded", location.href); }
@@ -2327,6 +2329,7 @@ else if (amountNum >= 100000) vipClass = " vip-account vip-10";
 
         const moveToIndex = (index, useTransition = true) => {
           const item = $track.children[index];
+          for(const row of $track.children)row.classList.toggle("perf-visible",row===item);
           const y = item ? item.offsetTop : 0;
 
           if (useTransition) {
@@ -3001,7 +3004,8 @@ function updateBroadcastTimer() {
 
   const labelEl = document.querySelector(".timer-label");
   if (labelEl) {
-    labelEl.textContent = Object.prototype.hasOwnProperty.call(timerData, "label") ? String(timerData.label ?? "") : "미션타이머";
+    const text = Object.prototype.hasOwnProperty.call(timerData, "label") ? String(timerData.label ?? "") : "미션타이머";
+    if(labelEl.textContent!==text)labelEl.textContent=text;
   }
 
   const sec = Math.max(0, Math.floor(diff / 1000));
@@ -3010,7 +3014,8 @@ function updateBroadcastTimer() {
   const m = String(Math.floor((sec % 3600) / 60)).padStart(2, "0");
   const s = String(sec % 60).padStart(2, "0");
 
-  $broadcastTimerValue.textContent = `${h}:${m}:${s}`;
+  const text = `${h}:${m}:${s}`;
+  if($broadcastTimerValue.textContent!==text)$broadcastTimerValue.textContent=text;
 
   const isCountdownMode =
     timerData.mode === "countdown" ||
@@ -3220,7 +3225,7 @@ function updateBroadcastTimer() {
 (()=>{const track=document.getElementById('rollerTrack'),box=document.getElementById('accountBox');if(!track||!box)return;let frame=0;
 const measure=document.createElement('canvas').getContext('2d');
 function centerMask(name){if(!measure)return;const style=getComputedStyle(name);measure.font=style.fontWeight+' '+style.fontSize+' '+style.fontFamily;const text=Array.from(name.textContent).filter(c=>c!=='＊').join('')||'가';const reference=measure.measureText(text),star=measure.measureText('＊');if(!Number.isFinite(reference.actualBoundingBoxAscent)||!Number.isFinite(star.actualBoundingBoxAscent))return;const shift=((star.actualBoundingBoxAscent-star.actualBoundingBoxDescent)-(reference.actualBoundingBoxAscent-reference.actualBoundingBoxDescent))/2;for(const glyph of name.querySelectorAll('.account-mask-star'))glyph.style.setProperty('--mask-center-offset',shift+'px');}
-function schedule(){if(frame)return;frame=requestAnimationFrame(()=>{frame=0;for(const group of track.querySelectorAll('.account-donor-group')){const row=group.parentElement,name=group.querySelector('.name'),amount=group.querySelector('.amount');let size=25;const setSize=()=>{name.style.setProperty('font-size',size+'px','important');amount.style.setProperty('font-size',size+'px','important');group.style.setProperty('--account-icon-size',size*0.9+'px');};setSize();const style=getComputedStyle(row),available=row.clientWidth-parseFloat(style.paddingLeft||0)-parseFloat(style.paddingRight||0);while(available>0&&group.getBoundingClientRect().width>available&&size>12){size-=.5;setSize();}centerMask(name);}});}
+function schedule(){if(frame)return;frame=requestAnimationFrame(()=>{frame=0;for(const group of track.querySelectorAll('.account-donor-group')){const row=group.parentElement,name=group.querySelector('.name'),amount=group.querySelector('.amount');let size=25;const setSize=()=>{name.style.setProperty('font-size',size+'px','important');amount.style.setProperty('font-size',size+'px','important');group.style.setProperty('--account-icon-size',size*.8+'px');};setSize();const style=getComputedStyle(row),available=row.clientWidth-parseFloat(style.paddingLeft||0)-parseFloat(style.paddingRight||0);while(available>0&&group.getBoundingClientRect().width>available&&size>12){size-=.5;setSize();}centerMask(name);}});}
 new MutationObserver(schedule).observe(track,{childList:true,subtree:true,characterData:true});if(window.ResizeObserver)new ResizeObserver(schedule).observe(box);document.fonts?.ready.then(schedule);document.fonts?.addEventListener('loadingdone',schedule);window.addEventListener('resize',schedule);schedule();
 })();
 </script>
