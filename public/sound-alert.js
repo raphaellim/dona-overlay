@@ -13,7 +13,7 @@ try{
  let audio;
  const ready=[];
  if(media.image){$('image').hidden=false;ready.push(eventReady($('image'),'load',signal));$('image').src=media.image;}
- if(media.sound){audio=new Audio();session.audio=audio;audio.preload='auto';ready.push(eventReady(audio,'canplay',signal));audio.src=media.sound;audio.load();}
+ if(media.sound){audio=new Audio();audio.volume=.8;session.audio=audio;audio.preload='auto';ready.push(eventReady(audio,'canplay',signal));audio.src=media.sound;audio.load();}
  status('알림 미디어 준비 중');await Promise.all(ready);if(signal.aborted)throw Error('취소됨');
  if(media.image&&($('image').naturalWidth>4096||$('image').naturalHeight>4096))throw Error('이미지는 가로·세로 4096px 이하를 사용하세요');
  if(audio&&(!Number.isFinite(audio.duration)||audio.duration>180))throw Error('음원은 180초 이내 파일을 사용하세요');

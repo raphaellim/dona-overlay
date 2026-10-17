@@ -31,7 +31,7 @@
   const handlers=new Map();
   const fire=(name,value)=>{for(const fn of handlers.get(name)||[])fn(value);};
   const connected=()=>fire('connect'),disconnected=()=>fire('disconnect');
-  const changed=e=>{const topic=e.detail.topic;if(['candidates','rules','alert','preset','alertWake'].includes(topic))return;fire('overlay:changed',{type:topic||'state'});};
+  const changed=e=>{const topic=e.detail.topic;if(['candidates','rules','alert','preset','alertWake','alertList'].includes(topic))return;fire('overlay:changed',{type:topic||'state'});};
   window.addEventListener('collection:connected',connected);window.addEventListener('collection:disconnected',disconnected);window.addEventListener('collection:changed',changed);
   return {on(name,fn){if(!handlers.has(name))handlers.set(name,[]);handlers.get(name).push(fn);if(name==='connect'&&ready)queueMicrotask(fn);return this;},emit(name,payload,ack){if(name==='station:join'&&typeof ack==='function')ack({ok:true,station});},disconnect(){window.removeEventListener('collection:connected',connected);window.removeEventListener('collection:disconnected',disconnected);window.removeEventListener('collection:changed',changed);handlers.clear();}};
  };
