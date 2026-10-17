@@ -1443,7 +1443,11 @@ body #overlayPanel #accountBox .name,body #overlayPanel #accountBox .amount{font
 body #overlayPanel .notice-title,body #overlayPanel .funding-title,body #overlayPanel .creator-title,body #overlayPanel .karaoke-title{font-weight:700!important}
 body #overlayPanel #fundingBox .o3-funding-label strong,body #overlayPanel #fundingBox .funding-ratio,body #overlayPanel #fundingBox .funding-ratio *{font-weight:700!important}
 body #overlayPanel #fundingBox .o3-funding-detail,body #overlayPanel #fundingBox .o3-funding-detail *{font-weight:600!important}
-body #overlayPanel #accountBox{background:rgba(10,15,24,.75)!important;border-radius:5px!important}
+body #overlayPanel #accountBox{background:rgba(10,15,24,var(--account-bg-opacity,.75))!important;border-radius:5px!important}
+</style><style id="contrastCorrection">
+body #overlayPanel #noticeBox .notice-line,body #overlayPanel #noticeBox .notice-line *{font-weight:700!important;text-shadow:0 1px 1px rgba(0,0,0,.9)!important}
+body #overlayPanel #fundingBox .o3-funding-detail,body #overlayPanel #fundingBox .o3-funding-detail *{font-weight:700!important;text-shadow:0 1px 1px rgba(0,0,0,.9)!important}
+body #overlayPanel #accountBox .name,body #overlayPanel #accountBox .amount{font-weight:800!important}
 </style></head>
 
 <body class="theme-gold">
@@ -2180,7 +2184,7 @@ body #overlayPanel #accountBox{background:rgba(10,15,24,.75)!important;border-ra
           if(/^#[0-9a-f]{3}([0-9a-f]{3})?$/i.test(rawColor)){
             let hex=rawColor.slice(1);if(hex.length===3)hex=hex.split('').map(x=>x+x).join('');
             const channels=[0,2,4].map(i=>parseInt(hex.slice(i,i+2),16));
-            color='#'+channels.map(x=>Math.round(x*.48+255*.52).toString(16).padStart(2,'0')).join('');
+            color='#'+channels.map(x=>Math.round(x*.75+255*.25).toString(16).padStart(2,'0')).join('');
           }
           const style = color ? ` style="color:${escapeHtml(color)} !important"` : "";
           return `<span class="notice-line notice-align-${align}"${style}>${escapeHtml(text)}</span>`;
@@ -3271,7 +3275,7 @@ function updateBroadcastTimer() {
 
 <script>try{if(new URLSearchParams(location.search).get("bg")==="1") document.body.classList.add("test-bg");}catch(e){}</script>
 
-<script>setInterval(()=>document.querySelectorAll('[data-donation-at]').forEach(e=>{const s=Math.max(0,Math.floor((Date.now()-Date.parse(e.dataset.donationAt))/1000));e.textContent='['+(s<1?'방금 전':s<60?s+'초 전':Math.floor(s/60)+'분 전')+']';}),1000);</script><script src="/overlay3-display.js?v=6165-crisp"></script><script src="/alert-queue.js"></script><script src="/overlay3-alert.js?v=6165"></script>
+<script>setInterval(()=>document.querySelectorAll('[data-donation-at]').forEach(e=>{const s=Math.max(0,Math.floor((Date.now()-Date.parse(e.dataset.donationAt))/1000));e.textContent='['+(s<1?'방금 전':s<60?s+'초 전':Math.floor(s/60)+'분 전')+']';}),1000);</script><script src="/overlay3-display.js?v=6165-account-control"></script><script src="/alert-queue.js"></script><script src="/overlay3-alert.js?v=6165"></script>
 <script>
 (()=>{const track=document.getElementById('rollerTrack'),box=document.getElementById('accountBox');if(!track||!box)return;let frame=0;
 const measure=document.createElement('canvas').getContext('2d');
