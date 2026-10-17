@@ -1399,6 +1399,12 @@ body,#overlayPanel{font-family:'Noto Sans KR','맑은 고딕',sans-serif!importa
 window.overlay3MaskAccountName=value=>{const letters=Array.from(String(value||'익명').trim());if(letters.length>1)letters[1]='＊';return letters.join('');};
 window.overlay3CreatorName=value=>{const text=Array.from(String(value||'익명').trim()).slice(0,4).join('');const name=document.createElement('span');name.className='o3-rank-name';name.textContent=text;return name.outerHTML;};</script><style>/* Keep the current row animated; clipped rows do not need painting. */
 #overlayPanel #accountBox .roller-item:not(.perf-visible) .name,#overlayPanel #accountBox .roller-item:not(.perf-visible) .amount{animation-play-state:paused!important}
+</style><style id="soft320">
+body #overlayPanel{width:300px!important;max-width:calc(100vw - 54px)!important;padding-left:8px!important;padding-right:8px!important}
+body #overlayPanel .overlay-box:not(#accountBox),body #overlayPanel .overlay-box:not(#accountBox) *{text-shadow:0 1px 2px rgba(0,0,0,.65)!important;-webkit-text-stroke:0!important}
+body #overlayPanel .o3-funding-detail,body #overlayPanel .o3-funding-detail span{color:#edf2f6!important;opacity:1!important}
+body #overlayPanel #fundingBox .funding-ratio em{color:#dcf4ec!important;opacity:1!important}
+body #overlayPanel #creatorBox .o3-rank-name{flex-basis:3.5em!important;width:3.5em!important;min-width:3.5em!important;max-width:3.5em!important}
 </style></head>
 
 <body class="theme-gold">
