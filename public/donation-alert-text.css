@@ -4,12 +4,12 @@
 #v5Alert-alert[data-amount-tier="rainbow"],#alert[data-amount-tier="rainbow"]{--donation-text-color:#b7a0ff}
 #v5Alert-source,#v5Alert-alert .v5Alert-message .name,#v5Alert-alert .v5Alert-message .amount,#alert #source,#alert #donor,#alert #amount{color:var(--donation-text-color,#fff)!important}
 /* v6.10: centered readable text, rainbow letters only; original stars remain. */
-#v5Alert-alert{
+#overlayPanel #v5Alert-alert{
  height:auto!important;min-height:190px!important;max-height:none!important;
  padding:14px 12px!important;gap:7px!important;align-content:center!important;
  justify-items:center!important;text-align:center!important;
 }
-#v5Alert-alert .v5Alert-label,#alert .label{
+#overlayPanel #v5Alert-alert .v5Alert-label,#alert .label{
  display:flex!important;flex-wrap:wrap!important;align-items:center!important;
  justify-content:center!important;gap:2px 7px!important;width:100%!important;
  white-space:normal!important;overflow:visible!important;line-height:17px!important;
@@ -20,27 +20,27 @@
  font-size:27px!important;font-weight:900!important;line-height:35px!important;letter-spacing:.04em!important;
 }
 #v5Alert-age,#v5Alert-title,#alert #age,#alert #title{font-size:12px!important;line-height:16px!important;color:#d3e1eb!important}
-#v5Alert-alert .v5Alert-message{width:100%!important;min-width:0!important;max-height:none!important}
-#v5Alert-alert .v5Alert-message>.row{
+#overlayPanel #v5Alert-alert .v5Alert-message{width:100%!important;min-width:0!important;max-height:none!important}
+#overlayPanel #v5Alert-alert .v5Alert-message>.row{
  display:grid!important;grid-template-columns:minmax(0,max-content) 28px max-content!important;
  justify-content:center!important;align-items:center!important;gap:7px!important;width:100%!important;min-width:0!important;
 }
-#v5Alert-alert .v5Alert-message .name{
+#overlayPanel #v5Alert-alert .v5Alert-message .name{
  font-size:25px!important;line-height:35px!important;font-weight:900!important;max-width:5em!important;
  text-align:center!important;min-width:0!important;overflow:hidden!important;text-overflow:ellipsis!important;
 }
-#v5Alert-alert .v5Alert-message .amount{font-size:28px!important;line-height:35px!important;font-weight:900!important}
-#v5Alert-alert #v5Alert-comment{
+#overlayPanel #v5Alert-alert .v5Alert-message .amount{font-size:28px!important;line-height:35px!important;font-weight:900!important}
+#overlayPanel #v5Alert-alert #v5Alert-comment{
  display:-webkit-box!important;-webkit-box-orient:vertical!important;-webkit-line-clamp:3!important;
  width:100%!important;font-size:21px!important;line-height:28px!important;max-height:84px!important;
  min-height:0!important;white-space:pre-wrap!important;overflow-wrap:anywhere!important;text-align:center!important;
  color:#fff!important;margin:1px 0!important;flex-basis:auto!important;
 }
-#v5Alert-alert #v5Alert-split{
+#overlayPanel #v5Alert-alert #v5Alert-split{
  width:100%!important;font-size:16px!important;line-height:22px!important;max-height:44px!important;
  text-align:center!important;color:#c9e7f4!important;flex-basis:auto!important;
 }
-#v5Alert-alert #v5Alert-comment:empty,#v5Alert-alert #v5Alert-split:empty{display:none!important}
+#overlayPanel #v5Alert-alert #v5Alert-comment:empty,#overlayPanel #v5Alert-alert #v5Alert-split:empty{display:none!important}
 #alert .message{justify-content:center!important;line-height:1.4}
 #alert #comment{font-size:24px;line-height:1.5;text-align:center}
 /* Color fallback is retained in browsers without background-clip:text. */
@@ -61,35 +61,3 @@
  #v5Alert-alert.show #v5Alert-source,#v5Alert-alert.show .v5Alert-message .name,#v5Alert-alert.show .v5Alert-message .amount,
  #alert.show #source,#alert.show #donor,#alert.show #amount{animation:none!important}
 }
-
-/* v6.16.1 popup content expands vertically; no line clamps. */
-body #v5Alert-alert{height:auto!important;min-height:230px!important;max-height:none!important;padding:18px 14px!important;gap:10px!important;overflow:visible!important;box-sizing:border-box!important}
-body #v5Alert-alert .v5Alert-label{display:flex!important;flex-wrap:wrap!important;justify-content:center!important;align-items:center!important;max-height:none!important;overflow:visible!important;white-space:normal!important;flex:none!important}
-body #v5Alert-alert .v5Alert-message{display:block!important;flex:none!important;width:100%!important;min-width:0!important;height:auto!important;max-height:none!important;white-space:normal!important;overflow:visible!important}
-body #v5Alert-alert .v5Alert-message>.row{display:grid!important;grid-template-columns:30px minmax(0,1fr)!important;gap:8px!important;align-items:center!important;justify-content:center!important;height:auto!important;min-height:90px!important;padding:0 3px!important;width:100%!important;box-sizing:border-box!important}
-body #v5Alert-alert .v5Alert-message .badge{grid-column:1!important;grid-row:1!important;width:30px!important;height:32px!important;justify-self:center!important}
-body #v5Alert-alert .v5Alert-message .icon,body #v5Alert-alert .v5Alert-message .icon svg{width:28px!important;height:30px!important}
-body #v5Alert-alert .v5Alert-message .name{grid-column:2!important;grid-row:1!important;width:100%!important;min-width:0!important;font-size:32px!important;line-height:1.35!important;text-align:center!important;white-space:normal!important;overflow:visible!important;text-overflow:clip!important;overflow-wrap:anywhere!important}
-body #v5Alert-alert .v5Alert-message .amount{grid-column:1/-1!important;grid-row:2!important;width:100%!important;min-width:0!important;font-size:clamp(26px,8vw,36px)!important;line-height:1.35!important;text-align:center!important;white-space:normal!important;overflow:visible!important;overflow-wrap:anywhere!important;letter-spacing:0!important}
-body #v5Alert-alert #v5Alert-comment,body #v5Alert-alert #v5Alert-split{display:block!important;flex:none!important;width:100%!important;height:auto!important;max-height:none!important;overflow:visible!important;-webkit-line-clamp:unset!important;white-space:pre-wrap!important;overflow-wrap:anywhere!important;line-height:1.45!important}
-body #v5Alert-alert #v5Alert-comment{font-size:21px!important}
-body #v5Alert-alert #v5Alert-split{font-size:18px!important}
-body #v5Alert-alert #v5Alert-comment:empty,body #v5Alert-alert #v5Alert-split:empty{display:none!important}
-#alert #comment,#alert #split{max-height:none!important;-webkit-line-clamp:unset!important;overflow:visible!important;white-space:pre-wrap!important}
-
-/* v6.16.3 source / donor + amount / allocation + message. */
-body #v5Alert-alert{min-height:160px!important;gap:8px!important;padding:16px 12px!important}
-body #v5Alert-alert .v5Alert-message>.row{display:flex!important;flex-flow:row nowrap!important;align-items:center!important;justify-content:center!important;gap:12px!important;width:100%!important;min-width:0!important;height:auto!important;min-height:42px!important;padding:0!important}
-body #v5Alert-alert .v5Alert-message .name,body #v5Alert-alert .v5Alert-message .amount{flex:0 1 auto!important;width:auto!important;min-width:0!important;white-space:nowrap!important;overflow-wrap:normal!important;word-break:keep-all!important;line-height:1.35!important;text-align:center!important;letter-spacing:0!important}
-body #v5Alert-alert .v5Alert-message .amount{flex:0 0 auto!important}
-body #v5Alert-alert #v5Alert-age{display:none!important}
-body #v5Alert-alert #v5Alert-source{font-size:27px!important;line-height:35px!important}
-
-#alert #age{display:none!important}
-
-/* v6.16.4 wider, centered one-line donor and amount. */
-body #v5Alert-alert{padding:18px 20px!important;min-height:160px!important;gap:9px!important}
-body #v5Alert-alert .v5Alert-message>.row{gap:16px!important;min-height:46px!important}
-body #v5Alert-alert #v5Alert-source{font-size:29px!important;line-height:38px!important;letter-spacing:.03em!important}
-body #v5Alert-alert #v5Alert-split{color:#c6d9e7!important;font-size:18px!important}
-body #v5Alert-alert #v5Alert-comment{color:#fff!important;font-size:22px!important;line-height:1.45!important}
