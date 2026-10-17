@@ -1124,7 +1124,7 @@ body.test-bg{
 
 #overlayPanel #accountBox .roller-item .name{display:flex!important;justify-content:center!important;align-items:center!important;overflow:visible!important;letter-spacing:0!important}
 #overlayPanel #accountBox .account-glyph{display:inline-block;width:1em;flex:0 0 1em;text-align:center;font-size:inherit}
-#overlayPanel #accountBox .account-mask-heart{font-size:.8em;width:1.25em;flex-basis:1.25em}
+#overlayPanel #accountBox .account-mask-star{font-size:.8em;width:1.25em;flex-basis:1.25em}
 
 
 /* v6.15.1: reserve more room for amounts and Prism crop safety. */
@@ -1149,7 +1149,7 @@ body #overlayPanel #accountBox .roller-item .badge,body #overlayPanel #accountBo
 body #overlayPanel #accountBox .roller-item .icon svg{width:17px!important;height:20px!important}
 body #overlayPanel #accountBox .roller-item .name{display:block!important;width:auto!important;min-width:0!important;font-size:25px!important;line-height:34px!important;text-align:left!important;letter-spacing:-.025em!important;font-weight:800!important;white-space:nowrap!important}
 body #overlayPanel #accountBox .roller-item .name .account-glyph{width:auto!important;display:inline!important;flex:none!important;font-size:inherit!important}
-body #overlayPanel #accountBox .roller-item .name .account-mask-heart{font-size:.82em!important;vertical-align:1px;letter-spacing:0!important;padding:0 .02em!important}
+body #overlayPanel #accountBox .roller-item .name .account-mask-star{font-size:1em!important;vertical-align:0;letter-spacing:0!important;padding:0 .02em!important}
 body #overlayPanel #accountBox .roller-item .amount{font-weight:800!important;line-height:34px!important;text-align:right!important;letter-spacing:-.025em!important}
 body #overlayPanel #fundingBox{padding-top:7px!important;padding-bottom:7px!important}
 body #overlayPanel #fundingBox .funding-title{font-size:18px!important;line-height:24px!important;margin-bottom:5px!important;gap:8px!important;align-items:center!important}
@@ -1171,6 +1171,14 @@ body #overlayPanel #accountBox .roller-item .badge{flex:0 0 20px!important;width
 body #overlayPanel #accountBox .roller-item .icon,body #overlayPanel #accountBox .roller-item .icon svg{width:20px!important;height:22px!important}
 body #overlayPanel #accountBox .roller-item .name{flex:0 0 auto!important;width:auto!important;min-width:0!important;margin:0!important;padding:0!important;font-size:25px!important;text-align:left!important;white-space:nowrap!important;line-height:34px!important}
 body #overlayPanel #accountBox .roller-item .amount{flex:0 0 auto!important;width:auto!important;min-width:0!important;margin:0 0 0 12px!important;padding:0!important;font-size:25px!important;text-align:left!important;white-space:nowrap!important;line-height:34px!important}
+
+
+/* Align the masking mark by its visible glyph, and scale the original icon with the name. */
+body #overlayPanel #accountBox .roller-item .name{display:inline-flex!important;align-items:baseline!important}
+body #overlayPanel #accountBox .roller-item .name .account-glyph{display:inline-block!important;line-height:inherit!important}
+body #overlayPanel #accountBox .roller-item .name .account-mask-star{vertical-align:baseline!important;padding:0 .02em!important;transform:translateY(var(--mask-center-offset,0px))}
+body #overlayPanel #accountBox .roller-item .badge{flex:0 0 calc(var(--account-icon-size,30px) + 2px)!important;width:calc(var(--account-icon-size,30px) + 2px)!important;height:32px!important}
+body #overlayPanel #accountBox .roller-item .icon,body #overlayPanel #accountBox .roller-item .icon svg{width:var(--account-icon-size,30px)!important;height:var(--account-icon-size,30px)!important}
 
 </style>
   <link rel="stylesheet" href="/assets/css/roulette-overlay.css">
@@ -1384,11 +1392,11 @@ body,#overlayPanel{font-family:'Noto Sans KR','맑은 고딕',sans-serif!importa
  const badge=document.createElement('span');badge.className='badge';badge.setAttribute('aria-hidden','true');
  const icon=document.createElement('span');icon.className='icon';if(tier==='diamond')icon.innerHTML='<svg viewBox="0 1 24 24" aria-hidden="true"><path fill="#72d8ff" d="M6 4h12l5 6-11 12L1 10z"/><path fill="#c5f2ff" d="M6 4l6 6H1zm12 0l-6 6h11z"/><path fill="#39aee9" d="M1 10h11v12zm11 0h11L12 22z"/><path fill="#91e9ff" d="M6 4h12l-6 6z"/></svg>';else if(tier==='star')icon.innerHTML='<svg viewBox="0 -0.5 24 24" aria-hidden="true"><path fill="#ffd96a" d="M12 2l3.1 6.3 6.9 1-5 4.9 1.2 6.8-6.2-3.2L5.8 21 7 14.2l-5-4.9 6.9-1z"/></svg>';else icon.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#4DE2B1" d="M12 21S2 14.7 2 7.8A5.3 5.3 0 0 1 12 5a5.3 5.3 0 0 1 10 2.8C22 14.7 12 21 12 21Z"/></svg>';badge.append(icon);
  if(tier){for(const side of ['a','b']){const spark=document.createElement('span');spark.className='spark '+side;badge.append(spark);}}
- const name=document.createElement('span');name.className='name';name.title=donor.name;for(const letter of Array.from(String(donor.name))){const glyph=document.createElement('span');glyph.className='account-glyph'+(letter==='♥'?' account-mask-heart':'');glyph.textContent=letter;name.append(glyph);}const length=Array.from(String(donor.name)).length;if(length>4)name.style.setProperty('font-size',Math.max(12,26*4/length)+'px','important');
+ const name=document.createElement('span');name.className='name';name.title=donor.name;for(const letter of Array.from(String(donor.name))){const glyph=document.createElement('span');glyph.className='account-glyph'+(letter==='＊'?' account-mask-star':'');glyph.textContent=letter;name.append(glyph);}const length=Array.from(String(donor.name)).length;if(length>4)name.style.setProperty('font-size',Math.max(12,26*4/length)+'px','important');
  const total=document.createElement('span');total.className='amount';total.textContent=amount.toLocaleString('ko-KR')+'';total.dataset.baseSize=String(total.textContent.length>9?25*9/total.textContent.length:25);total.style.setProperty('font-size',total.dataset.baseSize+'px','important');
  row.append(badge,name,total);return row;
 };window.overlay3MakeRow=makeRow;
-window.overlay3MaskAccountName=value=>{const letters=Array.from(String(value||'익명').trim());if(letters.length>1)letters[1]='♥';return letters.join('');};
+window.overlay3MaskAccountName=value=>{const letters=Array.from(String(value||'익명').trim());if(letters.length>1)letters[1]='＊';return letters.join('');};
 window.overlay3CreatorName=value=>{const text=Array.from(String(value||'익명').trim()).slice(0,4).join('');const name=document.createElement('span');name.className='o3-rank-name';name.textContent=text;return name.outerHTML;};</script></head>
 
 <body class="theme-gold">
@@ -3210,8 +3218,10 @@ function updateBroadcastTimer() {
 <script>setInterval(()=>document.querySelectorAll('[data-donation-at]').forEach(e=>{const s=Math.max(0,Math.floor((Date.now()-Date.parse(e.dataset.donationAt))/1000));e.textContent='['+(s<1?'방금 전':s<60?s+'초 전':Math.floor(s/60)+'분 전')+']';}),1000);</script><script src="/overlay3-display.js?v=6162"></script><script src="/alert-queue.js"></script><script src="/overlay3-alert.js?v=6165"></script>
 <script>
 (()=>{const track=document.getElementById('rollerTrack'),box=document.getElementById('accountBox');if(!track||!box)return;let frame=0;
-function schedule(){if(frame)return;frame=requestAnimationFrame(()=>{frame=0;for(const group of track.querySelectorAll('.account-donor-group')){const row=group.parentElement,name=group.querySelector('.name'),amount=group.querySelector('.amount');let size=25;const setSize=()=>{name.style.setProperty('font-size',size+'px','important');amount.style.setProperty('font-size',size+'px','important');};setSize();const style=getComputedStyle(row),available=row.clientWidth-parseFloat(style.paddingLeft||0)-parseFloat(style.paddingRight||0);while(available>0&&group.getBoundingClientRect().width>available&&size>12){size-=.5;setSize();}}});}
-new MutationObserver(schedule).observe(track,{childList:true,subtree:true,characterData:true});if(window.ResizeObserver)new ResizeObserver(schedule).observe(box);document.fonts?.ready.then(schedule);window.addEventListener('resize',schedule);schedule();
+const measure=document.createElement('canvas').getContext('2d');
+function centerMask(name){if(!measure)return;const style=getComputedStyle(name);measure.font=style.fontWeight+' '+style.fontSize+' '+style.fontFamily;const text=Array.from(name.textContent).filter(c=>c!=='＊').join('')||'가';const reference=measure.measureText(text),star=measure.measureText('＊');if(!Number.isFinite(reference.actualBoundingBoxAscent)||!Number.isFinite(star.actualBoundingBoxAscent))return;const shift=((star.actualBoundingBoxAscent-star.actualBoundingBoxDescent)-(reference.actualBoundingBoxAscent-reference.actualBoundingBoxDescent))/2;for(const glyph of name.querySelectorAll('.account-mask-star'))glyph.style.setProperty('--mask-center-offset',shift+'px');}
+function schedule(){if(frame)return;frame=requestAnimationFrame(()=>{frame=0;for(const group of track.querySelectorAll('.account-donor-group')){const row=group.parentElement,name=group.querySelector('.name'),amount=group.querySelector('.amount');let size=25;const setSize=()=>{name.style.setProperty('font-size',size+'px','important');amount.style.setProperty('font-size',size+'px','important');group.style.setProperty('--account-icon-size',size*1.2+'px');};setSize();const style=getComputedStyle(row),available=row.clientWidth-parseFloat(style.paddingLeft||0)-parseFloat(style.paddingRight||0);while(available>0&&group.getBoundingClientRect().width>available&&size>12){size-=.5;setSize();}centerMask(name);}});}
+new MutationObserver(schedule).observe(track,{childList:true,subtree:true,characterData:true});if(window.ResizeObserver)new ResizeObserver(schedule).observe(box);document.fonts?.ready.then(schedule);document.fonts?.addEventListener('loadingdone',schedule);window.addEventListener('resize',schedule);schedule();
 })();
 </script>
 </body>

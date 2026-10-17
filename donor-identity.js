@@ -1,7 +1,7 @@
 'use strict';
 const normalize=v=>String(v??'').normalize('NFC').trim();
 function clean(entries){if(!Array.isArray(entries)||entries.length>500)throw Error('등록은 최대 500개입니다.');const seen=new Set();return entries.map(e=>{const source=normalize(e.source),nickname=normalize(e.nickname);if(!source||!nickname||source.length>40||Array.from(nickname).length>12||/[\r\n\x00-\x1f]/.test(source+nickname))throw Error('입금자명과 닉네임을 확인하세요. 닉네임은 12글자까지입니다.');if(seen.has(source))throw Error('같은 입금자명이 중복되었습니다.');seen.add(source);return {source,nickname};});}
-function resolver(entries){const map=new Map(entries.map(e=>[e.source,e.nickname])),registered=new Set(entries.map(e=>e.nickname));return value=>{const raw=normalize(value)||'익명';if(map.has(raw))return map.get(raw);if(registered.has(raw))return raw;const chars=Array.from(raw);if(chars.length>1)chars[1]='♥';return chars.join('');};}
+function resolver(entries){const map=new Map(entries.map(e=>[e.source,e.nickname])),registered=new Set(entries.map(e=>e.nickname));return value=>{const raw=normalize(value)||'익명';if(map.has(raw))return map.get(raw);if(registered.has(raw))return raw;const chars=Array.from(raw);if(chars.length>1)chars[1]='＊';return chars.join('');};}
 function create({supabase,withSettingsMutation}){
  async function store(){const {data,error}=await supabase.from('settings').select('data').eq('id',3).maybeSingle();if(error&&error.code!=='PGRST116')throw error;return data?.data||{};}
  async function list(slug){const s=await store();return s.$donorIdentity?.[slug]||[];}
