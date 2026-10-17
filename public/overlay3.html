@@ -1434,6 +1434,16 @@ body #overlayPanel #allowanceBox .solo-preset.positive{background:rgba(14,82,66,
 body #overlayPanel #allowanceBox .solo-preset.negative{background:rgba(105,41,40,.85)!important;color:#ffd1bf!important}
 body #overlayPanel #allowanceBox .solo-preset.neutral{background:rgba(48,59,69,.75)!important;color:#dce3e9!important}
 body #overlayPanel #allowanceBox .solo-allowance{font-size:21px!important}
+</style><style id="crisp6165">
+@font-face{font-family:OverlayPretendard;src:url('/fonts/PretendardVariable.woff2') format('woff2');font-style:normal;font-weight:100 900;font-display:swap}
+body #overlayPanel,body #overlayPanel *,body #overlayPanel *::before,body #overlayPanel *::after,body #v5Alert-alert,body #v5Alert-alert *{font-family:OverlayPretendard,'Segoe UI Emoji','Apple Color Emoji',sans-serif!important;letter-spacing:0!important}
+body #overlayPanel .overlay-box:not(#accountBox),body #overlayPanel .overlay-box:not(#accountBox) *{text-shadow:0 1px 0 rgba(0,0,0,.65)!important;-webkit-text-stroke:0!important}
+body #overlayPanel #noticeBox .notice-line,body #overlayPanel #noticeBox .notice-line *{font-weight:600!important;text-shadow:0 1px 0 rgba(0,0,0,.65)!important}
+body #overlayPanel #accountBox .name,body #overlayPanel #accountBox .amount{font-weight:700!important}
+body #overlayPanel .notice-title,body #overlayPanel .funding-title,body #overlayPanel .creator-title,body #overlayPanel .karaoke-title{font-weight:700!important}
+body #overlayPanel #fundingBox .o3-funding-label strong,body #overlayPanel #fundingBox .funding-ratio,body #overlayPanel #fundingBox .funding-ratio *{font-weight:700!important}
+body #overlayPanel #fundingBox .o3-funding-detail,body #overlayPanel #fundingBox .o3-funding-detail *{font-weight:600!important}
+body #overlayPanel #accountBox{background:rgba(10,15,24,.75)!important;border-radius:5px!important}
 </style></head>
 
 <body class="theme-gold">
@@ -3261,7 +3271,7 @@ function updateBroadcastTimer() {
 
 <script>try{if(new URLSearchParams(location.search).get("bg")==="1") document.body.classList.add("test-bg");}catch(e){}</script>
 
-<script>setInterval(()=>document.querySelectorAll('[data-donation-at]').forEach(e=>{const s=Math.max(0,Math.floor((Date.now()-Date.parse(e.dataset.donationAt))/1000));e.textContent='['+(s<1?'방금 전':s<60?s+'초 전':Math.floor(s/60)+'분 전')+']';}),1000);</script><script src="/overlay3-display.js?v=6162"></script><script src="/alert-queue.js"></script><script src="/overlay3-alert.js?v=6165"></script>
+<script>setInterval(()=>document.querySelectorAll('[data-donation-at]').forEach(e=>{const s=Math.max(0,Math.floor((Date.now()-Date.parse(e.dataset.donationAt))/1000));e.textContent='['+(s<1?'방금 전':s<60?s+'초 전':Math.floor(s/60)+'분 전')+']';}),1000);</script><script src="/overlay3-display.js?v=6165-crisp"></script><script src="/alert-queue.js"></script><script src="/overlay3-alert.js?v=6165"></script>
 <script>
 (()=>{const track=document.getElementById('rollerTrack'),box=document.getElementById('accountBox');if(!track||!box)return;let frame=0;
 const measure=document.createElement('canvas').getContext('2d');
