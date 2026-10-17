@@ -1163,6 +1163,15 @@ body #overlayPanel #fundingBox .funding-ratio b{font-size:22px;font-weight:800;c
 body #overlayPanel #fundingBox .funding-ratio em{font-style:normal;font-size:19px;font-weight:650;color:#b1c9c3}
 body #overlayPanel #fundingBox .o3-funding-detail{display:flex!important;justify-content:space-between!important;gap:8px!important;margin-top:4px!important;padding:0 3px!important;font-size:14px!important;font-weight:600!important;line-height:20px!important;color:#abbac8!important}
 
+
+/* Approved preview: natural-width donor group centered after the account label. */
+body #overlayPanel #accountBox .roller-item.row{display:flex!important;justify-content:center!important;align-items:center!important;gap:0!important;padding:0 5px 0 0!important}
+body #overlayPanel #accountBox .account-donor-group{display:inline-flex;flex:0 0 auto;align-items:center;justify-content:center;white-space:nowrap;font-size:25px;line-height:34px;gap:0;font-variant-numeric:tabular-nums}
+body #overlayPanel #accountBox .roller-item .badge{flex:0 0 20px!important;width:20px!important;height:24px!important;margin:0 6px 0 0!important}
+body #overlayPanel #accountBox .roller-item .icon,body #overlayPanel #accountBox .roller-item .icon svg{width:20px!important;height:22px!important}
+body #overlayPanel #accountBox .roller-item .name{flex:0 0 auto!important;width:auto!important;min-width:0!important;margin:0!important;padding:0!important;font-size:25px!important;text-align:left!important;white-space:nowrap!important;line-height:34px!important}
+body #overlayPanel #accountBox .roller-item .amount{flex:0 0 auto!important;width:auto!important;min-width:0!important;margin:0 0 0 12px!important;padding:0!important;font-size:25px!important;text-align:left!important;white-space:nowrap!important;line-height:34px!important}
+
 </style>
   <link rel="stylesheet" href="/assets/css/roulette-overlay.css">
 <style>
@@ -2302,7 +2311,10 @@ if (amountNum >= 1000000) vipClass = " vip-account vip-100";
 else if (amountNum >= 500000) vipClass = " vip-account vip-50";
 else if (amountNum >= 300000) vipClass = " vip-account vip-30";
 else if (amountNum >= 100000) vipClass = " vip-account vip-10";
-          return window.overlay3MakeRow({name:Array.from(item.donorDisplayResolved?donor:window.overlay3MaskAccountName(donor)).slice(0,4).join(''),amount:Number(rawAmount)}).outerHTML.replace('class="row active ' , 'class="roller-item row active ');
+          const row=window.overlay3MakeRow({name:Array.from(item.donorDisplayResolved?donor:window.overlay3MaskAccountName(donor)).slice(0,4).join(''),amount:Number(rawAmount)});
+          const group=document.createElement('span');group.className='account-donor-group';
+          while(row.firstChild)group.append(row.firstChild);
+          row.append(group);row.classList.add('roller-item');return row.outerHTML;
         };
 
         const moveToIndex = (index, useTransition = true) => {
@@ -3198,7 +3210,7 @@ function updateBroadcastTimer() {
 <script>setInterval(()=>document.querySelectorAll('[data-donation-at]').forEach(e=>{const s=Math.max(0,Math.floor((Date.now()-Date.parse(e.dataset.donationAt))/1000));e.textContent='['+(s<1?'방금 전':s<60?s+'초 전':Math.floor(s/60)+'분 전')+']';}),1000);</script><script src="/overlay3-display.js?v=6162"></script><script src="/alert-queue.js"></script><script src="/overlay3-alert.js?v=6165"></script>
 <script>
 (()=>{const track=document.getElementById('rollerTrack'),box=document.getElementById('accountBox');if(!track||!box)return;let frame=0;
-function schedule(){if(frame)return;frame=requestAnimationFrame(()=>{frame=0;for(const amount of track.querySelectorAll('.amount')){let size=Number(amount.dataset.baseSize)||25;amount.style.setProperty('font-size',size+'px','important');while(amount.clientWidth>0&&amount.scrollWidth>amount.clientWidth&&size>14){size-=.5;amount.style.setProperty('font-size',size+'px','important');}}});}
+function schedule(){if(frame)return;frame=requestAnimationFrame(()=>{frame=0;for(const group of track.querySelectorAll('.account-donor-group')){const row=group.parentElement,name=group.querySelector('.name'),amount=group.querySelector('.amount');let size=25;const setSize=()=>{name.style.setProperty('font-size',size+'px','important');amount.style.setProperty('font-size',size+'px','important');};setSize();const style=getComputedStyle(row),available=row.clientWidth-parseFloat(style.paddingLeft||0)-parseFloat(style.paddingRight||0);while(available>0&&group.getBoundingClientRect().width>available&&size>12){size-=.5;setSize();}}});}
 new MutationObserver(schedule).observe(track,{childList:true,subtree:true,characterData:true});if(window.ResizeObserver)new ResizeObserver(schedule).observe(box);document.fonts?.ready.then(schedule);window.addEventListener('resize',schedule);schedule();
 })();
 </script>
