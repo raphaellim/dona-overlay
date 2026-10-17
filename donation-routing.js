@@ -25,8 +25,7 @@ function classify(row,config){
  let donor=row.donor;if(selected.length){const before=text.slice(0,selected[0].at).trim().replace(/[\s/,，]+$/,'').replace(/(?:님께서|님이|님|가|이)\s*$/,'').trim();if((row.source==='account'||selected[0].at<String(row.donor||'').length)&&before)donor=before;}
  if(c.mode==='solo'){
    if(streamers.length!==1)return hold('단독 모드는 활성 방송인이 정확히 1명이어야 합니다');
-   if(!selected.length&&/(?:에게|한테)|\s+[^\s]+\d/.test(text))return hold('대상 지정으로 보이는 문구 · 수동 확인 필요');
-   if(!selected.length)return {state:'auto',reason:'단독방송 자동 반영',donor,rows:[{targetId:streamers[0].id,creator:streamers[0].name,amount:Number(row.amount)}]};
+   return {state:'auto',reason:'갠방 활성 방송인 1명에게 전액 자동 반영',donor,rows:[{targetId:streamers[0].id,creator:streamers[0].name,amount:Number(row.amount)}]};
  }
  if(/균등|각\s*\d/.test(text)){
    if(!streamers.length)return hold('균등 분배할 방송인 없음');

@@ -1085,7 +1085,7 @@ body.test-bg{
 #overlayPanel #noticeBox .notice-line{display:block!important;box-sizing:border-box!important;height:32px!important;min-height:32px!important;max-height:32px!important;flex:0 0 32px!important;line-height:32px!important;font-size:23px!important;margin:0!important;padding:0!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
 #overlayPanel #allowanceBox{padding-top:10px!important;padding-bottom:10px!important;min-height:54px!important;box-sizing:border-box}
 #overlayPanel #allowanceBox .allowance-row{font-size:23.4px!important;line-height:33.8px!important;gap:15.6px!important}
-body #overlayPanel #allowanceBox .solo-preset {padding: 2px 4px !important;border-radius: 5px !important;line-height: 28px !important;font-size: 22px !important;gap: 4px !important;}
+#overlayPanel #allowanceBox .solo-preset{font-size:22.1px!important;line-height:33.8px!important}
 
 
 /* v6.14.2 account row: fixed icon slot, balanced breathing room. */
@@ -1429,7 +1429,7 @@ body #overlayPanel #creatorBox .o3-options{flex-wrap:nowrap!important;gap:5px!im
 body #overlayPanel #creatorBox .creator-align-opt{font-size:15px!important;white-space:nowrap!important}
 body #overlayPanel #creatorBox .o3-rank-money{font-size:23px!important}
 body #overlayPanel #allowanceBox .allowance-row{gap:7px!important;line-height:27px!important;font-size:21px!important}
-body #overlayPanel #allowanceBox .solo-preset{padding:3px 6px!important;border-radius:5px!important;line-height:25px!important;font-size:17px!important;gap:4px!important}
+body #overlayPanel #allowanceBox .solo-preset{padding:2px 4px!important;border-radius:5px!important;line-height:28px!important;font-size:22px!important;gap:4px!important}
 body #overlayPanel #allowanceBox .solo-preset.positive{background:rgba(14,82,66,.85)!important;color:#adf4d6!important}
 body #overlayPanel #allowanceBox .solo-preset.negative{background:rgba(105,41,40,.85)!important;color:#ffd1bf!important}
 body #overlayPanel #allowanceBox .solo-preset.neutral{background:rgba(48,59,69,.75)!important;color:#dce3e9!important}
@@ -1448,7 +1448,7 @@ body #overlayPanel #accountBox{background:rgba(10,15,24,var(--account-bg-opacity
 body #overlayPanel #noticeBox .notice-line,body #overlayPanel #noticeBox .notice-line *{font-weight:700!important;text-shadow:0 1px 1px rgba(0,0,0,.9)!important}
 body #overlayPanel #fundingBox .o3-funding-detail,body #overlayPanel #fundingBox .o3-funding-detail *{font-weight:700!important;text-shadow:0 1px 1px rgba(0,0,0,.9)!important}
 body #overlayPanel #accountBox .name,body #overlayPanel #accountBox .amount{font-weight:800!important}
-</style></head>
+</style><style>body #overlayPanel,body #overlayPanel>.overlay-box,body #v5Alert-alert{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}</style></head>
 
 <body class="theme-gold">
   <div id="overlayIdleScreen" class="overlay-idle-screen">시스템설정</div>
@@ -3275,7 +3275,7 @@ function updateBroadcastTimer() {
 
 <script>try{if(new URLSearchParams(location.search).get("bg")==="1") document.body.classList.add("test-bg");}catch(e){}</script>
 
-<script>setInterval(()=>document.querySelectorAll('[data-donation-at]').forEach(e=>{const s=Math.max(0,Math.floor((Date.now()-Date.parse(e.dataset.donationAt))/1000));e.textContent='['+(s<1?'방금 전':s<60?s+'초 전':Math.floor(s/60)+'분 전')+']';}),1000);</script><script src="/overlay3-display.js?v=6165-account-control"></script><script src="/alert-queue.js"></script><script src="/overlay3-alert.js?v=6165"></script>
+<script>setInterval(()=>document.querySelectorAll('[data-donation-at]').forEach(e=>{const s=Math.max(0,Math.floor((Date.now()-Date.parse(e.dataset.donationAt))/1000));e.textContent='['+(s<1?'방금 전':s<60?s+'초 전':Math.floor(s/60)+'분 전')+']';}),1000);</script><script src="/overlay3-display.js?v=6166"></script><script src="/alert-queue.js?v=6166"></script><script src="/overlay3-alert.js?v=6166"></script>
 <script>
 (()=>{const track=document.getElementById('rollerTrack'),box=document.getElementById('accountBox');if(!track||!box)return;let frame=0;
 const measure=document.createElement('canvas').getContext('2d');
@@ -3284,6 +3284,6 @@ function schedule(){if(frame)return;frame=requestAnimationFrame(()=>{frame=0;for
 new MutationObserver(schedule).observe(track,{childList:true,subtree:true,characterData:true});if(window.ResizeObserver)new ResizeObserver(schedule).observe(box);document.fonts?.ready.then(schedule);document.fonts?.addEventListener('loadingdone',schedule);window.addEventListener('resize',schedule);schedule();
 })();
 </script>
-</body>
+<script src="/preset-mini-alert.js?v=6166"></script></body>
 
 </html>

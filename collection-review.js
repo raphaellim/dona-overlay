@@ -3,8 +3,8 @@ const {normalizeConfig,classify}=require('./donation-routing');
 module.exports=function(app,d){
  const {supabase,getStationContext,managerAllowed,stationAllowed,ensureActiveBroadcast,readEffectiveSettings,saveEffectiveSettings,makeDonationRow,inputAllowedForActiveBroadcast,notify,afterApply}=d;
  async function context(req,res,admin=false){const ctx=await getStationContext(req,res);if(!ctx)return null;if(!await (admin?stationAllowed(req,ctx.station):managerAllowed(req,ctx.station,ctx.active))){res.status(403).json({error:'관리자 로그인 필요'});return null;}return ctx;}
- async function config(station,active){
-  const settings=await readEffectiveSettings(station.slug,active.id);
+ async function config(station,active,preloadedSettings){
+  const settings=preloadedSettings||await readEffectiveSettings(station.slug,active.id);
   const {data,error}=await supabase.from('broadcast_collection_rules').select('config').eq('station_id',station.id).eq('broadcast_id',active.id).maybeSingle();if(error)throw error;
   let saved=data?.config;
   if(!saved){const {data:old,error:oldError}=await supabase.from('station_collection_rules').select('config').eq('station_id',station.id).maybeSingle();if(oldError)throw oldError;saved=old?.config;}

@@ -22,6 +22,7 @@ const io = new Server(httpServer, {
   perMessageDeflate: false
 });
 io.use((socket,next)=>next(new Error('Use authenticated /ws/collection transport')));
+const overlayStateMemory=require('./overlay-state-memory');const overlayStateCache=new overlayStateMemory.Cache();
 const PORT = process.env.PORT || 3000;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '';
 const SUPABASE_URL = process.env.SUPABASE_URL;
@@ -45,7 +46,7 @@ io.on('connection', (socket) => {
 app.get('/api/build-check', (req, res) => {
   res.json({
     ok: true,
-    build: '2026-10-13-unified-v5'
+    build: '2026-10-17-v6.16.6-alert-studio'
   });
 });
 
@@ -56,19 +57,20 @@ app.use((req, res, next) => {
   if (method === 'GET' || method === 'HEAD' || !req.path.startsWith('/api/')) return next();
   // 파일 업로드/삭제 자체는 오버레이 상태값을 바꾸지 않습니다.
   // 큰 파일 업로드 직후 불필요한 overlay-state 재조회가 겹치지 않도록 제외합니다.
-  if (req.path.startsWith('/api/media')) return next();
+  if (req.path.startsWith('/api/media')||req.path.startsWith('/api/alert-studio')) return next();
   const originalJson=res.json.bind(res);
   res.json=function(body){
-    if(body?.ok&&method==='POST'&&['/api/donations','/api/donations/batch'].includes(req.path)){
+    if(!req.alertSent&&body?.ok&&method==='POST'&&['/api/donations','/api/donations/batch'].includes(req.path)){
       const rows=body.donations||(body.donation?[body.donation]:[]);
       const visible=rows.filter(r=>!r.silentAlert&&Number(r.totalAmount||0)>0);
-      if(visible.length)setImmediate(()=>collectionWs.notify(getStationSlug(req),'alert',{id:'manual:'+visible.map(r=>r.id).join(':'),donationIds:visible.map(r=>r.id),source:visible.some(r=>r.accountAmount>0)?'account':'toonie',donor:visible[0].donor,title:visible[0].title||'',vip:visible[0].vip||'',amount:visible.reduce((n,r)=>n+r.totalAmount,0),message:visible[0].message||'',receivedAt:visible[0].createdAt,rows:visible.map(r=>({creator:r.creator,amount:r.totalAmount}))}));
+      if(visible.length)setImmediate(()=>collectionWs.notify(getStationSlug(req),'alert',{broadcastId:body.broadcast?.id,id:'manual:'+visible.map(r=>r.id).join(':'),donationIds:visible.map(r=>r.id),source:visible.some(r=>r.accountAmount>0)?'account':'toonie',donor:visible[0].donor,title:visible[0].title||'',vip:visible[0].vip||'',amount:visible.reduce((n,r)=>n+r.totalAmount,0),message:visible[0].message||'',receivedAt:visible[0].createdAt,rows:visible.map(r=>({creator:r.creator,amount:r.totalAmount}))}));
     }
     return originalJson(body);
   };
 
   res.on('finish', () => {
     if (res.statusCode < 200 || res.statusCode >= 300) return;
+    overlayStateCache.invalidate();
     if(['/api/bank-devices/sync','/api/collection-ws-auth','/api/bank-device-candidates','/api/account-candidates','/api/toonie-candidates'].includes(req.path))return;
     const slug = getStationSlug(req);
     if(typeof collectionWs!=='undefined')collectionWs.notify(slug,req.path.startsWith('/api/roulette')?'roulette':req.path.startsWith('/api/sound-events')?'sound':'state');
@@ -1975,9 +1977,7 @@ async function readOverlayDonations(stationId, broadcastId) {
     .order('created_at', { ascending: true });
   if (broadcastId) q = q.eq('broadcast_id', broadcastId);
 
-  const { data, error } = await q;
-  if (error) throw error;
-  return (data || []).map(dbRowToDonation);
+  const rows=[];for(let offset=0;;offset+=1000){const {data,error}=await q.order('id',{ascending:true}).range(offset,offset+999);if(error)throw error;rows.push(...(data||[]).map(dbRowToDonation));if((data||[]).length<1000)break;}return rows;
 }
 
 function emptyCreator(name) {
@@ -3226,9 +3226,10 @@ function buildAccountDonorChatMessages(donations) {
   return splitStatusLine('🏦계좌', parts, 190);
 }
 
-async function sendExactMessages(slug, videoId, accountId, messages) {
+async function sendExactMessages(slug, videoId, accountId, messages, signal) {
   const sent = [];
   for (const msg of messages || []) {
+    if(signal?.aborted)throw Error('채팅 작업 시간 초과');
     if (!msg) continue;
     if (sent.length) await new Promise(resolve => setTimeout(resolve, 650));
     const r = await youtubeChatService.sendExact(slug, videoId, accountId, msg);
@@ -4120,14 +4121,14 @@ app.get('/api/overlay-state', async (req, res) => {
       return res.status(403).json({ error: '방송매니저는 오버레이 조회 토큰이 필요합니다.' });
     }
 
-    const broadcastId = req.query.broadcastId || ctx.active.id;
+    const broadcastId = req.query.broadcastId || ctx.active.id;const cacheKey=ctx.station.slug+':'+broadcastId,cached=overlayStateCache.get(cacheKey),cacheEpoch=overlayStateCache.epoch;if(cached){res.set('Cache-Control','no-store');return res.json(cached);}
     const [settings, donations] = await Promise.all([
       readEffectiveSettings(ctx.station.slug, broadcastId),
       readOverlayDonations(ctx.station.id, broadcastId)
     ]);
 
     res.set('Cache-Control', 'no-store');
-    const state=buildOverlayState(settings,donations);const receipts=await readAccountReceipts(ctx.station.id,broadcastId);const ledger=require('./account-receipts').ledgerRows(donations,receipts);state.accountDonors=require('./account-receipts').donorRows(ledger,{normalize:normName,aggregate:aggregateWon,format:displayManText}).slice(0,10);state.donations.push(...receipts.filter(r=>r.status!=='dismissed').slice(-160).map(r=>({id:'receipt:'+r.id,captureId:r.id,createdAt:r.received_at,receivedAt:r.received_at,donor:r.routing.receiptDonor||r.donor,creator:'',accountAmount:Number(r.amount),toonieAmount:0,totalAmount:Number(r.amount),title:r.title||'',message:r.message||'',silentAlert:false,receiptOnly:true})));res.json(await donorIdentity.state(ctx.station.slug,state));
+    const state=buildOverlayState(settings,donations);const receipts=await readAccountReceipts(ctx.station.id,broadcastId);const ledger=require('./account-receipts').ledgerRows(donations,receipts);state.accountDonors=require('./account-receipts').donorRows(ledger,{normalize:normName,aggregate:aggregateWon,format:displayManText}).slice(0,10);state.donations.push(...receipts.filter(r=>r.status!=='dismissed').slice(-160).map(r=>({id:'receipt:'+r.id,captureId:r.id,createdAt:r.received_at,receivedAt:r.received_at,donor:r.routing.receiptDonor||r.donor,creator:'',accountAmount:Number(r.amount),toonieAmount:0,totalAmount:Number(r.amount),title:r.title||'',message:r.message||'',silentAlert:false,receiptOnly:true})));const output=await donorIdentity.state(ctx.station.slug,overlayStateMemory.compact(state));overlayStateCache.set(cacheKey,output,cacheEpoch);res.json(output);
   } catch (e) {
     console.error('[api/overlay-state]', e);
     res.status(500).json({ error: e.message || '오버레이 상태 조회 실패' });
@@ -4216,6 +4217,11 @@ app.get('/api/summary', async (req, res) => {
 });
 
 async function maybeSendDonationYoutubeChat(ctx, settings, donor, accountTotal, toonieTotal, createdRows, options={}) {
+ const key='donation-chat:'+(createdRows||[]).map(r=>r.id).join(':')+':'+(options.eventId||'');
+ const snapshot={...settings};for(const k of Object.keys(snapshot))if(k==='stationSettings'||/^\$|token|secret|password|oauth|nightbot|youtube/i.test(k))delete snapshot[k];const context={station:{id:ctx.station.id,slug:ctx.station.slug},active:{id:ctx.active.id}};const rows=(createdRows||[]).map(r=>({id:r.id,creator:r.creator||r.creator_name,total_amount:Number(r.total_amount??r.totalAmount??r.amount??0)}));
+ await runtimeJobs.put('chat',ctx.station.slug,ctx.active.id,key,{ctx:context,settings:snapshot,donor,accountTotal,toonieTotal,createdRows:rows,options});
+}
+async function processDonationYoutubeChat(ctx, settings, donor, accountTotal, toonieTotal, createdRows, options={}) {
   try {
     const cfg = await readServiceDonationAuto(ctx.station.slug);
     if (!cfg.enabled || !cfg.liveUrl || !cfg.accountId || !await youtubeChatService.configured(ctx.station.slug)) return;
@@ -4273,9 +4279,9 @@ async function maybeSendDonationYoutubeChat(ctx, settings, donor, accountTotal, 
       messages.push(...accountDonorMessages);
     }
 
-    await sendExactMessages(ctx.station.slug, videoId, cfg.accountId, messages);
+    await sendExactMessages(ctx.station.slug, videoId, cfg.accountId, messages, options.signal);
   } catch (e) {
-    console.error('[youtube donation auto chat]', e?.message || e);
+    console.error('[youtube donation auto chat]', e?.message || e);throw e;
   }
 }
 
@@ -4343,20 +4349,34 @@ app.post('/api/station/toonie-widget', async (req, res) => {
 });
 
 app.get('/api/overlay-link-token',async(req,res)=>{try{const ctx=await getStationContext(req,res);if(!ctx)return;if(!await stationAllowed(req,ctx.station))return res.status(403).json({error:'관리자 전용'});res.set('Cache-Control','no-store');res.json({token:ctx.station.overlay_token});}catch(e){res.status(500).json({error:e.message});}});
-const alertCoordinator=require('./alert-coordinator')(app,{appearance:require('./overlay-appearance')({supabase,withSettingsMutation}),notifyTest:(slug,payload)=>collectionWs.notify(slug,'alert',payload),supabase,getStationContext,stationAllowed,stationTokenAllowed,readEffectiveSettings,saveEffectiveSettings,getCollectionConfig:ctx=>collectionReview.config(ctx.station,ctx.active)});
+const alertCoordinator=require('./alert-coordinator')(app,{appearance:require('./overlay-appearance')({supabase,withSettingsMutation}),notifyTest:(slug,payload)=>collectionWs.notify(slug,'alert',payload),supabase,getStationContext,stationAllowed,stationTokenAllowed,readEffectiveSettings,saveEffectiveSettings,getCollectionConfig:(ctx,effective)=>collectionReview.config(ctx.station,ctx.active,effective),getStudio:slug=>alertStudio.read(slug)});
 const collectionWs=require('./collection-ws')(httpServer,{port:()=>httpServer.address()?.port||PORT});
+const runtimeJobs=require('./runtime-jobs')({supabase,runChat:(p,signal)=>processDonationYoutubeChat(p.ctx,p.settings,p.donor,p.accountTotal,p.toonieTotal,p.createdRows,{...p.options,signal}),onWake:slug=>collectionWs.notify(slug,'alertWake')});
+httpServer.on('close',()=>runtimeJobs.close());
+const alertStudio=require('./alert-studio')(app,{supabase,getStationContext,stationAllowed,stationTokenAllowed,withSettingsMutation,notify:(...args)=>collectionWs.notify(...args),jobs:runtimeJobs,publicDir:path.join(__dirname,'public')});
 const identityNotify=collectionWs.notify.bind(collectionWs);
-collectionWs.notify=(slug,type,payload)=>{if(type!=='alert'||payload?.source!=='account')return identityNotify(slug,type,payload);return donorIdentity.names(slug).then(name=>identityNotify(slug,type,{...payload,donor:name(payload.donor),donorDisplayResolved:true})).catch(e=>console.error('[donor identity] alert suppressed:',e.message));};
+collectionWs.notify=async(slug,type,payload)=>{try{
+ if(type==='alert'){
+  if(payload.source==='account'){const name=await donorIdentity.names(slug);payload={...payload,donor:name(payload.donor),donorDisplayResolved:true};}
+  const station=await getStation(slug);if(!station)throw Error('방송국 없음');if(!payload.broadcastId)payload={...payload,broadcastId:(await ensureActiveBroadcast(station.id)).id};const {data:prefs,error}=await supabase.from('station_alert_preferences').select('toonie_mode,account_enabled').eq('station_id',station.id).maybeSingle();if(error)throw error;
+  if(!payload.preview&&((payload.source==='account'&&prefs?.account_enabled===false)||(payload.source==='toonie'&&prefs?.toonie_mode!=='internal')))return;
+  if(await alertStudio.enqueue(slug,payload,payload.broadcastId))return;
+ }
+ if(type==='preset'){
+  if(await alertStudio.enqueue(slug,{...payload,kind:'preset'},payload.broadcastId))return;
+ }
+ return identityNotify(slug,type,payload);
+}catch(e){console.error('[alert delivery]',e.message);}};
 alertCoordinator.onChange(slug=>collectionWs.notify(slug,'playback'));
-const notifyCollection=(slug,type,payload)=>{collectionWs.notify(slug,type,payload);if(type==='state')io.to(realtimeRoom(slug)).emit('overlay:changed',{type:'state',at:Date.now()});};
+const notifyCollection=(slug,type,payload)=>{const sent=collectionWs.notify(slug,type,payload);if(type==='state')io.to(realtimeRoom(slug)).emit('overlay:changed',{type:'state',at:Date.now()});return sent;};
 const collectionReview=require('./collection-review')(app,{supabase,getStationContext,managerAllowed,stationAllowed,ensureActiveBroadcast,readEffectiveSettings,saveEffectiveSettings,makeDonationRow,inputAllowedForActiveBroadcast,notify:notifyCollection,calcCheck,afterApply:async(ctx,settings,candidate,routing,rows)=>{
- if(!candidate.routing?.receiptFirst)notifyCollection(ctx.station.slug,'alert',{id:candidate.id,donationIds:rows.map(r=>r.id),source:candidate.source,donor:routing.donor,title:candidate.title,vip:candidate.vip,amount:candidate.amount,message:candidate.message,receivedAt:candidate.received_at,rows:routing.rows});
+ if(!candidate.routing?.receiptFirst)await notifyCollection(ctx.station.slug,'alert',{broadcastId:ctx.active.id,id:candidate.id,donationIds:rows.map(r=>r.id),source:candidate.source,donor:routing.donor,title:candidate.title,vip:candidate.vip,amount:candidate.amount,message:candidate.message,receivedAt:candidate.received_at,rows:routing.rows});
  try{if(routing.fundingId){const current=await readEffectiveSettings(ctx.station.slug,ctx.active.id),fundingData=normalizeFundingData(current.fundingData),item=fundingData.items.find(f=>f.id===routing.fundingId);if(item){item.current=Number(item.current||0)+(routing.fundingExactWon===true?Number(candidate.amount)/10000:Math.floor(Number(candidate.amount)/10000));await saveSharedStationSettings(ctx.station.slug,{fundingData});}}if(!candidate.routing?.receiptFirst){nightbotChat.enqueue(ctx.station.slug,rows,settings.nightbotChat);await maybeSendDonationYoutubeChat(ctx,settings,routing.donor,candidate.source==='account'?candidate.amount:0,candidate.source==='toonie'?candidate.amount:0,rows);}await maybeStartAutoRoulette(ctx,candidate.amount,routing.donor,routing);}catch(e){console.error('수집 후원 부가 전송 실패:',e.message);}
 }});
 require('./broadcast-finance')(app,{supabase,getStationContext,stationAllowed,dbRowToDonation,readEffectiveSettings});
 const collectionCapture=require('./capture-test')(app,{supabase,getStation,getStationContext,managerAllowed,stationAllowed,review:collectionReview,notify:notifyCollection,ensureActiveBroadcast,readEffectiveSettings,afterReceive:async(ctx,settings,candidate)=>{
- notifyCollection(ctx.station.slug,'state');notifyCollection(ctx.station.slug,'alert',{id:candidate.id,receiptOnly:true,source:'account',donor:candidate.routing.receiptDonor||candidate.donor,title:candidate.title,vip:candidate.vip,amount:candidate.amount,message:candidate.message,receivedAt:candidate.received_at,rows:[]});
- await maybeSendDonationYoutubeChat(ctx,settings,candidate.routing.receiptDonor||candidate.donor,candidate.amount,0,[],{receiptOnly:true});
+ notifyCollection(ctx.station.slug,'state');await notifyCollection(ctx.station.slug,'alert',{broadcastId:ctx.active.id,id:candidate.id,receiptOnly:true,source:'account',donor:candidate.routing.receiptDonor||candidate.donor,title:candidate.title,vip:candidate.vip,amount:candidate.amount,message:candidate.message,receivedAt:candidate.received_at,rows:[]});
+ await maybeSendDonationYoutubeChat(ctx,settings,candidate.routing.receiptDonor||candidate.donor,candidate.amount,0,[],{receiptOnly:true,eventId:candidate.id});
 }});
 require('./bank-devices')(app,{supabase,getStation,getStationContext,stationAllowed,isMasterRequest,saveAccount:collectionCapture.saveAccount,changed:()=>collectionWs.devicesChanged()});
 
@@ -4494,27 +4514,23 @@ app.post('/api/donations/batch', async (req, res) => {
       }, settings, ctx.station.id, ctx.active.id),selectedPresets,r.amount,settings,calcCheck);
     });
 
-    const { data, error } = await supabase.from('donations').insert(created).select();
-    if (error) throw error;
+    const requestKey=String(req.body.requestId||crypto.randomUUID());if(!/^[a-zA-Z0-9:-]{8,100}$/.test(requestKey))throw Error('요청 ID 확인 필요');
+    const fundingUnits=req.body.fundingExactWon===true?grandTotal/10000:Math.max(0,Math.trunc(Number(req.body.fundingUnits||0)))||Math.floor(grandTotal/10000);
+    if(!Number.isFinite(fundingUnits)||fundingUnits<0||fundingUnits>1e12)throw Error('펀딩 반영 금액 확인 필요');
+    const saveRows=()=>supabase.rpc('overlay_insert_donations',{p_station:ctx.station.slug,p_broadcast:String(ctx.active.id),p_key:requestKey,p_rows:created,p_funding_id:fundingIdForRows,p_units:fundingUnits});
+    const inserted=await (fundingIdForRows?withSettingsMutation(saveRows):saveRows());
+    if(inserted.error)throw inserted.error;
+    const data=inserted.data.rows;
+    if(inserted.data.duplicate){req.alertSent=true;return res.json({ok:true,duplicate:true,station:stationToClient(ctx.station),broadcast:broadcastToClient(ctx.active),count:data.length,donations:data.map(dbRowToDonation)});}
     nightbotChat.enqueue(ctx.station.slug, data, settings.nightbotChat);
     await maybeSendDonationYoutubeChat(ctx, settings, donor, accountTotal, toonieTotal, data);
 
-    const fundingId = fundingIdForRows;
-    if (fundingId) {
-      const current = await readEffectiveSettings(ctx.station.slug, ctx.active.id);
-      const fundingData = normalizeFundingData(current.fundingData);
-      const item = fundingData.items.find(f => f.id === fundingId);
-      if (item) {
-        let units = req.body.fundingExactWon===true?grandTotal/10000:Math.trunc(Number(req.body.fundingUnits || 0));
-        if (!units || units < 0) units = Math.floor(grandTotal / 10000);
-        if (units > 0) {
-          item.current = Number(item.current || 0) + units;
-          await saveSharedStationSettings(ctx.station.slug, { fundingData });
-        }
-      }
-    }
+    // Funding and manual donations commit atomically in overlay_insert_donations.
 
     const rouletteRun = await maybeStartAutoRoulette(ctx, grandTotal, donor, req.body || {});
+    const visible=data.map(dbRowToDonation).filter(r=>!r.silentAlert&&Number(r.totalAmount)>0);
+    if(visible.length)await collectionWs.notify(ctx.station.slug,'alert',{id:'manual:'+visible.map(r=>r.id).join(':'),broadcastId:ctx.active.id,donationIds:visible.map(r=>r.id),source:visible.some(r=>r.accountAmount>0)?'account':'toonie',donor:visible[0].donor,amount:visible.reduce((n,r)=>n+r.totalAmount,0),message:visible[0].message||'',receivedAt:visible[0].createdAt,rows:visible.map(r=>({creator:r.creator,amount:r.totalAmount}))});
+    req.alertSent=true;
     res.json({ ok: true, station: stationToClient(ctx.station), broadcast: broadcastToClient(ctx.active), count: data.length, donations: data.map(dbRowToDonation), rouletteRun: rouletteRun?.run || null });
   } catch (e) {
     res.status(400).json({ error: e.message || '저장 실패' });
@@ -4589,9 +4605,12 @@ app.post('/api/manual-entry', async (req, res) => {
         result_label: `${sideName}${direction === 'minus' ? '-' : '+'}${count}`,
         memo: `[무알림] 프리셋 수동${direction === 'minus' ? '제외' : '추가'}`
       };
-      const { data, error } = await supabase.from('donations').insert(row).select().single();
-      if (error) throw error;
-      return res.json({ ok: true, donation: dbRowToDonation(data) });
+      const entryKey=String(body.requestId||crypto.randomUUID());
+      const inserted=await supabase.rpc('overlay_insert_donations',{p_station:ctx.station.slug,p_broadcast:String(ctx.active.id),p_key:entryKey,p_rows:[row]});if(inserted.error)throw inserted.error;
+      const data=inserted.data.rows[0];
+      const aggregate=await supabase.rpc('overlay_preset_current',{p_station:String(ctx.station.id),p_broadcast:String(ctx.active.id),p_creator:creator,p_preset:preset.id});if(aggregate.error)throw aggregate.error;const current=Number(aggregate.data||0);
+      if(!inserted.data.duplicate)await collectionWs.notify(ctx.station.slug,'preset',{id:'preset:'+data.id,broadcastId:ctx.active.id,donor,creator,preset:preset.title,delta:signedCount*(presetSide==='minus'?-1:1),current,receivedAt:new Date().toISOString()});
+      return res.json({ ok: true, donation: dbRowToDonation(data),presetCurrent:current });
     }
 
     if (!donor) return res.status(400).json({ error: '도네이터명을 입력하세요.' });
