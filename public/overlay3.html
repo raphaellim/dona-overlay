@@ -1405,6 +1405,35 @@ body #overlayPanel .overlay-box:not(#accountBox),body #overlayPanel .overlay-box
 body #overlayPanel .o3-funding-detail,body #overlayPanel .o3-funding-detail span{color:#edf2f6!important;opacity:1!important}
 body #overlayPanel #fundingBox .funding-ratio em{color:#dcf4ec!important;opacity:1!important}
 body #overlayPanel #creatorBox .o3-rank-name{flex-basis:3.5em!important;width:3.5em!important;min-width:3.5em!important;max-width:3.5em!important}
+</style><style id="proposal300">
+body #overlayPanel>.overlay-box{padding-bottom:8px!important;border-bottom:0!important;margin-bottom:7px!important}
+body #overlayPanel>.overlay-box::before{top:5px!important;bottom:0!important;width:2px!important;min-width:2px!important;max-width:2px!important;border-radius:0!important;background:var(--section-color,#ffd783)!important}
+body #overlayPanel>.overlay-box::after{content:""!important;position:absolute!important;left:-7px!important;bottom:0!important;top:auto!important;width:30%!important;height:2px!important;background:linear-gradient(90deg,var(--section-color,#ffd783) 45%,transparent)!important;pointer-events:none!important}
+body #overlayPanel #fundingBox .o3-funding-meter{background:#123b3c!important;border:1px solid #5fafa5!important;border-radius:5px!important;border-bottom:1px solid #5fafa5!important;isolation:isolate!important}
+body #overlayPanel #fundingBox .o3-funding-fill{background:linear-gradient(90deg,#158f86,#51d6af)!important;border-right:2px solid #a0ffe0!important;opacity:1!important}
+body #overlayPanel #fundingBox .o3-funding-label{padding:6px!important;gap:5px!important}
+body #overlayPanel #fundingBox .o3-funding-label strong,body #overlayPanel #fundingBox .funding-ratio,body #overlayPanel #fundingBox .funding-ratio *{color:#fff!important;opacity:1!important;font-size:18px!important}
+body #overlayPanel #fundingBox .o3-funding-detail{font-size:16px!important;line-height:23px!important;margin-top:5px!important}
+body #overlayPanel #fundingBox .o3-funding-detail span:first-child{color:#a7ffe0!important;font-weight:800!important}
+body #overlayPanel #fundingBox .o3-funding-detail span:last-child{color:#fff0b5!important;font-weight:700!important}
+body #overlayPanel #noticeBox .notice-line,body #overlayPanel #noticeBox .notice-line *{font-weight:650!important;text-shadow:0 1px 1px #0006!important}
+</style><style id="joined40">
+body #overlayPanel>.overlay-box{border-top:0!important;border-bottom:0!important;margin-top:0!important;margin-bottom:0!important;padding-top:7px!important;padding-bottom:8px!important}
+body #overlayPanel>.overlay-box::before{top:0!important;bottom:0!important}
+body #overlayPanel>.overlay-box::after{left:-7px!important;width:calc(100% + 7px)!important;height:1px!important;bottom:0!important;background:linear-gradient(90deg,var(--section-color,#ffd783) 0%,var(--section-color,#ffd783) 36%,#71849c77 40%,#71849c77 100%)!important}
+</style><style id="groupGap">body #overlayPanel>.overlay-box{margin-bottom:5px!important}body #overlayPanel>.overlay-box:last-child{margin-bottom:0!important}</style><style id="approved6165">
+body #overlayPanel #creatorBox .creator-title::after{content:'단위: 만'!important;display:block!important;white-space:nowrap!important;flex:0 0 auto!important;width:auto!important;height:auto!important;background:none!important;font-size:11px!important;color:#dde5ed!important;margin-left:auto!important}
+body #overlayPanel #creatorBox .o3-creator-inline{display:flex!important;flex-wrap:nowrap!important;align-items:center!important;gap:5px!important;min-width:0!important}
+body #overlayPanel #creatorBox .o3-rank-name{flex:0 1 auto!important;width:auto!important;min-width:0!important;max-width:4em!important;font-size:20px!important}
+body #overlayPanel #creatorBox .o3-options{flex-wrap:nowrap!important;gap:5px!important;min-width:0!important}
+body #overlayPanel #creatorBox .creator-align-opt{font-size:15px!important;white-space:nowrap!important}
+body #overlayPanel #creatorBox .o3-rank-money{font-size:23px!important}
+body #overlayPanel #allowanceBox .allowance-row{gap:7px!important;line-height:27px!important;font-size:21px!important}
+body #overlayPanel #allowanceBox .solo-preset{padding:3px 6px!important;border-radius:5px!important;line-height:25px!important;font-size:17px!important;gap:4px!important}
+body #overlayPanel #allowanceBox .solo-preset.positive{background:rgba(14,82,66,.85)!important;color:#adf4d6!important}
+body #overlayPanel #allowanceBox .solo-preset.negative{background:rgba(105,41,40,.85)!important;color:#ffd1bf!important}
+body #overlayPanel #allowanceBox .solo-preset.neutral{background:rgba(48,59,69,.75)!important;color:#dce3e9!important}
+body #overlayPanel #allowanceBox .solo-allowance{font-size:21px!important}
 </style></head>
 
 <body class="theme-gold">
@@ -1469,7 +1498,7 @@ body #overlayPanel #creatorBox .o3-rank-name{flex-basis:3.5em!important;width:3.
   <div id="debugPanel"
     style="position:fixed;left:10px;bottom:10px;width:520px;max-width:calc(100vw - 20px);max-height:320px;overflow:auto;background:rgba(0,0,0,.88);color:#00ff66;font-size:12px;font-family:Consolas,monospace;padding:10px;border:1px solid #00ff66;z-index:9999999;display:none;pointer-events:auto;white-space:pre-wrap">
   </div>
-  <script src="/overlay3-presets.js?v=20261015-v613"></script>
+  <script src="/overlay3-presets.js?v=6165-final300"></script>
   <script src="/collection-socket.js"></script><script src="/overlay3-performance.js?v=6165p1"></script>
 
   <script>
@@ -1651,8 +1680,8 @@ body #overlayPanel #creatorBox .o3-rank-name{flex-basis:3.5em!important;width:3.
 
       function num(v) { const n = Number(v || 0); return Number.isFinite(n) ? n : 0; }
       function displayManAmount(won) {
-        const v = Math.trunc(Number(won || 0) / 1000) / 10;
-        return v.toFixed(1).replace(/\.0$/, "");
+        const v = Math.trunc(num(won) / 1000) / 10;
+        return v.toLocaleString('ko-KR',{maximumFractionDigits:1});
       }
 
       function displayAmount(won) {
@@ -2136,7 +2165,13 @@ body #overlayPanel #creatorBox .o3-rank-name{flex-basis:3.5em!important;width:3.
 
           if (!["left", "center", "right"].includes(align)) align = "left";
 
-          const color = colors[idx] || "";
+          const rawColor = String(colors[idx] || "");
+          let color = rawColor;
+          if(/^#[0-9a-f]{3}([0-9a-f]{3})?$/i.test(rawColor)){
+            let hex=rawColor.slice(1);if(hex.length===3)hex=hex.split('').map(x=>x+x).join('');
+            const channels=[0,2,4].map(i=>parseInt(hex.slice(i,i+2),16));
+            color='#'+channels.map(x=>Math.round(x*.48+255*.52).toString(16).padStart(2,'0')).join('');
+          }
           const style = color ? ` style="color:${escapeHtml(color)} !important"` : "";
           return `<span class="notice-line notice-align-${align}"${style}>${escapeHtml(text)}</span>`;
         }).join("");
@@ -2441,7 +2476,7 @@ const rows=allRows.filter(r=>!others.has(normalizeName(r.creator||r.name||''))).
           const shortName = Array.from(rawName).slice(0, 4).join("") || "익명";
           const total = displayManAmount(row.total ?? row.totalAmount ?? row.total_amount ?? row.amount ?? 0);
 
-          const totalHtml=showDonation?'<strong class="o3-rank-money">'+escapeHtml(displayAmount(totalOf(row)))+'</strong>':'';
+          const totalHtml=showDonation?'<strong class="o3-rank-money">'+escapeHtml(displayManAmount(totalOf(row)))+'</strong>':'';
           const optionHtml = visiblePresets.map(preset => {
             const value = presetNetValue(row, preset);
             const label = signedText(presetShortName(preset), value);
