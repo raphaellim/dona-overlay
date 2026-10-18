@@ -18,6 +18,7 @@ module.exports=function(app,d){
  }
  async function prepare(source,b,station,boundActive){const active=boundActive||await ensureActiveBroadcast(station.id),cfg=await config(station,active);const routing=classify({...b,source},cfg);if(source==='account'&&cfg.mode==='collab'){routing.receiptFirst=true;routing.receiptDonor=routing.donor||b.donor;}return {routing,broadcast_id:active.id,status:routing.state==='hold'?'hold':'pending'};}
  async function apply(candidate,ctx,routing){
+  if(candidate.source==='account'&&Number(candidate.amount)<1000)throw Error('계좌 1,000원 미만은 수집·반영하지 않습니다');
   if(candidate.broadcast_id!==ctx.active.id)throw Error('이전 방송에서 수집된 내역 · 해당 방송으로 전환하여 확인하세요');
   if(!await inputAllowedForActiveBroadcast(ctx))throw Error('방송시작 상태에서만 반영 가능');
   const cfg=await config(ctx.station,ctx.active),valid=new Set(cfg.targets.filter(t=>t.active).map(t=>t.name));

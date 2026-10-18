@@ -8,6 +8,7 @@ module.exports=function(app,{supabase,getStation,getStationContext,managerAllowe
  app.post('/api/collection-ws-auth',async(req,res)=>{try{const given=String(req.headers['x-auto-donation-token']||'');const station=await getStation(String(req.body?.station||''));if(!station||given.length<32||given.length>200)return res.status(401).json({error:'방송국 수집 토큰 오류'});const {data,error}=await supabase.from('station_collection_tokens').select('token_hash').eq('station_id',station.id).maybeSingle();if(error)throw error;if(!data||data.token_hash!==hash(given))return res.status(401).json({error:'방송국 수집 토큰 오류'});res.json({station:station.slug});}catch(e){res.status(500).json({error:e.message});}});
  async function save(source,b,station){
  const donor=String(b.donor||'').trim(),amount=Number(b.amount),eventId=String(b.eventId||'');
+ if(source==='account'&&Number.isSafeInteger(amount)&&amount>0&&amount<1000)return {ok:true,skipped:true,reason:'below_minimum',minimumAmount:1000};
  if(/테스트/i.test(donor+' '+(b.title||'')+' '+(b.message||'')))return {ok:true,skipped:true,reason:'test'};
  if(!donor||donor.length>100||!Number.isSafeInteger(amount)||amount<=0||amount>1e9||!eventId||eventId.length>200)throw new Error('후원자·금액·이벤트 ID 확인 필요');
  const at=new Date(b.receivedAt);if(!Number.isFinite(at.getTime()))throw new Error('수신 시각 확인 필요');

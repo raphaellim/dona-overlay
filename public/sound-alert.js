@@ -4,21 +4,29 @@ async function api(path,body,signal){const controller=new AbortController(),abor
 
 function delay(ms,signal){return new Promise((resolve,reject)=>{if(signal.aborted)return reject(Error('취소됨'));const onAbort=()=>{clearTimeout(t);reject(Error('취소됨'));};const t=setTimeout(()=>{signal.removeEventListener('abort',onAbort);resolve();},ms);signal.addEventListener('abort',onAbort,{once:true});});}
 function eventReady(target,event,signal,timeout=15000){return new Promise((resolve,reject)=>{const clean=()=>{clearTimeout(t);target.removeEventListener(event,ok);target.removeEventListener('error',bad);signal.removeEventListener('abort',bad);};const ok=()=>{clean();resolve();},bad=()=>{clean();reject(Error('미디어 로딩 실패/취소'));},t=setTimeout(bad,timeout);target.addEventListener(event,ok,{once:true});target.addEventListener('error',bad,{once:true});signal.addEventListener('abort',bad,{once:true});if(signal.aborted)bad();});}
-function clearMedia(){releaseNative();if(!session)return;session.controller.abort();clearInterval(session.heartbeat);clearTimeout(session.limit);if(session.audio){session.audio.pause();session.audio.removeAttribute('src');session.audio.load();session.audio=null;}$('image').removeAttribute('src');$('image').hidden=true;$('alert').hidden=true;$('alert').classList.remove('show');$('donor').textContent='';$('amount').textContent='';$('split').textContent='';$('comment').textContent='';$('unlock').hidden=true;$('unlock').onclick=null;session=null;}
+function clearMedia(){releaseNative();if(!session)return;session.controller.abort();clearInterval(session.heartbeat);clearTimeout(session.limit);for(const a of [session.audio,session.intro])if(a){a.pause();a.removeAttribute('src');a.load();}session.audio=null;session.intro=null;$('image').removeAttribute('src');$('image').hidden=true;$('alert').hidden=true;$('alert').classList.remove('show');$('donor').textContent='';$('amount').textContent='';$('split').textContent='';$('comment').textContent='';$('donatedAgo').textContent='';$('unlock').hidden=true;$('unlock').onclick=null;session=null;}
 async function touch(job,action,reason=''){const r=await api('/api/alert-studio/touch',{id:job.id,owner,action,reason});if(!r.ok)throw Error('재생 권한이 만료되었습니다');}
-async function play(job,config={}){lastFailure='';const controller=new AbortController();session={controller,audio:null,heartbeat:null,limit:null};const signal=controller.signal,p=job.payload,media=p.media||{};let success=false,failure='',stage='초기화';
+function donationAge(value,now=Date.now()){if(value===null||value===undefined||value==='')return '';let ms;if(typeof value==='number'||/^\d+(?:\.\d+)?$/.test(String(value))){ms=Number(value);if(ms<100000000000)ms*=1000;}else{const text=String(value);if(!/(?:Z|[+-]\d{2}:?\d{2})$/i.test(text))return '';ms=Date.parse(text);}if(!Number.isFinite(ms)||ms<946684800000||ms>now+60000)return '';const minutes=Math.max(0,Math.floor((now-ms)/60000));return minutes<1?'방금 후원':minutes<60?minutes+'분 전 후원':minutes<1440?Math.floor(minutes/60)+'시간'+(minutes%60?' '+minutes%60+'분':'')+' 전 후원':Math.floor(minutes/1440)+'일 전 후원';}
+async function playAudio(audio,controller,maxWait=185000){const signal=controller.signal;const ended=eventReady(audio,'ended',signal,maxWait);ended.catch(()=>{});let stallTimer=null;const stalled=()=>{clearTimeout(stallTimer);stallTimer=setTimeout(()=>controller.abort(),10000);};const resumed=()=>clearTimeout(stallTimer);audio.addEventListener('waiting',stalled);audio.addEventListener('playing',resumed);
+ try{try{await audio.play();}catch(e){if(e.name!=='NotAllowedError')throw e;$('unlock').hidden=false;status('브라우저 소리 허용 필요');await new Promise((resolve,reject)=>{const t=setTimeout(()=>{signal.removeEventListener('abort',cancel);reject(Error('소리 허용 시간 초과'));},30000),cancel=()=>{clearTimeout(t);reject(Error('취소됨'));};signal.addEventListener('abort',cancel,{once:true});$('unlock').onclick=()=>audio.play().then(()=>{clearTimeout(t);signal.removeEventListener('abort',cancel);$('unlock').hidden=true;resolve();}).catch(()=>{});});}await ended;}finally{clearTimeout(stallTimer);audio.removeEventListener('waiting',stalled);audio.removeEventListener('playing',resumed);}
+}
+async function play(job,config={}){lastFailure='';const controller=new AbortController();session={controller,intro:null,audio:null,heartbeat:null,limit:null};const signal=controller.signal,p=job.payload,media=p.media||{};let success=false,failure='',stage='초기화';
 try{
- session.limit=setTimeout(()=>controller.abort(),210000);
+ session.limit=setTimeout(()=>controller.abort(),media.introSound?280000:210000);
  session.heartbeat=setInterval(()=>touch(job,'heartbeat').catch(()=>controller.abort()),15000);
  let audio;
- if(q.get('native')==='1'){stage='통합 연결';if(!config.nativeSourceOrigin)throw Error('Node의 NATIVE_TOONIE_ORIGIN 설정 확인 필요');parentOrigin=new URL(config.nativeSourceOrigin).origin;status('투네 종료 대기');await nativeSlot(signal);clearTimeout(session.limit);session.limit=setTimeout(()=>controller.abort(),210000);}
+ if(q.get('native')==='1'){stage='통합 연결';if(!config.nativeSourceOrigin)throw Error('Node의 NATIVE_TOONIE_ORIGIN 설정 확인 필요');parentOrigin=new URL(config.nativeSourceOrigin).origin;status('투네 종료 대기');await nativeSlot(signal);clearTimeout(session.limit);session.limit=setTimeout(()=>controller.abort(),media.introSound?280000:210000);}
  stage='미디어 로딩';const ready=[];
  if(media.image){$('image').hidden=false;ready.push(eventReady($('image'),'load',signal));$('image').src=media.image;}
+ if(media.introSound&&p.kind!=='preset'){const intro=new Audio();intro.volume=.8;session.intro=intro;intro.preload='auto';ready.push(eventReady(intro,'canplay',signal));intro.src=media.introSound;intro.load();}
  if(media.sound){audio=new Audio();audio.volume=.8;session.audio=audio;audio.preload='auto';ready.push(eventReady(audio,'canplay',signal));audio.src=media.sound;audio.load();}
  status('알림 미디어 준비 중');await Promise.all(ready);if(signal.aborted)throw Error('취소됨');
  if(media.image&&($('image').naturalWidth>4096||$('image').naturalHeight>4096))throw Error('이미지는 가로·세로 4096px 이하를 사용하세요');
  if(audio&&(!Number.isFinite(audio.duration)||audio.duration>180))throw Error('음원은 180초 이내 파일을 사용하세요');
+ if(session.intro&&(!Number.isFinite(session.intro.duration)||session.intro.duration>30))throw Error('시작 음원은 30초 이내 파일을 사용하세요');
  stage='재생 시작 확인';await touch(job,'start');
+ if(session.intro){stage='시작음 재생';status('시작음 재생 중');await playAudio(session.intro,controller,65000);session.intro.pause();session.intro.removeAttribute('src');session.intro.load();session.intro=null;$('unlock').onclick=null;}
+
  $('text').hidden=media.showText===false;
  if(p.kind==='preset'){
  $('source').textContent='프리셋 변경';$('donor').textContent=p.donor||'';$('amount').textContent=p.preset+' '+(p.delta>0?'+':'')+p.delta;
@@ -29,11 +37,10 @@ try{
  $('split').textContent=(p.rows||[]).filter(r=>r.creator).map(r=>r.creator+' '+Number(r.amount||0).toLocaleString('ko-KR')).join(' · ');
  $('comment').textContent=p.message||'';$('text').style.background='rgba(10,22,30,'+Math.max(0,Math.min(100,Number(config.alertOpacity??94)))/100+')';
  }
- $('alert').dataset.amountTier=Number(p.amount)>=300000?'rainbow':Number(p.amount)>=100000?'gold':'mint';stage='알림 표시';$('alert').hidden=false;$('alert').classList.add('show');fitText();status('재생 중');
+ $('donatedAgo').textContent=p.kind==='preset'?'':donationAge(p.receivedAt);$('alert').dataset.amountTier=Number(p.amount)>=300000?'rainbow':Number(p.amount)>=100000?'gold':'mint';stage='알림 표시';$('alert').hidden=false;$('alert').classList.add('show');fitText();status('재생 중');
  if(p.kind==='preset'){await delay(3000,signal);}else{
  await delay(1000,signal);
- if(audio){const ended=eventReady(audio,'ended',signal,185000);ended.catch(()=>{});let stallTimer=null;const stalled=()=>{clearTimeout(stallTimer);stallTimer=setTimeout(()=>controller.abort(),10000);};const resumed=()=>clearTimeout(stallTimer);audio.addEventListener('waiting',stalled);audio.addEventListener('playing',resumed);
- try{try{await audio.play();}catch(e){if(e.name!=='NotAllowedError')throw e;$('unlock').hidden=false;status('브라우저 소리 허용 필요');await new Promise((resolve,reject)=>{const t=setTimeout(()=>{signal.removeEventListener('abort',cancel);reject(Error('소리 허용 시간 초과'));},30000),cancel=()=>{clearTimeout(t);reject(Error('취소됨'));};signal.addEventListener('abort',cancel,{once:true});$('unlock').onclick=()=>audio.play().then(()=>{clearTimeout(t);signal.removeEventListener('abort',cancel);$('unlock').hidden=true;resolve();}).catch(()=>{});});}await ended;}finally{clearTimeout(stallTimer);audio.removeEventListener('waiting',stalled);audio.removeEventListener('playing',resumed);}
+ if(audio){await playAudio(audio,controller);
  }else await delay(3000,signal);
  await delay(1000,signal);
  }
