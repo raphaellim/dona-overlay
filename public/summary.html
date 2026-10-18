@@ -393,6 +393,8 @@ function renderFundingSummary(){
   }).join('');
 }
 
+let settlementServerPolicy=null,settlementSaveTail=Promise.resolve();
+function saveSettlementServer(){const overrides={...(settlementServerPolicy?.creators||{})};for(const c of (summary?.creators||[]))overrides[c.creator]={ratio:getCreatorSettlementRatio(c.creator),tax:getCreatorSettlementTax(c.creator)};const value={ratio:settlementServerPolicy?.ratio||'8:2',tax:settlementServerPolicy?.tax??true,creators:overrides};settlementSaveTail=settlementSaveTail.catch(()=>{}).then(async()=>{const response=await fetch('/api/finance/policy?station='+encodeURIComponent(new URLSearchParams(location.search).get('station')||localStorage.getItem('STATION_SLUG')||'default'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(value)});if(!response.ok)throw Error('정산 비율·공제 서버 저장 실패');settlementServerPolicy=value;}).catch(e=>alert(e.message));}
 function settlementStoreKey(name){
   const station = new URLSearchParams(location.search).get('station') || localStorage.getItem('STATION_SLUG') || 'default';
   return `settlementRatio:${station}:${name}`;
@@ -408,12 +410,12 @@ function settlementWon(n){
 }
 function getCreatorSettlementRatio(name){
   const saved=localStorage.getItem(settlementStoreKey(name));
-  return ['10:0','9:1','8:2','7:3','6:4'].includes(saved)?saved:'8:2';
+  return ['10:0','9:1','8:2','7:3','6:4'].includes(saved)?saved:(settlementServerPolicy?.creators?.[name]?.ratio||settlementServerPolicy?.ratio||'8:2');
 }
 function setCreatorSettlementRatio(name,value){
   if(!['10:0','9:1','8:2','7:3','6:4'].includes(value))return;
   localStorage.setItem(settlementStoreKey(name),value);
-  renderSettlement();
+  renderSettlement();saveSettlementServer();
 }
 function settlementTaxStoreKey(name){
   const station = new URLSearchParams(location.search).get('station') || localStorage.getItem('STATION_SLUG') || 'default';
@@ -421,20 +423,22 @@ function settlementTaxStoreKey(name){
 }
 function getCreatorSettlementTax(name){
   const saved=localStorage.getItem(settlementTaxStoreKey(name));
-  return saved===null ? true : saved==='1';
+  return saved===null ? (settlementServerPolicy?.creators?.[name]?.tax??settlementServerPolicy?.tax??true) : saved==='1';
 }
 function setCreatorSettlementTax(name,checked){
   localStorage.setItem(settlementTaxStoreKey(name),checked?'1':'0');
   syncSettlementTaxAllState();
-  renderSettlement();
+  renderSettlement();saveSettlementServer();
 }
 function applySettlementRatioAll(value){
+  settlementServerPolicy={...(settlementServerPolicy||{}),ratio:value};
   for(const c of (summary?.creators||[])) localStorage.setItem(settlementStoreKey(c.creator),value);
-  renderSettlement();
+  renderSettlement();saveSettlementServer();
 }
 function applySettlementTaxAll(checked){
+  settlementServerPolicy={...(settlementServerPolicy||{}),tax:checked};
   for(const c of (summary?.creators||[])) localStorage.setItem(settlementTaxStoreKey(c.creator),checked?'1':'0');
-  renderSettlement();
+  renderSettlement();saveSettlementServer();
 }
 function syncSettlementTaxAllState(){
   const all=$('#settlementTaxAll'); if(!all)return;
@@ -477,7 +481,7 @@ function renderSettlement(){
   box.innerHTML=creators.map(c=>{
     const ratio=getCreatorSettlementRatio(c.creator), taxOn=getCreatorSettlementTax(c.creator);
     const gross=Math.max(0,Number(c.total||0)), share=Math.floor(gross*settlementRatioValue(ratio));
-    const tax=taxOn?Math.floor(share*0.033):0, final=Math.max(0,share-tax);
+    const tax=taxOn?Math.floor(share*33/1000):0, final=Math.max(0,share-tax);
     const detailId='settlement-detail-'+btoa(unescape(encodeURIComponent(c.creator))).replace(/=+$/,'');
     return `<tr><td><b>${esc(c.creator)}</b></td><td class="num">${settlementWon(gross)}</td><td><select onchange="setCreatorSettlementRatio('${escAttr(c.creator)}',this.value)">${['10:0','9:1','8:2','7:3','6:4'].map(v=>`<option value="${v}" ${v===ratio?'selected':''}>${v}</option>`).join('')}</select></td><td class="num">${settlementWon(share)}</td><td class="num settlement-tax"><label class="tax-toggle" style="padding:6px 8px;justify-content:center"><input type="checkbox" ${taxOn?'checked':''} onchange="setCreatorSettlementTax('${escAttr(c.creator)}',this.checked)">${taxOn?'-'+settlementWon(tax):'미공제'}</label></td><td class="num settlement-final">${settlementWon(final)}</td><td><button class="btn blue mini settlement-detail-btn" onclick="toggleSettlementDetail('${escAttr(c.creator)}')">내역보기</button></td></tr><tr id="${detailId}" class="settlement-detail-row" style="display:none"><td colspan="7">${renderSettlementDetailRows(c.creator)}</td></tr>`;
   }).join('');
@@ -711,5 +715,6 @@ window.addEventListener('beforeunload', ()=>{ if(fallbackTimer) clearInterval(fa
   a.textContent='인덱스';
   document.body.appendChild(a);
 })();</script>
+<script>(async()=>{try{const station=new URLSearchParams(location.search).get('station')||localStorage.getItem('STATION_SLUG')||'default',response=await fetch('/api/finance/policy?station='+encodeURIComponent(station));if(!response.ok)return;const policy=await response.json();settlementServerPolicy=policy;if(policy.saved){const names=new Set([...(summary?.creators||[]).map(c=>c.creator),...Object.keys(policy.creators||{})]);for(const name of names){const v=policy.creators?.[name]||policy;localStorage.setItem(settlementStoreKey(name),v.ratio);localStorage.setItem(settlementTaxStoreKey(name),v.tax?'1':'0');}renderSettlement();}}catch{}})();</script>
 <script src="/embedded-navigation.js"></script></body>
 </html>
