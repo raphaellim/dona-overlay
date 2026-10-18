@@ -36,7 +36,7 @@ try{
  $('source').textContent='프리셋 변경';$('donor').textContent=p.donor||'';$('amount').textContent=p.preset+' '+(p.delta>0?'+':'')+p.delta;
  $('split').textContent=(p.creator||'')+' · 현재 '+(p.current>0?'+':'')+p.current;$('comment').textContent='';$('text').style.background=p.delta<0?'#693329':'#104e3d';
  }else{
- $('source').textContent=p.source==='toonie'?'투네후원':'계좌후원';$('signature').textContent=p.randomPlan&&p.randomIndex?'랜덤시그 '+p.randomIndex+'/'+p.randomPlan.count:(p.media?.title||'');
+ $('source').textContent=p.source==='toonie'?'투네후원':'계좌후원';const signature=p.randomPlan&&p.randomIndex?'랜덤시그 '+p.randomIndex+'/'+p.randomPlan.count:(p.media?.title||'');$('signature').textContent=signature+(p.inferredPreset?' ('+String(p.inferredPreset)+')':'');
  $('donor').textContent=p.donor||'익명';$('amount').textContent=Number(p.amount||0).toLocaleString('ko-KR');
  $('split').textContent='';
  $('comment').textContent=p.message||'';$('text').style.background='rgba(10,22,30,'+Math.max(0,Math.min(100,Number(config.alertOpacity??94)))*.75/100+')';

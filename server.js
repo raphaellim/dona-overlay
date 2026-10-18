@@ -46,7 +46,7 @@ io.on('connection', (socket) => {
 app.get('/api/build-check', (req, res) => {
   res.json({
     ok: true,
-    build: '2026-10-19-v6.16.8.28-auto-preset-stacks'
+    build: '2026-10-19-v6.16.8.29-alert-preset-label'
   });
 });
 
@@ -4359,7 +4359,7 @@ const alertCoordinator=require('./alert-coordinator')(app,{appearance:require('.
 const collectionWs=require('./collection-ws')(httpServer,{port:()=>httpServer.address()?.port||PORT});
 const runtimeJobs=require('./runtime-jobs')({supabase,runChat:(p,signal)=>processDonationYoutubeChat(p.ctx,p.settings,p.donor,p.accountTotal,p.toonieTotal,p.createdRows,{...p.options,signal}),onWake:slug=>collectionWs.notify(slug,'alertWake')});
 httpServer.on('close',()=>runtimeJobs.close());
-const alertStudio=require('./alert-studio')(app,{supabase,getStationContext,stationAllowed,stationTokenAllowed,withSettingsMutation,notify:(...args)=>collectionWs.notify(...args),jobs:runtimeJobs,publicDir:path.join(__dirname,'public')});
+const alertStudio=require('./alert-studio')(app,{supabase,getStationContext,stationAllowed,stationTokenAllowed,withSettingsMutation,notify:(...args)=>collectionWs.notify(...args),jobs:runtimeJobs,readEffectiveSettings,publicDir:path.join(__dirname,'public')});
 const identityNotify=collectionWs.notify.bind(collectionWs);
 collectionWs.notify=async(slug,type,payload)=>{try{
  if(type==='alert'){
