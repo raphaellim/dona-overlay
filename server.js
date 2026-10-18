@@ -46,7 +46,7 @@ io.on('connection', (socket) => {
 app.get('/api/build-check', (req, res) => {
   res.json({
     ok: true,
-    build: '2026-10-17-v6.16.6-alert-studio'
+    build: '2026-10-19-v6.16.8.28-auto-preset-stacks'
   });
 });
 
@@ -73,8 +73,6 @@ app.use((req, res, next) => {
     overlayStateCache.invalidate();
     if(['/api/bank-devices/sync','/api/collection-ws-auth','/api/bank-device-candidates','/api/account-candidates','/api/toonie-candidates'].includes(req.path))return;
     const slug = getStationSlug(req);
-    // bank-broadcast-gate-notify
-    if(/^\/api\/(?:broadcasts(?:\/|$)|broadcast-timer(?:\/|$)|settings(?:\/|$))/.test(req.path)&&typeof collectionWs!=='undefined')collectionWs.devicesChanged().catch(()=>{});
     if(typeof collectionWs!=='undefined')collectionWs.notify(slug,req.path.startsWith('/api/roulette')?'roulette':req.path.startsWith('/api/sound-events')?'sound':'state');
     io.to(realtimeRoom(slug)).emit('overlay:changed', {
       type: req.path.startsWith('/api/roulette') ? 'roulette' :
@@ -1882,7 +1880,10 @@ function makeDonationRow(body, settings, stationId, broadcastId) {
   if (!creator) throw new Error('크리에이터를 선택하세요.');
   if (total <= 0) throw new Error(`${creator}: 금액을 입력하세요.`);
 
-  const check = calcCheck(processType, total, settings);
+  let check = calcCheck(processType, total, settings);
+  if(processType==='후원'&&body.autoPresetAllowed!==false&&!(Array.isArray(body.presetSelections)&&body.presetSelections.length)&&!body.manualKind&&!body.entryKind&&!body.fundingId&&!body.rouletteRuleId){
+    check=require('./auto-donation-routing').checkBySource(settings,accountAmount,toonieAmount,[body.donor,body.title,body.message,body.memo].filter(Boolean).join(' '),calcCheck);
+  }
   const silentAlert = body.silentAlert === true || body.noAlert === true || String(body.alert || '').toLowerCase() === 'false';
   const manualKind = normName(body.manualKind || body.entryKind || '');
   if (silentAlert || manualKind || body.message) {
@@ -4384,7 +4385,7 @@ const collectionCapture=require('./capture-test')(app,{supabase,getStation,getSt
  notifyCollection(ctx.station.slug,'state');await notifyCollection(ctx.station.slug,'alert',{broadcastId:ctx.active.id,id:candidate.id,receiptOnly:true,source:'account',donor:candidate.routing.receiptDonor||candidate.donor,title:candidate.title,vip:candidate.vip,amount:candidate.amount,message:candidate.message,receivedAt:candidate.received_at,rows:[]});
  await maybeSendDonationYoutubeChat(ctx,settings,candidate.routing.receiptDonor||candidate.donor,candidate.amount,0,[],{receiptOnly:true,eventId:candidate.id});
 }});
-require('./bank-devices')(app,{supabase,getStation,getStationContext,stationAllowed,isMasterRequest,saveAccount:collectionCapture.saveAccount,withSettingsMutation,ensureActiveBroadcast,readEffectiveSettings,changed:()=>collectionWs.devicesChanged()});
+require('./bank-devices')(app,{supabase,getStation,getStationContext,stationAllowed,isMasterRequest,saveAccount:collectionCapture.saveAccount,changed:()=>collectionWs.devicesChanged()});
 
 // 휴대폰 은행 알림 또는 투네이션 위젯 수집기에서 전달하는 자동 후원.
 // AUTO_DONATION_TOKEN은 방송국별로 별도 발급하고 HTTPS 요청 헤더에만 넣습니다.
@@ -4503,6 +4504,7 @@ app.post('/api/donations/batch', async (req, res) => {
       const tooniePart = r.amount - accountPart;
 
       return require('./donation-options').applyPresets(makeDonationRow({
+        autoPresetAllowed:validRows.length===1&&!selectedPresets?.length,
         exactWon:true,
         donor,
         creator: r.creator,
