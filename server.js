@@ -2872,6 +2872,7 @@ app.post('/api/allowance/adjust', async (req, res) => {
     // 용돈은 당일 방송 수동값이므로 방송국 공통값으로 저장하지 않습니다.
     // 다음 방송은 copySettingsToBroadcast에서 0으로 초기화됩니다.
     await saveEffectiveSettings(ctx.station.slug, ctx.active.id, { allowanceData: next });
+    await collectionWs.notify(ctx.station.slug,'allowance',{id:'allowance:'+crypto.randomUUID(),donor:String(req.body?.donor||'').slice(0,100),delta:direction==='minus'?-amount:amount,current:nextBalance,broadcastId:ctx.active.id});
 
     res.json({ ok: true, allowanceData: next });
   } catch (e) {
@@ -2887,8 +2888,10 @@ app.post('/api/allowance/reset', async (req, res) => {
     if (!await managerAllowed(req, ctx.station, ctx.active)) {
       return res.status(401).json({ error: '방송매니저 또는 방송국 관리자 권한이 필요합니다.' });
     }
+    const previous=normalizeAllowanceData((await readEffectiveSettings(ctx.station.slug,ctx.active.id)).allowanceData);
     const next = normalizeAllowanceData({ balance: 0, updatedAt: new Date().toISOString() });
     await saveEffectiveSettings(ctx.station.slug, ctx.active.id, { allowanceData: next });
+    await collectionWs.notify(ctx.station.slug,'allowance',{id:'allowance:'+crypto.randomUUID(),donor:String(req.body?.donor||'').slice(0,100),delta:-Number(previous.balance||0),current:0,broadcastId:ctx.active.id});
     res.json({ ok: true, allowanceData: next });
   } catch (e) {
     res.status(400).json({ error: e.message || '용돈 초기화 실패' });
@@ -4323,7 +4326,7 @@ app.get('/api/station/toonie-widget', async (req, res) => {
     if (!await stationAllowed(req, ctx.station)) return res.status(401).json({ error: '방송국 관리자 권한이 필요합니다.' });
     const { data, error } = await supabase.from('station_toonie_sources').select('widget_url').eq('station_id', ctx.station.id).maybeSingle();
     if (error) throw error;
-    res.json({ widgetUrl: data?.widget_url || '', collector: toonieCollector?.status(ctx.station.slug) || 'disabled' });
+    if(data?.widget_url)await require('./toonie-vault').read(supabase,{...data,station_id:ctx.station.id});res.set('Cache-Control','no-store');res.json({ widgetUrl:'',configured:!!data?.widget_url, collector: toonieCollector?.status(ctx.station.slug) || 'disabled' });
   } catch (e) { res.status(500).json({ error: e.message || '투네 위젯 설정 조회 실패' }); }
 });
 app.post('/api/station/toonie-widget', async (req, res) => {
@@ -4332,12 +4335,12 @@ app.post('/api/station/toonie-widget', async (req, res) => {
     const ctx = await getStationContext(req, res);
     if (!ctx) return;
     if (!await stationAllowed(req, ctx.station)) return res.status(401).json({ error: '방송국 관리자 권한이 필요합니다.' });
-    const raw = String(req.body?.widgetUrl || '').trim();
+    const raw = String(req.body?.widgetUrl || '').trim();if(!raw&&req.body?.clear!==true)return res.json({ok:true,unchanged:true});
     const widgetUrl = raw ? validWidgetUrl(raw) : '';
     if (raw && !widgetUrl) return res.status(400).json({ error: 'toon.at 알림 위젯 주소를 입력하세요.' });
     if (widgetUrl) {
       const { error } = await supabase.from('station_toonie_sources').upsert({ station_id: ctx.station.id,
-        widget_url: widgetUrl, updated_at: new Date().toISOString() }, { onConflict: 'station_id' });
+        widget_url: require('./toonie-vault').seal(widgetUrl,ctx.station.id), updated_at: new Date().toISOString() }, { onConflict: 'station_id' });
       if (error) throw error;
     } else {
       const { error } = await supabase.from('station_toonie_sources').delete().eq('station_id', ctx.station.id);
@@ -4362,15 +4365,15 @@ collectionWs.notify=async(slug,type,payload)=>{try{
   if(await alertStudio.enqueue(slug,payload,payload.broadcastId))return;
   if(!payload.preview&&((payload.source==='account'&&prefs?.account_enabled===false)||(payload.source==='toonie'&&prefs?.toonie_mode!=='internal')))return;
  }
- if(type==='preset'){
-  if(await alertStudio.enqueue(slug,{...payload,kind:'preset'},payload.broadcastId))return;
- }
+ if(type==='distribution'&&payload?.donor){const name=await donorIdentity.names(slug);payload={...payload,donor:name(payload.donor)};}
+ // Manual preset edits stay in the small overlay, outside the media queue.
  return identityNotify(slug,type,payload);
 }catch(e){console.error('[alert delivery]',e.message);}};
 alertCoordinator.onChange(slug=>collectionWs.notify(slug,'playback'));
 const notifyCollection=(slug,type,payload)=>{const sent=collectionWs.notify(slug,type,payload);if(type==='state')io.to(realtimeRoom(slug)).emit('overlay:changed',{type:'state',at:Date.now()});return sent;};
 const collectionReview=require('./collection-review')(app,{supabase,getStationContext,managerAllowed,stationAllowed,ensureActiveBroadcast,readEffectiveSettings,saveEffectiveSettings,makeDonationRow,inputAllowedForActiveBroadcast,notify:notifyCollection,calcCheck,afterApply:async(ctx,settings,candidate,routing,rows)=>{
- if(!candidate.routing?.receiptFirst||(await alertStudio.read(ctx.station.slug)).deliveryMode==='dedicated')await notifyCollection(ctx.station.slug,'alert',{broadcastId:ctx.active.id,id:candidate.id,donationIds:rows.map(r=>r.id),source:candidate.source,donor:routing.donor,title:candidate.title,vip:candidate.vip,amount:candidate.amount,message:candidate.message,receivedAt:candidate.received_at,rows:routing.rows});
+ if(candidate.routing?.receiptFirst)await notifyCollection(ctx.station.slug,'distribution',{id:'distribution:'+candidate.id,broadcastId:ctx.active.id,donor:routing.donor,rows:routing.rows});
+ if(!candidate.routing?.receiptFirst)await notifyCollection(ctx.station.slug,'alert',{broadcastId:ctx.active.id,id:candidate.id,donationIds:rows.map(r=>r.id),source:candidate.source,donor:routing.donor,title:candidate.title,vip:candidate.vip,amount:candidate.amount,message:candidate.message,receivedAt:candidate.received_at,rows:routing.rows});
  try{if(routing.fundingId){const current=await readEffectiveSettings(ctx.station.slug,ctx.active.id),fundingData=normalizeFundingData(current.fundingData),item=fundingData.items.find(f=>f.id===routing.fundingId);if(item){item.current=Number(item.current||0)+(routing.fundingExactWon===true?Number(candidate.amount)/10000:Math.floor(Number(candidate.amount)/10000));await saveSharedStationSettings(ctx.station.slug,{fundingData});}}if(!candidate.routing?.receiptFirst){nightbotChat.enqueue(ctx.station.slug,rows,settings.nightbotChat);await maybeSendDonationYoutubeChat(ctx,settings,routing.donor,candidate.source==='account'?candidate.amount:0,candidate.source==='toonie'?candidate.amount:0,rows);}await maybeStartAutoRoulette(ctx,candidate.amount,routing.donor,routing);}catch(e){console.error('수집 후원 부가 전송 실패:',e.message);}
 }});
 require('./broadcast-finance')(app,{supabase,getStationContext,stationAllowed,dbRowToDonation,readEffectiveSettings});
@@ -4777,7 +4780,7 @@ async function listToonieSources() {
   if (stationError) throw stationError;
   const byId = new Map((stations || []).map(x => [x.id, x.slug]));
   const liveSources=[];
-  for(const source of sources){const slug=byId.get(source.station_id);if(!slug)continue;const active=await ensureActiveBroadcast(source.station_id);const settings=await readEffectiveSettings(slug,active.id);const live=settings.broadcastLiveData;if(live?.live===true&&live.status==='live')liveSources.push({slug,url:source.widget_url,broadcastId:active.id,startedAt:live.collectionStartedAt||live.startedAt});}
+  for(const source of sources){const slug=byId.get(source.station_id);if(!slug)continue;const active=await ensureActiveBroadcast(source.station_id);const settings=await readEffectiveSettings(slug,active.id);const live=settings.broadcastLiveData;if(live?.live===true&&live.status==='live')liveSources.push({slug,url:await require('./toonie-vault').read(supabase,source),broadcastId:active.id,startedAt:live.collectionStartedAt||live.startedAt});}
   return liveSources;
 }
 

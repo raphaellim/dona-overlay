@@ -10,6 +10,8 @@ function donationAge(value,now=Date.now()){if(value===null||value===undefined||v
 async function playAudio(audio,controller,maxWait=185000){const signal=controller.signal;const ended=eventReady(audio,'ended',signal,maxWait);ended.catch(()=>{});let stallTimer=null;const stalled=()=>{clearTimeout(stallTimer);stallTimer=setTimeout(()=>controller.abort(),10000);};const resumed=()=>clearTimeout(stallTimer);audio.addEventListener('waiting',stalled);audio.addEventListener('playing',resumed);
  try{try{await audio.play();}catch(e){if(e.name!=='NotAllowedError')throw e;$('unlock').hidden=false;status('브라우저 소리 허용 필요');await new Promise((resolve,reject)=>{const t=setTimeout(()=>{signal.removeEventListener('abort',cancel);reject(Error('소리 허용 시간 초과'));},30000),cancel=()=>{clearTimeout(t);reject(Error('취소됨'));};signal.addEventListener('abort',cancel,{once:true});$('unlock').onclick=()=>audio.play().then(()=>{clearTimeout(t);signal.removeEventListener('abort',cancel);$('unlock').hidden=true;resolve();}).catch(()=>{});});}await ended;}finally{clearTimeout(stallTimer);audio.removeEventListener('waiting',stalled);audio.removeEventListener('playing',resumed);}
 }
+async function playIntro(audio,controller){const signal=controller.signal;try{await audio.play();}catch(e){if(e.name!=='NotAllowedError')throw e;$('unlock').hidden=false;await new Promise((resolve,reject)=>{let timer;const clean=()=>{clearTimeout(timer);signal.removeEventListener('abort',abort);$('unlock').onclick=null;$('unlock').hidden=true;},abort=()=>{clean();reject(Error('취소됨'));};timer=setTimeout(()=>{clean();reject(Error('소리 허용 시간 초과'));},30000);signal.addEventListener('abort',abort,{once:true});$('unlock').onclick=()=>audio.play().then(()=>{clean();resolve();}).catch(()=>{});if(signal.aborted)abort();});}await new Promise((resolve,reject)=>{const done=()=>{clearTimeout(t);audio.removeEventListener('ended',done);signal.removeEventListener('abort',abort);resolve();},abort=()=>{clearTimeout(t);audio.removeEventListener('ended',done);signal.removeEventListener('abort',abort);reject(Error('취소됨'));},t=setTimeout(done,1000);audio.addEventListener('ended',done,{once:true});signal.addEventListener('abort',abort,{once:true});if(signal.aborted)abort();});audio.pause();}
+
 async function play(job,config={}){lastFailure='';const controller=new AbortController();session={controller,intro:null,audio:null,heartbeat:null,limit:null};const signal=controller.signal,p=job.payload,media=p.media||{};let success=false,failure='',stage='초기화';
 try{
  session.limit=setTimeout(()=>controller.abort(),media.introSound?280000:210000);
@@ -23,9 +25,9 @@ try{
  status('알림 미디어 준비 중');await Promise.all(ready);if(signal.aborted)throw Error('취소됨');
  if(media.image&&($('image').naturalWidth>4096||$('image').naturalHeight>4096))throw Error('이미지는 가로·세로 4096px 이하를 사용하세요');
  if(audio&&(!Number.isFinite(audio.duration)||audio.duration>180))throw Error('음원은 180초 이내 파일을 사용하세요');
- if(session.intro&&(!Number.isFinite(session.intro.duration)||session.intro.duration>30))throw Error('시작 음원은 30초 이내 파일을 사용하세요');
+ 
  stage='재생 시작 확인';await touch(job,'start');
- if(session.intro){stage='시작음 재생';status('시작음 재생 중');await playAudio(session.intro,controller,65000);session.intro.pause();session.intro.removeAttribute('src');session.intro.load();session.intro=null;$('unlock').onclick=null;}
+ if(session.intro){stage='시작음 재생';status('시작음 재생 중');await playIntro(session.intro,controller);session.intro.pause();session.intro.removeAttribute('src');session.intro.load();session.intro=null;$('unlock').onclick=null;}
 
  $('text').hidden=media.showText===false;
  if(p.kind==='preset'){

@@ -1,0 +1,7 @@
+'use strict';
+const crypto=require('crypto'),prefix='enc:v1:';
+function key(){const raw=process.env.TOONIE_WIDGET_ENCRYPTION_KEY||'';if(!/^[A-Za-z0-9+/]{43}=$/.test(raw))throw Error('TOONIE_WIDGET_ENCRYPTION_KEY에 32바이트 Base64 키를 설정하세요');const k=Buffer.from(raw,'base64');if(k.length!==32)throw Error('투네 주소 암호화 키 형식 오류');return k;}
+function seal(value,station){const iv=crypto.randomBytes(12),cipher=crypto.createCipheriv('aes-256-gcm',key(),iv);cipher.setAAD(Buffer.from(String(station)));const data=Buffer.concat([cipher.update(value,'utf8'),cipher.final()]);return prefix+Buffer.concat([iv,cipher.getAuthTag(),data]).toString('base64');}
+function open(value,station){if(!value)return '';if(!value.startsWith(prefix))return value;try{const bytes=Buffer.from(value.slice(prefix.length),'base64'),dec=crypto.createDecipheriv('aes-256-gcm',key(),bytes.subarray(0,12));dec.setAAD(Buffer.from(String(station)));dec.setAuthTag(bytes.subarray(12,28));return Buffer.concat([dec.update(bytes.subarray(28)),dec.final()]).toString('utf8');}catch{throw Error('투네 주소 복호화 실패: 서버 암호화 키를 확인하세요');}}
+async function read(db,row){const value=open(row?.widget_url||'',row?.station_id);if(value&&!row.widget_url.startsWith(prefix)&&process.env.TOONIE_WIDGET_ENCRYPTION_KEY){const {error}=await db.from('station_toonie_sources').update({widget_url:seal(value,row.station_id)}).eq('station_id',row.station_id).eq('widget_url',row.widget_url);if(error)throw Error('기존 투네 주소 암호화 저장 실패');}return value;}
+module.exports={seal,open,read};

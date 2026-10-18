@@ -51,7 +51,7 @@ module.exports=function(server,{port}){
  });
  const timer=setInterval(()=>{for(const ws of wss.clients){if(!ws.alive){ws.terminate();continue;}ws.alive=false;ws.ping();}},60000);timer.unref();server.on('close',()=>{clearInterval(timer);wss.close();});
  return {
-  async notify(station,type,payload){for(const ws of wss.clients)if(ws.auth?.kind==='web'&&ws.auth.station===station){try{const access=ws.lastAccess&&Date.now()-ws.lastAccess.at<3000?ws.lastAccess.value:await invoke(ws.request,ws.auth.authPath,'GET');ws.lastAccess={at:Date.now(),value:access};if(access.status!==200){ws.close(1008,'access revoked');continue;}send(ws,{type:'changed',topic:type,payload:['alert','preset'].includes(type)?payload:undefined});}catch{ws.close(1011,'auth unavailable');}}},
+  async notify(station,type,payload){for(const ws of wss.clients)if(ws.auth?.kind==='web'&&ws.auth.station===station){try{const access=ws.lastAccess&&Date.now()-ws.lastAccess.at<3000?ws.lastAccess.value:await invoke(ws.request,ws.auth.authPath,'GET');ws.lastAccess={at:Date.now(),value:access};if(access.status!==200){ws.close(1008,'access revoked');continue;}send(ws,{type:'changed',topic:type,payload:['alert','preset','allowance','distribution'].includes(type)?payload:undefined});}catch{ws.close(1011,'auth unavailable');}}},
   async devicesChanged(){for(const ws of wss.clients)if(ws.auth?.kind==='device'){try{const result=await invoke({headers:{host:'localhost'}},'/api/bank-devices/sync','POST',{}, {'x-bank-device-token':ws.auth.token});const config=JSON.parse(result.body);if(result.status===200){ws.auth.station=config.station;send(ws,{type:'config',config});}else{send(ws,{type:'auth-error',code:result.status,error:config.error});ws.close(1008,'device revoked');}}catch{}}}
  };
 };
