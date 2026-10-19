@@ -1,43 +1,8 @@
-/* v37: keep the workspace inside the viewport; long lists scroll locally. */
-html:has(body.console-app){height:100%;overflow:hidden}
-body.console-app{height:100dvh;overflow:hidden}
-.console-app main{height:calc(100dvh - var(--console-top,88px));min-height:0;display:flex;flex-direction:column;overflow:hidden;padding-top:14px;padding-bottom:14px;gap:0}
-.console-app .page-intro{flex:0 0 auto;margin-bottom:10px;padding-bottom:0;min-height:0}
-.console-app .page-intro h1{font-size:23px;margin:2px 0;line-height:1.3}
-.console-app .page-intro p{margin:3px 0 0;font-size:12px;line-height:1.4}
-.console-app #subnav{flex:0 0 auto;margin-bottom:12px;padding-bottom:9px}
-.console-app #subnav button{min-height:34px;padding:5px 12px}
-.console-app #content{flex:1 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain;overflow-anchor:none;scrollbar-gutter:stable}
-.console-app #error:not(:empty){flex:0 0 auto;max-height:70px;overflow:auto;margin-bottom:8px;padding:7px 12px}
-.console-app #content>article,.console-app #content>.card{padding:16px 20px;margin-bottom:12px}
-.console-app #content h2{font-size:19px;margin-bottom:12px}
-.console-app #content label{margin-top:10px;margin-bottom:10px}
-.console-app #content p{margin:8px 0 12px}
-.console-app #content iframe{height:100%;min-height:0;max-height:100%;border-radius:10px}
-.console-app #content:has(>iframe){overflow:hidden}
-.console-app #identityRows{max-height:calc(100dvh - 370px)!important;min-height:100px}
+/* v38: preserve the established console layout. Only bound nickname editing. */
+.console-app #identityRows{max-height:52vh;overflow:auto;overflow-anchor:none;overscroll-behavior:contain;scrollbar-gutter:stable}
 .console-app #identityRows td{overflow-wrap:anywhere}
-.console-app #identityEditor:not(:empty){max-height:240px;overflow:auto;overscroll-behavior:contain}
+.console-app #identityEditor:not(:empty){max-height:260px;overflow:auto;overscroll-behavior:contain;margin-bottom:12px}
 .console-app .identity-editor-card label>input,.console-app .identity-editor-card label>textarea{width:100%;max-width:560px}
 .console-app .identity-editor-card textarea{height:72px;min-height:52px;resize:vertical}
-@media(min-width:901px){
- .console-app #content>.donation-workspace{height:100%;min-height:0}
- .console-app .donation-workspace>section{overflow:auto;min-height:0;overscroll-behavior:contain}
- .console-app .workspace-side{min-height:0;overflow:hidden}
- .console-app .workspace-side>section{min-height:0;display:flex;flex-direction:column;flex:1 1 0}
- .console-app #reviewPane,.console-app #recentPane{height:auto;flex:1 1 auto;min-height:0;overflow:auto}
-}
-@media(max-width:760px){
- .console-app main{height:calc(100dvh - var(--console-top,150px));padding:10px 12px}
- .console-app .page-intro h1{font-size:19px}
- .console-app .page-intro p,.console-app .workspace-badge,.console-app .page-intro .eyebrow{display:none}
- .console-app .page-intro{margin-bottom:6px}
- .console-app #subnav{margin-bottom:8px;padding-bottom:5px}
- .console-app #content>article{padding:12px}
- .console-app #identityRows{max-height:42dvh!important}
- .console-app #identityEditor:not(:empty){max-height:210px}
-}
-.console-app #content:has(#identityRows)>article{height:100%;min-height:0;display:flex;flex-direction:column;overflow:hidden;margin:0}
-.console-app #content:has(#identityRows)>article>h2,.console-app #content:has(#identityRows)>article>p,.console-app #content:has(#identityRows)>article>.row{flex-shrink:0}
-.console-app #content #identityRows{max-height:none!important;min-height:0;flex:1 1 auto}
-.console-app #identityEditor{flex:0 0 auto}
+/* Pending candidates fit their content, up to three 70px rows. */
+.console-app #reviewPane{height:auto;min-height:70px;max-height:210px;overflow:auto;overscroll-behavior:contain}
