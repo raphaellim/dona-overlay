@@ -1,10 +1,11 @@
 'use strict';
 // Mounted inside alert-studio.js so the existing administrator authorization and station context are reused.
-module.exports=function(app,{route,read,readEffectiveSettings,jobs,notify,makeFreeRandomPlan,matchIntro,getStationContext}){
+module.exports=function(app,{route,read,readEffectiveSettings,jobs,notify,makeFreeRandomPlan,matchIntro,getStationContext,match,supabase,withSettingsMutation}){
+ require('./mobile-funding-controls')(app,{route,supabase,withSettingsMutation,getStationContext,readEffectiveSettings,notify});
  const locks=new Map();
  async function serial(key,fn){const prev=locks.get(key)||Promise.resolve();const next=prev.catch(()=>{}).then(fn);locks.set(key,next);try{return await next;}finally{if(locks.get(key)===next)locks.delete(key);}}
  const validId=x=>typeof x==='string'&&/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(x);
- app.get('/api/mobile-alerts/catalog',route(async(req,res,c)=>{const config=await read(c.station.slug);res.json({ok:true,broadcastId:String(c.active.id),groups:config.groups||[],rules:(config.rules||[]).filter(r=>r.enabled!==false).map(({id,title,groupId,min,type})=>({id,title,groupId,min,type}))});},true));
+ app.get('/api/mobile-alerts/catalog',route(async(req,res,c)=>{const config=await read(c.station.slug);res.json({ok:true,broadcastId:String(c.active.id),groups:config.groups||[],rules:(config.rules||[]).filter(r=>r.enabled!==false).map(({id,title,groupId,min,max,type})=>({id,title,groupId,min,max,type}))});},true));
  app.post('/api/mobile-alerts/batch',route(async(req,res,c)=>serial(c.station.slug,async()=>{
   const body=req.body||{},accepted=[];
   if(String(body.broadcastId)!==String(c.active.id))throw Error('방송이 변경됐습니다. 담은 목록을 확인하고 다시 등록하세요');
@@ -13,10 +14,10 @@ module.exports=function(app,{route,read,readEffectiveSettings,jobs,notify,makeFr
   if(config.deliveryMode!=='dedicated'||!config.enabled)throw Error('웹에서 독립 알림 모드를 켜고 저장하세요');
   const settings=await readEffectiveSettings(c.station.slug,c.active.id);if(settings.broadcastLiveData?.live!==true||settings.broadcastLiveData?.status!=='live')throw Error('방송시작 상태에서 전송하세요');
   let total=0;const seen=new Set();const prepared=body.entries.map(item=>{
-   if(!item||!validId(item.requestId)||seen.has(item.requestId)||!['rule','random'].includes(item.kind)||!Number.isSafeInteger(item.count)||item.count<1||item.count>50)throw Error('요청 ID·횟수·알람 종류를 확인하세요');seen.add(item.requestId);total+=item.count;if(total>100)throw Error('한 번에 100회까지 전송하세요');
+   if(!item||!validId(item.requestId)||seen.has(item.requestId)||!['amount','rule','random'].includes(item.kind)||!Number.isSafeInteger(item.count)||item.count<1||item.count>50)throw Error('요청 ID·횟수·알람 종류를 확인하세요');seen.add(item.requestId);total+=item.count;if(total>100)throw Error('한 번에 100회까지 전송하세요');
    if(item.kind==='random'){const plan=makeFreeRandomPlan(config,item.count,item.groupId);return{item,plan};}
    if(config.accountEnabled===false)throw Error('계좌 알람 사용을 켜세요');
-   const rule=(config.rules||[]).find(r=>r.id===item.ruleId&&r.enabled!==false);if(!rule)throw Error('선택한 알람이 삭제되었거나 꺼져 있습니다');
+   const rule=item.kind==='amount'?(match||require('./alert-studio').match)(config,item.amount):(config.rules||[]).find(r=>r.id===item.ruleId&&r.enabled!==false);if(!rule)throw Error('선택한 알람이 삭제되었거나 꺼져 있습니다');
    if(!Number.isSafeInteger(item.amount)||item.amount<1000||item.amount>1e9||typeof item.donor!=='string'||!item.donor.trim()||item.donor.length>100)throw Error('테스트 이름·금액을 확인하세요');
    return{item,rule};
   });

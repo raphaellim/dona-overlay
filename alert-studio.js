@@ -49,8 +49,8 @@ module.exports=function(app,d){const {supabase,getStationContext,stationAllowed,
   notify(c.station.slug,'alertWake');notify(c.station.slug,'alertList');res.json({ok:true,count:randomPlan.count});
  },true));
  app.post('/api/alert-studio/test',route(async(req,res,c)=>{const amount=Number(req.body.amount||100000);if(!Number.isSafeInteger(amount)||amount<0)throw Error('테스트 금액 확인 필요');const config=await read(c.station.slug);if(config.deliveryMode!=='dedicated')throw Error('독립 알림 모드를 저장한 뒤 테스트하세요');await enqueue(c.station.slug,{id:'test:'+crypto.randomUUID(),preview:true,source:'account',donor:'테스트',amount,message:'이미지·사운드 테스트',receivedAt:new Date().toISOString()},c.active.id);res.json({ok:true});},true));
- require('./mobile-alert-controls')(app,{route,read,readEffectiveSettings,jobs,notify,makeFreeRandomPlan,matchIntro,getStationContext});
-return {read,enqueue};
+ require('./mobile-alert-controls')(app,{route,read,readEffectiveSettings,jobs,notify,makeFreeRandomPlan,matchIntro,getStationContext,supabase,withSettingsMutation});
+ return {read,enqueue};
 };
 module.exports.validate=validate;module.exports.match=match;module.exports.matchIntro=matchIntro;module.exports.matchRandom=matchRandom;
 
