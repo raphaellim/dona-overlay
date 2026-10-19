@@ -1,0 +1,7 @@
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
+const base=process.env.DONA_TEST_BASE||path.resolve(__dirname,'../../work36/dona-overlay-main');
+const {PGlite}=require(path.join(base,'node_modules/@electric-sql/pglite'));
+(async()=>{const db=new PGlite();await db.exec('create role anon;create role authenticated;create role service_role;create table stations(id uuid primary key);');const sql=fs.readFileSync(path.join(__dirname,'../sql/041-toonie-multi-collector.sql'),'utf8');await db.exec(sql);await db.exec(sql);
+const a='11111111-1111-4111-8111-111111111111',b='22222222-2222-4222-8222-222222222222',x='33333333-3333-4333-8333-333333333333',y='44444444-4444-4444-8444-444444444444';
+await db.query('insert into stations values($1),($2)',[a,b]);const claim=async(owner,ids)=>(await db.query('select * from claim_toonie_collector_stations($1,$2::uuid[])',[owner,ids])).rows.map(r=>r.station_id).sort();
+assert.deepEqual(await claim(x,[a,b]),[a,b]);assert.deepEqual(await claim(y,[a]),[]);assert.deepEqual(await claim(x,[b]),[b]);assert.deepEqual(await claim(y,[a]),[a]);await db.exec("update toonie_collector_leases set expires_at=now()-interval '1 second'");assert.deepEqual(await claim(y,[a,b]),[a,b]);assert.equal((await db.query('select count(*)::int n from stations')).rows[0].n,2);await db.close();console.log('PASS SQL: 재실행·단독소유·갱신·해제·만료후인계·기존행보존');})().catch(e=>{console.error(e);process.exit(1)});

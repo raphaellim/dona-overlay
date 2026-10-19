@@ -4332,7 +4332,7 @@ app.get('/api/station/toonie-widget', async (req, res) => {
     if (!await stationAllowed(req, ctx.station)) return res.status(401).json({ error: '방송국 관리자 권한이 필요합니다.' });
     const { data, error } = await supabase.from('station_toonie_sources').select('widget_url').eq('station_id', ctx.station.id).maybeSingle();
     if (error) throw error;
-    if(data?.widget_url)await require('./toonie-vault').read(supabase,{...data,station_id:ctx.station.id});res.set('Cache-Control','no-store');res.json({ widgetUrl:'',configured:!!data?.widget_url, collector: toonieCollector?.status(ctx.station.slug) || 'disabled' });
+    if(data?.widget_url)await require('./toonie-vault').read(supabase,{...data,station_id:ctx.station.id});res.set('Cache-Control','no-store');res.json({ widgetUrl:'',configured:!!data?.widget_url, collector: await toonieMulti.status(ctx.station.id)||toonieCollector?.status(ctx.station.slug)||'disabled' });
   } catch (e) { res.status(500).json({ error: e.message || '투네 위젯 설정 조회 실패' }); }
 });
 app.post('/api/station/toonie-widget', async (req, res) => {
@@ -4384,10 +4384,12 @@ const collectionReview=require('./collection-review')(app,{supabase,getStationCo
  try{if(!candidate.routing?.receiptFirst){nightbotChat.enqueue(ctx.station.slug,rows,settings.nightbotChat);await maybeSendDonationYoutubeChat(ctx,settings,routing.donor,candidate.source==='account'?candidate.amount:0,candidate.source==='toonie'?candidate.amount:0,rows);}await maybeStartAutoRoulette(ctx,candidate.amount,routing.donor,routing);}catch(e){console.error('수집 후원 부가 전송 실패:',e.message);}
 }});
 require('./broadcast-finance')(app,{supabase,getStationContext,stationAllowed,dbRowToDonation,readEffectiveSettings,withSettingsMutation});
+app.use(require('./toonie-multi-collector').legacyGuard);
 const collectionCapture=require('./capture-test')(app,{supabase,getStation,getStationContext,managerAllowed,stationAllowed,review:collectionReview,notify:notifyCollection,ensureActiveBroadcast,readEffectiveSettings,afterReceive:async(ctx,settings,candidate)=>{
  notifyCollection(ctx.station.slug,'state');await notifyCollection(ctx.station.slug,'alert',{broadcastId:ctx.active.id,id:candidate.id,receiptOnly:true,source:'account',donor:candidate.routing.receiptDonor||candidate.donor,title:candidate.title,vip:candidate.vip,amount:candidate.amount,message:candidate.message,receivedAt:candidate.received_at,rows:[]});
  await maybeSendDonationYoutubeChat(ctx,settings,candidate.routing.receiptDonor||candidate.donor,candidate.amount,0,[],{receiptOnly:true,eventId:candidate.id});
 }});
+const toonieMulti=require('./toonie-multi-collector')(app,{supabase,getStation,readEffectiveSettings,ingest:collectionCapture.ingestToonie});
 require('./bank-devices')(app,{supabase,getStation,getStationContext,stationAllowed,isMasterRequest,saveAccount:collectionCapture.saveAccount,withSettingsMutation,ensureActiveBroadcast,readEffectiveSettings,changed:()=>collectionWs.devicesChanged()});
 
 // 휴대폰 은행 알림 또는 투네이션 위젯 수집기에서 전달하는 자동 후원.
@@ -4868,7 +4870,7 @@ setTimeout(runDonationStatusScheduler, 15000);
 
 httpServer.listen(PORT, () => {
   console.log(`Donation multi-station server running on port ${PORT}`);
-  if (['1','true'].includes(String(process.env.TOONIE_COLLECTOR_ENABLED).toLowerCase())) {
+  if (!require('./toonie-multi-collector').enabled()&&['1','true'].includes(String(process.env.TOONIE_COLLECTOR_ENABLED).toLowerCase())) {
     toonieCollector = startToonieCollector({ listSources: listToonieSources, ingest: collectionCapture.ingestToonie });
   }
 });

@@ -1,0 +1,30 @@
+'use strict';
+const crypto=require('crypto'),vault=require('./toonie-vault'),{captureReason}=require('./collection-window');
+const enabled=()=>['true','1'].includes(String(process.env.TOONIE_MULTI_COLLECTOR_ENABLED).toLowerCase());
+const uuid=v=>/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(v||''));
+const version=widget=>crypto.createHash('sha256').update(widget).digest('hex');
+function widgetOf(row){const widget=vault.open(row.widget_url,row.station_id),u=new URL(widget);if(u.origin!=='https://toon.at'||u.username||u.password||u.search||u.hash||!/^\/widget\/alertbox\/[a-zA-Z0-9]+\/?$/.test(u.pathname))throw Error('위젯 주소 확인 필요');return widget;}
+module.exports=function(app,{supabase,getStation,readEffectiveSettings,ingest}){
+ function auth(req,res){if(!enabled()){res.status(409).json({error:'다중 수집기 모드 미사용'});return false;}const key=String(process.env.TOONIE_COLLECTOR_SERVICE_KEY||''),given=String(req.headers['x-toonie-service-key']||'');if(key.length<32||key.length>200||Buffer.byteLength(given)!==Buffer.byteLength(key)||!crypto.timingSafeEqual(Buffer.from(key),Buffer.from(given))){res.status(401).json({error:'수집 서비스 인증 실패'});return false;}res.set('Cache-Control','no-store');return true;}
+ async function active(station){const {data,error}=await supabase.from('broadcasts').select('id').eq('station_id',station.id).eq('is_active',true).maybeSingle();if(error)throw error;return data;}
+ app.get('/api/toonie-collector/manifest',async(req,res)=>{try{
+  if(!auth(req,res))return;const owner=String(req.query.owner||''),limit=Number(req.query.limit||20);if(!uuid(owner)||!Number.isInteger(limit)||limit<1||limit>100)return res.status(400).json({error:'수집기 식별자·용량 확인 필요'});
+  const registered=[];for(let offset=0;;offset+=500){const {data,error}=await supabase.from('station_toonie_sources').select('station_id,widget_url').order('station_id').range(offset,offset+499);if(error)throw error;registered.push(...(data||[]));if(registered.length>5000)throw Error('방송국 등록 용량 확인 필요');if((data||[]).length<500)break;}
+  const sources=[];let invalid=0;for(const row of registered){if(!row.widget_url)continue;try{const {data:station,error}=await supabase.from('stations').select('id,slug').eq('id',row.station_id).maybeSingle();if(error)throw error;if(!station)continue;const broadcast=await active(station);if(!broadcast)continue;const config=await readEffectiveSettings(station.slug,broadcast.id),live=config.broadcastLiveData;if(!live?.live||live.status!=='live')continue;const widget=widgetOf(row);sources.push({stationId:station.id,station:station.slug,broadcastId:broadcast.id,widgetUrl:widget,sourceVersion:version(widget),startedAt:live.collectionStartedAt||live.startedAt});}catch(e){invalid++;}}
+  const counts=new Map();for(const s of sources)counts.set(s.sourceVersion,(counts.get(s.sourceVersion)||0)+1);const unique=sources.filter(s=>counts.get(s.sourceVersion)===1);invalid+=sources.length-unique.length;const selected=unique.slice(0,limit),{data:claims,error}=await supabase.rpc('claim_toonie_collector_stations',{p_owner:owner,p_stations:selected.map(s=>s.stationId)});if(error)throw error;const granted=new Set((claims||[]).map(s=>typeof s==='string'?s:s.station_id));res.json({ok:true,leaseSeconds:75,refreshSeconds:20,invalidSources:invalid,waitingCount:Math.max(0,unique.length-limit),sources:selected.filter(s=>granted.has(s.stationId))});
+ }catch(e){console.error('[toonie multi] manifest failed');res.status(503).json({error:'방송국 수집 목록 조회 실패'});}});
+ app.post('/api/toonie-collector/events',async(req,res)=>{try{
+  if(!auth(req,res))return;const b=req.body||{},owner=String(b.collectorOwner||'');if(!uuid(owner)||!uuid(b.broadcastId)||!/^[-A-Za-z0-9_]{1,100}$/.test(String(b.station||'')))return res.status(400).json({error:'방송국·방송·수집기 식별자 확인 필요'});
+  if(!String(b.donor||'').trim()||String(b.donor).length>100||!Number.isSafeInteger(Number(b.amount))||Number(b.amount)<=0||Number(b.amount)>1e9||!b.eventId||String(b.eventId).length>200||!Number.isFinite(Date.parse(b.receivedAt)))return res.status(400).json({error:'후원 내역 형식 확인 필요'});
+  const station=await getStation(b.station);if(!station)return res.status(404).json({error:'방송국 없음'});const broadcast=await active(station);
+  if(!broadcast||broadcast.id!==b.broadcastId)return res.json({ok:true,skipped:true,reason:'previous_broadcast'});
+  const config=await readEffectiveSettings(station.slug,broadcast.id),reason=captureReason(config.broadcastLiveData,b,broadcast.id);if(reason)return res.json({ok:true,skipped:true,reason});
+  const {data:lease,error:le}=await supabase.from('toonie_collector_leases').select('owner,expires_at').eq('station_id',station.id).maybeSingle();if(le)throw le;if(!lease||lease.owner!==owner||Date.parse(lease.expires_at)<=Date.now())return res.status(409).json({error:'수집 연결 임대 갱신 필요'});
+  const {data:source,error:se}=await supabase.from('station_toonie_sources').select('station_id,widget_url').eq('station_id',station.id).maybeSingle();if(se)throw se;if(!source?.widget_url)return res.json({ok:true,skipped:true,reason:'source_removed'});if(b.sourceVersion&&b.sourceVersion!==version(widgetOf(source)))return res.json({ok:true,skipped:true,reason:'source_changed'});
+  const {collectorOwner,sourceVersion,...event}=b;res.json(await ingest(event));
+ }catch(e){console.error('[toonie multi] event failed');res.status(503).json({error:'수집 내역 저장 실패 · 재시도'});}});
+ return {async status(stationId){if(!enabled())return null;const {data,error}=await supabase.from('toonie_collector_leases').select('expires_at').eq('station_id',stationId).maybeSingle();if(error)return '다중 수집기 상태 확인 필요';return data&&Date.parse(data.expires_at)>Date.now()?'다중 수집기 배정됨':'다중 수집기 대기 · 방송시작·위젯 등록 확인';}};
+};
+module.exports.enabled=enabled;
+
+module.exports.legacyGuard=(req,res,next)=>{if(enabled()&&req.method==='POST'&&((req.path==='/api/collection-ws-auth'&&req.body?.source==='toonie')||req.path==='/api/toonie-candidates'))return res.status(409).json({error:'다중 투네 수집기 전용 경로 사용'});next();};
