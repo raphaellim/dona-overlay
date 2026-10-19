@@ -28,7 +28,7 @@ module.exports=function(server,{port}){
        ws.auth={kind:'web',station,authPath};send(ws,{type:'ready',deploymentVersion});
      }else if(['device','toonie','account'].includes(m.kind)){
        const token=String(m.token||'');if(token.length<32||token.length>200)throw Error('연결 토큰 확인 필요');
-       const state=await invoke(req,m.kind==='device'?'/api/bank-devices/sync':'/api/collection-ws-auth','POST',{station:m.station,source:m.kind},{[m.kind==='device'?'x-bank-device-token':'x-auto-donation-token']:token});
+       const state=await invoke(req,m.kind==='device'?'/api/bank-devices/sync':'/api/collection-ws-auth','POST',{station:m.station,source:m.kind,resolveWidget:m.kind==='toonie'&&m.resolveWidget===true},{[m.kind==='device'?'x-bank-device-token':'x-auto-donation-token']:token});
        if(state.status!==200){send(ws,{type:'auth-error',code:state.status,error:JSON.parse(state.body).error});ws.close(1008,'authentication failed');return;}
        const config=JSON.parse(state.body);ws.auth={kind:m.kind,token,station:config.station||m.station};send(ws,{type:'ready',config});
      }else throw Error('연결 종류 확인 필요');clearTimeout(deadline);return;
@@ -39,6 +39,11 @@ module.exports=function(server,{port}){
       if(!/^\/api\/[A-Za-z0-9_/?=&%.:+-]+$/.test(path)||!['GET','POST','PUT','PATCH','DELETE'].includes(method)||/\/(?:auth|login|logout)|callback|pair$/.test(path))throw Error('지원하지 않는 요청');
       const h={};for(const key of ['x-station-slug','x-overlay-token','x-station-token','x-broadcast-password'])if(m.headers?.[key])h[key]=String(m.headers[key]).slice(0,300);
       const target=new URL(path,'http://localhost');if(target.searchParams.has('station')&&target.searchParams.get('station')!==ws.auth.station)throw Error('다른 방송국 요청 차단');if(m.body?.station&&m.body.station!==ws.auth.station)throw Error('다른 방송국 요청 차단');target.searchParams.set('station',ws.auth.station);h['x-station-slug']=ws.auth.station;const result=await invoke(req,target.pathname+target.search,method,m.body,h);send(ws,{type:'response',id:m.id,...result});return;
+    }
+    if(m.type==='source-config'&&ws.auth.kind==='toonie'){
+      const a=ws.auth,result=await invoke(req,'/api/collection-ws-auth','POST',{station:a.station,source:'toonie',resolveWidget:true},{'x-auto-donation-token':a.token});
+      if(result.status===200)send(ws,{type:'source-config',config:JSON.parse(result.body)});
+      else{send(ws,{type:'source-error',code:result.status});if(result.status===401)ws.close(1008,'collector revoked');}return;
     }
     if(m.type==='status'&&ws.auth.kind==='device'){const result=await invoke(req,'/api/bank-devices/sync','POST',m.body||{},{'x-bank-device-token':ws.auth.token});const config=JSON.parse(result.body);send(ws,{type:result.status===200?'config':'auth-error',code:result.status,config,error:config.error});if(result.status!==200)ws.close(1008,'device revoked');return;}
     if(m.type==='event'&&ws.auth.kind!=='web'){

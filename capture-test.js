@@ -5,7 +5,20 @@ module.exports=function(app,{supabase,getStation,getStationContext,managerAllowe
  const admin=async(req,res)=>{const ctx=await getStationContext(req,res);if(!ctx)return null;if(!await stationAllowed(req,ctx.station)){res.status(403).json({error:'방송국 관리자 권한 필요'});return null;}return ctx;};
  app.get('/api/station/collection-token',async(req,res)=>{try{const ctx=await admin(req,res);if(!ctx)return;const {data,error}=await supabase.from('station_collection_tokens').select('updated_at').eq('station_id',ctx.station.id).maybeSingle();if(error)throw error;res.json({issued:!!data,updatedAt:data?.updated_at||null});}catch(e){res.status(500).json({error:e.message});}});
  app.post('/api/station/collection-token',async(req,res)=>{try{const ctx=await admin(req,res);if(!ctx)return;const token=crypto.randomBytes(32).toString('base64url');const {error}=await supabase.from('station_collection_tokens').upsert({station_id:ctx.station.id,token_hash:hash(token),updated_at:new Date().toISOString()},{onConflict:'station_id'});if(error)throw error;res.set('Cache-Control','no-store');res.json({token});}catch(e){res.status(500).json({error:e.message});}});
- app.post('/api/collection-ws-auth',async(req,res)=>{try{const given=String(req.headers['x-auto-donation-token']||'');const station=await getStation(String(req.body?.station||''));if(!station||given.length<32||given.length>200)return res.status(401).json({error:'방송국 수집 토큰 오류'});const {data,error}=await supabase.from('station_collection_tokens').select('token_hash').eq('station_id',station.id).maybeSingle();if(error)throw error;if(!data||data.token_hash!==hash(given))return res.status(401).json({error:'방송국 수집 토큰 오류'});res.json({station:station.slug});}catch(e){res.status(500).json({error:e.message});}});
+ app.post('/api/collection-ws-auth',async(req,res)=>{try{const given=String(req.headers['x-auto-donation-token']||'');const station=await getStation(String(req.body?.station||''));if(!station||given.length<32||given.length>200)return res.status(401).json({error:'방송국 수집 토큰 오류'});const {data,error}=await supabase.from('station_collection_tokens').select('token_hash').eq('station_id',station.id).maybeSingle();if(error)throw error;if(!data||data.token_hash!==hash(given))return res.status(401).json({error:'방송국 수집 토큰 오류'});const config={station:station.slug};
+ if(req.body?.source==='toonie'&&req.body?.resolveWidget===true){
+  const active=await ensureActiveBroadcast(station.id),settings=await readEffectiveSettings(station.slug,active.id),live=settings.broadcastLiveData;
+  config.broadcastId=active.id;config.enabled=live?.live===true&&live.status==='live';
+  config.startedAt=live?.collectionStartedAt||live?.startedAt||null;
+  if(config.enabled){
+   const {data:source,error:sourceError}=await supabase.from('station_toonie_sources').select('widget_url').eq('station_id',station.id).maybeSingle();if(sourceError)throw sourceError;
+   if(!source?.widget_url)return res.status(409).json({error:'방송국 투네 위젯 등록 필요'});
+   const widget=await require('./toonie-vault').read(supabase,{...source,station_id:station.id});
+   const u=new URL(widget);if(u.origin!=='https://toon.at'||u.username||u.password||u.search||u.hash||!/^\/widget\/alertbox\/[a-zA-Z0-9]+\/?$/.test(u.pathname))throw Error('방송국 투네 위젯 주소 확인 필요');
+   config.widgetUrl=u.href;
+  }
+ }
+ res.set('Cache-Control','no-store');res.json(config);}catch(e){console.error('[collection source] 설정 조회 실패');res.status(500).json({error:'수집 설정 조회 실패'});}});
  async function save(source,b,station){
  const donor=String(b.donor||'').trim(),amount=Number(b.amount),eventId=String(b.eventId||'');
  if(source==='account'&&Number.isSafeInteger(amount)&&amount>0&&amount<1000)return {ok:true,skipped:true,reason:'below_minimum',minimumAmount:1000};
