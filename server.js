@@ -4165,7 +4165,8 @@ app.get('/api/summary', async (req, res) => {
     }
 
     try {
-      res.json(buildSummary(settings, donations, ctx.active, ctx.station));
+      const summaryDonations=await donorIdentity.summaryRows(ctx.station.slug,donations);
+      res.json(buildSummary(settings, summaryDonations, ctx.active, ctx.station));
     } catch (sumErr) {
       console.error('[api/summary buildSummary]', sumErr);
       const safeSettings = normalizeSettings(settings || {});

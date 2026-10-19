@@ -19,8 +19,9 @@ function create({supabase,withSettingsMutation}){
  async function register(slug,source,nickname){source=normalize(source);nickname=normalize(nickname);return withSettingsMutation(async()=>{const s=await store(),entries=s.$donorIdentity?.[slug]||[];const old=entries.find(e=>e.source===source);if(old&&old.nickname!==nickname)throw Error('이 입금자명은 다른 닉네임에 연결되어 있습니다. 닉네임 관리에서 수정하세요.');const valid=clean([...entries.filter(e=>e.source!==source),{source,nickname}]);s.$donorIdentity={...s.$donorIdentity,[slug]:valid};const {error}=await supabase.from('settings').upsert({id:3,data:s,updated_at:new Date().toISOString()},{onConflict:'id'});if(error)throw error;return valid;});}
  async function names(slug){return resolver(await list(slug));}
  async function canonicalRows(slug,rows){const match=matcher(await list(slug));return rows.map(r=>{const raw=r.donor??r.donor_name;return {...r,donor:match(raw).nickname||raw};});}
+ async function summaryRows(slug,rows){const match=matcher(await list(slug));return rows.map(r=>{if(Number(r.accountAmount??r.account_amount??0)<=0)return {...r};const hit=match(r.donor);return hit.nickname?{...r,originalDonor:r.originalDonor??r.donor,donor:hit.nickname}:{...r};});}
  async function accountRows(slug,rows){const name=await names(slug);return rows.map(r=>({...r,donor:name(r.donor??r.donor_name)}));}
  async function state(slug,input){const name=await names(slug);const output=structuredClone(input);function visit(v,key=''){if(Array.isArray(v)){for(const r of v)visit(r,key);return;}if(!v||typeof v!=='object')return;if(typeof v.donor==='string'&&(key==='accountDonors'||Number(v.accountAmount??v.account_amount??v.account)>0)){v.donor=name(v.donor);v.donorDisplayResolved=true;}for(const [k,x]of Object.entries(v))if(x&&typeof x==='object')visit(x,k);}visit(output);return output;}
- return {list,save,names,match,register,canonicalRows,accountRows,state};
+ return {list,save,names,match,register,canonicalRows,summaryRows,accountRows,state};
 }
 module.exports={create,clean,resolver,matcher};
