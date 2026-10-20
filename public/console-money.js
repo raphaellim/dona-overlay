@@ -1,0 +1,2 @@
+/* Only the console inputs use thousand-won units. APIs and stored values stay in won. */
+(()=>{'use strict';function toWon(value){const text=String(value??'').trim();if(!/^\d+(?:\.\d{0,3})?$/.test(text))throw Error('금액은 천원 단위로 입력하세요. 예: 1 = 1,000원 / 12.5 = 12,500원');const [whole,fraction='']=text.split('.'),won=Number(whole)*1000+Number(fraction.padEnd(3,'0'));if(!Number.isSafeInteger(won)||won>1e11)throw Error('입력 금액이 너무 큽니다.');return won;}window.ConsoleMoney={toWon,fromWon:value=>Number(value||0)/1000};})();
