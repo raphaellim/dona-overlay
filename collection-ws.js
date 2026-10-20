@@ -8,11 +8,19 @@ module.exports=function(server,{port}){
  server.on('upgrade',(req,socket,head)=>{if(req.url.split('?')[0]!=='/ws/collection')return;
   try{if(req.headers.origin&&new URL(req.headers.origin).host!==req.headers.host){socket.destroy();return;}}catch{socket.destroy();return;}
   wss.handleUpgrade(req,socket,head,ws=>wss.emit('connection',ws,req));});
+ const transient=code=>code===408||code===429||code>=500;
  const send=(ws,b)=>{if(ws.readyState===WebSocket.OPEN&&ws.bufferedAmount<2e6)ws.send(JSON.stringify(b));};
  function invoke(req,path,method,body,headers={}){return new Promise((resolve,reject)=>{
   const bytes=body===undefined?'':JSON.stringify(body);
   const r=http.request({host:'127.0.0.1',port:typeof port==='function'?port():port,path,method,headers:{host:req.headers.host,cookie:req.headers.cookie||'',origin:req.headers.origin||'',...headers,'content-type':'application/json','content-length':Buffer.byteLength(bytes)}},res=>{let text='',size=0;res.on('data',chunk=>{size+=chunk.length;if(size>4e6){r.destroy(Error('응답 크기 초과'));return;}text+=chunk;});res.on('end',()=>resolve({status:res.statusCode,body:text,contentType:res.headers['content-type']}));});r.setTimeout(15000,()=>r.destroy(Error('서버 응답 지연')));r.on('error',reject);r.end(bytes);
  });}
+ async function refreshDevice(ws,body={}){
+  if(ws.readyState!==WebSocket.OPEN||ws.auth?.kind!=='device')return;
+  try{const result=await invoke(ws.request,'/api/bank-devices/sync','POST',body,{'x-bank-device-token':ws.auth.token});const config=JSON.parse(result.body);
+   if(result.status===200){ws.auth.station=config.station;ws.auth.deviceId=config.deviceId;ws.lastConfigAt=Date.now();send(ws,{type:'config',config});}
+   else{const retry=transient(result.status);send(ws,{type:retry?'config-error':'auth-error',code:result.status,error:config.error});ws.close(retry?1013:1008,retry?'temporarily unavailable':'device revoked');}
+  }catch(e){send(ws,{type:'config-error',code:503,error:'서버 상태 확인 지연 · 재연결 후 재검증'});ws.close(1013,'verification unavailable');}
+ }
  wss.on('connection',(ws,req)=>{
   ws.alive=true;ws.request=req;ws.auth=null;ws.chain=Promise.resolve();let count=0,windowAt=Date.now(),queued=0;
   const deadline=setTimeout(()=>ws.close(1008,'authentication required'),10000);
@@ -29,8 +37,8 @@ module.exports=function(server,{port}){
      }else if(['device','toonie','account'].includes(m.kind)){
        const token=String(m.token||'');if(token.length<32||token.length>200)throw Error('연결 토큰 확인 필요');
        const state=await invoke(req,m.kind==='device'?'/api/bank-devices/sync':'/api/collection-ws-auth','POST',{station:m.station,source:m.kind,resolveWidget:m.kind==='toonie'&&m.resolveWidget===true},{[m.kind==='device'?'x-bank-device-token':'x-auto-donation-token']:token});
-       if(state.status!==200){send(ws,{type:'auth-error',code:state.status,error:JSON.parse(state.body).error});ws.close(1008,'authentication failed');return;}
-       const config=JSON.parse(state.body);ws.auth={kind:m.kind,token,station:config.station||m.station};send(ws,{type:'ready',config});
+       if(state.status!==200){send(ws,{type:transient(state.status)?'config-error':'auth-error',code:state.status,error:JSON.parse(state.body).error});ws.close(transient(state.status)?1013:1008,transient(state.status)?'temporarily unavailable':'authentication failed');return;}
+       const config=JSON.parse(state.body);ws.auth={kind:m.kind,token,station:config.station||m.station,deviceId:config.deviceId};ws.lastConfigAt=Date.now();send(ws,{type:'ready',config});
      }else throw Error('연결 종류 확인 필요');clearTimeout(deadline);return;
     }
     if(!ws.auth)throw Error('인증 필요');
@@ -45,7 +53,7 @@ module.exports=function(server,{port}){
       if(result.status===200)send(ws,{type:'source-config',config:JSON.parse(result.body)});
       else{send(ws,{type:'source-error',code:result.status});if(result.status===401)ws.close(1008,'collector revoked');}return;
     }
-    if(m.type==='status'&&ws.auth.kind==='device'){const result=await invoke(req,'/api/bank-devices/sync','POST',m.body||{},{'x-bank-device-token':ws.auth.token});const config=JSON.parse(result.body);send(ws,{type:result.status===200?'config':'auth-error',code:result.status,config,error:config.error});if(result.status!==200)ws.close(1008,'device revoked');return;}
+    if(m.type==='status'&&ws.auth.kind==='device'){await refreshDevice(ws,m.body||{});return;}
     if(m.type==='event'&&ws.auth.kind!=='web'){
       const b=m.body||{};const a=ws.auth;if(a.station&&b.station!==a.station)throw Error('다른 방송국 내역');
       const result=await invoke(req,a.kind==='device'?'/api/bank-device-candidates':'/api/'+a.kind+'-candidates','POST',b,{[a.kind==='device'?'x-bank-device-token':'x-auto-donation-token']:a.token});
@@ -57,6 +65,10 @@ module.exports=function(server,{port}){
  const timer=setInterval(()=>{for(const ws of wss.clients){if(!ws.alive){ws.terminate();continue;}ws.alive=false;ws.ping();}},60000);timer.unref();server.on('close',()=>{clearInterval(timer);wss.close();});
  return {
   async notify(station,type,payload){for(const ws of wss.clients)if(ws.auth?.kind==='web'&&ws.auth.station===station){try{const access=ws.lastAccess&&Date.now()-ws.lastAccess.at<3000?ws.lastAccess.value:await invoke(ws.request,ws.auth.authPath,'GET');ws.lastAccess={at:Date.now(),value:access};if(access.status!==200){ws.close(1008,'access revoked');continue;}send(ws,{type:'changed',topic:type,payload:['alert','preset','allowance','distribution','funding'].includes(type)?payload:undefined});}catch{ws.close(1011,'auth unavailable');}}},
-  async devicesChanged(){for(const ws of wss.clients)if(ws.auth?.kind==='device'){try{const result=await invoke({headers:{host:'localhost'}},'/api/bank-devices/sync','POST',{}, {'x-bank-device-token':ws.auth.token});const config=JSON.parse(result.body);if(result.status===200){ws.auth.station=config.station;send(ws,{type:'config',config});}else{send(ws,{type:'auth-error',code:result.status,error:config.error});ws.close(1008,'device revoked');}}catch{}}}
+  deviceConnection(deviceId){const sockets=[...wss.clients].filter(ws=>ws.readyState===WebSocket.OPEN&&ws.auth?.kind==='device'&&String(ws.auth.deviceId)===String(deviceId));const at=Math.max(0,...sockets.map(ws=>ws.lastConfigAt||0));return {transportConnected:sockets.length>0,lastVerifiedAt:at?new Date(at).toISOString():null,heartbeatSeconds:30};},
+  async devicesChanged(){await Promise.all([...wss.clients].filter(ws=>ws.auth?.kind==='device').map(ws=>{
+   ws.refreshDirty=true;if(ws.refreshPending)return ws.refreshPending;
+   ws.refreshPending=ws.chain=ws.chain.catch(()=>{}).then(async()=>{while(ws.refreshDirty&&ws.readyState===WebSocket.OPEN){ws.refreshDirty=false;await refreshDevice(ws);}}).finally(()=>{ws.refreshPending=null;});return ws.refreshPending;
+  }));}
  };
 };
