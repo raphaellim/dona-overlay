@@ -5,6 +5,7 @@ async function api(path,body,signal){const controller=new AbortController(),abor
 // Latest-state-only reporting; independent of media/queue success. Never blocks playback.
 let rankingSeq=0,rankingActive=null,rankingPending=null,rankingSending=false;
 function rankingSignal(active,p){if(active){if(!Number.isSafeInteger(Number(p?.amount))||Number(p.amount)<5000)return;rankingActive={amount:Number(p.amount),broadcastId:p.broadcastId||''};}else{if(!rankingActive)return;const old=rankingActive;rankingActive=null;p=old;}const state=active?rankingActive:p;rankingPending={playerId:owner,seq:++rankingSeq,active,amount:state.amount,broadcastId:state.broadcastId};drainRankingSignal();}
+async function prepareRanking(p){if(!Number.isSafeInteger(Number(p?.amount))||Number(p.amount)<5000)return;rankingActive={amount:Number(p.amount),broadcastId:p.broadcastId||''};const value={playerId:owner,seq:++rankingSeq,active:true,prepare:true,...rankingActive},c=new AbortController(),timeout=setTimeout(()=>c.abort(),3000);try{await rawFetch('/api/donor-ranking/visibility?'+q,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(value),signal:c.signal});}catch{}finally{clearTimeout(timeout);}}
 async function drainRankingSignal(){if(rankingSending)return;rankingSending=true;try{while(rankingPending){const value=rankingPending;rankingPending=null;const c=new AbortController(),timeout=setTimeout(()=>c.abort(),5000);try{await rawFetch('/api/donor-ranking/visibility?'+q,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(value),signal:c.signal,keepalive:true});}catch{}finally{clearTimeout(timeout);}}}finally{rankingSending=false;}}
 
 function delay(ms,signal){return new Promise((resolve,reject)=>{if(signal.aborted)return reject(Error('취소됨'));const onAbort=()=>{clearTimeout(t);reject(Error('취소됨'));};const t=setTimeout(()=>{signal.removeEventListener('abort',onAbort);resolve();},ms);signal.addEventListener('abort',onAbort,{once:true});});}
@@ -32,7 +33,7 @@ try{
  if(media.image&&!gif&&($('image').naturalWidth>4096||$('image').naturalHeight>4096))throw Error('이미지는 가로·세로 4096px 이하를 사용하세요');
  if(audio&&(!Number.isFinite(audio.duration)||audio.duration>180))throw Error('음원은 180초 이내 파일을 사용하세요');
  
- stage='재생 시작 확인';await touch(job,'start');rankingSignal(true,p);
+ stage='재생 시작 확인';await touch(job,'start');stage='순위판 숨김 확인';await prepareRanking(p);if(signal.aborted)throw Error('취소됨');
  if(session.intro){stage='시작음 재생';status('시작음 재생 중');await playIntro(session.intro,controller);session.intro.pause();session.intro.removeAttribute('src');session.intro.load();session.intro=null;$('unlock').onclick=null;}
 
  if(gif){stage='GIF 로딩';status('GIF 준비 중');const blob=await fetchGif(media.image,signal);if(signal.aborted)throw Error('취소됨');session.gifUrl=URL.createObjectURL(blob);const loaded=eventReady($('image'),'load',signal);$('image').src=session.gifUrl;await loaded;if($('image').naturalWidth>960||$('image').naturalHeight>540)throw Error('GIF는 960×540px 이하를 사용하세요');$('image').hidden=false;}
