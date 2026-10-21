@@ -70,6 +70,8 @@ app.use((req, res, next) => {
 
   res.on('finish', () => {
     if (res.statusCode < 200 || res.statusCode >= 300) return;
+    // mobile-transport-status-no-overlay-invalidate
+    if(['/api/bank-devices/sync','/api/collection-ws-auth'].includes(req.path))return;
     overlayStateCache.invalidate();
     if(['/api/bank-devices/sync','/api/collection-ws-auth','/api/bank-device-candidates','/api/account-candidates','/api/toonie-candidates'].includes(req.path))return;
     const slug = getStationSlug(req);
@@ -4390,7 +4392,7 @@ const collectionCapture=require('./capture-test')(app,{supabase,getStation,getSt
  await maybeSendDonationYoutubeChat(ctx,settings,candidate.routing.receiptDonor||candidate.donor,candidate.amount,0,[],{receiptOnly:true,eventId:candidate.id});
 }});
 const toonieMulti=require('./toonie-multi-collector')(app,{supabase,getStation,readEffectiveSettings,ingest:collectionCapture.ingestToonie});
-require('./bank-devices')(app,{supabase,getStation,getStationContext,stationAllowed,isMasterRequest,saveAccount:collectionCapture.saveAccount,withSettingsMutation,ensureActiveBroadcast,readEffectiveSettings,changed:()=>collectionWs.devicesChanged()});
+require('./bank-devices')(app,{supabase,getStation,getStationContext,stationAllowed,isMasterRequest,saveAccount:collectionCapture.saveAccount,withSettingsMutation,ensureActiveBroadcast,readEffectiveSettings,saveEffectiveSettings,setActiveBroadcast,getStationBroadcastOrNull,copySettingsToBroadcast,getConnectionState:id=>collectionWs.deviceConnection(id),broadcastChanged:()=>{toonieCollector?.sync();return collectionWs.devicesChanged();},changed:()=>collectionWs.devicesChanged()});
 
 // 휴대폰 은행 알림 또는 투네이션 위젯 수집기에서 전달하는 자동 후원.
 // AUTO_DONATION_TOKEN은 방송국별로 별도 발급하고 HTTPS 요청 헤더에만 넣습니다.
