@@ -1,7 +1,6 @@
 'use strict';
 // Uses the same station scope, settings mutation queue and live-data shape as the web controls.
 module.exports=function({supabase,withSettingsMutation,ensureActiveBroadcast,readEffectiveSettings,saveEffectiveSettings,setActiveBroadcast,getStationBroadcastOrNull,copySettingsToBroadcast,sessions,changed}){
- const solo=require('./mobile-solo-default')({supabase,saveEffectiveSettings});
  const locks=new Map(),valid=x=>typeof x==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(x);
  const live=x=>x?.live===true&&x?.status==='live';
  const stamp=x=>String(x?.collectionStartedAt||x?.startedAt||'');
@@ -30,8 +29,7 @@ module.exports=function({supabase,withSettingsMutation,ensureActiveBroadcast,rea
    if(live(currentSettings.broadcastLiveData)&&String(current.id)!==targetId)throw Error('다른 방송이 진행 중입니다. 기존 방송을 종료한 뒤 새 방송을 연결하세요.');
    const title=String(b.title||'').trim();if(b.mode==='new'&&(!title||title.length>100||String(b.broadcastPassword||'').length>100))throw Error('방송 제목·입장 비밀번호를 확인하세요.');
    if(b.mode==='existing'&&!await getStationBroadcastOrNull(station.id,targetId))throw Error('이 방송국의 방송을 선택하세요.');
-   const soloConfig=b.mode==='new'?await solo.plan(device,station,currentSettings):null;
-   op={soloConfig,deviceId:String(device.id),stationId:String(station.id),targetId,mode:b.mode,title,expectedActiveId:String(current.id),phase:'pending',runStamp:live(currentSettings.broadcastLiveData)&&String(current.id)===targetId?stamp(currentSettings.broadcastLiveData):new Date().toISOString()};
+   op={deviceId:String(device.id),stationId:String(station.id),targetId,mode:b.mode,title,expectedActiveId:String(current.id),phase:'pending',runStamp:live(currentSettings.broadcastLiveData)&&String(current.id)===targetId?stamp(currentSettings.broadcastLiveData):new Date().toISOString()};
    await save(station.id,b.requestId,op);
   }
   let target=await getStationBroadcastOrNull(station.id,op.targetId);
@@ -41,7 +39,6 @@ module.exports=function({supabase,withSettingsMutation,ensureActiveBroadcast,rea
    target=await getStationBroadcastOrNull(station.id,op.targetId);
   }
   if(op.mode==='new'&&!op.settingsCopied){await copySettingsToBroadcast(station.slug,op.targetId);op.settingsCopied=true;await save(station.id,b.requestId,op);}
-  if(op.mode==='new'&&!op.soloApplied){if(!op.soloConfig){const settings=await readEffectiveSettings(station.slug,op.targetId);op.soloConfig=await solo.plan(device,station,settings);}await solo.apply(station,op.targetId,op.soloConfig);op.soloApplied=true;await save(station.id,b.requestId,op);}
   const current=await ensureActiveBroadcast(station.id);
   if(String(current.id)!==op.expectedActiveId&&String(current.id)!==op.targetId)throw Error('다른 방송으로 변경되어 시작을 중지했습니다.');
   let settings=await readEffectiveSettings(station.slug,op.targetId),previous=settings.broadcastLiveData;
