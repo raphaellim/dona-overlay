@@ -3,8 +3,11 @@ const normalize=v=>String(v??'').normalize('NFC').trim();
 function clean(entries){if(!Array.isArray(entries)||entries.length>5000)throw Error('등록은 최대 5,000개입니다.');const seen=new Set();return entries.map(e=>{const source=normalize(e.source),nickname=normalize(e.nickname);if(!source||!nickname||source.length>40||Array.from(nickname).length>12||/[\r\n\x00-\x1f]/.test(source+nickname))throw Error('입금자명과 닉네임을 확인하세요. 닉네임은 12글자까지입니다.');if(seen.has(source))throw Error('같은 입금자명이 중복되었습니다.');seen.add(source);return {source,nickname};});}
 function matcher(entries){
  const exact=new Map(entries.map(e=>[normalize(e.source),normalize(e.nickname)]));
+ const prefixes=[...exact].sort((a,b)=>b[0].length-a[0].length);
  const registered=[...new Set(entries.map(e=>normalize(e.nickname)))];
  return value=>{const raw=normalize(value);if(exact.has(raw))return {nickname:exact.get(raw),kind:'alias'};
+ const prefix=prefixes.find(([source])=>raw.startsWith(source));
+ if(prefix)return {nickname:prefix[1],kind:'alias-prefix',message:raw.slice(prefix[0].length).trim(),source:prefix[0]};
  if(registered.includes(raw))return {nickname:raw,kind:'exact'};
  const matches=registered.filter(n=>Array.from(n).length>=2&&raw.includes(n));
  const best=matches.filter(n=>!matches.some(other=>other!==n&&other.includes(n)));
