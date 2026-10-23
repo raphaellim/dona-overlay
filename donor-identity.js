@@ -7,6 +7,9 @@ function matcher(entries){
  return value=>{const raw=normalize(value);if(exact.has(raw))return {nickname:exact.get(raw),kind:'alias'};
  if(registered.includes(raw))return {nickname:raw,kind:'exact'};
  const candidates=[...exact.entries()].map(([source,nickname])=>({source,nickname})).concat(registered.map(nickname=>({source:nickname,nickname})));
+ // A registered name at the beginning followed by an explicit separator owns the donor.
+ const prefixes=candidates.filter(e=>raw.startsWith(e.source)&&/^[\s/,:，：]/u.test(raw.slice(e.source.length)));
+ if(prefixes.length){const longest=Math.max(...prefixes.map(e=>e.source.length)),best=prefixes.filter(e=>e.source.length===longest),names=[...new Set(best.map(e=>e.nickname))];if(names.length!==1)return {ambiguous:true,candidates:names};const selected=best[0];return {nickname:selected.nickname,kind:'prefix',matchedText:selected.source,message:raw.slice(selected.source.length).replace(/^[\s/,:，：]+/u,'').trim()};}
  const matches=candidates.filter(e=>Array.from(e.source).length>=2&&raw.includes(e.source));
  const best=matches.filter(e=>!matches.some(other=>other.source!==e.source&&other.source.includes(e.source)));
  const names=[...new Set(best.map(e=>e.nickname))];
