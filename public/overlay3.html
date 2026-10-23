@@ -1448,7 +1448,7 @@ body #overlayPanel #accountBox{background:rgba(10,15,24,var(--account-bg-opacity
 body #overlayPanel #noticeBox .notice-line,body #overlayPanel #noticeBox .notice-line *{font-weight:700!important;text-shadow:0 1px 1px rgba(0,0,0,.9)!important}
 body #overlayPanel #fundingBox .o3-funding-detail,body #overlayPanel #fundingBox .o3-funding-detail *{font-weight:700!important;text-shadow:0 1px 1px rgba(0,0,0,.9)!important}
 body #overlayPanel #accountBox .name,body #overlayPanel #accountBox .amount{font-weight:800!important}
-</style><style>body #overlayPanel,body #overlayPanel>.overlay-box,body #v5Alert-alert{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}</style><link rel="stylesheet" href="/overlay3-readable.css?v=616831"><link rel="stylesheet" href="/overlay3-preset-cards.css?v=616856">
+</style><style>body #overlayPanel,body #overlayPanel>.overlay-box,body #v5Alert-alert{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}</style><link rel="stylesheet" href="/overlay3-readable.css?v=616831"><link rel="stylesheet" href="/overlay3-preset-cards.css?v=616858">
 </head>
 
 <body class="theme-gold">
@@ -2490,8 +2490,7 @@ const rows=allRows.filter(r=>!others.has(normalizeName(r.creator||r.name||''))).
         function signClass(value) {
           const n = Number(value || 0);
           if (n < 0) return "red";
-          if (n > 0) return "plus";
-          return "muted";
+          return "plus";
         }
 
         $list.innerHTML = rows.map((row,rank) => {
@@ -2685,6 +2684,7 @@ const rows=allRows.filter(r=>!others.has(normalizeName(r.creator||r.name||''))).
 
 
       function playAlertQueue() {
+        alertQueue=[];return; // v58: ordinary donation playback belongs to dedicated source.
   if(window.UNIFIED_ALERTS!==false){alertQueue=[];return;}
   if (alertShowing || alertPlaying || !alertQueue.length) return;
 
@@ -2878,6 +2878,7 @@ const rows=allRows.filter(r=>!others.has(normalizeName(r.creator||r.name||''))).
       }
 
       async function checkManualSoundEvents() {
+        return; // v58: never claim dedicated source media from status overlay.
         try {
           if (IS_MONITOR) return;
           if (alertShowing || alertPlaying || alertQueue.length > 0) return;
@@ -3284,7 +3285,7 @@ function updateBroadcastTimer() {
 
 <script>try{if(new URLSearchParams(location.search).get("bg")==="1") document.body.classList.add("test-bg");}catch(e){}</script>
 
-<script>setInterval(()=>document.querySelectorAll('[data-donation-at]').forEach(e=>{const s=Math.max(0,Math.floor((Date.now()-Date.parse(e.dataset.donationAt))/1000));e.textContent='['+(s<1?'방금 전':s<60?s+'초 전':Math.floor(s/60)+'분 전')+']';}),1000);</script><script src="/overlay3-display.js?v=6166"></script><script src="/alert-queue.js?v=6166"></script><script src="/overlay3-alert.js?v=6166"></script>
+<script>setInterval(()=>document.querySelectorAll('[data-donation-at]').forEach(e=>{const s=Math.max(0,Math.floor((Date.now()-Date.parse(e.dataset.donationAt))/1000));e.textContent='['+(s<1?'방금 전':s<60?s+'초 전':Math.floor(s/60)+'분 전')+']';}),1000);</script><script src="/overlay3-display.js?v=6166"></script><script src="/alert-queue.js?v=6166"></script>
 <script>
 (()=>{const track=document.getElementById('rollerTrack'),box=document.getElementById('accountBox');if(!track||!box)return;let frame=0;
 const measure=document.createElement('canvas').getContext('2d');
@@ -3293,7 +3294,7 @@ function schedule(){if(frame)return;frame=requestAnimationFrame(()=>{frame=0;for
 new MutationObserver(schedule).observe(track,{childList:true,subtree:true,characterData:true});if(window.ResizeObserver)new ResizeObserver(schedule).observe(box);document.fonts?.ready.then(schedule);document.fonts?.addEventListener('loadingdone',schedule);window.addEventListener('resize',schedule);schedule();
 })();
 </script>
-<script src="/preset-mini-alert.js?v=6166"></script><script src="/funding-design.js?v=616856"></script><script src="/overlay3-readable.js?v=616831"></script><script src="/overlay3-counter-fit.js?v=616856"></script>
+<script src="/preset-mini-alert.js?v=616858"></script><script src="/funding-design.js?v=616856"></script><script src="/overlay3-readable.js?v=616831"></script><script src="/overlay3-counter-fit.js?v=616856"></script>
 </body>
 
 </html>

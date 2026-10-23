@@ -15,3 +15,23 @@ html body #overlayPanel .preset-white-icon{display:block!important;width:21px!im
 html body #overlayPanel .preset-icon-label{font-size:12px!important;color:#fff!important}
 html body #overlayPanel .creator-align-opt{display:inline-flex!important;align-items:center!important;gap:3px!important}
 html body #overlayPanel .creator-align-opt .preset-white-icon{width:14px!important;height:14px!important;min-width:14px!important;flex-basis:14px!important}
+/* v58: no outer frame; keep each section's chosen background opacity. */
+html body #overlayPanel,html body #overlayPanel.v5-combined{border:0!important;outline:0!important;box-shadow:none!important;border-radius:0!important;background:transparent!important;overflow:visible!important;position:relative!important}
+html body #overlayPanel #accountBox{border:0!important;box-shadow:none!important;border-radius:5px!important}
+html body #overlayPanel #accountBox .account-row{gap:6px!important;align-items:center!important}
+html body #overlayPanel #accountBox .account-title{flex:0 0 29px!important;width:29px!important;min-width:29px!important;font-size:14px!important;text-shadow:none!important}
+html body #overlayPanel #accountBox .account-title::before{font-size:14px!important;text-shadow:none!important;letter-spacing:0!important}
+html body #overlayPanel #accountBox :is(.name,.amount,.account-glyph){text-shadow:none!important;filter:none!important;-webkit-text-stroke:0!important}
+html body #overlayPanel #accountBox .account-donor-group{gap:4px!important}
+html body #overlayPanel #allowanceBox .solo-preset.neutral{background:rgba(38,110,85,var(--overlay-bg-opacity,.65))!important;color:#adf4d6!important}
+html body #optionAlert,html body #v5Alert-alert,html body #v5Alert-status{display:none!important;visibility:hidden!important}
+#presetMiniAlert{position:absolute;z-index:20;box-sizing:border-box;width:100%;padding:7px 9px;color:#fff;background:rgba(22,29,42,.88);border:0;border-left:2px solid var(--mini-color,#a9e8d5);border-radius:4px;box-shadow:none;font:700 17px/1.35 OverlayPretendard,system-ui,sans-serif;pointer-events:none;text-shadow:none}
+#presetMiniAlert[hidden]{display:none!important}
+#presetMiniAlert::after{content:"";position:absolute;left:-2px;bottom:0;width:80%;height:2px;background:linear-gradient(90deg,var(--mini-color,#a9e8d5) 0%,var(--mini-color,#a9e8d5) 40%,transparent 100%)}
+#presetMiniAlert .mini-head{display:flex;align-items:center;gap:6px;min-width:0;font-size:12px;color:var(--mini-color,#a9e8d5)}
+#presetMiniAlert .mini-donor{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#fff;font-weight:600}
+#presetMiniAlert .mini-main{font-size:18px;line-height:25px;overflow-wrap:anywhere;color:#fff}
+#presetMiniAlert .mini-detail{display:block;font-size:12px;line-height:17px;color:#e1e7ef;font-weight:500;overflow-wrap:anywhere}
+/* Borderless account surface, softened without changing the source width. */
+html body #overlayPanel #accountBox{border:0!important;outline:0!important;box-shadow:none!important;border-radius:8px!important;padding-top:6px!important;padding-bottom:6px!important}
+html body #overlayPanel #accountBox .account-row,html body #overlayPanel #accountBox .roller{border:0!important;outline:0!important;box-shadow:none!important;background:transparent!important}
