@@ -35,3 +35,13 @@ html body #optionAlert,html body #v5Alert-alert,html body #v5Alert-status{displa
 /* Borderless account surface, softened without changing the source width. */
 html body #overlayPanel #accountBox{border:0!important;outline:0!important;box-shadow:none!important;border-radius:8px!important;padding-top:6px!important;padding-bottom:6px!important}
 html body #overlayPanel #accountBox .account-row,html body #overlayPanel #accountBox .roller{border:0!important;outline:0!important;box-shadow:none!important;background:transparent!important}
+/* v60: section backgrounds and L markers share the same bounding box. */
+html body #overlayPanel>.overlay-box{box-sizing:border-box!important;padding-left:10px!important;border-radius:5px!important}
+html body #overlayPanel>.overlay-box::before{left:0!important;top:0!important;bottom:0!important;height:auto!important;width:2px!important;min-width:2px!important;max-width:2px!important}
+html body #overlayPanel>.overlay-box::after{left:0!important;bottom:0!important;top:auto!important;width:80%!important;height:2px!important}
+html body #overlayPanel>#accountBox{border-radius:8px!important}
+/* v61: equal 3px separation to the left and below each background. */
+html body #overlayPanel>.overlay-box{padding-left:6px!important;overflow:visible!important}
+html body #overlayPanel>.overlay-box::before{left:-3px!important;top:0!important;bottom:-3px!important;height:auto!important}
+html body #overlayPanel>.overlay-box::after{left:-3px!important;bottom:-3px!important;top:auto!important;width:80%!important;height:2px!important}
+html body #overlayPanel>.overlay-box{border:0!important}

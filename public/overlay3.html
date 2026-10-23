@@ -1448,7 +1448,7 @@ body #overlayPanel #accountBox{background:rgba(10,15,24,var(--account-bg-opacity
 body #overlayPanel #noticeBox .notice-line,body #overlayPanel #noticeBox .notice-line *{font-weight:700!important;text-shadow:0 1px 1px rgba(0,0,0,.9)!important}
 body #overlayPanel #fundingBox .o3-funding-detail,body #overlayPanel #fundingBox .o3-funding-detail *{font-weight:700!important;text-shadow:0 1px 1px rgba(0,0,0,.9)!important}
 body #overlayPanel #accountBox .name,body #overlayPanel #accountBox .amount{font-weight:800!important}
-</style><style>body #overlayPanel,body #overlayPanel>.overlay-box,body #v5Alert-alert{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}</style><link rel="stylesheet" href="/overlay3-readable.css?v=616831"><link rel="stylesheet" href="/overlay3-preset-cards.css?v=616858">
+</style><style>body #overlayPanel,body #overlayPanel>.overlay-box,body #v5Alert-alert{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}</style><link rel="stylesheet" href="/overlay3-readable.css?v=616831"><link rel="stylesheet" href="/overlay3-preset-cards.css?v=616861">
 </head>
 
 <body class="theme-gold">
@@ -3142,6 +3142,7 @@ function updateBroadcastTimer() {
         catch (e) { data = { settings: defaultSettings, accountDonors: [], creators: [], donations: [] }; }
 
         const settings = data.settings || defaultSettings;
+        window.OverlayAppearance?.apply(settings.stationStyle?.compactPreview);
         debugLog("refresh settings", { broadcastLiveData: settings.broadcastLiveData, overlaySections: settings.overlaySections, stationStyle: settings.stationStyle });
         debugLog("refresh settings loaded", {
           overlaySections: settings.overlaySections,
