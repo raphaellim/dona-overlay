@@ -1,0 +1,17 @@
+/* Compact static SVG counters. Existing transparency controls remain authoritative. */
+html body #overlayPanel>.overlay-box{margin-bottom:10px!important;border-bottom:0!important;box-shadow:none!important}
+html body #overlayPanel>.overlay-box::before{left:-7px!important;top:5px!important;bottom:0!important;width:2px!important;min-width:2px!important;max-width:2px!important;border-radius:0!important;background:var(--section-color,#ffd783)!important}
+html body #overlayPanel>.overlay-box::after{content:""!important;position:absolute!important;left:-7px!important;top:auto!important;bottom:0!important;width:80%!important;height:2px!important;border:0!important;border-radius:0!important;background:linear-gradient(90deg,var(--section-color,#ffd783) 0%,var(--section-color,#ffd783) 40%,transparent 100%)!important;pointer-events:none!important}
+html body #overlayPanel #allowanceBox{padding-top:4px!important;padding-bottom:4px!important;min-height:54px!important}
+html body #overlayPanel #allowanceBox .allowance-row{display:flex!important;flex-wrap:nowrap!important;gap:4px!important;align-items:stretch!important;min-width:0!important;min-height:42px!important;line-height:1!important}
+html body #overlayPanel #allowanceBox .solo-preset,html body #overlayPanel #allowanceBox .solo-allowance{display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:center!important;gap:4px!important;flex:1 1 0!important;min-width:0!important;max-width:none!important;padding:3px 4px!important;box-sizing:border-box!important;border-radius:5px!important;background:rgba(97,128,142,var(--overlay-bg-opacity,.65))!important;text-shadow:none!important;line-height:1!important;color:#f2f5fa!important;white-space:nowrap!important;font-variant-numeric:tabular-nums!important}
+html body #overlayPanel #allowanceBox .solo-preset.positive{background:rgba(38,110,85,var(--overlay-bg-opacity,.65))!important;color:#adf4d6!important}
+html body #overlayPanel #allowanceBox .solo-preset.negative{background:rgba(105,41,65,var(--overlay-bg-opacity,.65))!important;color:#ffb7cb!important}
+html body #overlayPanel #allowanceBox .solo-allowance{flex:1.55 1 0!important;background:rgba(48,59,69,var(--overlay-bg-opacity,.65))!important}
+html body #overlayPanel #allowanceBox .allowance-label{font-size:12px!important;font-weight:750!important;color:#fff!important;flex:0 0 auto!important}
+html body #overlayPanel #allowanceBox .allowance-value{font-size:var(--counter-size,23px)!important;line-height:1!important;min-width:0!important}
+html body #overlayPanel #allowanceBox .preset-card-value{font-size:var(--counter-size,25px)!important;font-weight:800!important;line-height:1!important;white-space:nowrap!important;min-width:0!important}
+html body #overlayPanel .preset-white-icon{display:block!important;width:21px!important;height:21px!important;min-width:21px!important;flex:0 0 21px!important;color:#fff!important;filter:none!important}
+html body #overlayPanel .preset-icon-label{font-size:12px!important;color:#fff!important}
+html body #overlayPanel .creator-align-opt{display:inline-flex!important;align-items:center!important;gap:3px!important}
+html body #overlayPanel .creator-align-opt .preset-white-icon{width:14px!important;height:14px!important;min-width:14px!important;flex-basis:14px!important}

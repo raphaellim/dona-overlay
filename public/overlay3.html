@@ -1448,7 +1448,8 @@ body #overlayPanel #accountBox{background:rgba(10,15,24,var(--account-bg-opacity
 body #overlayPanel #noticeBox .notice-line,body #overlayPanel #noticeBox .notice-line *{font-weight:700!important;text-shadow:0 1px 1px rgba(0,0,0,.9)!important}
 body #overlayPanel #fundingBox .o3-funding-detail,body #overlayPanel #fundingBox .o3-funding-detail *{font-weight:700!important;text-shadow:0 1px 1px rgba(0,0,0,.9)!important}
 body #overlayPanel #accountBox .name,body #overlayPanel #accountBox .amount{font-weight:800!important}
-</style><style>body #overlayPanel,body #overlayPanel>.overlay-box,body #v5Alert-alert{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}</style><link rel="stylesheet" href="/overlay3-readable.css?v=616831"></head>
+</style><style>body #overlayPanel,body #overlayPanel>.overlay-box,body #v5Alert-alert{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}</style><link rel="stylesheet" href="/overlay3-readable.css?v=616831"><link rel="stylesheet" href="/overlay3-preset-cards.css?v=616856">
+</head>
 
 <body class="theme-gold">
   <div id="overlayIdleScreen" class="overlay-idle-screen">시스템설정</div>
@@ -1512,7 +1513,7 @@ body #overlayPanel #accountBox .name,body #overlayPanel #accountBox .amount{font
   <div id="debugPanel"
     style="position:fixed;left:10px;bottom:10px;width:520px;max-width:calc(100vw - 20px);max-height:320px;overflow:auto;background:rgba(0,0,0,.88);color:#00ff66;font-size:12px;font-family:Consolas,monospace;padding:10px;border:1px solid #00ff66;z-index:9999999;display:none;pointer-events:auto;white-space:pre-wrap">
   </div>
-  <script src="/overlay3-presets.js?v=6165-final300"></script>
+  <script src="/overlay3-appearance.js?v=616856"></script><script src="/overlay3-presets.js?v=616856"></script>
   <script src="/collection-socket.js"></script><script src="/overlay3-performance.js?v=6165p1"></script>
 
   <script>
@@ -1692,6 +1693,13 @@ body #overlayPanel #accountBox .name,body #overlayPanel #accountBox .amount{font
         donations: []
       };
 
+      if(new URLSearchParams(location.search).get('appearancePreview')==='1'){
+        window.overlay3Presentation={broadcastMode:'solo',targets:[{name:'빵떠기'}],selectedSections:['account','notice','funding','allowance','presets']};
+        demoData.settings.notice='10월 아침방송 미션중\n10/31까지\n오전 8시 방송 시작\n빵디단 함께해요';
+        demoData.settings.allowanceData={balance:50000};demoData.settings.fundingData={items:[{id:'preview',title:'단풍펀딩',current:60,target:150,color:'#537e98'}]};
+        demoData.settings.overlaySections={account:true,notice:true,funding:true,allowance:true,presets:true,creators:false,media:false};
+        demoData.creators=[{creator:'빵떠기',presetNets:{smoke:{presetId:'smoke',plus:2,minus:0},food:{presetId:'food',plus:0,minus:3}}}];
+      }
       function num(v) { const n = Number(v || 0); return Number.isFinite(n) ? n : 0; }
       function displayManAmount(won) {
         const v = Math.trunc(num(won) / 1000) / 10;
@@ -1724,6 +1732,7 @@ body #overlayPanel #accountBox .name,body #overlayPanel #accountBox .amount{font
       }
 
       function applyStationStyle(settings) {
+        window.OverlayAppearance?.apply(settings?.stationStyle?.compactPreview);
         const st = settings?.stationStyle || {};
         const root = document.documentElement;
         const set = (name, value) => {
@@ -2029,7 +2038,7 @@ body #overlayPanel #accountBox .name,body #overlayPanel #accountBox .amount{font
           if(!f){el.innerHTML='<div class="o3-funding"><div class="o3-funding-detail">등록된 펀딩 없음</div></div>';return;}
           const current=Math.max(0,num(f.current)),goal=Math.max(0,num(f.target));
           const percent=goal>0?Math.max(0,current/goal*100):0,bar=Math.min(100,percent),left=Math.max(0,goal-current);
-          el.innerHTML='<div class="o3-funding"><div class="o3-funding-meter" role="progressbar" data-funding-key="'+escapeHtml(String(f.id||f.title||'펀딩'))+'" aria-label="'+escapeHtml(f.title||'펀딩')+'" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+bar+'"><i class="o3-funding-fill" style="width:'+bar+'%"></i><div class="o3-funding-label"><strong>'+escapeHtml(f.title||'펀딩')+'</strong><span class="funding-ratio"><b>'+escapeHtml(displayAmount(current))+'</b><em> / '+escapeHtml(displayAmount(goal))+'</em></span></div></div><div class="o3-funding-detail">'+'<span>'+(goal>0?'달성률 '+Math.round(percent)+'%':'목표 미설정')+'</span><span>'+(goal>0?(current>=goal?'목표 달성':'목표까지 '+escapeHtml(displayAmount(left))):'')+'</span>'+'</div></div>';
+          el.innerHTML='<div class="o3-funding"><div class="o3-funding-meter" role="progressbar" data-funding-color="'+escapeHtml(/^#[0-9a-f]{6}$/i.test(f.color||'')?f.color:'')+'" data-funding-key="'+escapeHtml(String(f.id||f.title||'펀딩'))+'" aria-label="'+escapeHtml(f.title||'펀딩')+'" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+bar+'"><i class="o3-funding-fill" style="width:'+bar+'%"></i><div class="o3-funding-label"><strong>'+escapeHtml(f.title||'펀딩')+'</strong><span class="funding-ratio"><b>'+escapeHtml(displayAmount(current))+'</b><em> / '+escapeHtml(displayAmount(goal))+'</em></span></div></div><div class="o3-funding-detail">'+'<span>'+(goal>0?'달성률 '+Math.round(percent)+'%':'목표 미설정')+'</span><span>'+(goal>0?(current>=goal?'목표 달성':'목표까지 '+escapeHtml(displayAmount(left))):'')+'</span>'+'</div></div>';
         };
         draw();if(items.length>1)o3FundingTimer=setInterval(()=>{if(!document.hidden&&getComputedStyle($fundingBox).display!=='none'){o3FundingIndex++;draw();}},4000);
       }
@@ -2356,7 +2365,7 @@ body #overlayPanel #accountBox .name,body #overlayPanel #accountBox .amount{font
    function renderAllowance(settings) {
  const el=document.getElementById('allowanceRow'),box=document.getElementById('allowanceBox');if(!el||!box)return;
  const input={settings,creators:latestOverlayCreators,config:window.overlay3Presentation};
- const html=window.Overlay3Presets.markup(input);box.dataset.soloEmpty=html?'0':'1';el.innerHTML=html;el.classList.toggle('hidden',!html);box.classList.toggle('hidden',!html);
+ const html=window.Overlay3Presets.markup(input);box.dataset.soloEmpty=html?'0':'1';el.innerHTML=html;el.classList.toggle('with-allowance',!!el.querySelector('.solo-allowance'));el.classList.toggle('hidden',!html);box.classList.toggle('hidden',!html);
 }
 window.addEventListener('overlay3:presentation',()=>{if(!latestSettingsForTimer)return;renderAllowance(latestSettingsForTimer);renderCreators(latestOverlayCreators);});
 
@@ -2494,7 +2503,7 @@ const rows=allRows.filter(r=>!others.has(normalizeName(r.creator||r.name||''))).
           const optionHtml = visiblePresets.map(preset => {
             const value = presetNetValue(row, preset);
             const label = signedText(presetShortName(preset), value);
-            return `<span class="creator-align-opt ${signClass(value)}">${escapeHtml(label)}</span>`;
+            return `<span class="creator-align-opt ${signClass(value)}" aria-label="${escapeHtml(label)}">${window.Overlay3Presets.iconMarkup(preset)}<span>${value>0?'+':''}${escapeHtml(String(value))}</span></span>`;
           }).join("");
 
           return '<article><div class="o3-rank"><em>'+(rank+1)+'</em><div class="o3-creator-inline">'+window.overlay3CreatorName(rawName)+(optionHtml?'<span class="o3-options">'+optionHtml+'</span>':'')+'</div>'+totalHtml+'</div></article>';
@@ -3284,6 +3293,7 @@ function schedule(){if(frame)return;frame=requestAnimationFrame(()=>{frame=0;for
 new MutationObserver(schedule).observe(track,{childList:true,subtree:true,characterData:true});if(window.ResizeObserver)new ResizeObserver(schedule).observe(box);document.fonts?.ready.then(schedule);document.fonts?.addEventListener('loadingdone',schedule);window.addEventListener('resize',schedule);schedule();
 })();
 </script>
-<script src="/preset-mini-alert.js?v=6166"></script><script src="/funding-design.js?v=61674"></script><script src="/overlay3-readable.js?v=616831"></script></body>
+<script src="/preset-mini-alert.js?v=6166"></script><script src="/funding-design.js?v=616856"></script><script src="/overlay3-readable.js?v=616831"></script><script src="/overlay3-counter-fit.js?v=616856"></script>
+</body>
 
 </html>
