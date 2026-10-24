@@ -1,0 +1,3 @@
+'use strict';const fs=require('fs'),path=require('path'),file=process.argv[2]||path.join(__dirname,'server.js');let s=fs.readFileSync(file,'utf8');if(s.includes('/* new-broadcast-solo-v67 */')){console.log('v67 새 방송 기본 갠방 연결 유지');process.exit(0);}const anchor='    await copySettingsToBroadcast(station.slug, data.id);';if(!s.includes(anchor))throw Error('방송 생성 연결 위치 확인 필요. 서버는 변경하지 않았습니다.');s=s.replace(anchor,anchor+`
+    /* new-broadcast-solo-v67 */
+    await require('./broadcast-default-mode').create({supabase,readEffectiveSettings,station,broadcast:data,mode:req.body.broadcastMode==='collab'||req.body.mode==='collab'?'collab':'solo'});`);fs.copyFileSync(file,file+'.before-v67');fs.writeFileSync(file,s);console.log('v67 새 방송 기본 갠방 연결 완료');

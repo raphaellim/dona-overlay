@@ -5,4 +5,6 @@ execFileSync(process.execPath,[path.join(__dirname,'apply-patch42.cjs'),path.joi
 execFileSync(process.execPath,[path.join(__dirname,'apply-patch54.cjs'),path.join(__dirname,'server.js')],{stdio:'inherit'});
 execFileSync(process.execPath,[path.join(__dirname,'apply-patch56.cjs'),path.join(__dirname,'server.js')],{stdio:'inherit'});
 execFileSync(process.execPath,[path.join(__dirname,'apply-patch63.cjs'),path.join(__dirname,'server.js')],{stdio:'inherit'});
+execFileSync(process.execPath,[path.join(__dirname,'apply-patch67.cjs'),path.join(__dirname,'server.js')],{stdio:'inherit'});
+execFileSync(process.execPath,[path.join(__dirname,'apply-patch68.cjs'),path.join(__dirname,'server.js')],{stdio:'inherit'});
 require('./server.js');
