@@ -36,6 +36,7 @@ try{
  if(media.image&&!gif&&($('image').naturalWidth>4096||$('image').naturalHeight>4096))throw Error('이미지는 가로·세로 4096px 이하를 사용하세요');
  if(audio&&(!Number.isFinite(audio.duration)||audio.duration>180))throw Error('음원은 180초 이내 파일을 사용하세요');
  
+ stage='프리셋 화면 반영 확인';const applied=await api('/api/alert-display/prepare',{broadcastId:p.broadcastId});if(!applied.ready)throw Error('오버레이 숫자 반영 확인 실패 · 재생 관리에서 다시 재생하세요');
  stage='재생 시작 확인';await touch(job,'start');stage='순위판 숨김 확인';await prepareRanking(p);if(signal.aborted)throw Error('취소됨');
  if(session.intro){stage='시작음 재생';status('시작음 재생 중');await playIntro(session.intro,controller);session.intro.pause();session.intro.removeAttribute('src');session.intro.load();session.intro=null;$('unlock').onclick=null;}
 

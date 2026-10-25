@@ -58,6 +58,7 @@ app.use((req, res, next) => {
   // 파일 업로드/삭제 자체는 오버레이 상태값을 바꾸지 않습니다.
   // 큰 파일 업로드 직후 불필요한 overlay-state 재조회가 겹치지 않도록 제외합니다.
   if (req.path.startsWith('/api/media')||req.path.startsWith('/api/alert-studio')) return next();
+  if(req.path.startsWith('/api/alert-display/')||['/api/donor-ranking/visibility','/api/donor-ranking/visibility-ack'].includes(req.path))return next();
   const originalJson=res.json.bind(res);
   res.json=function(body){
     if(!req.alertSent&&body?.ok&&method==='POST'&&['/api/donations','/api/donations/batch'].includes(req.path)){
@@ -4371,7 +4372,7 @@ const alertCoordinator=require('./alert-coordinator')(app,{appearance:require('.
 const collectionWs=require('./collection-ws')(httpServer,{port:()=>httpServer.address()?.port||PORT});
 const runtimeJobs=require('./runtime-jobs')({supabase,runChat:(p,signal)=>processDonationYoutubeChat(p.ctx,p.settings,p.donor,p.accountTotal,p.toonieTotal,p.createdRows,{...p.options,signal}),onWake:slug=>collectionWs.notify(slug,'alertWake')});
 httpServer.on('close',()=>runtimeJobs.close());
-const alertStudio=require('./alert-studio')(app,{supabase,getStationContext,stationAllowed,stationTokenAllowed,withSettingsMutation,notify:(...args)=>collectionWs.notify(...args),jobs:runtimeJobs,readEffectiveSettings,publicDir:path.join(__dirname,'public')});
+const alertStudio=require('./alert-studio')(app,{supabase,getStationContext,stationAllowed,stationTokenAllowed,withSettingsMutation,notify:(...args)=>collectionWs.notify(...args),jobs:runtimeJobs,readEffectiveSettings,publicDir:path.join(__dirname,'public'),invalidateDisplay:()=>{supabase.invalidateReads?.();overlayStateCache.invalidate();}});
 const identityNotify=collectionWs.notify.bind(collectionWs);
 collectionWs.notify=async(slug,type,payload)=>{try{
  if(type==='alert'){

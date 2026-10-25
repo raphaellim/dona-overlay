@@ -1514,7 +1514,7 @@ body #overlayPanel #accountBox .name,body #overlayPanel #accountBox .amount{font
     style="position:fixed;left:10px;bottom:10px;width:520px;max-width:calc(100vw - 20px);max-height:320px;overflow:auto;background:rgba(0,0,0,.88);color:#00ff66;font-size:12px;font-family:Consolas,monospace;padding:10px;border:1px solid #00ff66;z-index:9999999;display:none;pointer-events:auto;white-space:pre-wrap">
   </div>
   <script src="/overlay3-appearance.js?v=616862"></script><script src="/overlay3-presets.js?v=616856"></script>
-  <script src="/collection-socket.js"></script><script src="/overlay3-performance.js?v=6165p1"></script>
+  <script>window.overlayDisplayNativeFetch=window.fetch.bind(window);</script><script src="/collection-socket.js"></script><script src="/overlay3-performance.js?v=6165p1"></script>
 
   <script>
     if (new URLSearchParams(location.search).get("debug") === "1") { console.log("[overlay-debug] overlay.html loaded", location.href); }
@@ -2964,6 +2964,7 @@ const rows=allRows.filter(r=>!others.has(normalizeName(r.creator||r.name||''))).
             ? s.accountDonors
             : aggregateAccountDonorsFromDonations(s.donations || []);
           return {
+            _syncReadOk:true,
             settings,
             accountDonors,
             creators: normalizeCreatorRows({ ...s, settings }),
@@ -3141,6 +3142,7 @@ function updateBroadcastTimer() {
         try { data = await loadData(); }
         catch (e) { data = { settings: defaultSettings, accountDonors: [], creators: [], donations: [] }; }
 
+        window.overlay3SyncReadOk=data._syncReadOk===true;
         const settings = data.settings || defaultSettings;
         window.OverlayAppearance?.apply(settings.stationStyle?.compactPreview);
         debugLog("refresh settings", { broadcastLiveData: settings.broadcastLiveData, overlaySections: settings.overlaySections, stationStyle: settings.stationStyle });
@@ -3203,20 +3205,16 @@ function updateBroadcastTimer() {
         }
       }
 
-      let refreshBusy = false;
-      let refreshQueued = false;
+      let refreshBusy = false, refreshQueued = false, refreshTask=null;
       const fetchLatestState = refresh;
-      const realtimeRefresh = async () => {
-        if (refreshBusy) { refreshQueued = true; return; }
-        refreshBusy = true;
-        try { await fetchLatestState(); }
-        finally {
-          refreshBusy = false;
-          if (refreshQueued) { refreshQueued = false; setTimeout(realtimeRefresh, 150); }
-        }
+      const realtimeRefresh = () => {
+        if (refreshBusy) { refreshQueued=true; return refreshTask; }
+        refreshBusy=true;
+        refreshTask=(async()=>{do{refreshQueued=false;await fetchLatestState();}while(refreshQueued);})().finally(()=>{refreshBusy=false;refreshTask=null;});
+        return refreshTask;
       };
-
-      refresh = realtimeRefresh.bind(null);
+      refresh=realtimeRefresh;
+      window.refreshOverlayBeforeAlert=async()=>{await refresh();if(!window.overlay3SyncReadOk)throw Error('오버레이 최신 데이터 조회 실패');};
       refresh();
       testSoundFromQuery();
 
@@ -3295,7 +3293,7 @@ function schedule(){if(frame)return;frame=requestAnimationFrame(()=>{frame=0;for
 new MutationObserver(schedule).observe(track,{childList:true,subtree:true,characterData:true});if(window.ResizeObserver)new ResizeObserver(schedule).observe(box);document.fonts?.ready.then(schedule);document.fonts?.addEventListener('loadingdone',schedule);window.addEventListener('resize',schedule);schedule();
 })();
 </script>
-<script src="/preset-mini-alert.js?v=616858"></script><script src="/funding-design.js?v=616856"></script><script src="/overlay3-readable.js?v=616831"></script><script src="/overlay3-counter-fit.js?v=616856"></script>
+<script src="/alert-display-client.js?v=20261025-order1"></script><script src="/preset-mini-alert.js?v=616858"></script><script src="/funding-design.js?v=616856"></script><script src="/overlay3-readable.js?v=616831"></script><script src="/overlay3-counter-fit.js?v=616856"></script>
 </body>
 
 </html>

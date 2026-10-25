@@ -3,7 +3,7 @@ module.exports=d=>async(req,res,next)=>{try{
  const {supabase,getStationContext,stationAllowed,isMasterRequest}=d;
  if(!req.path.startsWith('/api/'))return next();
  if(!['POST','PUT','PATCH','DELETE'].includes(req.method))return next();
- if(req.headers.origin){try{if(new URL(req.headers.origin).host!==req.headers.host)return res.status(403).json({error:'다른 사이트에서의 변경 요청 차단'});}catch{return res.status(403).json({error:'Origin 오류'});}}
+ if(req.headers.origin){try{const origin=new URL(req.headers.origin);const trusted=process.env.NATIVE_TOONIE_ORIGIN;const playbackOnly=['/api/donor-ranking/visibility','/api/alert-display/prepare'].includes(req.path);if(origin.host!==req.headers.host&&!(playbackOnly&&trusted&&origin.origin===new URL(trusted).origin&&origin.protocol==='https:'))return res.status(403).json({error:'다른 사이트에서의 변경 요청 차단'});}catch{return res.status(403).json({error:'Origin 오류'});}}
  const tracked=/^\/api\/(donations(?:\/|$)|manual-entry(?:\/|$)|allowance(?:\/|$)|collection-candidates|(?:account|toonie)-candidates\/|settings(?:\/|$)|mission-timer|roulette|operators|broadcasts|station\/collection-rules|alert-config|overlay-display)/.test(req.path);
  if(!tracked)return next();
  const ctx=await getStationContext(req,res);if(!ctx)return;const admin=await stationAllowed(req,ctx.station),actor=req.namedActor;

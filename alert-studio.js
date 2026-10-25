@@ -22,6 +22,7 @@ module.exports=function(app,d){const {supabase,getStationContext,stationAllowed,
  async function read(slug){const hit=cache.get(slug);if(hit&&hit.until>Date.now())return hit.value;const {data,error}=await supabase.from('settings').select('data').eq('id',3).maybeSingle();if(error)throw error;const value={...defaults,...data?.data?.$alertStudio?.[slug],nativeSourceOrigin:process.env.NATIVE_TOONIE_ORIGIN||'',alertOpacity:data?.data?.$overlayAppearance?.[slug]?.alertOpacity??94};cache.set(slug,{value,until:Date.now()+3000});while(cache.size>50)cache.delete(cache.keys().next().value);return value;}
  async function ctx(req,res,admin=false){const c=await getStationContext(req,res);if(!c)return;const permitted=await stationAllowed(req,c.station)||(!admin&&await stationTokenAllowed(req,c.station));if(!permitted){res.status(403).json({error:'방송국 인증 필요'});return;}return c;}
  const route=(fn,admin=false)=>async(req,res)=>{try{const c=await ctx(req,res,admin);if(c)await fn(req,res,c);}catch(e){res.status(400).json({error:e.message});}};
+ require('./alert-display-sync')(app,{route,supabase,invalidate:()=>d.invalidateDisplay?.()});
  require('./native-toonie-page')(app,{supabase,route,read});
  require('./mobile-receipts')(app,{supabase,route,read,enqueue,notify,readEffectiveSettings});
  app.get('/api/alert-studio/config',route(async(req,res,c)=>res.json(await read(c.station.slug))));
