@@ -74,7 +74,17 @@ function createPostgresClient({connectionString,pool}={}) {
   pool.on('error',()=>console.error('[database] idle connection interrupted'));
  }
  const metadata=new Map(),functions=new Map();
- const client={pool,from:table=>new Query(client,table),async columnTypes(table){return (await meta(table)).types;},async primaryKey(table){return (await meta(table)).pk;},async rpc(name,args={}){try{
+ const client={pool,from:table=>new Query(client,table),async readSettingsScope(stationSlug,broadcastId){try{
+  // Project JSON inside Postgres: historical broadcasts never cross the network.
+  // This is read-only. Full-root reads remain available for serialized saves.
+  const r=await pool.query(`SELECT (data::jsonb - 'stationSettings' - 'sessionSettings') ||
+   jsonb_build_object('stationSettings',jsonb_build_object($1::text,
+    jsonb_build_object('_shared',COALESCE(data::jsonb #> ARRAY['stationSettings',$1::text,'_shared'],'{}'::jsonb)) ||
+    CASE WHEN $2::text IS NULL THEN '{}'::jsonb ELSE jsonb_build_object($2::text,
+     COALESCE(data::jsonb #> ARRAY['stationSettings',$1::text,$2::text],'{}'::jsonb)) END
+   )) AS data FROM public.settings WHERE id=1`,[String(stationSlug),broadcastId==null?null:String(broadcastId)]);
+  return {data:r.rows[0]||null,error:null};
+ }catch(e){return resultError(e);}},async columnTypes(table){return (await meta(table)).types;},async primaryKey(table){return (await meta(table)).pk;},async rpc(name,args={}){try{
   ident(name);const keys=Object.keys(args);keys.forEach(ident);
   if(!functions.has(name)){const task=pool.query(`SELECT p.proargnames AS names,p.pronargs AS nargs,p.pronargdefaults AS defaults,p.proretset AS setof,
  ARRAY(SELECT format_type(t,NULL) FROM unnest(p.proargtypes::oid[]) WITH ORDINALITY AS x(t,pos) ORDER BY pos) AS types

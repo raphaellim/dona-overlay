@@ -59,6 +59,8 @@ app.use((req, res, next) => {
   // 큰 파일 업로드 직후 불필요한 overlay-state 재조회가 겹치지 않도록 제외합니다.
   if (req.path.startsWith('/api/media')||req.path.startsWith('/api/alert-studio')) return next();
   if(req.path.startsWith('/api/alert-display/')||['/api/donor-ranking/visibility','/api/donor-ranking/visibility-ack'].includes(req.path))return next();
+  // Device heartbeat/source discovery do not change the overlay's donation state.
+  if(['/api/bank-devices/sync','/api/collection-ws-auth'].includes(req.path))return next();
   const originalJson=res.json.bind(res);
   res.json=function(body){
     if(!req.alertSent&&body?.ok&&method==='POST'&&['/api/donations','/api/donations/batch'].includes(req.path)){
@@ -1499,7 +1501,12 @@ function effectiveSettingsFromGlobal(global, stationSlug, broadcastId) {
 }
 
 async function readEffectiveSettings(stationSlug, broadcastId) {
-  const global = await readGlobalSettings();
+  let global;
+  if(typeof supabase.readSettingsScope==='function'){
+    const {data,error}=await supabase.readSettingsScope(stationSlug,broadcastId);
+    if(error)throw error;
+    global=data?.data&&typeof data.data==='object'?normalizeSettings(data.data):await readGlobalSettings();
+  }else global=await readGlobalSettings();
   return effectiveSettingsFromGlobal(global, stationSlug, broadcastId);
 }
 
@@ -2230,7 +2237,7 @@ app.post('/api/logout', async(req, res) => {
 });
 
 /* 기본 API */
-app.get('/api/health', (req, res) => res.json({ ok: true, storage: databaseProvider, multistation: true, supabaseConfigured: !!supabase, databaseConfigured: !!supabase, readCacheSeconds }));
+app.get('/api/health', (req, res) => res.json({ ok: true, storage: databaseProvider, multistation: true, supabaseConfigured: !!supabase, databaseConfigured: !!supabase, readCacheSeconds, settingsReadMode:typeof databaseRaw?.readSettingsScope==='function'?'broadcast':'global' }));
 
 /* 최고관리자 방송국 API */
 app.get('/api/stations', checkMaster, async (req, res) => {
