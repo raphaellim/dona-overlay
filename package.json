@@ -7,13 +7,15 @@
     "start": "node server.js",
     "test": "node --test tests/unified-v5.test.js tests/routing.test.js tests/websocket.test.js tests/approval.test.js tests/integrated-rules.test.js tests/sql-v5.test.js tests/collection-window.test.js tests/account-receipts.test.js tests/donation-options.test.js tests/finance.test.js tests/scheduled-chat.test.js tests/solo-presets.test.js",
     "test:browser": "node --test --test-concurrency=1 tests/console-browser.test.js tests/alert-browser.test.js tests/console-speed-browser.test.js tests/console-options-browser.test.js tests/finance-browser.test.js tests/alert-text-browser.test.js tests/solo-presets-browser.test.js tests/display-sync-browser.test.js",
-    "test:startup": "node tests/startup-v5.test.js"
+    "test:startup": "node tests/startup-v5.test.js",
+    "test:migration": "node --test tests/postgres-client.test.js tests/postgres-runtime.test.js tests/database-read-cache.test.js tests/private-receipt-storage.test.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.1",
     "cors": "^2.8.5",
     "express": "^4.18.2",
     "multer": "^1.4.5-lts.1",
+    "pg": "^8.23.1",
     "playwright": "1.55.0",
     "socket.io": "^4.8.1",
     "ws": "^8.18.3"

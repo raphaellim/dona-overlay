@@ -221,11 +221,19 @@ function listMediaFiles(slug = 'default', options = {}) {
   return sorted;
 }
 
-const supabase = SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY
-  ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-      auth: { persistSession: false, autoRefreshToken: false }
-    })
-  : null;
+// DATABASE_URL takes priority. Existing Supabase setup still works until cutover.
+const databaseProvider = process.env.DATABASE_URL ? 'postgres' : 'supabase';
+const databaseRaw = process.env.DATABASE_URL
+  ? require('./postgres-client').createPostgresClient({connectionString:process.env.DATABASE_URL})
+  : SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY
+    ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {auth:{persistSession:false,autoRefreshToken:false}})
+    : null;
+if(databaseRaw && databaseProvider==='postgres') databaseRaw.storage=require('./private-receipt-storage')(app,{directory:process.env.RECEIPT_STORAGE_DIR});
+const readCacheSeconds=Number(process.env.DB_READ_CACHE_SECONDS ?? 15);
+if(!Number.isFinite(readCacheSeconds)||readCacheSeconds<0||readCacheSeconds>60)throw Error('DB_READ_CACHE_SECONDS must be 0..60');
+const supabase = databaseRaw ? require('./database-read-cache')(databaseRaw,{ttl:readCacheSeconds*1000}) : null;
+// Mutation reads must not use an older cached snapshot when merging JSON settings.
+app.use((req,res,next)=>!['GET','HEAD','OPTIONS'].includes(req.method)&&supabase ? supabase.uncached(next) : next());
 
 app.use(cors());
 app.use(express.json({ limit: '20mb' }));
@@ -1125,7 +1133,7 @@ function getStationSlug(req) {
 
 function requireDb(res) {
   if (!supabase) {
-    res.status(500).json({ error: 'Supabase 환경변수가 설정되지 않았습니다.' });
+    res.status(500).json({ error: 'DB 연결 환경변수(DATABASE_URL 또는 Supabase)를 설정하세요.' });
     return false;
   }
   return true;
@@ -1133,7 +1141,8 @@ function requireDb(res) {
 
 let settingsMutationTail = Promise.resolve();
 function withSettingsMutation(task) {
-  const run = settingsMutationTail.then(task, task);
+  const freshTask = () => supabase?.uncached ? supabase.uncached(task) : task();
+  const run = settingsMutationTail.then(freshTask, freshTask);
   settingsMutationTail = run.catch(() => {});
   return run;
 }
@@ -2220,7 +2229,7 @@ app.post('/api/logout', async(req, res) => {
 });
 
 /* 기본 API */
-app.get('/api/health', (req, res) => res.json({ ok: true, storage: 'supabase', multistation: true, supabaseConfigured: !!supabase }));
+app.get('/api/health', (req, res) => res.json({ ok: true, storage: databaseProvider, multistation: true, supabaseConfigured: !!supabase, databaseConfigured: !!supabase, readCacheSeconds }));
 
 /* 최고관리자 방송국 API */
 app.get('/api/stations', checkMaster, async (req, res) => {
