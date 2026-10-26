@@ -3,6 +3,17 @@
  if(params.get('demo')==='1')return;
  let disposed=false,socket,ready=false,retry=1000,seq=0,connectPromise,resolveConnect,rejectConnect,timer,connectTimeout;
  const pending=new Map();
+ const inflightReads=new Map(),readStats={sent:0,shared:0};window.collectionReadStats=readStats;
+ const sharedReadPaths=new Set(['/api/settings','/api/station-info','/api/alert-config','/api/alert-studio/config','/api/overlay-link-token','/api/station/collection-rules','/api/donor-ranking/config']);
+ function readOnce(input,options,url){
+  if(options.signal||input instanceof Request||!sharedReadPaths.has(url.pathname))return nativeFetch(input,options);
+  const key=JSON.stringify([url.href,options.credentials||'same-origin',[...new Headers(options.headers||{}).entries()]]);
+  let task=inflightReads.get(key);if(task){readStats.shared++;return task.then(r=>r.clone());}
+  readStats.sent++;task=nativeFetch(input,options);inflightReads.set(key,task);
+  const clear=()=>{if(inflightReads.get(key)===task)inflightReads.delete(key);};task.then(clear,clear);
+  return task.then(r=>r.clone());
+ }
+
  const autoUpdate=/\/(?:overlay[^/]*|summary[^/]*|donation-alert|sound-alert)\.html$/i.test(location.pathname);
  let loadedDeployment=null;
  function checkDeployment(version){
@@ -36,13 +47,14 @@
   return {on(name,fn){if(!handlers.has(name))handlers.set(name,[]);handlers.get(name).push(fn);if(name==='connect'&&ready)queueMicrotask(fn);return this;},emit(name,payload,ack){if(name==='station:join'&&typeof ack==='function')ack({ok:true,station});},disconnect(){window.removeEventListener('collection:connected',connected);window.removeEventListener('collection:disconnected',disconnected);window.removeEventListener('collection:changed',changed);handlers.clear();}};
  };
  connect();
- window.addEventListener('pagehide',()=>{disposed=true;ready=false;clearTimeout(timer);clearTimeout(connectTimeout);if(socket){socket.onclose=null;socket.onmessage=null;socket.onerror=null;socket.close();}for(const p of pending.values()){clearTimeout(p.timeout);p.reject(Error('페이지 종료'));}pending.clear();},{once:true});
+ window.addEventListener('pagehide',()=>{disposed=true;ready=false;inflightReads.clear();clearTimeout(timer);clearTimeout(connectTimeout);if(socket){socket.onclose=null;socket.onmessage=null;socket.onerror=null;socket.close();}for(const p of pending.values()){clearTimeout(p.timeout);p.reject(Error('페이지 종료'));}pending.clear();},{once:true});
  window.fetch=async(input,options={})=>{
   const request=input instanceof Request?input:null,url=new URL(request?request.url:String(input),location.href);
   if(url.origin!==location.origin||!url.pathname.startsWith('/api/')||/\/auth|\/login|\/logout|callback|\/media|\/upload/.test(url.pathname)||options.body instanceof FormData||options.body instanceof Blob)return nativeFetch(input,options);
   const method=(options.method||request?.method||'GET').toUpperCase(),headers=Object.fromEntries(new Headers(options.headers||request?.headers||{}));
   // Console reads use authenticated same-origin HTTP, independent of the serialized RPC write queue.
-  if(method==='GET')return nativeFetch(input,options);
+  if(method==='GET')return readOnce(input,options,url);
+  inflightReads.clear();
   if(!ready){connect();await connectPromise;}
   let body=options.body;if(body===undefined&&request&&!['GET','HEAD'].includes(method))body=await request.clone().text();
   if(body){try{body=JSON.parse(body);}catch{return nativeFetch(input,options);}}

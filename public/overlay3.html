@@ -1514,7 +1514,7 @@ body #overlayPanel #accountBox .name,body #overlayPanel #accountBox .amount{font
     style="position:fixed;left:10px;bottom:10px;width:520px;max-width:calc(100vw - 20px);max-height:320px;overflow:auto;background:rgba(0,0,0,.88);color:#00ff66;font-size:12px;font-family:Consolas,monospace;padding:10px;border:1px solid #00ff66;z-index:9999999;display:none;pointer-events:auto;white-space:pre-wrap">
   </div>
   <script src="/overlay3-appearance.js?v=616862"></script><script src="/overlay3-presets.js?v=616856"></script>
-  <script>window.overlayDisplayNativeFetch=window.fetch.bind(window);</script><script src="/collection-socket.js"></script><script src="/overlay3-performance.js?v=6165p1"></script>
+  <script src="/mission-timer-model.js?v=616871"></script><script src="/mission-timer-clock.js?v=616871"></script><script src="/collection-socket.js"></script><script src="/overlay3-performance.js?v=6165p1"></script>
 
   <script>
     if (new URLSearchParams(location.search).get("debug") === "1") { console.log("[overlay-debug] overlay.html loaded", location.href); }
@@ -2045,27 +2045,12 @@ body #overlayPanel #accountBox .name,body #overlayPanel #accountBox .amount{font
       window.addEventListener('pagehide',()=>{clearInterval(o3FundingTimer);o3FundingTimer=null;o3FundingSignature='';});
       window.addEventListener('pageshow',()=>{if(latestSettingsForTimer)renderFunding(latestSettingsForTimer);});
 
+      const studioMissionClock = new MissionTimerClock.Clock();
       function timerBaseMs(settings) {
-        const t = settings?.broadcastTimerData || {};
-        const now = Date.now();
-        if (t.mode === "until") {
-          if (t.running && t.targetAt) {
-            const target = new Date(t.targetAt).getTime();
-            return Math.max(0, target - now);
-          }
-          return Math.max(0, Number(t.durationMs || 0));
-        }
-        let elapsed = Math.max(0, Number(t.elapsedMs || 0));
-        if (t.running && t.startedAt) {
-          const start = new Date(t.startedAt).getTime();
-          if (start) elapsed += Math.max(0, now - start);
-        }
-        if (t.mode === "countdown") {
-          const dur = Math.max(0, Number(t.durationMs || 0));
-          return Math.max(0, dur - elapsed);
-        }
-        return elapsed;
+        studioMissionClock.apply({broadcastId:settings?.broadcast?.id||settings?.broadcastId||studioMissionClock.broadcast||'',broadcastTimerData:settings?.broadcastTimerData});
+        return studioMissionClock.ms();
       }
+      window.addEventListener('collection:changed',e=>{if(e.detail?.topic==='timer'&&e.detail.payload?.broadcastTimerData){studioMissionClock.apply(e.detail.payload);if(latestSettingsForTimer)latestSettingsForTimer.broadcastTimerData=e.detail.payload.broadcastTimerData;updateBroadcastTimer();}});
 
       function coinLabel(type) {
         return type === "full" ? "완곡" : type === "special" ? "스페셜" : "1절";
@@ -2964,7 +2949,6 @@ const rows=allRows.filter(r=>!others.has(normalizeName(r.creator||r.name||''))).
             ? s.accountDonors
             : aggregateAccountDonorsFromDonations(s.donations || []);
           return {
-            _syncReadOk:true,
             settings,
             accountDonors,
             creators: normalizeCreatorRows({ ...s, settings }),
@@ -3074,7 +3058,7 @@ function updateBroadcastTimer() {
     if(labelEl.textContent!==text)labelEl.textContent=text;
   }
 
-  const sec = Math.max(0, Math.floor(diff / 1000));
+  const sec = Math.max(0, timerData.mode === "countup" ? Math.floor(diff / 1000) : Math.ceil(diff / 1000));
 
   const h = String(Math.floor(sec / 3600)).padStart(2, "0");
   const m = String(Math.floor((sec % 3600) / 60)).padStart(2, "0");
@@ -3089,27 +3073,6 @@ function updateBroadcastTimer() {
 
   if (!isCountdownMode) {document.getElementById("missionCountdownBig")?.classList.remove("show");missionCountdownLastSec=null;mission30SoundPlayed=false;}
   if (isCountdownMode) {
-    if (sec <= 30 && sec > 0 && !mission30SoundPlayed) {
-      mission30SoundPlayed = true;
-
-      try {
-        const soundFile =
-          timerData.warningSoundFile ||
-          timerData.missionSoundFile ||
-          "mission_30sec.mp3";
-
-        const audio = new Audio("/sounds/" + soundFile);
-        audio.volume = 1.0;
-        audio.play().catch(() => {});
-      } catch (e) {
-        console.warn("[mission-sound] play failed", e);
-      }
-    }
-
-    if (sec > 30) {
-      mission30SoundPlayed = false;
-    }
-
     const big = document.getElementById("missionCountdownBig");
 
     if (big) {
@@ -3142,7 +3105,6 @@ function updateBroadcastTimer() {
         try { data = await loadData(); }
         catch (e) { data = { settings: defaultSettings, accountDonors: [], creators: [], donations: [] }; }
 
-        window.overlay3SyncReadOk=data._syncReadOk===true;
         const settings = data.settings || defaultSettings;
         window.OverlayAppearance?.apply(settings.stationStyle?.compactPreview);
         debugLog("refresh settings", { broadcastLiveData: settings.broadcastLiveData, overlaySections: settings.overlaySections, stationStyle: settings.stationStyle });
@@ -3205,16 +3167,20 @@ function updateBroadcastTimer() {
         }
       }
 
-      let refreshBusy = false, refreshQueued = false, refreshTask=null;
+      let refreshBusy = false;
+      let refreshQueued = false;
       const fetchLatestState = refresh;
-      const realtimeRefresh = () => {
-        if (refreshBusy) { refreshQueued=true; return refreshTask; }
-        refreshBusy=true;
-        refreshTask=(async()=>{do{refreshQueued=false;await fetchLatestState();}while(refreshQueued);})().finally(()=>{refreshBusy=false;refreshTask=null;});
-        return refreshTask;
+      const realtimeRefresh = async () => {
+        if (refreshBusy) { refreshQueued = true; return; }
+        refreshBusy = true;
+        try { await fetchLatestState(); }
+        finally {
+          refreshBusy = false;
+          if (refreshQueued) { refreshQueued = false; setTimeout(realtimeRefresh, 150); }
+        }
       };
-      refresh=realtimeRefresh;
-      window.refreshOverlayBeforeAlert=async()=>{await refresh();if(!window.overlay3SyncReadOk)throw Error('오버레이 최신 데이터 조회 실패');};
+
+      refresh = realtimeRefresh.bind(null);
       refresh();
       testSoundFromQuery();
 
@@ -3293,7 +3259,7 @@ function schedule(){if(frame)return;frame=requestAnimationFrame(()=>{frame=0;for
 new MutationObserver(schedule).observe(track,{childList:true,subtree:true,characterData:true});if(window.ResizeObserver)new ResizeObserver(schedule).observe(box);document.fonts?.ready.then(schedule);document.fonts?.addEventListener('loadingdone',schedule);window.addEventListener('resize',schedule);schedule();
 })();
 </script>
-<script src="/alert-display-client.js?v=20261025-order1"></script><script src="/preset-mini-alert.js?v=616858"></script><script src="/funding-design.js?v=616856"></script><script src="/overlay3-readable.js?v=616831"></script><script src="/overlay3-counter-fit.js?v=616856"></script>
+<script src="/preset-mini-alert.js?v=616858"></script><script src="/funding-design.js?v=616856"></script><script src="/overlay3-readable.js?v=616831"></script><script src="/overlay3-counter-fit.js?v=616856"></script>
 </body>
 
 </html>
