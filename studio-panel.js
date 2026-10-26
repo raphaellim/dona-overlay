@@ -1,5 +1,6 @@
 'use strict';
 module.exports=(app,d)=>{
+ app.get('/api/studio-version',(req,res)=>{res.set('Cache-Control','no-store');res.json({ok:true,version:'6.16.8.71.1',studioPanel:true});});
  const crypto=require('crypto'),revision=v=>crypto.createHash('sha256').update(JSON.stringify(v)).digest('hex');
  app.get('/api/studio-panel',async(req,res)=>{try{const c=await d.getStationContext(req,res);if(!c)return;const part=String(req.query.part||'');if(!['karaoke','notice','timer','design','visibility'].includes(part))return res.status(400).json({error:'관리 항목 오류'});const admin=await d.stationAllowed(req,c.station),manager=admin||await d.managerAllowed(req,c.station,c.active);if(!manager&&!(part==='karaoke'&&await d.stationTokenAllowed(req,c.station)))return res.status(403).json({error:'방송국 권한 필요'});const s=await d.readEffectiveSettings(c.station.slug,c.active.id);res.set('Cache-Control','no-store');
  if(part==='visibility')return res.json({sections:s.overlaySections||{}});

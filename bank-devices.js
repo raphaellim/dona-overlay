@@ -37,6 +37,7 @@ module.exports=function mountBankDevices(app,{supabase,getStation,getStationCont
  const {data:station,error}=await supabase.from('stations').select('id,slug').eq('id',d.station_id).maybeSingle();if(error)throw error;if(!station)return res.status(409).json({error:'방송국 없음'});
  const b=req.body||{};if(b.station!==station.slug)return res.status(409).json({error:'이 내역은 다른 방송국에서 수집됐습니다. 자동 전송하지 않습니다.'});
  if(!await sessions.accepts(d,station,b))return res.status(409).json({ok:false,requireBroadcastConnect:true,error:'방송 연결이 없거나 종료·변경되었습니다. 앱에서 방송을 다시 연결하세요.'});
- res.json(await saveAccount({...b,creator:d.creator},station));
+ /* station-basic-v70 */ const stationDefault=await require('./broadcast-default-mode').read(supabase,station.slug);
+ res.json(await saveAccount({...b,creator:stationDefault.creator||d.creator},station));
  }catch(e){res.status(500).json({error:e.message});}});
 };
