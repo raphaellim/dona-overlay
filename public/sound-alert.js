@@ -27,7 +27,7 @@ try{
  session.limit=setTimeout(()=>controller.abort(),media.introSound?280000:/\.gif(?:[?#]|$)/i.test(media.image||'')?245000:210000);
  session.heartbeat=setInterval(()=>{touch(job,'heartbeat').catch(()=>controller.abort());if(rankingActive)rankingSignal(true,rankingActive);},15000);
  let audio;
- if(q.get('native')==='1'){stage='통합 연결';if(!config.nativeSourceOrigin)throw Error('Node의 NATIVE_TOONIE_ORIGIN 설정 확인 필요');parentOrigin=new URL(config.nativeSourceOrigin).origin;status('투네 종료 대기');await nativeSlot(signal);clearTimeout(session.limit);session.limit=setTimeout(()=>controller.abort(),media.introSound?280000:/\.gif(?:[?#]|$)/i.test(media.image||'')?245000:210000);}
+
  stage='미디어 로딩';const ready=[];
  const gif=/\.gif(?:[?#]|$)/i.test(media.image||'');if(media.image&&!gif){$('image').hidden=false;ready.push(eventReady($('image'),'load',signal));$('image').src=media.image;}
  if(media.introSound&&p.kind!=='preset'){const intro=new Audio();intro.volume=.8;session.intro=intro;intro.preload='auto';ready.push(eventReady(intro,'canplay',signal));intro.src=media.introSound;intro.load();}
@@ -36,11 +36,13 @@ try{
  if(media.image&&!gif&&($('image').naturalWidth>4096||$('image').naturalHeight>4096))throw Error('이미지는 가로·세로 4096px 이하를 사용하세요');
  if(audio&&(!Number.isFinite(audio.duration)||audio.duration>180))throw Error('음원은 180초 이내 파일을 사용하세요');
  
- stage='프리셋 화면 반영 확인';const applied=await api('/api/alert-display/prepare',{broadcastId:p.broadcastId});if(!applied.ready)throw Error('오버레이 숫자 반영 확인 실패 · 재생 관리에서 다시 재생하세요');
- stage='재생 시작 확인';await touch(job,'start');stage='순위판 숨김 확인';await prepareRanking(p);if(signal.aborted)throw Error('취소됨');
+ if(gif){stage='GIF 로딩';status('GIF 준비 중');const blob=await fetchGif(media.image,signal);if(signal.aborted)throw Error('취소됨');session.gifUrl=URL.createObjectURL(blob);const loaded=eventReady($('image'),'load',signal);$('image').src=session.gifUrl;await loaded;if($('image').naturalWidth>960||$('image').naturalHeight>540)throw Error('GIF는 960×540px 이하를 사용하세요');$('image').hidden=false;}
+ stage='재생 준비 확인';await touch(job,'start');if(signal.aborted)throw Error('취소됨');
+ if(q.get('native')==='1'){stage='통합 연결';if(!config.nativeSourceOrigin)throw Error('Node의 NATIVE_TOONIE_ORIGIN 설정 확인 필요');parentOrigin=new URL(config.nativeSourceOrigin).origin;status('투네 종료 대기');await nativeSlot(signal);clearTimeout(session.limit);session.limit=setTimeout(()=>controller.abort(),media.introSound?280000:/\.gif(?:[?#]|$)/i.test(media.image||'')?245000:210000);}
+ rankingSignal(true,p);
  if(session.intro){stage='시작음 재생';status('시작음 재생 중');await playIntro(session.intro,controller);session.intro.pause();session.intro.removeAttribute('src');session.intro.load();session.intro=null;$('unlock').onclick=null;}
 
- if(gif){stage='GIF 로딩';status('GIF 준비 중');const blob=await fetchGif(media.image,signal);if(signal.aborted)throw Error('취소됨');session.gifUrl=URL.createObjectURL(blob);const loaded=eventReady($('image'),'load',signal);$('image').src=session.gifUrl;await loaded;if($('image').naturalWidth>960||$('image').naturalHeight>540)throw Error('GIF는 960×540px 이하를 사용하세요');$('image').hidden=false;}
+
  $('text').hidden=media.showText===false;
  $('alert').dataset.freeRandom=p.kind==='freeRandom'?'1':'0';
  if(p.kind==='freeRandom'){

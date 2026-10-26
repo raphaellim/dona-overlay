@@ -53,6 +53,8 @@ app.get('/api/build-check', (req, res) => {
 // 성공한 API 변경을 같은 방송국의 오버레이에만 알립니다.
 // 실제 데이터는 기존 API를 통해 한 번 동기화하므로 권한/정규화 로직은 그대로 유지됩니다.
 app.use((req, res, next) => {
+  // v72: visibility/ack/heartbeat are not donation data mutations.
+  if(['/api/donor-ranking/visibility','/api/donor-ranking/visibility-ack','/api/toonie-playback'].includes(req.path))return next();
   const method = String(req.method || 'GET').toUpperCase();
   if (method === 'GET' || method === 'HEAD' || !req.path.startsWith('/api/')) return next();
   // 파일 업로드/삭제 자체는 오버레이 상태값을 바꾸지 않습니다.
