@@ -519,8 +519,8 @@ window.overlay3CreatorName=value=>{const text=Array.from(String(value||'익명')
         }
 
         if ($karaokeQueueList) {
-          const waitQueue = songs.filter(s => s.status === "대기").slice(0, 6);
-          const holdQueue = songs.filter(s => s.status === "보류").slice(0, 6);
+          const waitQueue = songs.filter(s => s.status === "대기");
+          const holdQueue = songs.filter(s => s.status === "보류");
 
           const waitHtml = waitQueue.length
             ? waitQueue.map((s, idx) => `
@@ -629,12 +629,12 @@ window.overlay3CreatorName=value=>{const text=Array.from(String(value||'익명')
         // Avoid restarting the hold whenever the overlay receives an unchanged state.
         if(noticeStepSignature===lineHtml)return;
         noticeStepSignature=lineHtml;stopNoticeSteps();
-        if (lines.length > 4) {
+        if (lines.length > 2) {
           textEl.classList.add("rolling");
           textEl.innerHTML='<div class="notice-roll-window"><div class="notice-roll-track">'+lineHtml+lineHtml+'</div></div>';
           const track=textEl.querySelector('.notice-roll-track');let index=0;
           const hold=()=>{noticeStepTimer=setTimeout(()=>{
-            if(!track.isConnected)return;
+            if(!track.isConnected)return;if(document.hidden){hold();return;}
             const rowHeight=track.firstElementChild.getBoundingClientRect().height;
             track.style.transition='transform 250ms ease-in-out';
             track.style.transform='translateY(-'+(++index*rowHeight)+'px)';
@@ -642,7 +642,7 @@ window.overlay3CreatorName=value=>{const text=Array.from(String(value||'익명')
               if(index===lines.length){index=0;track.style.transition='none';track.style.transform='translateY(0)';}
               hold();
             },250);
-          },1500);};hold();
+          },3000);};hold();
         } else {
           textEl.classList.remove("rolling");
           textEl.innerHTML = lineHtml;
@@ -749,11 +749,12 @@ window.overlay3CreatorName=value=>{const text=Array.from(String(value||'익명')
           ? summary.creators
           : (Array.isArray(summary?.creatorSummary) ? summary.creatorSummary : []);
 
+        for(const t of summary?.presentation?.targets||[])if(t.name)allowed.add(normalizeName(t.name));
         const cleaned = rows
           .map(row => ({ ...row, creator: normalizeName(row.creator || row.name || "") }))
           .filter(row => row.creator && (!allowed.size || allowed.has(row.creator)));
 
-        if (cleaned.length) return cleaned.slice(0, 5);
+        if (cleaned.length) return cleaned;
 
         const aggregated = aggregateCreatorsFromDonations(summary?.donations || [], settings);
         return aggregated.length ? aggregated : zeroCreatorsFromSettings(settings);
@@ -965,7 +966,7 @@ const rows=allRows.filter(r=>!others.has(normalizeName(r.creator||r.name||''))).
             ? s.accountDonors
             : aggregateAccountDonorsFromDonations(s.donations || []);
           return {
-            settings,broadcastId:s.broadcastId,live:s.live,presentation:s.presentation,
+            settings,broadcastId:s.broadcastId,broadcastTitle:s.broadcastTitle,live:s.live,presentation:s.presentation,
             accountDonors,
             creators: normalizeCreatorRows({ ...s, settings }),
             donations: s.donations || []
@@ -994,7 +995,7 @@ function updateBroadcastTimer() {
   const s = String(sec % 60).padStart(2, "0");
 
   const text = `${h}:${m}:${s}`;
-  if($broadcastTimerValue.textContent!==text)$broadcastTimerValue.textContent=text;
+  if($broadcastTimerValue.textContent!==text)$broadcastTimerValue.textContent=text;window.LiveCatchTheme?.approvedTick?.(text);
 
 }
 const timerTick=setInterval(updateBroadcastTimer,250);
@@ -1018,6 +1019,7 @@ const timerTick=setInterval(updateBroadcastTimer,250);
         if(has('creators','presets','presentation','overlaySections'))renderCreators(latestOverlayCreators);
         if(has('broadcastTimerData')){studioMissionClock.apply({broadcastId:data.broadcastId,broadcastTimerData:settings.broadcastTimerData,serverNow:Date.now()});updateBroadcastTimer();}
         syncO3Headings();
+        window.LiveCatchTheme?.render(data,changes);
       }
       const store=createOverlayLiveStore({onChange:renderLive,onGap:()=>scheduleResync()});
       function scheduleResync(){if(disposed||resyncTimer)return;resyncTimer=setTimeout(()=>{resyncTimer=null;refresh();},25);}

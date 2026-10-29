@@ -1,7 +1,7 @@
 'use strict';
 const crypto=require('node:crypto');
 const FIELDS=['title','titleImage','noticeTitle','notice','noticeColors','noticeAligns','overlaySections','creators','presets','stationStyle','allowanceData','fundingData','karaokeData','broadcastTimerData','broadcastLiveData','columns','maxCreators'];
-const PRESENTATION=['broadcastMode','displayMode','selectedSections','targets','overlayOpacity','accountOpacity','alertOpacity','mode','accountEnabled','duration','deliveryMode'];
+const PRESENTATION=['publicTotals','themePreset','backgroundOpacity','statusMessage','broadcastMode','displayMode','selectedSections','targets','overlayOpacity','accountOpacity','alertOpacity','mode','accountEnabled','duration','deliveryMode'];
 const pick=(value,keys)=>Object.fromEntries(keys.filter(k=>value&&Object.hasOwn(value,k)).map(k=>[k,value[k]]));
 module.exports=function({notify,pool,getStation,readEffectiveSettings,markHandled,invalidate,currentOperation}){
  const epoch=crypto.randomUUID(),revisions=new Map(),saved=new Map(),owners=new Map();let operation=0,clock=0;
@@ -32,7 +32,7 @@ module.exports=function({notify,pool,getStation,readEffectiveSettings,markHandle
  if(req.path==='/api/station-style'&&body.stationStyle){settings(slug,null,{stationStyle:body.stationStyle});return true;}
  if(req.path==='/api/funding-data'&&body.fundingData){settings(slug,null,{fundingData:body.fundingData});return true;}
  if(req.path==='/api/overlay-display'){const sections=body.selectedSections||b.sections||[];if(op){finishPreview(op,{settings:{overlaySections:Object.fromEntries(['account','notice','creators','funding','karaoke','broadcastTimer','media','allowance','presets'].map(k=>[k,sections.includes(k)]))},presentation:{displayMode:b.mode,selectedSections:sections}});return true;}const keys=['account','notice','creators','funding','karaoke','broadcastTimer','media','allowance','presets'];presentation(slug,null,{displayMode:b.mode,selectedSections:sections},{settings:{overlaySections:Object.fromEntries(keys.map(k=>[k,sections.includes(k)]))}});return true;}
- if(req.path==='/api/overlay-appearance'){presentation(slug,null,body);return true;}
+ if(req.path==='/api/overlay-appearance'){presentation(slug,null,pick(body,Object.keys(b))); return true;}
  if(req.path==='/api/alert-config'){presentation(slug,null,{mode:b.mode,accountEnabled:b.accountEnabled,duration:b.duration});return true;}
  if(req.path.startsWith('/api/mission-timer/')&&body.broadcastTimerData){settings(slug,broadcast,{broadcastTimerData:body.broadcastTimerData});return true;}
  return false;

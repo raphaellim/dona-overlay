@@ -61,3 +61,14 @@ OBS·프리즘 실사용 확인 시 동일 장면과 해상도에서 소스 OFF/
 ## 6.16.8-rebuild.77 룰렛 송출 연결 복구
 
 기존 roulette 전용 DOM 이벤트에만 의존하던 송출 코드를 현재 collection:changed의 roulette/state 이벤트에 직접 연결했습니다. 재연결 시 상태 확인을 유지하고, 스크립트가 DOM 준비 후 로드되어도 초기화합니다. 종료 시 이벤트·회전·결과 타이머와 음원을 정리합니다. 룰렛 실행 후 실제 오버레이 DOM 표시 및 방송국/토큰 전달 검사를 추가했습니다. 별도 룰렛 송출 페이지나 DB 변경은 없습니다.
+
+## rebuild.78 테마 프리셋
+
+오버레이 → 디자인·미리보기에서 캐치 프레임 / 팝 스티커 / 소프트 티켓 / 시그널 라인을 선택합니다. 배경 불투명도는 0=완전 투명, 100=완전 불투명이며, 프레임과 글자에는 적용하지 않습니다. 기본 상태 문구도 여기서 설정합니다. 기존 방송국별 $overlayAppearance 저장소 및 /api/overlay-appearance 인증·저장 경로와 overlayPatch WebSocket을 사용합니다. 기존 /overlay3.html, /karaoke-alert.html 주소와 쿼리, /native-toonie 후원 알람은 유지합니다.
+
+원래의 방송인 누적 제목 settings.title은 수정하지 않으며, 상단은 선택 방송에서 읽은 broadcastTitle을 사용합니다. 메인 계좌후원·후원순위 영역은 테마 화면에서 숨기고, 등록 프리셋의 기존 계산 모델로 합산값을 표시합니다. 공지는 2줄 창·3초 정지 롤링으로 바뀝니다. 상태 알림은 확정된 실시간 데이터 차이만 사용하며 초기 스냅샷·복구 재적용·연결 끊김은 기준값만 설정합니다. 대기열은 32개, 식별 기록은 128개까지입니다.
+
+검증 명령: npm test / npm run test:ui / npm run test:startup / npm run test:theme. test:theme의 실제 브라우저 검사는 Playwright Chromium 설치가 필요합니다.
+
+## rebuild.80
+마지막 승인 HTML 디자인 적용. 자세한 내용은 docs/approved-verification.md 참조.

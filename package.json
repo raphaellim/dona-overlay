@@ -1,13 +1,15 @@
 {
   "name": "livecatch-server",
-  "version": "6.16.8-rebuild.77",
+  "version": "6.16.8-rebuild.80",
   "description": "LiveCatch station console, donation collection, sequential alerts and realtime overlays",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "test": "node --test tests/live-state.test.cjs tests/playback.test.cjs tests/report-donor.test.cjs tests/approval.test.js tests/database-read-cache.test.js tests/finance.test.js tests/routing.test.js tests/account-receipts.test.js tests/collection-window.test.js tests/postgres-runtime.test.js tests/postgres-client.test.js",
     "test:startup": "node tests/startup.test.cjs",
-    "test:ui": "node tests/overlay-dom.test.cjs && node tests/shared-transport.test.cjs && node tests/websocket.test.js && node tests/console-bootstrap.test.cjs && node tests/roulette-display.test.cjs"
+    "test:ui": "node tests/overlay-dom.test.cjs && node tests/shared-transport.test.cjs && node tests/websocket.test.js && node tests/console-bootstrap.test.cjs && node tests/roulette-display.test.cjs",
+    "test:theme": "node --test tests/theme-settings.test.cjs && node tests/theme-ui.test.cjs && node tests/theme-browser.test.cjs",
+    "test:approved": "node tests/approved-browser.test.cjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.1",
