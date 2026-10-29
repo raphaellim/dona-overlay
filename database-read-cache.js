@@ -28,7 +28,7 @@ module.exports=function withReadCache(client,{ttl=15000,maxBytes=16*1024*1024}={
   // Unknown functions may change funding/settings and donations atomically.
   if(key==='rpc')return (name,args)=>safeRpc.has(name)?target.rpc(name,args):write([...tables],()=>target.rpc(name,args));
   if(key==='uncached')return fn=>context.run(true,async()=>await fn());
-  if(key==='invalidateReads')return ()=>invalidate();
+  if(key==='invalidateReads')return affected=>invalidate(affected);
   const v=target[key];return typeof v==='function'?v.bind(target):v;
  }});
 };

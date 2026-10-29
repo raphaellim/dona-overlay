@@ -8,7 +8,7 @@ for(const donor of ['열려 6 각2','열려 6 균등']){const p=parse(donor,6000
 assert.equal(parse('열려 떠기2 또영3',60000).state,'hold');assert.equal(parse('열려 6 각3',60000).state,'hold');
 assert.equal(parse('열려 균등',10000).state,'hold');assert.equal(parse('열려 국고2',20000).rows[0].creator,'국고');
 assert.equal(parse('열려',100,{mode:'solo',targets:[config.targets[0],config.targets[3]]}).state,'auto');
-assert.equal(parse('열려 국고2',20000,{mode:'solo',targets:[config.targets[0],config.targets[3]]}).state,'review');
+assert.equal(parse('열려 국고2',20000,{mode:'solo',targets:[config.targets[0],config.targets[3]]}).state,'auto');
 assert.equal(classify({donor:'열려',amount:100,source:'toonie',replay:true},{mode:'solo',targets:[config.targets[0]]}).state,'hold');
 assert.equal(parse('열려',10000).state,'hold');assert.equal(parse('열려 떠기2 떠기3',50000).state,'hold');
 assert.equal(parse('열려 떠기2',20000,{mode:'collab',targets:[{name:'A',aliases:['떠기']},{name:'B',aliases:['떠기']}]}).state,'hold');

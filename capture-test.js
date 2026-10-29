@@ -32,6 +32,7 @@ module.exports=function(app,{supabase,getStation,getStationContext,managerAllowe
  const prepared=await review.prepare(source,b,station,active);
  const latest=await ensureActiveBroadcast(station.id);if(latest.id!==active.id)return {ok:true,skipped:true,reason:'broadcast_changed'};
  const refreshed=await readEffectiveSettings(station.slug,active.id);const stopReason=require('./collection-window').captureReason(refreshed.broadcastLiveData,b,active.id);if(stopReason)return {ok:true,skipped:true,reason:stopReason};
+ if(source==='toonie'&&/^[a-f0-9]{64}$/.test(String(b.playbackKey||'')))prepared.routing={...prepared.routing,playbackKey:b.playbackKey};
  if(source==='toonie'){const stableId=require('./toonie-donor-key')(b.toonieDonorId);if(stableId)prepared.routing={...prepared.routing,toonieDonorId:stableId};}
  const payload={station_id:station.id,source,event_id:eventId,donor,amount,title:String(b.title||'').slice(0,100),message:String(b.message||'').slice(0,1000),vip:String(b.vip||'').slice(0,80),bank:String(b.bank||'').slice(0,30),creator:String(b.creator||'').slice(0,100),received_at:at.toISOString(),replay:!!b.replay,...prepared};
  const {data:inserted,error}=await supabase.from('donation_capture_candidates').insert(payload).select().single();

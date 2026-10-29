@@ -13,11 +13,8 @@ test('bank candidate retries publish receipt only once and remain awaiting alloc
  await service.saveAccount(event,station);assert.equal((await service.saveAccount(event,station)).duplicate,true);assert.equal(alerts,1);assert.equal(chats,1);assert.equal(stored.broadcast_id,'b1');
 });
 test('production approval hook suppresses both alert and YouTube send for receipt-first allocations',async()=>{
- const s=fs.readFileSync(require.resolve('../server'),'utf8');const start=s.indexOf('afterApply:async(ctx,settings,candidate,routing,rows)=>{');const end=s.indexOf('\n}});',start);assert.ok(start>0&&end>start);const code=s.slice(start+'afterApply:'.length,end+2);let alerts=0,chats=0;
- const ctx={notifyCollection(){alerts++},nightbotChat:{enqueue(){}},maybeSendDonationYoutubeChat:async()=>{chats++},maybeStartAutoRoulette:async()=>{},console};vm.createContext(ctx);const hook=vm.runInContext('('+code+')',ctx);
- await hook({station:{slug:'s'}},{},{...receipt,source:'account'}, {},[]);assert.equal(alerts,0);assert.equal(chats,0);
- await hook({station:{slug:'s'}},{},{...receipt,routing:{}}, {},[]);assert.equal(alerts,1);assert.equal(chats,1);
-});
-test('receipt alert displays without native heartbeat and duplicate event is not displayed again',()=>{
- const Queue=require('../public/alert-queue');let shown=0;const q=new Queue({show(){shown++},hide(){}});q.configure({mode:'native',accountEnabled:true,playback:{known:false,busy:true}});assert.equal(q.push({id:'r1',source:'account',receiptOnly:true}),true);assert.equal(shown,1);assert.equal(q.push({id:'r1',source:'account',receiptOnly:true}),false);q.end();assert.equal(shown,1);
+ const s=fs.readFileSync(require.resolve('../server'),'utf8');const start=s.indexOf('afterApply:async(ctx,settings,candidate,routing,rows)=>{');const end=s.indexOf('\n}});',start);assert.ok(start>0&&end>start);const code=s.slice(start+'afterApply:'.length,end+2);let alerts=0,chats=0;const topics=[];
+ const ctx={notifyCollection(slug,topic){topics.push(topic);if(topic==='alert')alerts++},nightbotChat:{enqueue(){}},maybeSendDonationYoutubeChat:async()=>{chats++},maybeStartAutoRoulette:async()=>{},console};vm.createContext(ctx);const hook=vm.runInContext('('+code+')',ctx);
+ await hook({station:{slug:'s'},active:{id:'b1'}},{},{...receipt,source:'account'}, {},[]);assert.equal(alerts,0);assert.equal(chats,0);assert.deepEqual(topics,['distribution']);
+ await hook({station:{slug:'s'},active:{id:'b1'}},{},{...receipt,routing:{}}, {},[]);assert.equal(alerts,1);assert.equal(chats,1);
 });

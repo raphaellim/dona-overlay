@@ -12,6 +12,16 @@ const host='127.0.0.1:'+server.address().port;
 const denied=await open({Origin:'http://'+host});denied.sendJson({type:'auth',kind:'web',station:'duugi'});assert.equal((await denied.next()).type,'auth-error');
 const web=await open({Origin:'http://'+host,Cookie:'session=ok'});web.sendJson({type:'auth',kind:'web',station:'duugi'});assert.equal((await web.next()).type,'ready');web.sendJson({type:'rpc',id:'1',method:'GET',path:'/api/test?station=duugi'});let m=await web.next();assert.equal(m.status,200);assert.equal(JSON.parse(m.body).cookie,'session=ok');
 bus.notify('different','alert',{donor:'secret'});bus.notify('duugi','state');assert.equal((await web.next()).topic,'state');
+// Exercise the real transport: DOM-only tests cannot catch stripped delta payloads.
+for(const [topic,payload] of [
+ ['overlayPatch',{epoch:'e',seq:1,scope:'station',settings:{notice:'즉시 공지'},presentation:{selectedSections:['notice']}}],
+ ['timer',{broadcastTimerData:{running:true},serverNow:123}],
+ ['alertControl',{paused:true,revision:7}],
+ ['playback',{config:{enabled:false,deliveryMode:'dedicated'}}],
+ ['studioStyle',{timerOpacity:70}],['karaoke',{broadcastId:'b',karaokeData:{title:'노래방'}}],
+ ['stack',{broadcastId:'b',stackPlayback:true}]
+]){await bus.notify('duugi',topic,payload);m=await web.next();assert.equal(m.topic,topic);assert.deepEqual(m.payload,payload);}
+await bus.notify('duugi','state',{private:'not part of public event'});m=await web.next();assert.equal(m.payload,undefined);
 const source=await open();source.sendJson({type:'auth',kind:'toonie',station:'duugi',token});assert.equal((await source.next()).type,'ready');source.sendJson({type:'event',body:{station:'wrong',eventId:'bad'}});assert.equal((await source.next()).ok,false);assert.equal(events,0);
 for(let i=0;i<2;i++){source.sendJson({type:'event',body:{station:'duugi',eventId:'same'}});m=await source.next();assert.equal(m.type,'ack');assert.equal(m.eventId,'same');assert.equal(m.ok,true);}assert.equal(m.duplicate,true);
 const device=await open();device.sendJson({type:'auth',kind:'device',token});assert.equal((await device.next()).config.state,'pending');linked=true;await bus.devicesChanged();m=await device.next();assert.equal(m.type,'config');assert.equal(m.config.station,'duugi');
