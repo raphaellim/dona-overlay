@@ -1,3 +1,0 @@
-# Operational backups contain private settings and tokens; do not commit them.
-*.dump
-*.backup

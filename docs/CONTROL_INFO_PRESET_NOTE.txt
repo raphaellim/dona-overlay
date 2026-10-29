@@ -1,1 +1,0 @@
-control.html: 현재 방송정보를 /api/station-info + /api/settings 양쪽에서 보강해서 표시하도록 수정했습니다. 프리셋 수동 입력은 선택한 프리셋 옵션과 금액 기준으로 서버 makeDonationRow/calcCheck에서 자동 계산됩니다. 예: 흡연 단가 11900, 금액 50000 => 흡연+4, 잔액은 후원금 원본에 유지됩니다.
