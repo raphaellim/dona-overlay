@@ -1,6 +1,6 @@
 {
   "name": "livecatch-server",
-  "version": "6.16.8-rebuild.86",
+  "version": "6.16.8-rebuild.88",
   "description": "LiveCatch station console, donation collection, sequential alerts and realtime overlays",
   "main": "server.js",
   "scripts": {
