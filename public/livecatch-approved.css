@@ -67,10 +67,41 @@ html[data-lc-hidden='1'] #lc-design *{animation-play-state:paused!important}@med
 /* rebuild.89: video-safe contrast for 0–69% panel backgrounds */
 #lc-design.clear .panel{--ink:#fff;--muted:#f5f8ff;--plus:#71ffc2;--minus:#ffb0a8}
 #lc-design.clear .panel :is(.title,.heading,.guide,.song,.song span,.requester,.queue-title,.name,.who,.num,.count,.coins,.timer,.timer b,.counter small,.counter.money .value,.total-row,.total-row b,.fund>span,.status){color:#fff!important}
-#lc-design.clear .panel :is(.title,.heading,.guide,.song,.song span,.requester,.queue-title,.name,.who,.num,.count,.coins,.timer,.timer b,.counter small,.counter .value,.total-row,.total-row b,.fund>span,.status,.approved-notice-track>div){text-shadow:-1px -1px 0 #142133,1px -1px 0 #142133,-1px 1px 0 #142133,1px 1px 0 #142133,0 1px 2px #142133!important;-webkit-text-stroke:0!important}
-#lc-design.clear .panel svg{filter:drop-shadow(0 1px 1px #142133)}
+#lc-design.clear .panel :is(.title,.heading,.guide,.song,.song span,.requester,.queue-title,.name,.who,.num,.count,.coins,.timer,.timer b,.counter small,.counter .value,.total-row,.total-row b,.fund>span,.status,.approved-notice-track>div){text-shadow:none!important;-webkit-text-stroke:.8px #142133!important;paint-order:stroke fill}
+#lc-design.clear .panel svg{filter:none}
 #lc-design.clear .panel .value.plus{color:#71ffc2!important}
 #lc-design.clear .panel .value.minus{color:#ffb0a8!important}
 #lc-design.clear .approved-notice-track>div{color:var(--ink)!important}
 #lc-design .coins{overflow-wrap:anywhere;white-space:normal}
-#lc-design.clear .panel :is(.total-head,.total-sub,.total-name,.total-amount){color:#fff!important;text-shadow:-1px -1px 0 #142133,1px -1px 0 #142133,-1px 1px 0 #142133,1px 1px 0 #142133,0 1px 2px #142133!important}
+#lc-design.clear .panel :is(.total-head,.total-sub,.total-name,.total-amount){color:#fff!important;text-shadow:none!important;-webkit-text-stroke:.8px #142133!important;paint-order:stroke fill}
+
+/* rebuild.90: larger text, open tracking, crisp thin outlines */
+#lc-design .panel *{letter-spacing:.1px!important}
+#lc-design .title{font-size:26px!important}
+#lc-design .heading{font-size:28px!important}
+#lc-design .notice,#lc-design .approved-notice-track>div{font-size:20px!important;line-height:33px!important}
+#lc-design .approved-notice{height:66px!important;max-height:66px!important}
+#lc-design .counter .value{font-size:29px!important}
+#lc-design .counter small{font-size:19px!important}
+#lc-design .counter.money small{font-size:22px!important}
+#lc-design .counter.money .value{font-size:32px!important;letter-spacing:0!important;font-variant-numeric:tabular-nums}
+#lc-design .timer{font-size:21px!important;flex-wrap:wrap;row-gap:3px!important}
+#lc-design .timer b{font-size:32px!important;letter-spacing:0!important;font-variant-numeric:tabular-nums;max-width:100%}
+#lc-design .status{font-size:18px!important}
+#lc-design .guide,#lc-design .requester{font-size:19px!important}
+#lc-design .song{font-size:29px!important}
+#lc-design .song-row,#lc-design .name{font-size:19px!important}
+#lc-design .who{font-size:18px!important}
+#lc-design .coins{font-size:19px!important}
+#lc-design .total-name{font-size:19px!important}
+#lc-design .total-amount{font-size:27px!important;letter-spacing:0!important;font-variant-numeric:tabular-nums}
+#lc-design .fund-roll .fund>span:first-child{font-size:19px!important}
+#lc-design .fund-roll .fund .fund-amounts{font-size:16px!important;letter-spacing:0!important}
+#lc-design .fund-roll .fund>span:nth-of-type(2){font-size:16px!important}
+#lc-design .counter.money{flex-wrap:wrap!important}
+
+#lc-design .approved-notice-track>div{height:33px!important;overflow:hidden;text-overflow:ellipsis}
+#lc-design .timer,#lc-design .counter.money{flex-wrap:nowrap!important}
+#lc-design .timer b,#lc-design .counter.money .value{flex-shrink:0}
+#lc-design .song-row{grid-template-columns:25px minmax(0,1fr) auto!important}
+#lc-design .who{max-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
