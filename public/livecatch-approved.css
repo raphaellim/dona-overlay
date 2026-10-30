@@ -108,3 +108,10 @@ html[data-lc-hidden='1'] #lc-design *{animation-play-state:paused!important}@med
 
 /* rebuild.91: sharp dark outer edge, without blurred shadows */
 #lc-design.clear .panel :is(.title,.heading,.guide,.song,.song span,.requester,.queue-title,.name,.who,.num,.count,.coins,.timer,.timer b,.counter small,.counter .value,.total-head,.total-sub,.total-name,.total-amount,.fund>span,.status,.approved-notice-track>div){paint-order:stroke fill!important;text-shadow:none!important}
+
+/* rebuild.92: notice surface independent of panel alpha; signed preset labels */
+#lc-design .panel .notice{background:rgb(var(--tint)/.18)!important;border:1px solid var(--accent)!important}
+#lc-design .panel .counter:has(.value.plus) small{color:var(--plus,#198b5b)!important}
+#lc-design .panel .counter:has(.value.minus) small{color:var(--minus,#dc5145)!important}
+#lc-design.clear .panel .counter:has(.value.plus) small{color:#71ffc2!important}
+#lc-design.clear .panel .counter:has(.value.minus) small{color:#ffb0a8!important}
