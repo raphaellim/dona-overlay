@@ -20,13 +20,13 @@
 :root[style*="--alert-bg-alpha: 0"] #alert #text{filter:drop-shadow(0 1px 1px #ffffffaa)}
 :root[data-alert-theme=signal] #alert .spark{color:var(--at-accent)}
 
-#alert #text{width:min(280px,100%)!important;padding:12px 10px!important}
-#alert #title{flex-wrap:wrap!important;gap:4px!important}
-#alert #title #source{font-size:18px!important}
-#alert #title #amount{font-size:30px!important}
+#alert #text{width:min(464px,100%)!important;padding:10px 10px!important}
+#alert #title{flex-wrap:nowrap!important;gap:7px!important}
+#alert #title #source{font-size:28px!important}
+#alert #title #amount{font-size:var(--alert-line-size,42px)!important}
 #alert #comment{font-size:17px!important;line-height:24px!important}
 #alert #title #honorific,#alert #details #signature,#alert #details #donatedAgo,#alert #details #signature:not(:empty)+#donatedAgo:not(:empty)::before{color:var(--at-ink)!important;-webkit-text-fill-color:currentColor!important}
-#alert #details #signature{font-size:19px!important}
-#alert #details #donatedAgo{font-size:14px!important}
+#alert #details #signature{font-size:var(--alert-detail-size,28px)!important}
+#alert #details #donatedAgo{font-size:var(--alert-detail-size,28px)!important}
 #alert #text:before,#alert #text:after{border-color:var(--at-accent)!important}
 #alert[data-free-random="1"] #title #donor{color:var(--at-ink)!important;background:none!important;-webkit-text-fill-color:currentColor!important}

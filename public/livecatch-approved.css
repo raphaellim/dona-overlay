@@ -67,13 +67,13 @@ html[data-lc-hidden='1'] #lc-design *{animation-play-state:paused!important}@med
 /* rebuild.89: video-safe contrast for 0–69% panel backgrounds */
 #lc-design.clear .panel{--ink:#fff;--muted:#f5f8ff;--plus:#71ffc2;--minus:#ffb0a8}
 #lc-design.clear .panel :is(.title,.heading,.guide,.song,.song span,.requester,.queue-title,.name,.who,.num,.count,.coins,.timer,.timer b,.counter small,.counter.money .value,.total-row,.total-row b,.fund>span,.status){color:#fff!important}
-#lc-design.clear .panel :is(.title,.heading,.guide,.song,.song span,.requester,.queue-title,.name,.who,.num,.count,.coins,.timer,.timer b,.counter small,.counter .value,.total-row,.total-row b,.fund>span,.status,.approved-notice-track>div){text-shadow:none!important;-webkit-text-stroke:.8px #142133!important;paint-order:stroke fill}
+#lc-design.clear .panel :is(.title,.heading,.guide,.song,.song span,.requester,.queue-title,.name,.who,.num,.count,.coins,.timer,.timer b,.counter small,.counter .value,.total-row,.total-row b,.fund>span,.status,.approved-notice-track>div){text-shadow:none!important;-webkit-text-stroke:1.6px #101820!important;paint-order:stroke fill}
 #lc-design.clear .panel svg{filter:none}
 #lc-design.clear .panel .value.plus{color:#71ffc2!important}
 #lc-design.clear .panel .value.minus{color:#ffb0a8!important}
 #lc-design.clear .approved-notice-track>div{color:var(--ink)!important}
 #lc-design .coins{overflow-wrap:anywhere;white-space:normal}
-#lc-design.clear .panel :is(.total-head,.total-sub,.total-name,.total-amount){color:#fff!important;text-shadow:none!important;-webkit-text-stroke:.8px #142133!important;paint-order:stroke fill}
+#lc-design.clear .panel :is(.total-head,.total-sub,.total-name,.total-amount){color:#fff!important;text-shadow:none!important;-webkit-text-stroke:1.6px #101820!important;paint-order:stroke fill}
 
 /* rebuild.90: larger text, open tracking, crisp thin outlines */
 #lc-design .panel *{letter-spacing:.1px!important}
@@ -105,3 +105,6 @@ html[data-lc-hidden='1'] #lc-design *{animation-play-state:paused!important}@med
 #lc-design .timer b,#lc-design .counter.money .value{flex-shrink:0}
 #lc-design .song-row{grid-template-columns:25px minmax(0,1fr) auto!important}
 #lc-design .who{max-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* rebuild.91: sharp dark outer edge, without blurred shadows */
+#lc-design.clear .panel :is(.title,.heading,.guide,.song,.song span,.requester,.queue-title,.name,.who,.num,.count,.coins,.timer,.timer b,.counter small,.counter .value,.total-head,.total-sub,.total-name,.total-amount,.fund>span,.status,.approved-notice-track>div){paint-order:stroke fill!important;text-shadow:none!important}
